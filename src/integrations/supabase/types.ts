@@ -415,6 +415,17 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_daily_analytics_for_admins: {
+        Args: { days_back?: number }
+        Returns: {
+          active_users: number
+          date: string
+          engagement_score: number
+          new_signups: number
+          total_families: number
+          total_users: number
+        }[]
+      }
       get_engagement_analytics: {
         Args: { days_back?: number }
         Returns: {
@@ -468,6 +479,10 @@ export type Database = {
       refresh_daily_analytics: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      refresh_daily_analytics_secure: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
     }
     Enums: {

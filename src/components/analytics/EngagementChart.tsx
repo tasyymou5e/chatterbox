@@ -5,9 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 interface EngagementData {
   date: string;
   active_users: number;
-  daily_logins: number;
-  daily_signups: number;
-  unique_logins: number;
+  new_signups: number;
+  total_users: number;
+  total_families: number;
+  engagement_score: number;
 }
 
 interface EngagementChartProps {
@@ -20,12 +21,12 @@ const chartConfig = {
     label: "Active Users",
     color: "hsl(var(--primary))",
   },
-  daily_logins: {
-    label: "Daily Logins",
+  new_signups: {
+    label: "New Signups",
     color: "hsl(var(--secondary))",
   },
-  daily_signups: {
-    label: "Daily Signups",
+  total_users: {
+    label: "Total Users",
     color: "hsl(var(--accent))",
   },
 };
@@ -65,7 +66,7 @@ export const EngagementChart = ({ data, loading = false }: EngagementChartProps)
               />
               <ChartTooltip content={<ChartTooltipContent />} />
               <Legend />
-              <Line 
+               <Line 
                 type="monotone" 
                 dataKey="active_users" 
                 stroke="var(--color-active_users)"
@@ -75,16 +76,16 @@ export const EngagementChart = ({ data, loading = false }: EngagementChartProps)
               />
               <Line 
                 type="monotone" 
-                dataKey="daily_logins" 
-                stroke="var(--color-daily_logins)"
+                dataKey="new_signups" 
+                stroke="var(--color-new_signups)"
                 strokeWidth={2}
                 dot={{ r: 4 }}
                 activeDot={{ r: 6 }}
               />
               <Line 
                 type="monotone" 
-                dataKey="daily_signups" 
-                stroke="var(--color-daily_signups)"
+                dataKey="total_users" 
+                stroke="var(--color-total_users)"
                 strokeWidth={2}
                 dot={{ r: 4 }}
                 activeDot={{ r: 6 }}

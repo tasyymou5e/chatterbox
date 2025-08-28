@@ -11,10 +11,11 @@ interface EngagementMetric {
 
 interface DailyAnalytics {
   date: string;
-  daily_logins: number;
-  daily_signups: number;
+  total_users: number;
   active_users: number;
-  unique_logins: number;
+  new_signups: number;
+  total_families: number;
+  engagement_score: number;
 }
 
 interface RetentionData {
@@ -46,10 +47,7 @@ export const useAnalytics = () => {
   const fetchDailyAnalytics = async () => {
     try {
       const { data, error } = await supabase
-        .from('daily_analytics')
-        .select('*')
-        .order('date', { ascending: false })
-        .limit(30);
+        .rpc('get_daily_analytics_for_admins', { days_back: 30 });
       
       if (error) throw error;
       
@@ -67,7 +65,7 @@ export const useAnalytics = () => {
       setDailyAnalytics(transformedData);
     } catch (err) {
       console.error('Error fetching daily analytics:', err);
-      setError('Failed to fetch daily analytics');
+      setError('Failed to fetch daily analytics - ensure you have admin access');
     }
   };
 
