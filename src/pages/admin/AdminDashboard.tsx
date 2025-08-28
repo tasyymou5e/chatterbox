@@ -9,6 +9,7 @@ import {
   TrendingUp,
   Clock
 } from 'lucide-react';
+import CreateTestFamilyButton from '@/components/admin/CreateTestFamilyButton';
 
 interface DashboardStats {
   totalFamilies: number;
@@ -29,55 +30,56 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchDashboardStats = async () => {
-      try {
-        // Get total families
-        const { count: familiesCount } = await supabase
-          .from('families')
-          .select('*', { count: 'exact', head: true });
-
-        // Get total users
-        const { count: usersCount } = await supabase
-          .from('profiles')
-          .select('*', { count: 'exact', head: true });
-
-        // Get parents count
-        const { count: parentsCount } = await supabase
-          .from('user_roles')
-          .select('*', { count: 'exact', head: true })
-          .eq('role', 'parent');
-
-        // Get children count
-        const { count: childrenCount } = await supabase
-          .from('user_roles')
-          .select('*', { count: 'exact', head: true })
-          .eq('role', 'child');
-
-        // Get recent signups (last 7 days)
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-        
-        const { count: recentSignupsCount } = await supabase
-          .from('profiles')
-          .select('*', { count: 'exact', head: true })
-          .gte('created_at', sevenDaysAgo.toISOString());
-
-        setStats({
-          totalFamilies: familiesCount || 0,
-          totalUsers: usersCount || 0,
-          totalParents: parentsCount || 0,
-          totalChildren: childrenCount || 0,
-          recentSignups: recentSignupsCount || 0,
-        });
-      } catch (error) {
-        console.error('Error fetching dashboard stats:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchDashboardStats();
   }, []);
+
+  // Extract fetchDashboardStats to be reusable
+  const fetchDashboardStats = async () => {
+    try {
+      // Get total families
+      const { count: familiesCount } = await supabase
+        .from('families')
+        .select('*', { count: 'exact', head: true });
+
+      // Get total users
+      const { count: usersCount } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true });
+
+      // Get parents count
+      const { count: parentsCount } = await supabase
+        .from('user_roles')
+        .select('*', { count: 'exact', head: true })
+        .eq('role', 'parent');
+
+      // Get children count
+      const { count: childrenCount } = await supabase
+        .from('user_roles')
+        .select('*', { count: 'exact', head: true })
+        .eq('role', 'child');
+
+      // Get recent signups (last 7 days)
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      
+      const { count: recentSignupsCount } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', sevenDaysAgo.toISOString());
+
+      setStats({
+        totalFamilies: familiesCount || 0,
+        totalUsers: usersCount || 0,
+        totalParents: parentsCount || 0,
+        totalChildren: childrenCount || 0,
+        recentSignups: recentSignupsCount || 0,
+      });
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const StatCard = ({ 
     title, 
@@ -228,6 +230,7 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
+              <CreateTestFamilyButton onSuccess={() => fetchDashboardStats()} />
               <button className="w-full text-left text-sm text-blue-400 hover:text-blue-300 p-2 rounded hover:bg-gray-700 transition-colors">
                 View All Families →
               </button>

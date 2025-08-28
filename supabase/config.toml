@@ -1,1 +1,4 @@
 project_id = "lxuqfgbukrrickanmmic"
+
+[functions.create-test-family]
+verify_jwt = true
