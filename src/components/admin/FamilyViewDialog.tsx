@@ -33,6 +33,9 @@ interface FamilyViewDialogProps {
 export default function FamilyViewDialog({ family, open, onOpenChange }: FamilyViewDialogProps) {
   if (!family) return null;
 
+  console.log('FamilyViewDialog received family:', family);
+  console.log('FamilyViewDialog received members:', family.members);
+
   const getRoleColor = (role: string) => {
     return role === 'parent' ? 'bg-purple-600' : 'bg-green-600';
   };

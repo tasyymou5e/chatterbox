@@ -101,6 +101,7 @@ export default function AdminFamilies() {
       )];
 
       // Fetch profiles for all users at once
+      console.log('Fetching profiles for user IDs:', allUserIds);
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select('user_id, first_name, last_name, email')
@@ -108,17 +109,21 @@ export default function AdminFamilies() {
 
       if (profilesError) {
         console.error('Error fetching profiles:', profilesError);
+      } else {
+        console.log('Profile data fetched:', profilesData);
       }
 
       // Create a map of user profiles for quick lookup
       const profilesMap = new Map(
         (profilesData || []).map(profile => [profile.user_id, profile])
       );
+      console.log('Profiles map created:', profilesMap);
 
       // Transform the data to include member details and count
       const familiesWithMembers = (familiesData || []).map(family => {
         const members = (family.family_members || []).map(member => {
           const profile = profilesMap.get(member.user_id);
+          console.log(`Member ${member.user_id}:`, { member, profile });
           return {
             id: member.id,
             user_id: member.user_id,
@@ -154,6 +159,8 @@ export default function AdminFamilies() {
 
   const handleViewFamily = (family: Family, e: React.MouseEvent) => {
     e.stopPropagation();
+    console.log('Opening view dialog for family:', family);
+    console.log('Family members data:', family.members);
     setSelectedFamily(family);
     setViewDialogOpen(true);
   };
