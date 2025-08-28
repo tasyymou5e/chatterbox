@@ -27,22 +27,52 @@ export default function AdminLogin() {
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
 
-    const { error } = await signIn(email, password);
-
-    if (error) {
+    // Validate inputs
+    if (!email?.trim() || !password?.trim()) {
       toast({
-        title: "Access Denied",
-        description: error.message === "Invalid login credentials" 
-          ? "Invalid email or password. Admin access only." 
-          : error.message,
+        title: "Input Required",
+        description: "Please enter both email and password.",
         variant: "destructive",
       });
-    } else {
+      setIsSigningIn(false);
+      return;
+    }
+
+    try {
+      const { error } = await signIn(email, password);
+
+      if (error) {
+        // Categorize errors for better user experience
+        let errorMessage = "An unexpected error occurred.";
+        
+        if (error.message === "Invalid login credentials") {
+          errorMessage = "Invalid email or password. Admin access only.";
+        } else if (error.message.includes("network") || error.message.includes("fetch")) {
+          errorMessage = "Network error. Please check your connection and try again.";
+        } else if (error.message.includes("rate limit")) {
+          errorMessage = "Too many login attempts. Please wait a moment and try again.";
+        } else {
+          errorMessage = error.message;
+        }
+
+        toast({
+          title: "Access Denied",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Admin Access Granted",
+          description: "Welcome to the admin portal.",
+        });
+        navigate('/admin/dashboard');
+      }
+    } catch (error) {
       toast({
-        title: "Admin Access Granted",
-        description: "Welcome to the admin portal.",
+        title: "Connection Error",
+        description: "Unable to connect to the server. Please try again.",
+        variant: "destructive",
       });
-      navigate('/admin/dashboard');
     }
 
     setIsSigningIn(false);
