@@ -95,7 +95,7 @@ interface FamilyLeaderboard {
   profiles: {
     first_name: string | null;
     last_name: string | null;
-  };
+  } | null;
 }
 
 export const useGamification = (familyId?: string) => {
@@ -180,7 +180,9 @@ export const useGamification = (familyId?: string) => {
           point_reward,
           xp_reward,
           rarity,
-          is_secret
+          is_secret,
+          unlock_criteria,
+          is_active
         )
       `)
       .eq('user_id', user.id)
@@ -192,7 +194,7 @@ export const useGamification = (familyId?: string) => {
       return;
     }
 
-    setUserAchievements(data || []);
+    setUserAchievements(data as any || []);
   };
 
   // Fetch wishlist items
@@ -241,7 +243,7 @@ export const useGamification = (familyId?: string) => {
       .from('family_leaderboards')
       .select(`
         *,
-        profiles!family_leaderboards_user_id_fkey (
+        profiles (
           first_name,
           last_name
         )
@@ -256,7 +258,7 @@ export const useGamification = (familyId?: string) => {
       return;
     }
 
-    setLeaderboard(data || []);
+    setLeaderboard(data as any || []);
   };
 
   // Add wishlist item

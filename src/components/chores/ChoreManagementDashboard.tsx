@@ -30,7 +30,7 @@ interface FamilyMember {
   profiles: {
     first_name: string | null;
     last_name: string | null;
-  };
+  } | null;
 }
 
 interface ChoreManagementDashboardProps {
@@ -70,13 +70,13 @@ export const ChoreManagementDashboard = ({ familyId }: ChoreManagementDashboardP
 
       setFamily(familyData);
 
-      // Fetch family members
+      // Fetch family members with proper join
       const { data: membersData, error: membersError } = await supabase
         .from('family_members')
         .select(`
           user_id,
           role,
-          profiles!family_members_user_id_fkey (
+          profiles (
             first_name,
             last_name
           )
@@ -88,7 +88,8 @@ export const ChoreManagementDashboard = ({ familyId }: ChoreManagementDashboardP
         return;
       }
 
-      setFamilyMembers(membersData || []);
+      // Type assertion to handle the Supabase response
+      setFamilyMembers(membersData as any || []);
     };
 
     fetchFamilyData();
@@ -367,7 +368,7 @@ export const ChoreManagementDashboard = ({ familyId }: ChoreManagementDashboardP
                     <div key={member.user_id} className="flex items-center justify-between p-4 border border-border rounded-lg">
                       <div className="space-y-1">
                         <h3 className="font-semibold text-foreground">
-                          {member.profiles.first_name} {member.profiles.last_name}
+                          {member.profiles?.first_name} {member.profiles?.last_name}
                         </h3>
                         <p className="text-sm text-muted-foreground">
                           {completed} completed • {memberAssignments.length} total
