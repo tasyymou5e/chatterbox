@@ -231,13 +231,22 @@ export default function AdminDashboard() {
           <CardContent>
             <div className="space-y-2">
               <CreateTestFamilyButton onSuccess={() => fetchDashboardStats()} />
-              <button className="w-full text-left text-sm text-blue-400 hover:text-blue-300 p-2 rounded hover:bg-gray-700 transition-colors">
+              <button 
+                className="w-full text-left text-sm text-blue-400 hover:text-blue-300 p-2 rounded hover:bg-gray-700 transition-colors"
+                onClick={() => window.location.href = '/admin/families'}
+              >
                 View All Families →
               </button>
-              <button className="w-full text-left text-sm text-blue-400 hover:text-blue-300 p-2 rounded hover:bg-gray-700 transition-colors">
+              <button 
+                className="w-full text-left text-sm text-blue-400 hover:text-blue-300 p-2 rounded hover:bg-gray-700 transition-colors"
+                onClick={() => window.location.href = '/admin/users'}
+              >
                 Manage Users →
               </button>
-              <button className="w-full text-left text-sm text-blue-400 hover:text-blue-300 p-2 rounded hover:bg-gray-700 transition-colors">
+              <button 
+                className="w-full text-left text-sm text-blue-400 hover:text-blue-300 p-2 rounded hover:bg-gray-700 transition-colors"
+                onClick={() => window.location.href = '/admin/reports'}
+              >
                 Generate Reports →
               </button>
             </div>

@@ -14,6 +14,9 @@ import Reports from "./pages/Reports";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminFamilies from "./pages/admin/AdminFamilies";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminReports from "./pages/admin/AdminReports";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,9 +44,9 @@ const App = () => (
                 </AdminRoute>
               }>
                 <Route path="dashboard" element={<AdminDashboard />} />
-                <Route path="families" element={<div className="p-6 text-white">Families Management - Coming Soon</div>} />
-                <Route path="users" element={<div className="p-6 text-white">User Management - Coming Soon</div>} />
-                <Route path="reports" element={<div className="p-6 text-white">Reports - Coming Soon</div>} />
+                <Route path="families" element={<AdminFamilies />} />
+                <Route path="users" element={<AdminUsers />} />
+                <Route path="reports" element={<AdminReports />} />
               </Route>
               
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
