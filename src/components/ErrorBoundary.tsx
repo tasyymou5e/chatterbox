@@ -73,7 +73,10 @@ class ErrorBoundary extends Component<Props, State> {
   };
 
   private handleReload = () => {
-    window.location.reload();
+    this.setState({ hasError: false, error: null, errorInfo: null });
+    if ((window as any).__navigate) {
+      (window as any).__navigate('/');
+    }
   };
 
   render() {

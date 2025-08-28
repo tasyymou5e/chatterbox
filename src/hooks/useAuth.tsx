@@ -51,22 +51,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  // Helper function to navigate based on role
-  const navigateBasedOnRole = (role: string | null, navigate: any) => {
-    switch (role) {
-      case 'admin':
-        navigate('/admin/dashboard');
-        break;
-      case 'parent':
-        navigate('/parent-dashboard');
-        break;
-      case 'child':
-        navigate('/children/tasks');
-        break;
-      default:
-        navigate('/parent-dashboard'); // Fallback
-        break;
-    }
+  // Helper function to navigate based on role - removed to avoid conflicts with useAuthNavigation
+  const logSuccessfulAuth = (role: string | null) => {
+    console.log('Authentication successful, role:', role);
   };
 
   useEffect(() => {
@@ -169,15 +156,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           }
         );
 
-        // Fetch user role and navigate accordingly
+        // Fetch user role and log success - navigation handled by useAuthNavigation
         const role = await fetchUserRole(data.user.id);
         setUserRole(role);
-        
-        // Use navigate from router context if available in component
-        const navigate = (window as any).__navigate;
-        if (navigate) {
-          navigateBasedOnRole(role, navigate);
-        }
+        logSuccessfulAuth(role);
       }, 0);
     } else if (error) {
       // Log failed login attempt - use a deterministic ID based on email

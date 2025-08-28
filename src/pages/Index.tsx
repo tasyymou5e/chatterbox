@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Hero } from "@/components/Hero";
 import { PortalSelection } from "@/components/PortalSelection";
 import { Button } from "@/components/ui/button";
@@ -6,9 +7,10 @@ import { ArrowDown } from "lucide-react";
 
 const Index = () => {
   const [showPortals, setShowPortals] = useState(false);
+  const navigate = useNavigate();
 
   const scrollToPortals = () => {
-    window.location.href = '/auth';
+    navigate('/auth');
   };
 
   return (

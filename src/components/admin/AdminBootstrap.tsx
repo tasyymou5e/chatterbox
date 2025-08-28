@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -9,6 +10,7 @@ import { UserPlus, Shield, CheckCircle, Loader2 } from 'lucide-react';
 
 export const AdminBootstrap = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [hasAdmins, setHasAdmins] = useState<boolean | null>(null);
   const [isChecking, setIsChecking] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
@@ -132,7 +134,7 @@ export const AdminBootstrap = () => {
           </CardHeader>
           <CardContent className="text-center">
             <Button
-              onClick={() => window.location.href = '/admin/login'}
+              onClick={() => navigate('/admin/login')}
               className="bg-blue-600 hover:bg-blue-700 text-white"
             >
               Go to Admin Login

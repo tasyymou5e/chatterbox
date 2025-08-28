@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,6 +12,7 @@ import { Bug, Settings, UserPlus, Loader2 } from 'lucide-react';
 export const AdminDebugPanel = () => {
   const { debugInfo, isDebugging, runDiagnostics, createTestAdmin } = useAdminDebug();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [isCreatingAdmin, setIsCreatingAdmin] = useState(false);
   const [adminEmail, setAdminEmail] = useState('admin@test.com');
   const [adminPassword, setAdminPassword] = useState('admin123!');
@@ -172,21 +174,21 @@ export const AdminDebugPanel = () => {
           </CardHeader>
           <CardContent className="flex flex-wrap gap-2">
             <Button
-              onClick={() => window.location.href = '/admin/login'}
+              onClick={() => navigate('/admin/login')}
               variant="outline"
               className="border-gray-600 text-gray-300 hover:bg-gray-700"
             >
               Admin Login
             </Button>
             <Button
-              onClick={() => window.location.href = '/admin/dashboard'}
+              onClick={() => navigate('/admin/dashboard')}
               variant="outline"
               className="border-gray-600 text-gray-300 hover:bg-gray-700"
             >
               Admin Dashboard
             </Button>
             <Button
-              onClick={() => window.location.href = '/'}
+              onClick={() => navigate('/')}
               variant="outline"
               className="border-gray-600 text-gray-300 hover:bg-gray-700"
             >

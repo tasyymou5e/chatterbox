@@ -156,7 +156,7 @@ export default function AdminLogin() {
                 For security purposes, all admin access is logged and monitored.
               </p>
               <Button
-                onClick={() => window.location.href = '/admin/debug'}
+                onClick={() => navigate('/admin/debug')}
                 variant="ghost"
                 size="sm"
                 className="text-xs text-gray-400 hover:text-gray-300"
@@ -164,7 +164,7 @@ export default function AdminLogin() {
                 🔧 Debug Panel
               </Button>
               <Button
-                onClick={() => window.location.href = '/admin/bootstrap'}
+                onClick={() => navigate('/admin/bootstrap')}
                 variant="ghost"
                 size="sm"
                 className="text-xs text-gray-400 hover:text-gray-300"
