@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,6 +31,7 @@ interface DashboardStats {
 }
 
 export default function AdminDashboard() {
+  const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats>({
     totalFamilies: 0,
     totalUsers: 0,
@@ -266,7 +268,7 @@ export default function AdminDashboard() {
               <Button 
                 variant="outline"
                 className="w-full justify-start border-border"
-                onClick={() => window.location.href = '/admin/families'}
+                onClick={() => navigate('/admin/families')}
               >
                 <Home className="h-4 w-4 mr-2" />
                 View All Families
@@ -274,7 +276,7 @@ export default function AdminDashboard() {
               <Button 
                 variant="outline"
                 className="w-full justify-start border-border"
-                onClick={() => window.location.href = '/admin/users'}
+                onClick={() => navigate('/admin/users')}
               >
                 <Users className="h-4 w-4 mr-2" />
                 Manage Users
@@ -282,7 +284,7 @@ export default function AdminDashboard() {
               <Button 
                 variant="outline"
                 className="w-full justify-start border-border"
-                onClick={() => window.location.href = '/admin/reports'}
+                onClick={() => navigate('/admin/reports')}
               >
                 <BarChart3 className="h-4 w-4 mr-2" />
                 Generate Reports
