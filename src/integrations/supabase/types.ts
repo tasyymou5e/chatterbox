@@ -388,10 +388,11 @@ export type Database = {
       daily_analytics: {
         Row: {
           active_users: number | null
-          daily_logins: number | null
-          daily_signups: number | null
           date: string | null
-          unique_logins: number | null
+          engagement_score: number | null
+          new_signups: number | null
+          total_families: number | null
+          total_users: number | null
         }
         Relationships: []
       }

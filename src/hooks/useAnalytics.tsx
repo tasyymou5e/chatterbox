@@ -49,7 +49,16 @@ export const useAnalytics = () => {
       const { data, error } = await supabase
         .rpc('get_daily_analytics_for_admins', { days_back: 30 });
       
-      if (error) throw error;
+      if (error) {
+        console.error('RPC Error details:', error);
+        throw new Error(`Analytics RPC failed: ${error.message}`);
+      }
+      
+      if (!data || data.length === 0) {
+        console.warn('No analytics data returned from RPC');
+        setDailyAnalytics([]);
+        return;
+      }
       
       // Transform and reverse data for chronological order in charts
       const transformedData = (data || [])
@@ -63,9 +72,16 @@ export const useAnalytics = () => {
         }));
       
       setDailyAnalytics(transformedData);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error fetching daily analytics:', err);
-      setError('Failed to fetch daily analytics - ensure you have admin access');
+      const errorMsg = err?.message || 'Unknown error occurred';
+      if (errorMsg.includes('permission denied') || errorMsg.includes('Admin role required')) {
+        setError('Access denied - admin role required for analytics');
+      } else if (errorMsg.includes('daily_analytics')) {
+        setError('Analytics data is being refreshed - please try again in a moment');
+      } else {
+        setError(`Analytics error: ${errorMsg}`);
+      }
     }
   };
 
