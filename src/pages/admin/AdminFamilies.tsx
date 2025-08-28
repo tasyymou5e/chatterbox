@@ -46,30 +46,56 @@ export default function AdminFamilies() {
 
   const fetchFamilies = async () => {
     try {
+      console.log('Fetching families as admin user...');
+      
       // Get all families first
       const { data: families, error: familiesError } = await supabase
         .from('families')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (familiesError) throw familiesError;
+      if (familiesError) {
+        console.error('Error fetching families:', familiesError);
+        throw familiesError;
+      }
+
+      console.log(`Found ${families?.length || 0} families`);
 
       // Get member counts for each family
       const familiesWithCounts = await Promise.all(
         (families || []).map(async (family) => {
-          const { count } = await supabase
-            .from('family_members')
-            .select('*', { count: 'exact', head: true })
-            .eq('family_id', family.id);
-
-          return {
-            ...family,
-            member_count: count || 0
-          };
+          try {
+            const { count, error: countError } = await supabase
+              .from('family_members')
+              .select('*', { count: 'exact', head: true })
+              .eq('family_id', family.id);
+            
+            if (countError) {
+              console.error(`Error counting members for family ${family.family_code}:`, countError);
+              return {
+                ...family,
+                member_count: 0
+              };
+            }
+            
+            console.log(`Family ${family.family_code} has ${count || 0} members`);
+            
+            return {
+              ...family,
+              member_count: count || 0
+            };
+          } catch (error) {
+            console.error(`Failed to count members for family ${family.family_code}:`, error);
+            return {
+              ...family,
+              member_count: 0
+            };
+          }
         })
       );
 
       setFamilies(familiesWithCounts);
+      console.log('Successfully loaded families with member counts');
     } catch (error) {
       console.error('Error fetching families:', error);
       toast({
