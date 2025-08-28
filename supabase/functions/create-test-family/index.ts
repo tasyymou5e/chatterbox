@@ -23,6 +23,7 @@ interface CreateFamilyRequest {
   parent1: Parent;
   parent2: Parent | null;
   children: Child[];
+  createdBy: string; // Admin user ID passed from frontend
 }
 
 serve(async (req) => {
@@ -32,12 +33,24 @@ serve(async (req) => {
   }
 
   try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    // Validate required environment variables
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    if (!supabaseUrl || !serviceRoleKey) {
+      console.error('Missing required environment variables:', { supabaseUrl: !!supabaseUrl, serviceRoleKey: !!serviceRoleKey });
+      throw new Error('Missing required Supabase configuration');
+    }
 
-    const { displayName, parent1, parent2, children }: CreateFamilyRequest = await req.json();
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+    const { displayName, parent1, parent2, children, createdBy }: CreateFamilyRequest = await req.json();
+    
+    // Validate required fields
+    if (!displayName || !parent1 || !createdBy) {
+      console.error('Missing required fields:', { displayName: !!displayName, parent1: !!parent1, createdBy: !!createdBy });
+      throw new Error('Missing required fields: displayName, parent1, or createdBy');
+    }
 
     console.log('Creating test family:', { displayName, parent1, parent2, children: children.length });
 
@@ -62,7 +75,7 @@ serve(async (req) => {
         display_name: displayName,
         family_code: familyCode,
         name: internalName,
-        created_by: (await supabase.auth.getUser()).data.user?.id
+        created_by: createdBy
       })
       .select()
       .single();
@@ -162,7 +175,7 @@ serve(async (req) => {
             family_id: familyData.id,
             user_id: authData.user.id,
             role: member.role,
-            invited_by: (await supabase.auth.getUser()).data.user?.id
+            invited_by: createdBy
           });
 
         if (familyMemberError) {

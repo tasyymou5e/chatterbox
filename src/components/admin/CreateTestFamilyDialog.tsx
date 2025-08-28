@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Plus, Minus, Loader2, Users, Mail, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { supabase } from '@/integrations/supabase/client';
 import FamilyNameSuggestions from './FamilyNameSuggestions';
 
@@ -28,11 +29,8 @@ interface CreateTestFamilyDialogProps {
   onSuccess?: () => void;
 }
 
-export default function CreateTestFamilyDialog({ 
-  open, 
-  onOpenChange, 
-  onSuccess 
-}: CreateTestFamilyDialogProps) {
+export default function CreateTestFamilyDialog({ open, onOpenChange, onSuccess }: CreateTestFamilyDialogProps) {
+  const { user } = useAdminAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   
@@ -129,6 +127,11 @@ export default function CreateTestFamilyDialog({
 
   const handleSubmit = async () => {
     if (!validateForm()) return;
+    
+    if (!user?.id) {
+      toast({ variant: "destructive", title: "Not authenticated as admin" });
+      return;
+    }
 
     setLoading(true);
     try {
@@ -148,7 +151,8 @@ export default function CreateTestFamilyDialog({
           firstName: child.firstName.trim(),
           lastName: child.lastName.trim(),
           email: child.generatedEmail
-        }))
+        })),
+        createdBy: user.id
       };
 
       const { data, error } = await supabase.functions.invoke('create-test-family', {
