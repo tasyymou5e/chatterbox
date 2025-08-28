@@ -14,6 +14,78 @@ export type Database = {
   }
   public: {
     Tables: {
+      analytics_metrics: {
+        Row: {
+          created_at: string | null
+          date_recorded: string
+          id: string
+          metadata: Json | null
+          metric_name: string
+          metric_type: string
+          metric_value: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          date_recorded?: string
+          id?: string
+          metadata?: Json | null
+          metric_name: string
+          metric_type: string
+          metric_value: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          date_recorded?: string
+          id?: string
+          metadata?: Json | null
+          metric_name?: string
+          metric_type?: string
+          metric_value?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      engagement_metrics: {
+        Row: {
+          actions_performed: number | null
+          created_at: string | null
+          date_recorded: string | null
+          engagement_score: number | null
+          family_id: string | null
+          id: string
+          metadata: Json | null
+          pages_visited: number | null
+          session_duration: number | null
+          user_id: string | null
+        }
+        Insert: {
+          actions_performed?: number | null
+          created_at?: string | null
+          date_recorded?: string | null
+          engagement_score?: number | null
+          family_id?: string | null
+          id?: string
+          metadata?: Json | null
+          pages_visited?: number | null
+          session_duration?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          actions_performed?: number | null
+          created_at?: string | null
+          date_recorded?: string | null
+          engagement_score?: number | null
+          family_id?: string | null
+          id?: string
+          metadata?: Json | null
+          pages_visited?: number | null
+          session_duration?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       families: {
         Row: {
           created_at: string
@@ -156,6 +228,39 @@ export type Database = {
         }
         Relationships: []
       }
+      system_health_metrics: {
+        Row: {
+          error_rate: number | null
+          id: string
+          metadata: Json | null
+          response_time: number | null
+          service_name: string
+          status: string
+          timestamp: string | null
+          uptime_percentage: number | null
+        }
+        Insert: {
+          error_rate?: number | null
+          id?: string
+          metadata?: Json | null
+          response_time?: number | null
+          service_name: string
+          status: string
+          timestamp?: string | null
+          uptime_percentage?: number | null
+        }
+        Update: {
+          error_rate?: number | null
+          id?: string
+          metadata?: Json | null
+          response_time?: number | null
+          service_name?: string
+          status?: string
+          timestamp?: string | null
+          uptime_percentage?: number | null
+        }
+        Relationships: []
+      }
       user_activity_logs: {
         Row: {
           activity_type: string
@@ -280,9 +385,28 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      daily_analytics: {
+        Row: {
+          active_users: number | null
+          daily_logins: number | null
+          daily_signups: number | null
+          date: string | null
+          unique_logins: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      calculate_user_retention: {
+        Args: { days_back?: number }
+        Returns: {
+          cohort_date: string
+          retention_day_1: number
+          retention_day_30: number
+          retention_day_7: number
+          users_count: number
+        }[]
+      }
       end_user_session: {
         Args: { session_id: string }
         Returns: undefined
@@ -290,6 +414,16 @@ export type Database = {
       generate_family_code: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_engagement_analytics: {
+        Args: { days_back?: number }
+        Returns: {
+          change_percentage: number
+          current_value: number
+          metric: string
+          previous_value: number
+          trend: string
+        }[]
       }
       has_role: {
         Args: {
