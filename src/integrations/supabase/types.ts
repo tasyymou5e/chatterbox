@@ -18,6 +18,8 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string
+          display_name: string
+          family_code: string
           id: string
           name: string
           updated_at: string
@@ -25,6 +27,8 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by: string
+          display_name: string
+          family_code: string
           id?: string
           name: string
           updated_at?: string
@@ -32,6 +36,8 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string
+          display_name?: string
+          family_code?: string
           id?: string
           name?: string
           updated_at?: string
@@ -132,6 +138,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_family_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
