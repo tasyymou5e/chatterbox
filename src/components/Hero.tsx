@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useNavigate } from "react-router-dom";
 import { Heart, Star, Users, Brain, Gamepad2, Award } from "lucide-react";
 
 interface HeroProps {
@@ -7,6 +8,7 @@ interface HeroProps {
 }
 
 export const Hero = ({ onChoosePortal }: HeroProps) => {
+  const navigate = useNavigate();
   const features = [
     {
       icon: Brain,
@@ -64,6 +66,7 @@ export const Hero = ({ onChoosePortal }: HeroProps) => {
               size="lg" 
               variant="outline"
               className="border-white/30 text-white hover:bg-white/10 font-semibold px-8 py-4 text-lg backdrop-blur-sm"
+              onClick={() => navigate('/about')}
             >
               Learn More
             </Button>
