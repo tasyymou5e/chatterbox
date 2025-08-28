@@ -35,7 +35,8 @@ const queryClient = new QueryClient({
     },
   },
 });
-// Force complete app rebuild and redeploy - v3.0.0 - Admin Portal Fix
+// EMERGENCY DEPLOYMENT FIX - v3.1.0 - Critical fixes applied
+// Simplified admin routing and enhanced error boundaries
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -57,22 +58,62 @@ const App = () => (
               <Route path="/reports" element={<Reports />} />
               <Route path="/games" element={<GamesCatalog />} />
               
-              {/* Admin Routes */}
-              <Route path="/admin/login" element={<AdminLogin />} />
-              <Route path="/admin/debug" element={<AdminDebugPanel />} />
-              <Route path="/admin/bootstrap" element={<AdminBootstrap />} />
+              {/* Simplified Admin Routes - No nesting temporarily */}
+              <Route path="/admin/login" element={
+                <ErrorBoundary componentName="AdminLogin">
+                  <AdminLogin />
+                </ErrorBoundary>
+              } />
+              <Route path="/admin/debug" element={
+                <ErrorBoundary componentName="AdminDebug">
+                  <AdminDebugPanel />
+                </ErrorBoundary>
+              } />
+              <Route path="/admin/bootstrap" element={
+                <ErrorBoundary componentName="AdminBootstrap">
+                  <AdminBootstrap />
+                </ErrorBoundary>
+              } />
+              
+              {/* Protected Admin Routes */}
               <Route path="/admin" element={
-                <AdminRoute>
-                  <AdminLayout />
-                </AdminRoute>
+                <ErrorBoundary componentName="AdminRoute">
+                  <AdminRoute>
+                    <AdminLayout />
+                  </AdminRoute>
+                </ErrorBoundary>
               }>
                 <Route index element={<Navigate to="dashboard" replace />} />
-                <Route path="dashboard" element={<AdminDashboard />} />
-                <Route path="families" element={<AdminFamilies />} />
-                <Route path="users" element={<AdminUsers />} />
-                <Route path="reports" element={<AdminReports />} />
-                <Route path="content" element={<AdminContent />} />
-                <Route path="system-monitoring" element={<AdminSystemMonitoring />} />
+                <Route path="dashboard" element={
+                  <ErrorBoundary componentName="AdminDashboard">
+                    <AdminDashboard />
+                  </ErrorBoundary>
+                } />
+                <Route path="families" element={
+                  <ErrorBoundary componentName="AdminFamilies">
+                    <AdminFamilies />
+                  </ErrorBoundary>
+                } />
+                <Route path="users" element={
+                  <ErrorBoundary componentName="AdminUsers">
+                    <AdminUsers />
+                  </ErrorBoundary>
+                } />
+                <Route path="reports" element={
+                  <ErrorBoundary componentName="AdminReports">
+                    <AdminReports />
+                  </ErrorBoundary>
+                } />
+                <Route path="content" element={
+                  <ErrorBoundary componentName="AdminContent">
+                    <AdminContent />
+                  </ErrorBoundary>
+                } />
+                <Route path="system-monitoring" element={
+                  <ErrorBoundary componentName="AdminSystemMonitoring">
+                    <AdminSystemMonitoring />
+                  </ErrorBoundary>
+                } />
               </Route>
               
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

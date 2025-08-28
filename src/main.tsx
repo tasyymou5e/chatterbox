@@ -2,9 +2,9 @@ import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 
-// Force complete rebuild and deployment - v3.0.0 - Admin Portal Fix
-// Comprehensive fix for admin authentication and deployment issues
-console.log('🚀 Application starting - Version 3.0.0');
+// EMERGENCY DEPLOYMENT FIX - v3.1.0 - Build: 2025-01-28T16:00:00Z
+// Critical runtime fixes and deployment recognition
+console.log('🚀 Emergency Fix Deployment - Version 3.1.0 - Build:', new Date().toISOString());
 const root = createRoot(document.getElementById("root")!);
 
 try {

@@ -62,16 +62,14 @@ export const AdminAuthProvider = ({ children }: { children: React.ReactNode }) =
         if (session?.user) {
           // Defer async role check to prevent auth deadlock
           setTimeout(() => {
-            if (!isCheckingRole) {
-              setIsCheckingRole(true);
-              checkAdminRole(session.user.id).then((adminStatus) => {
-                setIsAdmin(adminStatus);
-                setIsCheckingRole(false);
-              }).catch(() => {
-                setIsAdmin(false);
-                setIsCheckingRole(false);
-              });
-            }
+            setIsCheckingRole(true);
+            checkAdminRole(session.user.id).then((adminStatus) => {
+              setIsAdmin(adminStatus);
+              setIsCheckingRole(false);
+            }).catch(() => {
+              setIsAdmin(false);
+              setIsCheckingRole(false);
+            });
           }, 0);
         } else {
           setIsAdmin(false);
@@ -103,7 +101,7 @@ export const AdminAuthProvider = ({ children }: { children: React.ReactNode }) =
     });
 
     return () => subscription.unsubscribe();
-  }, [isCheckingRole]);
+  }, []);
 
   const signIn = async (email: string, password: string) => {
     console.log('🔐 Attempting admin sign in for:', email);
