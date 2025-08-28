@@ -53,54 +53,72 @@ export const AdminAuthProvider = ({ children }: { children: React.ReactNode }) =
   };
 
   useEffect(() => {
-    // Set up auth state listener FIRST - use SYNC callback to prevent deadlocks
+    let mounted = true;
+
+    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
+        if (!mounted) return;
+        
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Defer async role check to prevent auth deadlock
-          setTimeout(() => {
-            setIsCheckingRole(true);
-            checkAdminRole(session.user.id).then((adminStatus) => {
+          setIsCheckingRole(true);
+          try {
+            const adminStatus = await checkAdminRole(session.user.id);
+            if (mounted) {
               setIsAdmin(adminStatus);
               setIsCheckingRole(false);
-            }).catch(() => {
+            }
+          } catch (error) {
+            if (mounted) {
               setIsAdmin(false);
               setIsCheckingRole(false);
-            });
-          }, 0);
+            }
+          }
         } else {
           setIsAdmin(false);
+          setIsCheckingRole(false);
         }
         
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        setIsCheckingRole(true);
-        checkAdminRole(session.user.id).then((adminStatus) => {
-          setIsAdmin(adminStatus);
+    const initAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!mounted) return;
+        
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          setIsCheckingRole(true);
+          const adminStatus = await checkAdminRole(session.user.id);
+          if (mounted) {
+            setIsAdmin(adminStatus);
+            setIsCheckingRole(false);
+          }
+        }
+        
+        if (mounted) setLoading(false);
+      } catch (error) {
+        if (mounted) {
+          setLoading(false);
           setIsCheckingRole(false);
-        }).catch(() => {
-          setIsAdmin(false);
-          setIsCheckingRole(false);
-        });
-      } else {
-        setIsAdmin(false);
+        }
       }
-      
-      setLoading(false);
-    });
+    };
 
-    return () => subscription.unsubscribe();
+    initAuth();
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {

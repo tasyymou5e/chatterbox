@@ -9,10 +9,11 @@ interface AdminRouteProps {
 export const AdminRoute = ({ children }: AdminRouteProps) => {
   const { loading, user, isAdmin } = useAdminAuth();
 
+  // Show loading for longer during admin check
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-900">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
