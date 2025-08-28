@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
+import { useAuthNavigation } from '@/hooks/useAuthNavigation';
 import { toast } from '@/hooks/use-toast';
 import { Loader2, Heart } from 'lucide-react';
 
@@ -13,6 +14,9 @@ const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { signUp, signIn } = useAuth();
   const navigate = useNavigate();
+  
+  // Set up navigation for auth context
+  useAuthNavigation();
 
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -37,7 +41,7 @@ const Auth = () => {
         title: 'Account created successfully!',
         description: 'Please check your email to verify your account.',
       });
-      navigate('/parent-dashboard');
+      // Navigation will be handled by useAuth after role detection
     }
 
     setIsLoading(false);
@@ -64,7 +68,7 @@ const Auth = () => {
         title: 'Welcome back!',
         description: 'You have been signed in successfully.',
       });
-      navigate('/parent-dashboard');
+      // Navigation will be handled by useAuth after role detection
     }
 
     setIsLoading(false);
@@ -83,7 +87,7 @@ const Auth = () => {
 
         <Card className="bg-card/95 backdrop-blur-sm shadow-large border-0">
           <CardHeader className="text-center">
-            <CardTitle className="text-foreground">Parent Portal</CardTitle>
+            <CardTitle className="text-foreground">Account Access</CardTitle>
             <CardDescription>Create an account or sign in to get started</CardDescription>
           </CardHeader>
           <CardContent>
@@ -121,7 +125,7 @@ const Auth = () => {
                       id="signup-email"
                       name="signup-email"
                       type="email"
-                      placeholder="parent@example.com"
+                      placeholder="your@example.com"
                       required
                     />
                   </div>
@@ -142,7 +146,7 @@ const Auth = () => {
                     disabled={isLoading}
                   >
                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Create Parent Account
+                    Create Account
                   </Button>
                 </form>
               </TabsContent>
@@ -155,7 +159,7 @@ const Auth = () => {
                       id="signin-email"
                       name="signin-email"
                       type="email"
-                      placeholder="parent@example.com"
+                      placeholder="your@example.com"
                       required
                     />
                   </div>
@@ -175,7 +179,7 @@ const Auth = () => {
                     disabled={isLoading}
                   >
                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Sign In to Portal
+                    Sign In
                   </Button>
                 </form>
               </TabsContent>

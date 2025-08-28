@@ -6,6 +6,7 @@ import { useAuthLogging } from './useAuthLogging';
 interface AuthContextType {
   user: User | null;
   session: Session | null;
+  userRole: string | null;
   loading: boolean;
   signUp: (email: string, password: string, firstName?: string, lastName?: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
@@ -17,8 +18,56 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const { logActivity, createSession, endSession } = useAuthLogging();
+
+  // Helper function to fetch user role
+  const fetchUserRole = async (userId: string): Promise<string | null> => {
+    try {
+      // Check roles in priority order: admin > parent > child
+      const { data: adminCheck } = await supabase.rpc('has_role', { 
+        _user_id: userId, 
+        _role: 'admin' 
+      });
+      if (adminCheck) return 'admin';
+
+      const { data: parentCheck } = await supabase.rpc('has_role', { 
+        _user_id: userId, 
+        _role: 'parent' 
+      });
+      if (parentCheck) return 'parent';
+
+      const { data: childCheck } = await supabase.rpc('has_role', { 
+        _user_id: userId, 
+        _role: 'child' 
+      });
+      if (childCheck) return 'child';
+
+      return null;
+    } catch (error) {
+      console.error('Error fetching user role:', error);
+      return null;
+    }
+  };
+
+  // Helper function to navigate based on role
+  const navigateBasedOnRole = (role: string | null, navigate: any) => {
+    switch (role) {
+      case 'admin':
+        navigate('/admin/dashboard');
+        break;
+      case 'parent':
+        navigate('/parent-dashboard');
+        break;
+      case 'child':
+        navigate('/children/tasks');
+        break;
+      default:
+        navigate('/parent-dashboard'); // Fallback
+        break;
+    }
+  };
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -32,8 +81,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (event === 'SIGNED_IN' && session?.user) {
           setTimeout(() => {
             createSession(session.user.id);
+            // Fetch user role after sign in
+            fetchUserRole(session.user.id).then(role => {
+              setUserRole(role);
+            });
           }, 0);
         } else if (event === 'SIGNED_OUT') {
+          setUserRole(null);
           // Session cleanup is handled in signOut function
         }
       }
@@ -44,6 +98,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      
+      // Fetch role for existing session
+      if (session?.user) {
+        fetchUserRole(session.user.id).then(role => {
+          setUserRole(role);
+        });
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -92,14 +153,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       password,
     });
 
-    // Enhanced login logging with success/failure tracking
-    if (data.user) {
-      setTimeout(() => {
+    // Enhanced login logging with success/failure tracking and role-based navigation
+    if (data.user && !error) {
+      setTimeout(async () => {
         logActivity(
           data.user.id,
           'login',
-          !error,
-          error?.message,
+          true,
+          undefined,
           { 
             email, 
             loginMethod: 'email_password',
@@ -107,6 +168,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             userAgent: navigator.userAgent
           }
         );
+
+        // Fetch user role and navigate accordingly
+        const role = await fetchUserRole(data.user.id);
+        setUserRole(role);
+        
+        // Use navigate from router context if available in component
+        const navigate = (window as any).__navigate;
+        if (navigate) {
+          navigateBasedOnRole(role, navigate);
+        }
       }, 0);
     } else if (error) {
       // Log failed login attempt - use a deterministic ID based on email
@@ -135,6 +206,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const { error } = await supabase.auth.signOut();
 
+    // Clear user role on sign out
+    setUserRole(null);
+
     // Log signout and properly end session
     if (currentUserId && !error) {
       setTimeout(() => {
@@ -161,6 +235,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const value = {
     user,
     session,
+    userRole,
     loading,
     signUp,
     signIn,
