@@ -28,6 +28,9 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import CreateTestFamilyButton from '@/components/admin/CreateTestFamilyButton';
+import FamilyViewDialog from '@/components/admin/FamilyViewDialog';
+import FamilyEditDialog from '@/components/admin/FamilyEditDialog';
+import FamilyDeleteDialog from '@/components/admin/FamilyDeleteDialog';
 
 interface FamilyMember {
   id: string;
@@ -55,6 +58,10 @@ export default function AdminFamilies() {
   const [families, setFamilies] = useState<Family[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedFamily, setSelectedFamily] = useState<Family | null>(null);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -145,10 +152,28 @@ export default function AdminFamilies() {
     }
   };
 
-  const toggleFamilyExpansion = (familyId: string) => {
+  const handleViewFamily = (family: Family, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedFamily(family);
+    setViewDialogOpen(true);
+  };
+
+  const handleEditFamily = (family: Family, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedFamily(family);
+    setEditDialogOpen(true);
+  };
+
+  const handleDeleteFamily = (family: Family, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedFamily(family);
+    setDeleteDialogOpen(true);
+  };
+
+  const toggleFamilyExpansion = (familyId: string, expanded: boolean) => {
     setFamilies(prev => prev.map(family => 
       family.id === familyId 
-        ? { ...family, expanded: !family.expanded }
+        ? { ...family, expanded }
         : family
     ));
   };
@@ -265,7 +290,7 @@ export default function AdminFamilies() {
         <CardContent>
           <div className="space-y-2">
             {filteredFamilies.map((family) => (
-              <Collapsible key={family.id} open={family.expanded} onOpenChange={() => toggleFamilyExpansion(family.id)}>
+              <Collapsible key={family.id} open={family.expanded} onOpenChange={(expanded) => toggleFamilyExpansion(family.id, expanded)}>
                 <div className="border border-gray-700 rounded-lg bg-gray-800/50">
                   {/* Family Header Row */}
                   <CollapsibleTrigger asChild>
@@ -296,7 +321,7 @@ export default function AdminFamilies() {
                             variant="ghost"
                             size="sm"
                             className="text-blue-400 hover:text-blue-300 hover:bg-gray-700"
-                            onClick={(e) => e.stopPropagation()}
+                            onClick={(e) => handleViewFamily(family, e)}
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
@@ -304,7 +329,7 @@ export default function AdminFamilies() {
                             variant="ghost"
                             size="sm"
                             className="text-green-400 hover:text-green-300 hover:bg-gray-700"
-                            onClick={(e) => e.stopPropagation()}
+                            onClick={(e) => handleEditFamily(family, e)}
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -312,7 +337,7 @@ export default function AdminFamilies() {
                             variant="ghost"
                             size="sm"
                             className="text-red-400 hover:text-red-300 hover:bg-gray-700"
-                            onClick={(e) => e.stopPropagation()}
+                            onClick={(e) => handleDeleteFamily(family, e)}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -389,6 +414,25 @@ export default function AdminFamilies() {
           )}
         </CardContent>
       </Card>
+
+      {/* Dialogs */}
+      <FamilyViewDialog 
+        family={selectedFamily}
+        open={viewDialogOpen}
+        onOpenChange={setViewDialogOpen}
+      />
+      <FamilyEditDialog 
+        family={selectedFamily}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onSuccess={fetchFamilies}
+      />
+      <FamilyDeleteDialog 
+        family={selectedFamily}
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onSuccess={fetchFamilies}
+      />
     </div>
   );
 }
