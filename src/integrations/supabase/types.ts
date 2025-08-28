@@ -477,6 +477,10 @@ export type Database = {
         }
         Returns: string
       }
+      refresh_analytics_automated: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       refresh_daily_analytics: {
         Args: Record<PropertyKey, never>
         Returns: undefined
