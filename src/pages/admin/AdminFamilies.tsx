@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { 
   Table,
   TableBody,
@@ -19,10 +20,24 @@ import {
   Eye,
   Edit,
   Trash2,
-  Plus
+  Plus,
+  ChevronRight,
+  ChevronDown,
+  User,
+  Mail
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import CreateTestFamilyButton from '@/components/admin/CreateTestFamilyButton';
+
+interface FamilyMember {
+  id: string;
+  user_id: string;
+  role: 'parent' | 'child' | 'admin';
+  joined_at: string;
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+}
 
 interface Family {
   id: string;
@@ -32,6 +47,8 @@ interface Family {
   created_at: string;
   created_by: string;
   member_count: number;
+  members?: FamilyMember[];
+  expanded?: boolean;
 }
 
 export default function AdminFamilies() {
@@ -48,10 +65,18 @@ export default function AdminFamilies() {
     try {
       console.log('Fetching families as admin user...');
       
-      // Get all families first
-      const { data: families, error: familiesError } = await supabase
+      // Get families with their members first
+      const { data: familiesData, error: familiesError } = await supabase
         .from('families')
-        .select('*')
+        .select(`
+          *,
+          family_members (
+            id,
+            user_id,
+            role,
+            joined_at
+          )
+        `)
         .order('created_at', { ascending: false });
 
       if (familiesError) {
@@ -59,43 +84,55 @@ export default function AdminFamilies() {
         throw familiesError;
       }
 
-      console.log(`Found ${families?.length || 0} families`);
+      console.log(`Found ${familiesData?.length || 0} families`);
 
-      // Get member counts for each family
-      const familiesWithCounts = await Promise.all(
-        (families || []).map(async (family) => {
-          try {
-            const { count, error: countError } = await supabase
-              .from('family_members')
-              .select('*', { count: 'exact', head: true })
-              .eq('family_id', family.id);
-            
-            if (countError) {
-              console.error(`Error counting members for family ${family.family_code}:`, countError);
-              return {
-                ...family,
-                member_count: 0
-              };
-            }
-            
-            console.log(`Family ${family.family_code} has ${count || 0} members`);
-            
-            return {
-              ...family,
-              member_count: count || 0
-            };
-          } catch (error) {
-            console.error(`Failed to count members for family ${family.family_code}:`, error);
-            return {
-              ...family,
-              member_count: 0
-            };
-          }
-        })
+      // Get all unique user IDs from family members
+      const allUserIds = [...new Set(
+        (familiesData || [])
+          .flatMap(family => family.family_members || [])
+          .map(member => member.user_id)
+      )];
+
+      // Fetch profiles for all users at once
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, first_name, last_name, email')
+        .in('user_id', allUserIds);
+
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+      }
+
+      // Create a map of user profiles for quick lookup
+      const profilesMap = new Map(
+        (profilesData || []).map(profile => [profile.user_id, profile])
       );
 
-      setFamilies(familiesWithCounts);
-      console.log('Successfully loaded families with member counts');
+      // Transform the data to include member details and count
+      const familiesWithMembers = (familiesData || []).map(family => {
+        const members = (family.family_members || []).map(member => {
+          const profile = profilesMap.get(member.user_id);
+          return {
+            id: member.id,
+            user_id: member.user_id,
+            role: member.role,
+            joined_at: member.joined_at,
+            first_name: profile?.first_name,
+            last_name: profile?.last_name,
+            email: profile?.email
+          };
+        });
+
+        return {
+          ...family,
+          member_count: family.family_members?.length || 0,
+          members,
+          expanded: false
+        };
+      });
+
+      setFamilies(familiesWithMembers);
+      console.log('Successfully loaded families with member details');
     } catch (error) {
       console.error('Error fetching families:', error);
       toast({
@@ -106,6 +143,18 @@ export default function AdminFamilies() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const toggleFamilyExpansion = (familyId: string) => {
+    setFamilies(prev => prev.map(family => 
+      family.id === familyId 
+        ? { ...family, expanded: !family.expanded }
+        : family
+    ));
+  };
+
+  const getRoleColor = (role: string) => {
+    return role === 'parent' ? 'bg-purple-600' : 'bg-green-600';
   };
 
   const filteredFamilies = families.filter(family =>
@@ -214,62 +263,121 @@ export default function AdminFamilies() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow className="border-gray-700">
-                <TableHead className="text-gray-300">Family Code</TableHead>
-                <TableHead className="text-gray-300">Display Name</TableHead>
-                <TableHead className="text-gray-300">Members</TableHead>
-                <TableHead className="text-gray-300">Created</TableHead>
-                <TableHead className="text-gray-300">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredFamilies.map((family) => (
-                <TableRow key={family.id} className="border-gray-700">
-                  <TableCell className="text-white font-mono">
-                    {family.family_code}
-                  </TableCell>
-                  <TableCell className="text-white">
-                    {family.display_name}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="secondary" className="bg-blue-600 text-white">
-                      {family.member_count} members
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-gray-300">
-                    {new Date(family.created_at).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-blue-400 hover:text-blue-300 hover:bg-gray-700"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-green-400 hover:text-green-300 hover:bg-gray-700"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-red-400 hover:text-red-300 hover:bg-gray-700"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+          <div className="space-y-2">
+            {filteredFamilies.map((family) => (
+              <Collapsible key={family.id} open={family.expanded} onOpenChange={() => toggleFamilyExpansion(family.id)}>
+                <div className="border border-gray-700 rounded-lg bg-gray-800/50">
+                  {/* Family Header Row */}
+                  <CollapsibleTrigger asChild>
+                    <div className="flex items-center justify-between p-4 hover:bg-gray-700/30 cursor-pointer transition-colors">
+                      <div className="flex items-center space-x-4">
+                        <div className="flex items-center text-gray-400">
+                          {family.expanded ? (
+                            <ChevronDown className="h-4 w-4" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4" />
+                          )}
+                        </div>
+                        <div className="font-mono text-white">{family.family_code}</div>
+                        <div className="text-white">{family.display_name}</div>
+                        <Badge 
+                          variant="secondary" 
+                          className="bg-blue-600 text-white cursor-pointer hover:bg-blue-500"
+                        >
+                          {family.member_count} members
+                        </Badge>
+                      </div>
+                      <div className="flex items-center space-x-4">
+                        <div className="text-gray-300 text-sm">
+                          {new Date(family.created_at).toLocaleDateString()}
+                        </div>
+                        <div className="flex space-x-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-blue-400 hover:text-blue-300 hover:bg-gray-700"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-green-400 hover:text-green-300 hover:bg-gray-700"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-400 hover:text-red-300 hover:bg-gray-700"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
                     </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                  </CollapsibleTrigger>
+
+                  {/* Family Members */}
+                  <CollapsibleContent>
+                    <div className="border-t border-gray-700 bg-gray-800/80">
+                      {family.members && family.members.length > 0 ? (
+                        <div className="p-4">
+                          <div className="text-sm font-semibold text-gray-300 mb-3 flex items-center">
+                            <Users className="h-4 w-4 mr-2" />
+                            Family Members ({family.members.length})
+                          </div>
+                          <div className="space-y-2">
+                            {family.members.map((member) => (
+                              <div 
+                                key={member.id} 
+                                className="flex items-center justify-between p-3 bg-gray-700/30 rounded-md border border-gray-600/30"
+                              >
+                                <div className="flex items-center space-x-3">
+                                  <User className="h-4 w-4 text-gray-400" />
+                                  <div>
+                                    <div className="text-white font-medium">
+                                      {member.first_name && member.last_name 
+                                        ? `${member.first_name} ${member.last_name}`
+                                        : 'Unknown Name'
+                                      }
+                                    </div>
+                                    <div className="flex items-center space-x-2 text-sm text-gray-400">
+                                      <Mail className="h-3 w-3" />
+                                      <span>{member.email || 'No email'}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex items-center space-x-3">
+                                  <Badge 
+                                    variant="secondary" 
+                                    className={`text-white ${getRoleColor(member.role)}`}
+                                  >
+                                    {member.role}
+                                  </Badge>
+                                  <div className="text-xs text-gray-400">
+                                    Joined: {new Date(member.joined_at).toLocaleDateString()}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="p-4 text-center text-gray-400">
+                          <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                          <p>No members found</p>
+                        </div>
+                      )}
+                    </div>
+                  </CollapsibleContent>
+                </div>
+              </Collapsible>
+            ))}
+          </div>
 
           {filteredFamilies.length === 0 && (
             <div className="text-center py-8">
