@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      achievements: {
+        Row: {
+          achievement_type: Database["public"]["Enums"]["achievement_type"]
+          created_at: string
+          description: string
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          is_secret: boolean | null
+          name: string
+          point_reward: number | null
+          rarity: string | null
+          unlock_criteria: Json
+          updated_at: string
+          xp_reward: number | null
+        }
+        Insert: {
+          achievement_type: Database["public"]["Enums"]["achievement_type"]
+          created_at?: string
+          description: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_secret?: boolean | null
+          name: string
+          point_reward?: number | null
+          rarity?: string | null
+          unlock_criteria: Json
+          updated_at?: string
+          xp_reward?: number | null
+        }
+        Update: {
+          achievement_type?: Database["public"]["Enums"]["achievement_type"]
+          created_at?: string
+          description?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_secret?: boolean | null
+          name?: string
+          point_reward?: number | null
+          rarity?: string | null
+          unlock_criteria?: Json
+          updated_at?: string
+          xp_reward?: number | null
+        }
+        Relationships: []
+      }
       analytics_metrics: {
         Row: {
           created_at: string | null
@@ -46,6 +94,355 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      chore_assignments: {
+        Row: {
+          assigned_at: string
+          assigned_by: string
+          assigned_to: string
+          chore_id: string | null
+          completed_at: string | null
+          completion_notes: string | null
+          created_at: string
+          due_date: string | null
+          family_id: string | null
+          id: string
+          is_verified: boolean | null
+          parent_feedback: string | null
+          points_earned: number | null
+          recurrence_pattern: Json | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["chore_status"] | null
+          streak_bonus: number | null
+          time_bonus: number | null
+          updated_at: string
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by: string
+          assigned_to: string
+          chore_id?: string | null
+          completed_at?: string | null
+          completion_notes?: string | null
+          created_at?: string
+          due_date?: string | null
+          family_id?: string | null
+          id?: string
+          is_verified?: boolean | null
+          parent_feedback?: string | null
+          points_earned?: number | null
+          recurrence_pattern?: Json | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["chore_status"] | null
+          streak_bonus?: number | null
+          time_bonus?: number | null
+          updated_at?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string
+          assigned_to?: string
+          chore_id?: string | null
+          completed_at?: string | null
+          completion_notes?: string | null
+          created_at?: string
+          due_date?: string | null
+          family_id?: string | null
+          id?: string
+          is_verified?: boolean | null
+          parent_feedback?: string | null
+          points_earned?: number | null
+          recurrence_pattern?: Json | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["chore_status"] | null
+          streak_bonus?: number | null
+          time_bonus?: number | null
+          updated_at?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chore_assignments_chore_id_fkey"
+            columns: ["chore_id"]
+            isOneToOne: false
+            referencedRelation: "chores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chore_assignments_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chore_categories: {
+        Row: {
+          autism_friendly_features: Json | null
+          color: string | null
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          sort_order: number | null
+          updated_at: string
+        }
+        Insert: {
+          autism_friendly_features?: Json | null
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Update: {
+          autism_friendly_features?: Json | null
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      chore_completions: {
+        Row: {
+          actual_duration: number | null
+          assignment_id: string | null
+          chore_id: string | null
+          completion_date: string
+          completion_notes: string | null
+          completion_photos: string[] | null
+          created_at: string
+          difficulty_rating: number | null
+          family_id: string | null
+          id: string
+          metadata: Json | null
+          mini_game_scores: Json | null
+          points_earned: number | null
+          satisfaction_rating: number | null
+          time_completed: string
+          time_started: string | null
+          user_id: string
+        }
+        Insert: {
+          actual_duration?: number | null
+          assignment_id?: string | null
+          chore_id?: string | null
+          completion_date?: string
+          completion_notes?: string | null
+          completion_photos?: string[] | null
+          created_at?: string
+          difficulty_rating?: number | null
+          family_id?: string | null
+          id?: string
+          metadata?: Json | null
+          mini_game_scores?: Json | null
+          points_earned?: number | null
+          satisfaction_rating?: number | null
+          time_completed?: string
+          time_started?: string | null
+          user_id: string
+        }
+        Update: {
+          actual_duration?: number | null
+          assignment_id?: string | null
+          chore_id?: string | null
+          completion_date?: string
+          completion_notes?: string | null
+          completion_photos?: string[] | null
+          created_at?: string
+          difficulty_rating?: number | null
+          family_id?: string | null
+          id?: string
+          metadata?: Json | null
+          mini_game_scores?: Json | null
+          points_earned?: number | null
+          satisfaction_rating?: number | null
+          time_completed?: string
+          time_started?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chore_completions_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "chore_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chore_completions_chore_id_fkey"
+            columns: ["chore_id"]
+            isOneToOne: false
+            referencedRelation: "chores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chore_completions_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chore_templates: {
+        Row: {
+          age_max: number | null
+          age_min: number | null
+          autism_accommodations: Json | null
+          base_points: number | null
+          category_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          difficulty: Database["public"]["Enums"]["chore_difficulty"] | null
+          estimated_duration: number | null
+          id: string
+          instructions: Json | null
+          is_active: boolean | null
+          sensory_considerations: Json | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          age_max?: number | null
+          age_min?: number | null
+          autism_accommodations?: Json | null
+          base_points?: number | null
+          category_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          difficulty?: Database["public"]["Enums"]["chore_difficulty"] | null
+          estimated_duration?: number | null
+          id?: string
+          instructions?: Json | null
+          is_active?: boolean | null
+          sensory_considerations?: Json | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          age_max?: number | null
+          age_min?: number | null
+          autism_accommodations?: Json | null
+          base_points?: number | null
+          category_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          difficulty?: Database["public"]["Enums"]["chore_difficulty"] | null
+          estimated_duration?: number | null
+          id?: string
+          instructions?: Json | null
+          is_active?: boolean | null
+          sensory_considerations?: Json | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chore_templates_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "chore_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chores: {
+        Row: {
+          base_points: number | null
+          category_id: string | null
+          created_at: string
+          created_by: string
+          custom_settings: Json | null
+          description: string | null
+          difficulty: Database["public"]["Enums"]["chore_difficulty"] | null
+          estimated_duration: number | null
+          family_id: string | null
+          id: string
+          instructions: Json | null
+          is_active: boolean | null
+          template_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          base_points?: number | null
+          category_id?: string | null
+          created_at?: string
+          created_by: string
+          custom_settings?: Json | null
+          description?: string | null
+          difficulty?: Database["public"]["Enums"]["chore_difficulty"] | null
+          estimated_duration?: number | null
+          family_id?: string | null
+          id?: string
+          instructions?: Json | null
+          is_active?: boolean | null
+          template_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          base_points?: number | null
+          category_id?: string | null
+          created_at?: string
+          created_by?: string
+          custom_settings?: Json | null
+          description?: string | null
+          difficulty?: Database["public"]["Enums"]["chore_difficulty"] | null
+          estimated_duration?: number | null
+          family_id?: string | null
+          id?: string
+          instructions?: Json | null
+          is_active?: boolean | null
+          template_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chores_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "chore_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chores_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chores_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "chore_templates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       content_categories: {
         Row: {
@@ -237,6 +634,56 @@ export type Database = {
           },
         ]
       }
+      daily_streaks: {
+        Row: {
+          bonus_multiplier: number | null
+          created_at: string
+          current_streak: number | null
+          family_id: string | null
+          id: string
+          last_activity_date: string | null
+          longest_streak: number | null
+          streak_start_date: string | null
+          streak_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bonus_multiplier?: number | null
+          created_at?: string
+          current_streak?: number | null
+          family_id?: string | null
+          id?: string
+          last_activity_date?: string | null
+          longest_streak?: number | null
+          streak_start_date?: string | null
+          streak_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bonus_multiplier?: number | null
+          created_at?: string
+          current_streak?: number | null
+          family_id?: string | null
+          id?: string
+          last_activity_date?: string | null
+          longest_streak?: number | null
+          streak_start_date?: string | null
+          streak_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_streaks_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       engagement_metrics: {
         Row: {
           actions_performed: number | null
@@ -389,6 +836,127 @@ export type Database = {
           },
         ]
       }
+      family_challenges: {
+        Row: {
+          challenge_type: string | null
+          completed_at: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          end_date: string
+          family_id: string | null
+          id: string
+          is_active: boolean | null
+          is_completed: boolean | null
+          participant_count: number | null
+          progress: Json | null
+          reward_points: number | null
+          start_date: string
+          target_criteria: Json
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          challenge_type?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          end_date: string
+          family_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_completed?: boolean | null
+          participant_count?: number | null
+          progress?: Json | null
+          reward_points?: number | null
+          start_date: string
+          target_criteria: Json
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          challenge_type?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          end_date?: string
+          family_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_completed?: boolean | null
+          participant_count?: number | null
+          progress?: Json | null
+          reward_points?: number | null
+          start_date?: string
+          target_criteria?: Json
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_challenges_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      family_leaderboards: {
+        Row: {
+          achievements_unlocked: number | null
+          chores_completed: number | null
+          collaboration_score: number | null
+          family_id: string | null
+          id: string
+          last_updated: string
+          leaderboard_type: string
+          period_end: string
+          period_start: string
+          points: number | null
+          rank: number | null
+          user_id: string
+        }
+        Insert: {
+          achievements_unlocked?: number | null
+          chores_completed?: number | null
+          collaboration_score?: number | null
+          family_id?: string | null
+          id?: string
+          last_updated?: string
+          leaderboard_type: string
+          period_end: string
+          period_start: string
+          points?: number | null
+          rank?: number | null
+          user_id: string
+        }
+        Update: {
+          achievements_unlocked?: number | null
+          chores_completed?: number | null
+          collaboration_score?: number | null
+          family_id?: string | null
+          id?: string
+          last_updated?: string
+          leaderboard_type?: string
+          period_end?: string
+          period_start?: string
+          points?: number | null
+          rank?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_leaderboards_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       family_members: {
         Row: {
           created_at: string
@@ -420,6 +988,182 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "family_members_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mini_game_scores: {
+        Row: {
+          bonus_points: number | null
+          chore_context: string | null
+          completion_time: number | null
+          difficulty_level: string | null
+          family_id: string | null
+          game_type: string
+          id: string
+          metadata: Json | null
+          played_at: string
+          score: number
+          user_id: string
+        }
+        Insert: {
+          bonus_points?: number | null
+          chore_context?: string | null
+          completion_time?: number | null
+          difficulty_level?: string | null
+          family_id?: string | null
+          game_type: string
+          id?: string
+          metadata?: Json | null
+          played_at?: string
+          score: number
+          user_id: string
+        }
+        Update: {
+          bonus_points?: number | null
+          chore_context?: string | null
+          completion_time?: number | null
+          difficulty_level?: string | null
+          family_id?: string | null
+          game_type?: string
+          id?: string
+          metadata?: Json | null
+          played_at?: string
+          score?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mini_game_scores_chore_context_fkey"
+            columns: ["chore_context"]
+            isOneToOne: false
+            referencedRelation: "chores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mini_game_scores_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      motivation_journal_entries: {
+        Row: {
+          challenges_faced: string[] | null
+          created_at: string
+          entry_date: string
+          family_id: string | null
+          goals_for_tomorrow: string[] | null
+          gratitude_notes: string[] | null
+          id: string
+          metadata: Json | null
+          mood_after: number | null
+          mood_before: number | null
+          parent_comments: string | null
+          photo_urls: string[] | null
+          proud_moments: string[] | null
+          reflection_text: string | null
+          updated_at: string
+          user_id: string
+          voice_note_url: string | null
+        }
+        Insert: {
+          challenges_faced?: string[] | null
+          created_at?: string
+          entry_date?: string
+          family_id?: string | null
+          goals_for_tomorrow?: string[] | null
+          gratitude_notes?: string[] | null
+          id?: string
+          metadata?: Json | null
+          mood_after?: number | null
+          mood_before?: number | null
+          parent_comments?: string | null
+          photo_urls?: string[] | null
+          proud_moments?: string[] | null
+          reflection_text?: string | null
+          updated_at?: string
+          user_id: string
+          voice_note_url?: string | null
+        }
+        Update: {
+          challenges_faced?: string[] | null
+          created_at?: string
+          entry_date?: string
+          family_id?: string | null
+          goals_for_tomorrow?: string[] | null
+          gratitude_notes?: string[] | null
+          id?: string
+          metadata?: Json | null
+          mood_after?: number | null
+          mood_before?: number | null
+          parent_comments?: string | null
+          photo_urls?: string[] | null
+          proud_moments?: string[] | null
+          reflection_text?: string | null
+          updated_at?: string
+          user_id?: string
+          voice_note_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "motivation_journal_entries_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      peer_recognitions: {
+        Row: {
+          chore_context: string | null
+          family_id: string | null
+          from_user_id: string
+          given_at: string
+          id: string
+          message: string | null
+          points_awarded: number | null
+          recognition_type: string | null
+          to_user_id: string
+        }
+        Insert: {
+          chore_context?: string | null
+          family_id?: string | null
+          from_user_id: string
+          given_at?: string
+          id?: string
+          message?: string | null
+          points_awarded?: number | null
+          recognition_type?: string | null
+          to_user_id: string
+        }
+        Update: {
+          chore_context?: string | null
+          family_id?: string | null
+          from_user_id?: string
+          given_at?: string
+          id?: string
+          message?: string | null
+          points_awarded?: number | null
+          recognition_type?: string | null
+          to_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "peer_recognitions_chore_context_fkey"
+            columns: ["chore_context"]
+            isOneToOne: false
+            referencedRelation: "chores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "peer_recognitions_family_id_fkey"
             columns: ["family_id"]
             isOneToOne: false
             referencedRelation: "families"
@@ -492,6 +1236,63 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      reward_redemptions: {
+        Row: {
+          approval_notes: string | null
+          approved_by: string | null
+          created_at: string
+          family_id: string | null
+          fulfilled_at: string | null
+          fulfillment_status: string | null
+          id: string
+          points_spent: number
+          redeemed_at: string
+          user_id: string
+          wishlist_item_id: string | null
+        }
+        Insert: {
+          approval_notes?: string | null
+          approved_by?: string | null
+          created_at?: string
+          family_id?: string | null
+          fulfilled_at?: string | null
+          fulfillment_status?: string | null
+          id?: string
+          points_spent: number
+          redeemed_at?: string
+          user_id: string
+          wishlist_item_id?: string | null
+        }
+        Update: {
+          approval_notes?: string | null
+          approved_by?: string | null
+          created_at?: string
+          family_id?: string | null
+          fulfilled_at?: string | null
+          fulfillment_status?: string | null
+          id?: string
+          points_spent?: number
+          redeemed_at?: string
+          user_id?: string
+          wishlist_item_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reward_redemptions_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reward_redemptions_wishlist_item_id_fkey"
+            columns: ["wishlist_item_id"]
+            isOneToOne: false
+            referencedRelation: "wishlist_items"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       system_alerts: {
         Row: {
@@ -637,6 +1438,51 @@ export type Database = {
         }
         Relationships: []
       }
+      user_achievements: {
+        Row: {
+          achievement_id: string | null
+          family_id: string | null
+          id: string
+          metadata: Json | null
+          progress: Json | null
+          unlocked_at: string
+          user_id: string
+        }
+        Insert: {
+          achievement_id?: string | null
+          family_id?: string | null
+          id?: string
+          metadata?: Json | null
+          progress?: Json | null
+          unlocked_at?: string
+          user_id: string
+        }
+        Update: {
+          achievement_id?: string | null
+          family_id?: string | null
+          id?: string
+          metadata?: Json | null
+          progress?: Json | null
+          unlocked_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_achievements_achievement_id_fkey"
+            columns: ["achievement_id"]
+            isOneToOne: false
+            referencedRelation: "achievements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_achievements_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_activity_logs: {
         Row: {
           activity_type: string
@@ -681,6 +1527,106 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_levels: {
+        Row: {
+          created_at: string
+          current_level: number | null
+          current_xp: number | null
+          family_id: string | null
+          id: string
+          level_name: string | null
+          level_up_date: string | null
+          next_level_xp: number | null
+          total_xp: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_level?: number | null
+          current_xp?: number | null
+          family_id?: string | null
+          id?: string
+          level_name?: string | null
+          level_up_date?: string | null
+          next_level_xp?: number | null
+          total_xp?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_level?: number | null
+          current_xp?: number | null
+          family_id?: string | null
+          id?: string
+          level_name?: string | null
+          level_up_date?: string | null
+          next_level_xp?: number | null
+          total_xp?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_levels_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_points: {
+        Row: {
+          created_at: string
+          current_points: number | null
+          family_id: string | null
+          id: string
+          last_reset_date: string | null
+          lifetime_points: number | null
+          monthly_points: number | null
+          points_spent: number | null
+          updated_at: string
+          user_id: string
+          weekly_points: number | null
+        }
+        Insert: {
+          created_at?: string
+          current_points?: number | null
+          family_id?: string | null
+          id?: string
+          last_reset_date?: string | null
+          lifetime_points?: number | null
+          monthly_points?: number | null
+          points_spent?: number | null
+          updated_at?: string
+          user_id: string
+          weekly_points?: number | null
+        }
+        Update: {
+          created_at?: string
+          current_points?: number | null
+          family_id?: string | null
+          id?: string
+          last_reset_date?: string | null
+          lifetime_points?: number | null
+          monthly_points?: number | null
+          points_spent?: number | null
+          updated_at?: string
+          user_id?: string
+          weekly_points?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_points_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -759,6 +1705,68 @@ export type Database = {
           },
         ]
       }
+      wishlist_items: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          description: string | null
+          family_id: string | null
+          id: string
+          image_url: string | null
+          is_approved: boolean | null
+          is_redeemed: boolean | null
+          item_name: string
+          point_cost: number
+          redeemed_at: string | null
+          reward_type: Database["public"]["Enums"]["reward_type"] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          description?: string | null
+          family_id?: string | null
+          id?: string
+          image_url?: string | null
+          is_approved?: boolean | null
+          is_redeemed?: boolean | null
+          item_name: string
+          point_cost: number
+          redeemed_at?: string | null
+          reward_type?: Database["public"]["Enums"]["reward_type"] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          description?: string | null
+          family_id?: string | null
+          id?: string
+          image_url?: string | null
+          is_approved?: boolean | null
+          is_redeemed?: boolean | null
+          item_name?: string
+          point_cost?: number
+          redeemed_at?: string | null
+          reward_type?: Database["public"]["Enums"]["reward_type"] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wishlist_items_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       daily_analytics: {
@@ -774,6 +1782,24 @@ export type Database = {
       }
     }
     Functions: {
+      calculate_chore_points: {
+        Args: {
+          base_points: number
+          completion_time?: number
+          difficulty: Database["public"]["Enums"]["chore_difficulty"]
+          estimated_time?: number
+          streak_count?: number
+        }
+        Returns: number
+      }
+      calculate_level_progression: {
+        Args: { current_xp: number }
+        Returns: {
+          level: number
+          level_name: string
+          next_level_xp: number
+        }[]
+      }
       calculate_user_retention: {
         Args: { days_back?: number }
         Returns: {
@@ -782,6 +1808,17 @@ export type Database = {
           retention_day_30: number
           retention_day_7: number
           users_count: number
+        }[]
+      }
+      check_and_award_achievements: {
+        Args: {
+          p_completion_data?: Json
+          p_family_id: string
+          p_user_id: string
+        }
+        Returns: {
+          achievement_id: string
+          achievement_name: string
         }[]
       }
       end_user_session: {
@@ -898,12 +1935,39 @@ export type Database = {
         Args: { error_id: string }
         Returns: boolean
       }
+      update_family_leaderboard: {
+        Args: { p_family_id: string }
+        Returns: undefined
+      }
+      update_user_gamification_stats: {
+        Args: {
+          p_family_id: string
+          p_points_earned: number
+          p_user_id: string
+          p_xp_earned?: number
+        }
+        Returns: undefined
+      }
     }
     Enums: {
+      achievement_type:
+        | "streak"
+        | "skill"
+        | "collaboration"
+        | "milestone"
+        | "special"
       app_role: "admin" | "parent" | "child"
       approval_status: "pending" | "approved" | "rejected"
+      chore_difficulty: "easy" | "medium" | "hard"
+      chore_status:
+        | "assigned"
+        | "in_progress"
+        | "completed"
+        | "verified"
+        | "overdue"
       content_type: "game" | "video" | "website" | "app"
       interaction_type: "view" | "click" | "launch" | "complete" | "favorite"
+      reward_type: "points" | "custom" | "privilege" | "activity"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1031,10 +2095,26 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      achievement_type: [
+        "streak",
+        "skill",
+        "collaboration",
+        "milestone",
+        "special",
+      ],
       app_role: ["admin", "parent", "child"],
       approval_status: ["pending", "approved", "rejected"],
+      chore_difficulty: ["easy", "medium", "hard"],
+      chore_status: [
+        "assigned",
+        "in_progress",
+        "completed",
+        "verified",
+        "overdue",
+      ],
       content_type: ["game", "video", "website", "app"],
       interaction_type: ["view", "click", "launch", "complete", "favorite"],
+      reward_type: ["points", "custom", "privilege", "activity"],
     },
   },
 } as const
