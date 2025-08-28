@@ -18,9 +18,9 @@ const Index = () => {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">AC</span>
+              <span className="text-white font-bold text-sm">SH</span>
             </div>
-            <span className="font-bold text-xl text-foreground">AutismCare</span>
+            <span className="font-bold text-xl text-foreground">Spectrum Harmony</span>
           </div>
           
           <div className="flex items-center gap-4">
@@ -72,9 +72,9 @@ const Index = () => {
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">AC</span>
+                  <span className="text-white font-bold text-sm">SH</span>
                 </div>
-                <span className="font-bold text-xl">AutismCare</span>
+                <span className="font-bold text-xl">Spectrum Harmony</span>
               </div>
               <p className="text-white/80 text-sm leading-relaxed">
                 Empowering autistic children through technology, education, and family connection.
@@ -113,7 +113,7 @@ const Index = () => {
           </div>
           
           <div className="border-t border-white/20 mt-8 pt-8 text-center text-sm text-white/60">
-            <p>&copy; 2024 AutismCare. Built with ❤️ for autistic children and their families.</p>
+            <p>&copy; 2024 Spectrum Harmony. Built with ❤️ for autistic children and their families.</p>
           </div>
         </div>
       </footer>

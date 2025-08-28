@@ -90,7 +90,7 @@ const ParentDashboard = () => {
             <div className="flex items-center gap-3">
               <Heart className="h-8 w-8 text-primary" />
               <div>
-                <h1 className="text-xl font-bold text-foreground">AutismCare Parent Portal</h1>
+                <h1 className="text-xl font-bold text-foreground">Spectrum Harmony Parent Portal</h1>
                 <p className="text-sm text-muted-foreground">Welcome back, {displayName}</p>
               </div>
             </div>
@@ -193,7 +193,7 @@ const ParentDashboard = () => {
         {/* Welcome Message */}
         <Card className="mt-8 bg-gradient-primary text-primary-foreground shadow-medium">
           <CardContent className="p-6">
-            <h3 className="text-lg font-semibold mb-2">Welcome to AutismCare!</h3>
+            <h3 className="text-lg font-semibold mb-2">Welcome to Spectrum Harmony!</h3>
             <p className="opacity-90">
               You're now part of a supportive community dedicated to helping autistic children thrive. 
               Start by exploring the family management tools above or create your first child account 

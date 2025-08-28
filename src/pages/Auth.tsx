@@ -76,7 +76,7 @@ const Auth = () => {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-4">
             <Heart className="h-8 w-8 text-white" />
-            <h1 className="text-2xl font-bold text-white">AutismCare</h1>
+            <h1 className="text-2xl font-bold text-white">Spectrum Harmony</h1>
           </div>
           <p className="text-white/80">Welcome to our supportive community</p>
         </div>
