@@ -4,7 +4,7 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
-// Force rebuild configuration update
+// Force rebuild configuration update - v3.0.0 - Admin Portal Fix
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",

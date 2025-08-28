@@ -22,6 +22,8 @@ export const AdminAuthProvider = ({ children }: { children: React.ReactNode }) =
 
   const checkAdminRole = async (userId: string) => {
     try {
+      console.log('🔍 Checking admin role for user:', userId);
+      
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
@@ -30,13 +32,22 @@ export const AdminAuthProvider = ({ children }: { children: React.ReactNode }) =
         .maybeSingle();
       
       if (error) {
-        console.error('Error checking admin role:', error);
+        console.error('❌ Error checking admin role:', error);
+        console.error('Error details:', {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint
+        });
         return false;
       }
       
-      return !!data;
+      const isAdmin = !!data;
+      console.log(`${isAdmin ? '✅' : '❌'} Admin role check result:`, { userId, isAdmin, data });
+      
+      return isAdmin;
     } catch (error) {
-      console.error('Error checking admin role:', error);
+      console.error('❌ Unexpected error checking admin role:', error);
       return false;
     }
   };
@@ -95,11 +106,25 @@ export const AdminAuthProvider = ({ children }: { children: React.ReactNode }) =
   }, [isCheckingRole]);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { error };
+    console.log('🔐 Attempting admin sign in for:', email);
+    
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (error) {
+        console.error('❌ Sign in error:', error);
+        return { error };
+      }
+      
+      console.log('✅ Sign in successful, checking admin role...');
+      return { error: null, data };
+    } catch (error) {
+      console.error('❌ Unexpected sign in error:', error);
+      return { error };
+    }
   };
 
   const signOut = async () => {

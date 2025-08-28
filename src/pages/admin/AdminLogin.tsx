@@ -150,11 +150,29 @@ export default function AdminLogin() {
               </Button>
             </form>
 
-            <div className="mt-6 pt-4 border-t border-gray-700">
+          <div className="mt-6 pt-4 border-t border-gray-700">
+            <div className="flex flex-col items-center space-y-2">
               <p className="text-xs text-gray-500 text-center">
                 For security purposes, all admin access is logged and monitored.
               </p>
+              <Button
+                onClick={() => window.location.href = '/admin/debug'}
+                variant="ghost"
+                size="sm"
+                className="text-xs text-gray-400 hover:text-gray-300"
+              >
+                🔧 Debug Panel
+              </Button>
+              <Button
+                onClick={() => window.location.href = '/admin/bootstrap'}
+                variant="ghost"
+                size="sm"
+                className="text-xs text-gray-400 hover:text-gray-300"
+              >
+                🚀 Bootstrap
+              </Button>
             </div>
+          </div>
           </CardContent>
         </Card>
       </div>

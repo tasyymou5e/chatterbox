@@ -23,6 +23,8 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import AdminReports from "./pages/admin/AdminReports";
 import AdminContent from "./pages/admin/AdminContent";
 import AdminSystemMonitoring from "./pages/admin/AdminSystemMonitoring";
+import { AdminDebugPanel } from "@/components/admin/AdminDebugPanel";
+import { AdminBootstrap } from "@/components/admin/AdminBootstrap";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -33,7 +35,7 @@ const queryClient = new QueryClient({
     },
   },
 });
-// Force complete app rebuild and redeploy - v2.0.1
+// Force complete app rebuild and redeploy - v3.0.0 - Admin Portal Fix
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -57,6 +59,8 @@ const App = () => (
               
               {/* Admin Routes */}
               <Route path="/admin/login" element={<AdminLogin />} />
+              <Route path="/admin/debug" element={<AdminDebugPanel />} />
+              <Route path="/admin/bootstrap" element={<AdminBootstrap />} />
               <Route path="/admin" element={
                 <AdminRoute>
                   <AdminLayout />
