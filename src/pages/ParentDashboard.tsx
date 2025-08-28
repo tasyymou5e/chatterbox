@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { Heart, Users, Plus, Settings, LogOut } from 'lucide-react';
+import { Heart, Users, Plus, Settings, LogOut, Target } from 'lucide-react';
 
 interface Profile {
   id: string;
@@ -140,11 +140,37 @@ const ParentDashboard = () => {
             </CardContent>
           </Card>
 
+          {/* Chore Management Card */}
+          <Card className="bg-gradient-card shadow-soft hover:shadow-medium transition-shadow">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="h-5 w-5 text-secondary" />
+                Daily Tasks Management
+              </CardTitle>
+              <CardDescription>
+                Manage chores and track progress
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">
+                  Create, assign, and track daily tasks with gamification to motivate your children.
+                </p>
+                <Button 
+                  className="w-full mt-4 bg-secondary hover:bg-secondary-hover"
+                  onClick={() => navigate('/parent/chores')}
+                >
+                  Manage Tasks
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Add Child Account Card */}
           <Card className="bg-gradient-card shadow-soft hover:shadow-medium transition-shadow">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Plus className="h-5 w-5 text-secondary" />
+                <Plus className="h-5 w-5 text-accent" />
                 Add Child Account
               </CardTitle>
               <CardDescription>
@@ -156,7 +182,7 @@ const ParentDashboard = () => {
                 <p className="text-sm text-muted-foreground">
                   Set up personalized learning experiences tailored to your child's needs.
                 </p>
-                <Button className="w-full mt-4 bg-secondary hover:bg-secondary-hover">
+                <Button className="w-full mt-4 bg-accent hover:bg-accent-hover">
                   Create Child Account
                 </Button>
               </div>
