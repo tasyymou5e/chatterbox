@@ -35,22 +35,41 @@ export const useAnalytics = () => {
 
   const fetchEngagementMetrics = async () => {
     try {
-      const { data, error } = await supabase.rpc('get_engagement_analytics', { days_back: 30 });
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Engagement metrics timeout')), 5000)
+      );
+      
+      const queryPromise = supabase.rpc('get_engagement_analytics', { days_back: 30 });
+      const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
+      
       if (error) throw error;
       setEngagementMetrics(data || []);
     } catch (err) {
       console.error('Error fetching engagement metrics:', err);
       setError('Failed to fetch engagement metrics');
+      // Set empty data as fallback
+      setEngagementMetrics([]);
     }
   };
 
   const fetchDailyAnalytics = async () => {
     try {
-      const { data, error } = await supabase
-        .rpc('get_daily_analytics_for_admins', { days_back: 30 });
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Daily analytics timeout')), 5000)
+      );
+      
+      const queryPromise = supabase.rpc('get_daily_analytics_for_admins', { days_back: 30 });
+      const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
       
       if (error) {
         console.error('RPC Error details:', error);
+        if (error.code === '42883') {
+          console.log('Function does not exist, this is expected in some environments');
+          setDailyAnalytics([]);
+          return;
+        }
         throw new Error(`Analytics RPC failed: ${error.message}`);
       }
       
@@ -82,17 +101,28 @@ export const useAnalytics = () => {
       } else {
         setError(`Analytics error: ${errorMsg}`);
       }
+      // Set empty data as fallback
+      setDailyAnalytics([]);
     }
   };
 
   const fetchRetentionData = async () => {
     try {
-      const { data, error } = await supabase.rpc('calculate_user_retention', { days_back: 30 });
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Retention data timeout')), 5000)
+      );
+      
+      const queryPromise = supabase.rpc('calculate_user_retention', { days_back: 30 });
+      const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
+      
       if (error) throw error;
       setRetentionData(data || []);
     } catch (err) {
       console.error('Error fetching retention data:', err);
       setError('Failed to fetch retention data');
+      // Set empty data as fallback
+      setRetentionData([]);
     }
   };
 

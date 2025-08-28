@@ -24,12 +24,19 @@ export const AdminAuthProvider = ({ children }: { children: React.ReactNode }) =
     try {
       console.log('🔍 Checking admin role for user:', userId);
       
-      const { data, error } = await supabase
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Admin role check timeout')), 10000)
+      );
+      
+      const queryPromise = supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
         .eq('role', 'admin')
         .maybeSingle();
+      
+      const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
       
       if (error) {
         console.error('❌ Error checking admin role:', error);
@@ -48,6 +55,7 @@ export const AdminAuthProvider = ({ children }: { children: React.ReactNode }) =
       return isAdmin;
     } catch (error) {
       console.error('❌ Unexpected error checking admin role:', error);
+      // Return false on timeout or other errors to prevent hanging
       return false;
     }
   };
@@ -66,12 +74,17 @@ export const AdminAuthProvider = ({ children }: { children: React.ReactNode }) =
         if (session?.user) {
           setIsCheckingRole(true);
           try {
-            const adminStatus = await checkAdminRole(session.user.id);
+            // Add timeout for role check to prevent hanging
+            const adminStatus = await Promise.race([
+              checkAdminRole(session.user.id),
+              new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 8000))
+            ]);
             if (mounted) {
               setIsAdmin(adminStatus);
               setIsCheckingRole(false);
             }
           } catch (error) {
+            console.error('Auth state change error:', error);
             if (mounted) {
               setIsAdmin(false);
               setIsCheckingRole(false);
