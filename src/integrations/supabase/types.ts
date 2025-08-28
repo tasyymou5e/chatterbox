@@ -432,6 +432,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_family_creator: {
+        Args: { family_id_param: string; user_id_param: string }
+        Returns: boolean
+      }
+      is_family_member: {
+        Args: { family_id_param: string; user_id_param: string }
+        Returns: boolean
+      }
       log_family_activity: {
         Args: {
           p_activity_details?: Json
@@ -456,6 +464,10 @@ export type Database = {
           p_user_id: string
         }
         Returns: string
+      }
+      refresh_daily_analytics: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
     }
     Enums: {
