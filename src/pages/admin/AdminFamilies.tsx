@@ -46,20 +46,17 @@ export default function AdminFamilies() {
 
   const fetchFamilies = async () => {
     try {
-      // Get families with member counts
-      const { data: familiesData, error } = await supabase
+      // Get all families first
+      const { data: families, error: familiesError } = await supabase
         .from('families')
-        .select(`
-          *,
-          family_members!inner(count)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (familiesError) throw familiesError;
 
-      // Transform data to include member count
+      // Get member counts for each family
       const familiesWithCounts = await Promise.all(
-        (familiesData || []).map(async (family) => {
+        (families || []).map(async (family) => {
           const { count } = await supabase
             .from('family_members')
             .select('*', { count: 'exact', head: true })
