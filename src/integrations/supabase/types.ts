@@ -44,6 +44,50 @@ export type Database = {
         }
         Relationships: []
       }
+      family_activity_logs: {
+        Row: {
+          activity_details: Json | null
+          activity_type: string
+          created_at: string
+          family_id: string | null
+          id: string
+          member_role: Database["public"]["Enums"]["app_role"]
+          parent_user_id: string | null
+          timestamp: string
+          user_id: string
+        }
+        Insert: {
+          activity_details?: Json | null
+          activity_type: string
+          created_at?: string
+          family_id?: string | null
+          id?: string
+          member_role: Database["public"]["Enums"]["app_role"]
+          parent_user_id?: string | null
+          timestamp?: string
+          user_id: string
+        }
+        Update: {
+          activity_details?: Json | null
+          activity_type?: string
+          created_at?: string
+          family_id?: string | null
+          id?: string
+          member_role?: Database["public"]["Enums"]["app_role"]
+          parent_user_id?: string | null
+          timestamp?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_activity_logs_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       family_members: {
         Row: {
           created_at: string
@@ -112,6 +156,51 @@ export type Database = {
         }
         Relationships: []
       }
+      user_activity_logs: {
+        Row: {
+          activity_type: string
+          created_at: string
+          device_info: Json | null
+          failure_reason: string | null
+          id: string
+          ip_address: unknown | null
+          metadata: Json | null
+          session_id: string | null
+          success: boolean
+          timestamp: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          activity_type: string
+          created_at?: string
+          device_info?: Json | null
+          failure_reason?: string | null
+          id?: string
+          ip_address?: unknown | null
+          metadata?: Json | null
+          session_id?: string | null
+          success?: boolean
+          timestamp?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          activity_type?: string
+          created_at?: string
+          device_info?: Json | null
+          failure_reason?: string | null
+          id?: string
+          ip_address?: unknown | null
+          metadata?: Json | null
+          session_id?: string | null
+          success?: boolean
+          timestamp?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -133,11 +222,71 @@ export type Database = {
         }
         Relationships: []
       }
+      user_sessions: {
+        Row: {
+          created_at: string
+          device_info: Json | null
+          ended_at: string | null
+          family_id: string | null
+          id: string
+          ip_address: unknown | null
+          is_active: boolean
+          last_activity: string
+          session_id: string
+          started_at: string
+          updated_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_info?: Json | null
+          ended_at?: string | null
+          family_id?: string | null
+          id?: string
+          ip_address?: unknown | null
+          is_active?: boolean
+          last_activity?: string
+          session_id: string
+          started_at?: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          device_info?: Json | null
+          ended_at?: string | null
+          family_id?: string | null
+          id?: string
+          ip_address?: unknown | null
+          is_active?: boolean
+          last_activity?: string
+          session_id?: string
+          started_at?: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_sessions_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      end_user_session: {
+        Args: { session_id: string }
+        Returns: undefined
+      }
       generate_family_code: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -148,6 +297,31 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      log_family_activity: {
+        Args: {
+          p_activity_details?: Json
+          p_activity_type: string
+          p_family_id: string
+          p_member_role: Database["public"]["Enums"]["app_role"]
+          p_parent_user_id?: string
+          p_user_id: string
+        }
+        Returns: string
+      }
+      log_user_activity: {
+        Args: {
+          p_activity_type: string
+          p_device_info?: Json
+          p_failure_reason?: string
+          p_ip_address?: unknown
+          p_metadata?: Json
+          p_session_id?: string
+          p_success?: boolean
+          p_user_agent?: string
+          p_user_id: string
+        }
+        Returns: string
       }
     }
     Enums: {
