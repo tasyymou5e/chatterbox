@@ -25,8 +25,15 @@ import AdminContent from "./pages/admin/AdminContent";
 import AdminSystemMonitoring from "./pages/admin/AdminSystemMonitoring";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
-// Force app refresh for deployment
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 3,
+      staleTime: 1000 * 60 * 5, // 5 minutes
+    },
+  },
+});
+// Force complete app rebuild and redeploy - v2.0.1
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
