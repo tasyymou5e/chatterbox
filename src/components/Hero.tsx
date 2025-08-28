@@ -2,7 +2,11 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Heart, Star, Users, Brain, Gamepad2, Award } from "lucide-react";
 
-export const Hero = () => {
+interface HeroProps {
+  onChoosePortal?: () => void;
+}
+
+export const Hero = ({ onChoosePortal }: HeroProps) => {
   const features = [
     {
       icon: Brain,
@@ -52,8 +56,9 @@ export const Hero = () => {
             <Button 
               size="lg" 
               className="bg-white text-primary hover:bg-white/95 font-semibold px-8 py-4 text-lg shadow-medium"
+              onClick={onChoosePortal}
             >
-              Choose Your Portal
+              Parent Sign Up
             </Button>
             <Button 
               size="lg" 

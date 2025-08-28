@@ -8,13 +8,7 @@ const Index = () => {
   const [showPortals, setShowPortals] = useState(false);
 
   const scrollToPortals = () => {
-    setShowPortals(true);
-    // Smooth scroll to portals section
-    setTimeout(() => {
-      document.getElementById('portals')?.scrollIntoView({ 
-        behavior: 'smooth' 
-      });
-    }, 100);
+    window.location.href = '/auth';
   };
 
   return (
@@ -49,7 +43,7 @@ const Index = () => {
 
       {/* Hero Section */}
       <section className="pt-16">
-        <Hero />
+        <Hero onChoosePortal={scrollToPortals} />
         
         {/* Scroll indicator */}
         <div className="text-center pb-8">
