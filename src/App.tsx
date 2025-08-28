@@ -11,12 +11,14 @@ import Auth from "./pages/Auth";
 import About from "./pages/About";
 import ParentDashboard from "./pages/ParentDashboard";
 import Reports from "./pages/Reports";
+import GamesCatalog from "./pages/GamesCatalog";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminFamilies from "./pages/admin/AdminFamilies";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminReports from "./pages/admin/AdminReports";
+import AdminContent from "./pages/admin/AdminContent";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +37,7 @@ const App = () => (
               <Route path="/about" element={<About />} />
               <Route path="/parent-dashboard" element={<ParentDashboard />} />
               <Route path="/reports" element={<Reports />} />
+              <Route path="/games" element={<GamesCatalog />} />
               
               {/* Admin Routes */}
               <Route path="/admin/login" element={<AdminLogin />} />
@@ -47,6 +50,7 @@ const App = () => (
                 <Route path="families" element={<AdminFamilies />} />
                 <Route path="users" element={<AdminUsers />} />
                 <Route path="reports" element={<AdminReports />} />
+                <Route path="content" element={<AdminContent />} />
               </Route>
               
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

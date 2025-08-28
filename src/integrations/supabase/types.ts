@@ -47,6 +47,196 @@ export type Database = {
         }
         Relationships: []
       }
+      content_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          sort_order: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      content_favorites: {
+        Row: {
+          content_item_id: string | null
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          content_item_id?: string | null
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          content_item_id?: string | null
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_favorites_content_item_id_fkey"
+            columns: ["content_item_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_interactions: {
+        Row: {
+          content_item_id: string | null
+          device_info: Json | null
+          family_id: string | null
+          id: string
+          interaction_type: Database["public"]["Enums"]["interaction_type"]
+          metadata: Json | null
+          session_duration: number | null
+          timestamp: string
+          user_id: string
+        }
+        Insert: {
+          content_item_id?: string | null
+          device_info?: Json | null
+          family_id?: string | null
+          id?: string
+          interaction_type: Database["public"]["Enums"]["interaction_type"]
+          metadata?: Json | null
+          session_duration?: number | null
+          timestamp?: string
+          user_id: string
+        }
+        Update: {
+          content_item_id?: string | null
+          device_info?: Json | null
+          family_id?: string | null
+          id?: string
+          interaction_type?: Database["public"]["Enums"]["interaction_type"]
+          metadata?: Json | null
+          session_duration?: number | null
+          timestamp?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_interactions_content_item_id_fkey"
+            columns: ["content_item_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_items: {
+        Row: {
+          age_max: number | null
+          age_min: number | null
+          approval_status: Database["public"]["Enums"]["approval_status"] | null
+          approved_by: string | null
+          autism_features: Json | null
+          category_id: string | null
+          content_rating: string | null
+          content_type: Database["public"]["Enums"]["content_type"]
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          is_free: boolean | null
+          platform: string | null
+          sort_order: number | null
+          tags: string[] | null
+          thumbnail_url: string | null
+          title: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          age_max?: number | null
+          age_min?: number | null
+          approval_status?:
+            | Database["public"]["Enums"]["approval_status"]
+            | null
+          approved_by?: string | null
+          autism_features?: Json | null
+          category_id?: string | null
+          content_rating?: string | null
+          content_type: Database["public"]["Enums"]["content_type"]
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_free?: boolean | null
+          platform?: string | null
+          sort_order?: number | null
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          age_max?: number | null
+          age_min?: number | null
+          approval_status?:
+            | Database["public"]["Enums"]["approval_status"]
+            | null
+          approved_by?: string | null
+          autism_features?: Json | null
+          category_id?: string | null
+          content_rating?: string | null
+          content_type?: Database["public"]["Enums"]["content_type"]
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_free?: boolean | null
+          platform?: string | null
+          sort_order?: number | null
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "content_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       engagement_metrics: {
         Row: {
           actions_performed: number | null
@@ -492,6 +682,9 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "parent" | "child"
+      approval_status: "pending" | "approved" | "rejected"
+      content_type: "game" | "video" | "website" | "app"
+      interaction_type: "view" | "click" | "launch" | "complete" | "favorite"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -620,6 +813,9 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "parent", "child"],
+      approval_status: ["pending", "approved", "rejected"],
+      content_type: ["game", "video", "website", "app"],
+      interaction_type: ["view", "click", "launch", "complete", "favorite"],
     },
   },
 } as const

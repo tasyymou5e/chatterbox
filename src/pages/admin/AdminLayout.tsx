@@ -92,6 +92,17 @@ export default function AdminLayout() {
                   <BarChart3 className="h-4 w-4" />
                   <span>Reports</span>
                 </Link>
+                <Link 
+                  to="/admin/content" 
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    location.pathname === '/admin/content' 
+                      ? 'text-white bg-gray-700' 
+                      : 'text-gray-300 hover:text-white hover:bg-gray-700'
+                  }`}
+                >
+                  <Settings className="h-4 w-4" />
+                  <span>Content</span>
+                </Link>
               </div>
             </div>
 

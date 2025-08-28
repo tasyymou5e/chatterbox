@@ -1,0 +1,293 @@
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Heart, Search, Play, Star } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { ContentCard } from '@/components/games/ContentCard';
+import { CategoryFilter } from '@/components/games/CategoryFilter';
+
+interface ContentItem {
+  id: string;
+  title: string;
+  description: string;
+  content_type: string;
+  category_id: string;
+  url: string;
+  thumbnail_url: string;
+  age_min: number;
+  age_max: number;
+  autism_features: any;
+  tags: string[];
+  is_free: boolean;
+  content_categories?: {
+    name: string;
+    icon: string;
+  };
+}
+
+interface Category {
+  id: string;
+  name: string;
+  icon: string;
+  description: string;
+}
+
+interface Favorite {
+  content_item_id: string;
+}
+
+export default function GamesCatalog() {
+  const [contentItems, setContentItems] = useState<ContentItem[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [ageFilter, setAgeFilter] = useState('all');
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchData();
+    if (user) {
+      fetchFavorites();
+    }
+  }, [user]);
+
+  const fetchData = async () => {
+    try {
+      const [itemsResult, categoriesResult] = await Promise.all([
+        supabase
+          .from('content_items')
+          .select(`
+            *,
+            content_categories (name, icon)
+          `)
+          .eq('approval_status', 'approved')
+          .eq('is_active', true)
+          .order('sort_order'),
+        supabase
+          .from('content_categories')
+          .select('*')
+          .eq('is_active', true)
+          .order('sort_order')
+      ]);
+
+      if (itemsResult.error) throw itemsResult.error;
+      if (categoriesResult.error) throw categoriesResult.error;
+
+      setContentItems(itemsResult.data || []);
+      setCategories(categoriesResult.data || []);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load content",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchFavorites = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('content_favorites')
+        .select('content_item_id')
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setFavorites(data?.map((fav: Favorite) => fav.content_item_id) || []);
+    } catch (error) {
+      console.error('Error fetching favorites:', error);
+    }
+  };
+
+  const handleFavorite = async (contentId: string) => {
+    if (!user) {
+      toast({
+        title: "Please sign in",
+        description: "You need to be signed in to save favorites",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const isFavorited = favorites.includes(contentId);
+      
+      if (isFavorited) {
+        const { error } = await supabase
+          .from('content_favorites')
+          .delete()
+          .eq('content_item_id', contentId)
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+
+        setFavorites(prev => prev.filter(id => id !== contentId));
+      } else {
+        const { error } = await supabase
+          .from('content_favorites')
+          .insert([{
+            content_item_id: contentId,
+            user_id: user.id
+          }]);
+
+        if (error) throw error;
+
+        setFavorites(prev => [...prev, contentId]);
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update favorite",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleContentClick = async (item: ContentItem) => {
+    // Log the interaction
+    if (user) {
+      try {
+        await supabase
+          .from('content_interactions')
+          .insert([{
+            content_item_id: item.id,
+            user_id: user.id,
+            interaction_type: 'click',
+            device_info: {
+              userAgent: navigator.userAgent,
+              platform: navigator.platform,
+              language: navigator.language
+            },
+            metadata: {
+              title: item.title,
+              content_type: item.content_type,
+              category: item.content_categories?.name
+            }
+          }]);
+      } catch (error) {
+        console.error('Error logging interaction:', error);
+      }
+    }
+
+    // Open the content
+    window.open(item.url, '_blank', 'noopener,noreferrer');
+  };
+
+  const filteredItems = contentItems.filter(item => {
+    const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         item.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         item.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    const matchesCategory = selectedCategory === 'all' || item.category_id === selectedCategory;
+    
+    const matchesAge = ageFilter === 'all' || (
+      ageFilter === '3-5' && item.age_min <= 5 && item.age_max >= 3
+    ) || (
+      ageFilter === '6-8' && item.age_min <= 8 && item.age_max >= 6
+    ) || (
+      ageFilter === '9-12' && item.age_min <= 12 && item.age_max >= 9
+    ) || (
+      ageFilter === '13+' && item.age_max >= 13
+    );
+    
+    return matchesSearch && matchesCategory && matchesAge;
+  });
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
+      <div className="container mx-auto px-4 py-6">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-primary mb-4">
+            🎮 Games & Activities Catalog
+          </h1>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Discover educational games, videos, and interactive content designed for children with autism and special needs
+          </p>
+        </div>
+
+        {/* Search and Filters */}
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
+          <div className="flex flex-col lg:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search games, videos, and activities..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 text-lg"
+              />
+            </div>
+            <Select value={ageFilter} onValueChange={setAgeFilter}>
+              <SelectTrigger className="w-full lg:w-48">
+                <SelectValue placeholder="Age Range" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Ages</SelectItem>
+                <SelectItem value="3-5">Ages 3-5</SelectItem>
+                <SelectItem value="6-8">Ages 6-8</SelectItem>
+                <SelectItem value="9-12">Ages 9-12</SelectItem>
+                <SelectItem value="13+">Ages 13+</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* Category Filter */}
+        <CategoryFilter
+          categories={categories}
+          selectedCategory={selectedCategory}
+          onCategoryChange={setSelectedCategory}
+        />
+
+        {/* Content Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {filteredItems.map((item) => (
+            <ContentCard
+              key={item.id}
+              item={item}
+              isFavorited={favorites.includes(item.id)}
+              onFavorite={() => handleFavorite(item.id)}
+              onClick={() => handleContentClick(item)}
+            />
+          ))}
+        </div>
+
+        {/* No Results */}
+        {filteredItems.length === 0 && (
+          <div className="text-center py-12">
+            <div className="text-6xl mb-4">🔍</div>
+            <h3 className="text-xl font-semibold mb-2">No content found</h3>
+            <p className="text-muted-foreground">
+              Try adjusting your search or filter criteria
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

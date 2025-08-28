@@ -66,9 +66,9 @@ export const Hero = ({ onChoosePortal }: HeroProps) => {
               size="lg" 
               variant="outline"
               className="border-white/30 text-white hover:bg-white/10 font-semibold px-8 py-4 text-lg backdrop-blur-sm"
-              onClick={() => navigate('/about')}
+              onClick={() => navigate('/games')}
             >
-              Learn More
+              Browse Games & Activities
             </Button>
           </div>
         </div>
