@@ -276,6 +276,45 @@ export type Database = {
         }
         Relationships: []
       }
+      error_patterns: {
+        Row: {
+          affected_users_count: number | null
+          created_at: string
+          error_message_pattern: string
+          first_seen: string
+          id: string
+          last_seen: string
+          occurrence_count: number | null
+          pattern_hash: string
+          resolution_status: string | null
+          updated_at: string
+        }
+        Insert: {
+          affected_users_count?: number | null
+          created_at?: string
+          error_message_pattern: string
+          first_seen?: string
+          id?: string
+          last_seen?: string
+          occurrence_count?: number | null
+          pattern_hash: string
+          resolution_status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          affected_users_count?: number | null
+          created_at?: string
+          error_message_pattern?: string
+          first_seen?: string
+          id?: string
+          last_seen?: string
+          occurrence_count?: number | null
+          pattern_hash?: string
+          resolution_status?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       families: {
         Row: {
           created_at: string
@@ -388,6 +427,42 @@ export type Database = {
           },
         ]
       }
+      performance_metrics: {
+        Row: {
+          component_name: string | null
+          created_at: string
+          id: string
+          metadata: Json | null
+          metric_type: string
+          route_path: string | null
+          threshold_exceeded: boolean | null
+          user_id: string | null
+          value: number
+        }
+        Insert: {
+          component_name?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          metric_type: string
+          route_path?: string | null
+          threshold_exceeded?: boolean | null
+          user_id?: string | null
+          value: number
+        }
+        Update: {
+          component_name?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          metric_type?: string
+          route_path?: string | null
+          threshold_exceeded?: boolean | null
+          user_id?: string | null
+          value?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -415,6 +490,117 @@ export type Database = {
           last_name?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      system_alerts: {
+        Row: {
+          acknowledged: boolean | null
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          alert_type: string
+          created_at: string
+          description: string | null
+          id: string
+          metadata: Json | null
+          resolved: boolean | null
+          resolved_at: string | null
+          severity: string
+          title: string
+          triggered_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          acknowledged?: boolean | null
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          alert_type: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+          severity: string
+          title: string
+          triggered_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          acknowledged?: boolean | null
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          alert_type?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+          severity?: string
+          title?: string
+          triggered_by?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      system_errors: {
+        Row: {
+          browser_info: Json | null
+          component_name: string | null
+          created_at: string
+          device_info: Json | null
+          error_type: string
+          id: string
+          message: string
+          metadata: Json | null
+          resolved: boolean | null
+          resolved_at: string | null
+          resolved_by: string | null
+          route_path: string | null
+          session_id: string | null
+          severity: string
+          stack_trace: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          browser_info?: Json | null
+          component_name?: string | null
+          created_at?: string
+          device_info?: Json | null
+          error_type: string
+          id?: string
+          message: string
+          metadata?: Json | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          route_path?: string | null
+          session_id?: string | null
+          severity: string
+          stack_trace?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          browser_info?: Json | null
+          component_name?: string | null
+          created_at?: string
+          device_info?: Json | null
+          error_type?: string
+          id?: string
+          message?: string
+          metadata?: Json | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          route_path?: string | null
+          session_id?: string | null
+          severity?: string
+          stack_trace?: string | null
+          updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -627,6 +813,19 @@ export type Database = {
           trend: string
         }[]
       }
+      get_error_statistics: {
+        Args: { days_back?: number }
+        Returns: {
+          critical_errors: number
+          error_rate_trend: number[]
+          high_errors: number
+          low_errors: number
+          medium_errors: number
+          resolved_errors: number
+          top_error_components: string[]
+          total_errors: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -650,6 +849,22 @@ export type Database = {
           p_member_role: Database["public"]["Enums"]["app_role"]
           p_parent_user_id?: string
           p_user_id: string
+        }
+        Returns: string
+      }
+      log_system_error: {
+        Args: {
+          p_browser_info?: Json
+          p_component_name?: string
+          p_device_info?: Json
+          p_error_type: string
+          p_message: string
+          p_metadata?: Json
+          p_route_path?: string
+          p_session_id?: string
+          p_severity: string
+          p_stack_trace?: string
+          p_user_id?: string
         }
         Returns: string
       }
@@ -678,6 +893,10 @@ export type Database = {
       refresh_daily_analytics_secure: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      resolve_system_error: {
+        Args: { error_id: string }
+        Returns: boolean
       }
     }
     Enums: {

@@ -1,15 +1,30 @@
 import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
+import { useErrorTracking } from "@/hooks/useErrorTracking";
 
 const NotFound = () => {
   const location = useLocation();
+  const { logError } = useErrorTracking();
 
   useEffect(() => {
+    // Log 404 error to the system
+    logError({
+      errorType: '404_not_found',
+      severity: 'low',
+      message: `User attempted to access non-existent route: ${location.pathname}`,
+      componentName: 'NotFound',
+      metadata: {
+        attempted_path: location.pathname,
+        referrer: document.referrer,
+        search: location.search,
+      }
+    });
+    
     console.error(
       "404 Error: User attempted to access non-existent route:",
       location.pathname
     );
-  }, [location.pathname]);
+  }, [location.pathname, logError]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
