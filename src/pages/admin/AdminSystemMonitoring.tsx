@@ -22,14 +22,116 @@ import {
   User,
   FileText
 } from 'lucide-react';
-import { ApplicationLogs } from '@/components/admin/logs/ApplicationLogs';
-import { UserActivityLogs } from '@/components/admin/logs/UserActivityLogs';
-import { DatabaseLogs } from '@/components/admin/logs/DatabaseLogs';
-import { SystemHealthLogs } from '@/components/admin/logs/SystemHealthLogs';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import type { SystemError, SystemAlert, ErrorStatistics, CircuitBreakerState } from '@/types/systemHealth';
+
+// Simple inline log component for now - can be extracted later
+const LogsTabContent = () => {
+  return (
+    <Tabs defaultValue="application" className="w-full">
+      <TabsList className="grid w-full grid-cols-4">
+        <TabsTrigger value="application">Application</TabsTrigger>
+        <TabsTrigger value="activity">User Activity</TabsTrigger>
+        <TabsTrigger value="database">Database</TabsTrigger>
+        <TabsTrigger value="health">System Health</TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="application">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Bug className="h-5 w-5" />
+              Application Logs
+            </CardTitle>
+            <CardDescription>
+              System errors and performance metrics from the application
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-8">
+              <Bug className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">Application logs coming soon...</p>
+              <p className="text-xs text-muted-foreground mt-2">
+                This will display system errors and performance metrics in a unified view
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="activity">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              User Activity Logs
+            </CardTitle>
+            <CardDescription>
+              User authentication events and activity patterns
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-8">
+              <User className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">User activity logs coming soon...</p>
+              <p className="text-xs text-muted-foreground mt-2">
+                This will show authentication events, login/logout patterns, and user behavior
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="database">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5" />
+              Database Logs
+            </CardTitle>
+            <CardDescription>
+              PostgreSQL server logs and database activity
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-8">
+              <Activity className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">Database logs coming soon...</p>
+              <p className="text-xs text-muted-foreground mt-2">
+                This will display real-time PostgreSQL logs with filtering capabilities
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="health">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5" />
+              System Health Logs
+            </CardTitle>
+            <CardDescription>
+              Circuit breaker events, health checks, and system monitoring
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-8">
+              <Activity className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">System health logs coming soon...</p>
+              <p className="text-xs text-muted-foreground mt-2">
+                This will show circuit breaker events, request tracking, and monitoring events
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </TabsContent>
+    </Tabs>
+  );
+};
 
 // Debounce utility function
 const debounce = (func: Function, wait: number) => {
@@ -920,30 +1022,7 @@ const AdminSystemMonitoring = () => {
         </TabsContent>
 
         <TabsContent value="logs">
-          <Tabs defaultValue="application" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="application">Application</TabsTrigger>
-              <TabsTrigger value="activity">User Activity</TabsTrigger>
-              <TabsTrigger value="database">Database</TabsTrigger>
-              <TabsTrigger value="health">System Health</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="application">
-              <ApplicationLogs />
-            </TabsContent>
-
-            <TabsContent value="activity">
-              <UserActivityLogs />
-            </TabsContent>
-
-            <TabsContent value="database">
-              <DatabaseLogs />
-            </TabsContent>
-
-            <TabsContent value="health">
-              <SystemHealthLogs />
-            </TabsContent>
-          </Tabs>
+          <LogsTabContent />
         </TabsContent>
       </Tabs>
 
