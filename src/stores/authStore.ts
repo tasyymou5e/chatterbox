@@ -275,119 +275,81 @@ export const useAuthStore = create<AuthState>()(
                 console.warn('Failed to log signup activity (non-blocking):', error);
               });
             }, 0);
-          }
+           }
 
-          return { error };
+           return { error };
         },
 
-        // Sign in with role verification - CRITICAL FIX for admin login
+        // Enhanced signIn with admin role verification and activity logging
         signIn: async (email: string, password: string) => {
-          console.log('🔐 AuthStore: Starting signIn process for:', email);
-          set({ loading: true, isCheckingRole: true });
-          
           try {
-            console.log('🔐 AuthStore: Calling Supabase signInWithPassword...');
+            set({ loading: true });
+            console.log('🔐 Starting sign in process for:', email);
+            
             const { data, error } = await supabase.auth.signInWithPassword({
               email,
-              password,
+              password
             });
 
             if (error) {
-              console.error('❌ AuthStore: Supabase sign in error:', error.message, error);
-              throw error;
+              console.error('❌ Sign in error:', error);
+              set({ loading: false });
+              return { error };
             }
 
-            console.log('✅ AuthStore: Supabase sign in successful');
-            console.log('👤 AuthStore: User data:', {
-              id: data.user?.id,
-              email: data.user?.email,
-              role: data.user?.role
-            });
-
-            if (data.user && data.session && !error) {
-              console.log('🔐 AuthStore: Setting session and user in state...');
-              set({ 
-                session: data.session, 
+            if (data?.user && data?.session) {
+              console.log('✅ Auth successful, establishing session...');
+              
+              // Wait longer for session to be properly established to prevent race conditions
+              await new Promise(resolve => setTimeout(resolve, 500));
+              
+              const userRole = await get().fetchUserRole(data.user.id);
+              const isAdmin = userRole === 'admin';
+              
+              console.log('👤 User role determined:', { userRole, isAdmin });
+              
+              // Set all auth state atomically to prevent race conditions
+              set({
                 user: data.user,
-                sessionReady: true
+                session: data.session,
+                userRole,
+                isAdmin,
+                loading: false
               });
 
-              // CRITICAL FIX: Make role checking synchronous for signIn
-              console.log('👑 AuthStore: Starting synchronous admin role check...');
-              let adminStatus = false;
-              try {
-                adminStatus = await get().checkAdminRole(data.user.id);
-                console.log('👑 AuthStore: Admin role check complete, status:', adminStatus);
-                
-                const userRole = await get().fetchUserRole(data.user.id);
-                console.log('🎭 AuthStore: User role fetch complete, role:', userRole);
-                
-                set({ 
-                  isAdmin: adminStatus,
-                  userRole: userRole || 'parent',
-                  isCheckingRole: false
-                });
-                
-                console.log('✅ AuthStore: Role verification complete for signIn');
-              } catch (roleError) {
-                console.warn('⚠️ AuthStore: Role check failed during signIn:', roleError);
-                set({ 
-                  isAdmin: false,
-                  userRole: 'parent',
-                  isCheckingRole: false
-                });
-              }
+              // Additional wait to ensure state is fully propagated
+              await new Promise(resolve => setTimeout(resolve, 200));
+              
+              console.log('🎯 Auth state fully established');
 
-              // Non-blocking activity logging
-              setTimeout(() => {
-                console.log('📝 AuthStore: Logging user activity (async)...');
-                authLoggingService.logActivity(
+              // Log the sign-in activity using authLoggingService directly
+              try {
+                await authLoggingService.logActivity(
                   data.user.id,
                   'login',
                   true,
                   undefined,
-                  { 
-                    email, 
-                    loginMethod: 'email_password',
-                    sessionCreated: !!data.session,
-                    userAgent: navigator.userAgent
+                  {
+                    email: data.user.email,
+                    role: userRole,
+                    timestamp: new Date().toISOString(),
+                    loginMethod: 'email_password'
                   }
-                ).catch(error => {
-                  console.warn('⚠️ AuthStore: Activity logging failed (non-critical):', error);
-                });
-              }, 0);
-              
-              return { error, user: data.user, isAdmin: adminStatus };
-            } else if (error) {
-              console.log('🔐 AuthStore - Login failed:', error.message);
-              
-              // Log failed login attempt (non-blocking)
-              const attemptId = `failed_${Date.now()}`;
-              setTimeout(() => {
-                authLoggingService.logActivity(
-                  attemptId,
-                  'failed_login',
-                  false,
-                  error.message,
-                  { 
-                    email, 
-                    attemptTime: new Date().toISOString(),
-                    failureType: error.message?.includes('Invalid') ? 'invalid_credentials' : 'other'
-                  }
-                ).catch(logError => {
-                  console.warn('⚠️ AuthStore: Failed to log failed login activity (non-blocking):', logError);
-                });
-              }, 0);
+                );
+              } catch (logError) {
+                console.warn('Failed to log sign-in activity:', logError);
+              }
+
+              return { error: null, user: data.user, isAdmin };
             }
 
-            return { error, user: data.user, isAdmin: false };
-            
-          } catch (error) {
-            console.error('❌ AuthStore: Sign in process failed:', error);
-            return { error };
-          } finally {
-            console.log('🔐 AuthStore: Setting loading to false');
-            set({ loading: false, isCheckingRole: false });
+            console.error('❌ No user or session returned');
+            set({ loading: false });
+            return { error: { message: 'No user or session returned' } };
+          } catch (err: any) {
+            console.error('💥 Sign in exception:', err);
+            set({ loading: false });
+            return { error: err };
           }
         },
 

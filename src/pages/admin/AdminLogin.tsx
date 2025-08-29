@@ -21,21 +21,18 @@ export default function AdminLogin() {
 
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log('🔐 AdminLogin: Form submitted');
     setIsSigningIn(true);
-
+    
     const formData = new FormData(e.currentTarget);
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
-
-    console.log('🔐 AdminLogin: Form data extracted, email:', email);
-
-    // Validate inputs
-    if (!email?.trim() || !password?.trim()) {
-      console.log('❌ AdminLogin: Validation failed - missing email or password');
+    
+    console.log('🔐 Admin login attempt for:', email);
+    
+    if (!email || !password) {
       toast({
         title: "Input Required",
-        description: "Please enter both email and password.",
+        description: "Please fill in all fields",
         variant: "destructive",
       });
       setIsSigningIn(false);
@@ -43,60 +40,67 @@ export default function AdminLogin() {
     }
 
     try {
-      console.log('🔐 AdminLogin: Calling signIn function...');
-      const { error, user: signedInUser, isAdmin: adminStatus } = await signIn(email, password) as any;
-
-      if (error) {
-        console.error('❌ AdminLogin: Sign in returned error:', error);
-        // Categorize errors for better user experience
-        let errorMessage = "An unexpected error occurred.";
-        
-        if (error.message === "Invalid login credentials") {
-          errorMessage = "Invalid email or password. Admin access only.";
-        } else if (error.message.includes("network") || error.message.includes("fetch")) {
-          errorMessage = "Network error. Please check your connection and try again.";
-        } else if (error.message.includes("rate limit")) {
-          errorMessage = "Too many login attempts. Please wait a moment and try again.";
-        } else {
-          errorMessage = error.message;
-        }
-
-        console.log('🔐 AdminLogin: Showing error toast:', errorMessage);
-        toast({
-          title: "Access Denied",
-          description: errorMessage,
-          variant: "destructive",
-        });
-      } else {
-        console.log('✅ AdminLogin: Sign in successful - role check completed synchronously');
-        
-        if (adminStatus) {
-          console.log('✅ AdminLogin: Admin access confirmed directly from signIn');
+      const result = await signIn(email, password);
+      
+      if (result.error) {
+        console.error('❌ Login failed:', result.error);
+        if (result.error.message?.includes('Invalid login credentials')) {
           toast({
-            title: "Admin Access Granted",
-            description: "Welcome to the admin portal.",
+            title: "Access Denied",
+            description: "Invalid email or password",
+            variant: "destructive",
           });
-          navigate('/admin/dashboard');
-        } else {
-          console.log('❌ AdminLogin: User authenticated but not admin');
+        } else if (result.error.message?.includes('Too many requests')) {
           toast({
-            title: "Access Denied", 
-            description: "This account does not have administrator privileges.",
+            title: "Rate Limited",
+            description: "Too many login attempts. Please wait a moment and try again.",
+            variant: "destructive",
+          });
+        } else if (result.error.message?.includes('Network')) {
+          toast({
+            title: "Connection Error",
+            description: "Network error. Please check your connection and try again.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Login Failed",
+            description: "Login failed. Please try again.",
             variant: "destructive",
           });
         }
+        setIsSigningIn(false);
+      } else if (result.isAdmin) {
+        console.log('✅ Admin login successful, waiting before navigation...');
+        toast({
+          title: "Welcome Admin",
+          description: "Welcome back, Admin!",
+        });
+        
+        // Wait additional time to ensure auth state is fully established before navigation
+        // This prevents the race condition that causes login loops
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        console.log('🔄 Navigating to admin dashboard...');
+        navigate('/admin/dashboard');
+      } else {
+        console.error('❌ User is not an admin');
+        toast({
+          title: "Access Denied",
+          description: "Access denied. Admin privileges required.",
+          variant: "destructive",
+        });
+        setIsSigningIn(false);
       }
     } catch (error) {
-      console.error('❌ AdminLogin: Unexpected error during sign in:', error);
+      console.error('💥 Unexpected login error:', error);
       toast({
-        title: "Connection Error",
-        description: "Unable to connect to the server. Please try again.",
+        title: "Connection Error", 
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
+      setIsSigningIn(false);
     }
-
-    console.log('🔐 AdminLogin: Setting isSigningIn to false');
-    setIsSigningIn(false);
   };
 
   return (

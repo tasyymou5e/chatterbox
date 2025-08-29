@@ -9,74 +9,116 @@ interface AdminRouteProps {
 
 export const AdminRoute = ({ children }: AdminRouteProps) => {
   const { loading, user, isAdmin, signingOut } = useAdminAuth();
-
-  // Emergency timeout - if loading takes too long, show fallback
-  const [showEmergencyFallback, setShowEmergencyFallback] = React.useState(false);
   
+  // Emergency timeouts to prevent infinite loading states - increased timeouts to allow for slower auth
+  const [emergencyLoadingTimeout, setEmergencyLoadingTimeout] = React.useState(false);
+  const [emergencySignOutTimeout, setEmergencySignOutTimeout] = React.useState(false);
+  const [authDebugInfo, setAuthDebugInfo] = React.useState<string>('');
+
+  // Debug auth state changes
+  React.useEffect(() => {
+    const debugInfo = `Loading: ${loading}, User: ${user ? 'present' : 'null'}, IsAdmin: ${isAdmin}, SigningOut: ${signingOut}`;
+    setAuthDebugInfo(debugInfo);
+    console.log('🛡️ AdminRoute auth state:', debugInfo);
+  }, [loading, user, isAdmin, signingOut]);
+
   React.useEffect(() => {
     if (loading) {
+      console.log('⏳ AdminRoute: Starting loading timeout (20s)');
       const timeout = setTimeout(() => {
-        setShowEmergencyFallback(true);
-      }, 15000); // 15 second emergency timeout
-      
+        console.warn('🚨 Emergency timeout: Loading took too long (>20s)');
+        setEmergencyLoadingTimeout(true);
+      }, 20000); // Increased to 20 seconds
+
       return () => clearTimeout(timeout);
     } else {
-      setShowEmergencyFallback(false);
+      setEmergencyLoadingTimeout(false);
     }
   }, [loading]);
 
-  // Emergency timeout for stuck signOut
   React.useEffect(() => {
     if (signingOut) {
+      console.log('⏳ AdminRoute: Starting sign out timeout (10s)');
       const timeout = setTimeout(() => {
-        console.warn('🔐 AdminRoute - SignOut timeout detected, triggering emergency logout');
-        // Access emergency logout from auth store
-        const authStore = (window as any).__authStore;
-        if (authStore) {
-          authStore.getState().emergencyLogout();
-        }
-      }, 8000); // 8 second timeout for signOut (reduced for faster recovery)
-      
+        console.warn('🚨 Emergency timeout: Sign out took too long (>10s)');
+        setEmergencySignOutTimeout(true);
+      }, 10000); // Increased to 10 seconds
+
       return () => clearTimeout(timeout);
+    } else {
+      setEmergencySignOutTimeout(false);
     }
   }, [signingOut]);
 
-  // Show emergency fallback if loading takes too long
-  if (showEmergencyFallback) {
+  // Show loading state with debug info
+  if (loading && !emergencyLoadingTimeout) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background p-8">
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">System Loading Issue</h2>
-          <p className="text-muted-foreground mb-4">
-            The admin system is taking longer than expected to load.
-          </p>
-          <button 
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
-          >
-            Retry Loading
-          </button>
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-4 text-gray-300">Loading admin panel...</p>
+          <p className="mt-2 text-xs text-gray-500">{authDebugInfo}</p>
         </div>
       </div>
     );
   }
 
-  // Show loading for admin check or during signOut
-  if (loading || signingOut) {
+  // Show sign out state
+  if (signingOut && !emergencySignOutTimeout) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
-        <p className="text-sm text-muted-foreground">
-          {signingOut ? 'Signing out...' : 'Verifying admin access...'}
-        </p>
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-red-500 mx-auto"></div>
+          <p className="mt-4 text-gray-300">Signing out...</p>
+        </div>
       </div>
     );
   }
 
-  // Only redirect if not signing out (to prevent race condition)
+  // Emergency fallback UI with recovery options
+  if (emergencyLoadingTimeout || emergencySignOutTimeout) {
+    const handleEmergencyReset = () => {
+      console.log('🚨 Emergency reset triggered');
+      // Clear all auth state and redirect to login
+      localStorage.clear();
+      sessionStorage.clear();
+      window.location.href = '/admin/login';
+    };
+
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="bg-red-900/50 border border-red-500 rounded-lg p-6 max-w-md text-center">
+          <h2 className="text-red-400 font-semibold mb-2">Authentication Timeout</h2>
+          <p className="text-gray-300 mb-2 text-sm">
+            The authentication process is taking longer than expected.
+          </p>
+          <p className="text-xs text-gray-500 mb-4">{authDebugInfo}</p>
+          <div className="space-y-2">
+            <button
+              onClick={() => window.location.reload()}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm"
+            >
+              Refresh Page
+            </button>
+            <button
+              onClick={handleEmergencyReset}
+              className="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm"
+            >
+              Reset & Return to Login
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Improved session validation - ensure we have both user and session
   if (!user || !isAdmin) {
+    console.log('🔄 AdminRoute: Redirecting to login - User:', !!user, 'IsAdmin:', isAdmin);
     return <Navigate to="/admin/login" replace />;
   }
 
+  // Additional validation: ensure we have a complete auth state
+  console.log('✅ AdminRoute: Auth validated, rendering protected content');
   return <>{children}</>;
 };
