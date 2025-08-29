@@ -31,6 +31,8 @@ import CreateTestFamilyButton from '@/components/admin/CreateTestFamilyButton';
 import FamilyViewDialog from '@/components/admin/FamilyViewDialog';
 import FamilyEditDialog from '@/components/admin/FamilyEditDialog';
 import FamilyDeleteDialog from '@/components/admin/FamilyDeleteDialog';
+import ErrorBoundary from '@/components/ErrorBoundary';
+import { useAuthStore } from '@/stores/authStore';
 
 interface FamilyMember {
   id: string;
@@ -55,8 +57,10 @@ interface Family {
 }
 
 export default function AdminFamilies() {
+  const { sessionReady } = useAuthStore();
   const [families, setFamilies] = useState<Family[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFamily, setSelectedFamily] = useState<Family | null>(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
@@ -65,11 +69,14 @@ export default function AdminFamilies() {
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchFamilies();
-  }, []);
+    if (sessionReady) {
+      fetchFamilies();
+    }
+  }, [sessionReady]);
 
   const fetchFamilies = async () => {
     try {
+      setError(null);
       console.log('Fetching families as admin user...');
       
       // Get families with their members first
@@ -88,6 +95,7 @@ export default function AdminFamilies() {
 
       if (familiesError) {
         console.error('Error fetching families:', familiesError);
+        setError(`Failed to load families: ${familiesError.message}`);
         throw familiesError;
       }
 
@@ -145,12 +153,14 @@ export default function AdminFamilies() {
 
       setFamilies(familiesWithMembers);
       console.log('Successfully loaded families with member details');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching families:', error);
+      const errorMessage = error?.message || 'Failed to load families';
+      setError(errorMessage);
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Failed to load families'
+        description: errorMessage
       });
     } finally {
       setLoading(false);
@@ -197,15 +207,40 @@ export default function AdminFamilies() {
   if (loading) {
     return (
       <div className="p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        <div className="flex items-center justify-center h-64 space-y-4">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            <p className="text-muted-foreground mt-2">
+              {sessionReady ? 'Loading families...' : 'Initializing session...'}
+            </p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <ErrorBoundary componentName="AdminFamilies">
+      <div className="p-6 space-y-6">
+        
+        {/* Error Display */}
+        {error && (
+          <Card className="bg-destructive/10 border-destructive/20">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <p className="text-destructive text-sm">{error}</p>
+                <Button 
+                  onClick={fetchFamilies}
+                  variant="outline"
+                  size="sm"
+                  className="text-destructive border-destructive/20"
+                >
+                  Retry
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -440,6 +475,7 @@ export default function AdminFamilies() {
         onOpenChange={setDeleteDialogOpen}
         onSuccess={fetchFamilies}
       />
-    </div>
+      </div>
+    </ErrorBoundary>
   );
 }

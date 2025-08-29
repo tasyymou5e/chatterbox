@@ -12,6 +12,7 @@ interface AuthState {
   isAdmin: boolean;
   loading: boolean;
   isCheckingRole: boolean;
+  sessionReady: boolean;
   
   // Actions
   initialize: () => void;
@@ -28,6 +29,7 @@ interface AuthState {
   setIsAdmin: (isAdmin: boolean) => void;
   setLoading: (loading: boolean) => void;
   setIsCheckingRole: (checking: boolean) => void;
+  setSessionReady: (ready: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -41,6 +43,7 @@ export const useAuthStore = create<AuthState>()(
         isAdmin: false,
         loading: true,
         isCheckingRole: false,
+        sessionReady: false,
 
 
         // State setters
@@ -50,6 +53,7 @@ export const useAuthStore = create<AuthState>()(
         setIsAdmin: (isAdmin) => set({ isAdmin }),
         setLoading: (loading) => set({ loading }),
         setIsCheckingRole: (isCheckingRole) => set({ isCheckingRole }),
+        setSessionReady: (sessionReady) => set({ sessionReady }),
 
         // Helper function to fetch user role
         fetchUserRole: async (userId: string): Promise<string | null> => {
@@ -116,7 +120,7 @@ export const useAuthStore = create<AuthState>()(
 
         // Initialize authentication
         initialize: () => {
-          const { setSession, setUser, setLoading, setUserRole, setIsAdmin, setIsCheckingRole, fetchUserRole, checkAdminRole } = get();
+          const { setSession, setUser, setLoading, setUserRole, setIsAdmin, setIsCheckingRole, setSessionReady, fetchUserRole, checkAdminRole } = get();
 
           // Set up auth state listener
           const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -137,6 +141,7 @@ export const useAuthStore = create<AuthState>()(
                 setUserRole(role);
                 setIsAdmin(adminStatus);
                 setIsCheckingRole(false);
+                setSessionReady(true);
 
                 // Log auth state changes for successful sign ins
                 if (event === 'SIGNED_IN') {
@@ -149,6 +154,7 @@ export const useAuthStore = create<AuthState>()(
                 setUserRole(null);
                 setIsAdmin(false);
                 setIsCheckingRole(false);
+                setSessionReady(false);
               }
             }
           );
@@ -170,6 +176,9 @@ export const useAuthStore = create<AuthState>()(
                 setUserRole(role);
                 setIsAdmin(adminStatus);
                 setIsCheckingRole(false);
+                setSessionReady(true);
+              } else {
+                setSessionReady(false);
               }
             } catch (error) {
               console.error('Error initializing auth:', error);
@@ -282,7 +291,8 @@ export const useAuthStore = create<AuthState>()(
             userRole: null, 
             isAdmin: false,
             user: null,
-            session: null
+            session: null,
+            sessionReady: false
           });
 
           // Log signout

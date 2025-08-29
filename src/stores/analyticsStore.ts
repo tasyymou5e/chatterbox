@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuthStore } from './authStore';
 
 interface EngagementMetric {
   metric: string;
@@ -34,14 +35,17 @@ interface AnalyticsState {
   retentionData: RetentionData[];
   loading: boolean;
   error: string | null;
+  retryCount: number;
 
   // Actions
   fetchEngagementMetrics: () => Promise<void>;
   fetchDailyAnalytics: () => Promise<void>;
   fetchRetentionData: () => Promise<void>;
   refreshAnalytics: () => Promise<void>;
+  waitForSessionAndRefresh: () => Promise<void>;
   setError: (error: string | null) => void;
   setLoading: (loading: boolean) => void;
+  getFallbackData: () => { engagementMetrics: EngagementMetric[]; dailyAnalytics: DailyAnalytics[]; retentionData: RetentionData[] };
 }
 
 export const useAnalyticsStore = create<AnalyticsState>()(
@@ -53,10 +57,59 @@ export const useAnalyticsStore = create<AnalyticsState>()(
       retentionData: [],
       loading: true,
       error: null,
+      retryCount: 0,
 
       // Actions
       setError: (error) => set({ error }),
       setLoading: (loading) => set({ loading }),
+
+      getFallbackData: () => ({
+        engagementMetrics: [
+          { metric: 'Active Users', current_value: 0, previous_value: 0, change_percentage: 0, trend: 'stable' },
+          { metric: 'Total Logins', current_value: 0, previous_value: 0, change_percentage: 0, trend: 'stable' }
+        ],
+        dailyAnalytics: [],
+        retentionData: []
+      }),
+
+      waitForSessionAndRefresh: async () => {
+        const authStore = useAuthStore.getState();
+        
+        // If session is ready, proceed immediately
+        if (authStore.sessionReady && authStore.isAdmin) {
+          console.log('✅ Session ready, refreshing analytics');
+          await get().refreshAnalytics();
+          return;
+        }
+
+        // If not ready, wait and retry
+        console.log('⏳ Session not ready, waiting...');
+        let attempts = 0;
+        const maxAttempts = 10;
+        
+        while (attempts < maxAttempts) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          const currentAuthState = useAuthStore.getState();
+          
+          if (currentAuthState.sessionReady && currentAuthState.isAdmin) {
+            console.log('✅ Session ready after waiting, refreshing analytics');
+            await get().refreshAnalytics();
+            return;
+          }
+          
+          attempts++;
+          console.log(`⏳ Still waiting for session... (${attempts}/${maxAttempts})`);
+        }
+
+        // If we get here, session never became ready - show fallback
+        console.warn('❌ Session never became ready, using fallback data');
+        const fallback = get().getFallbackData();
+        set({ 
+          ...fallback, 
+          loading: false, 
+          error: 'Analytics unavailable - authentication not ready' 
+        });
+      },
 
       fetchEngagementMetrics: async () => {
         try {
@@ -79,16 +132,24 @@ export const useAnalyticsStore = create<AnalyticsState>()(
 
       fetchDailyAnalytics: async () => {
         try {
+          console.log('🔄 Fetching daily analytics...');
+          
+          // Check session state before making RPC call
+          const authState = useAuthStore.getState();
+          if (!authState.sessionReady) {
+            throw new Error('Session not ready for RPC calls');
+          }
+          
           // Add timeout to prevent hanging
           const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Daily analytics timeout')), 5000)
+            setTimeout(() => reject(new Error('Daily analytics timeout')), 8000)
           );
           
           const queryPromise = supabase.rpc('get_daily_analytics_for_admins', { days_back: 30 });
           const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
           
           if (error) {
-            console.error('RPC Error details:', error);
+            console.error('❌ RPC Error details:', error);
             if (error.code === '42883') {
               console.log('Function does not exist, this is expected in some environments');
               set({ dailyAnalytics: [] });
@@ -114,10 +175,21 @@ export const useAnalyticsStore = create<AnalyticsState>()(
               })
             }));
           
-          set({ dailyAnalytics: transformedData });
+          console.log('✅ Daily analytics fetched successfully:', transformedData.length, 'records');
+          set({ dailyAnalytics: transformedData, retryCount: 0 });
         } catch (err: any) {
-          console.error('Error fetching daily analytics:', err);
+          console.error('❌ Error fetching daily analytics:', err);
           const errorMsg = err?.message || 'Unknown error occurred';
+          
+          // Implement retry logic for session timing issues
+          const currentRetryCount = get().retryCount;
+          if ((errorMsg.includes('Session not ready') || errorMsg.includes('permission denied')) && currentRetryCount < 3) {
+            console.log(`🔄 Retrying daily analytics (${currentRetryCount + 1}/3) in 2 seconds...`);
+            set({ retryCount: currentRetryCount + 1 });
+            setTimeout(() => get().fetchDailyAnalytics(), 2000);
+            return;
+          }
+          
           if (errorMsg.includes('permission denied') || errorMsg.includes('Admin role required')) {
             get().setError('Access denied - admin role required for analytics');
           } else if (errorMsg.includes('daily_analytics')) {
@@ -125,7 +197,7 @@ export const useAnalyticsStore = create<AnalyticsState>()(
           } else {
             get().setError(`Analytics error: ${errorMsg}`);
           }
-          set({ dailyAnalytics: [] });
+          set({ dailyAnalytics: [], retryCount: 0 });
         }
       },
 
@@ -150,16 +222,29 @@ export const useAnalyticsStore = create<AnalyticsState>()(
 
       refreshAnalytics: async () => {
         try {
-          set({ loading: true, error: null });
+          console.log('🔄 Starting analytics refresh...');
+          set({ loading: true, error: null, retryCount: 0 });
           
-          // Fetch all analytics data
-          await Promise.all([
+          // Fetch all analytics data with individual error handling
+          const results = await Promise.allSettled([
             get().fetchEngagementMetrics(),
             get().fetchDailyAnalytics(),
             get().fetchRetentionData()
           ]);
+
+          // Log results
+          results.forEach((result, index) => {
+            const functionNames = ['fetchEngagementMetrics', 'fetchDailyAnalytics', 'fetchRetentionData'];
+            if (result.status === 'rejected') {
+              console.warn(`❌ ${functionNames[index]} failed:`, result.reason);
+            } else {
+              console.log(`✅ ${functionNames[index]} succeeded`);
+            }
+          });
+
+          console.log('✅ Analytics refresh completed');
         } catch (err) {
-          console.error('Error refreshing analytics:', err);
+          console.error('❌ Unexpected error refreshing analytics:', err);
           get().setError('Failed to refresh analytics data');
         } finally {
           set({ loading: false });

@@ -20,9 +20,11 @@ import { AnalyticsKPICard } from '@/components/analytics/AnalyticsKPICard';
 import { EngagementChart } from '@/components/analytics/EngagementChart';
 import { RetentionChart } from '@/components/analytics/RetentionChart';
 import { SystemHealthWidget } from '@/components/analytics/SystemHealthWidget';
-import { useAnalytics } from '@/hooks/useAnalytics';
+import { useAnalyticsWithSession } from '@/hooks/useAnalyticsWithSession';
 import { useUIStore } from '@/stores/uiStore';
 import { useAdminStore } from '@/stores/adminStore';
+import ErrorBoundary from '@/components/ErrorBoundary';
+import { useAuthStore } from '@/stores/authStore';
 
 interface DashboardStats {
   totalFamilies: number;
@@ -34,6 +36,7 @@ interface DashboardStats {
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
+  const { sessionReady, isAdmin } = useAuthStore();
   const { 
     getLoading, 
     setLoading, 
@@ -58,12 +61,20 @@ export default function AdminDashboard() {
     retentionData, 
     loading: analyticsLoading, 
     error: analyticsError, 
-    refreshAnalytics 
-  } = useAnalytics();
+    refreshAnalytics,
+    waitForSessionAndRefresh 
+  } = useAnalyticsWithSession();
 
   useEffect(() => {
     fetchDashboardStats();
   }, []);
+
+  // Load system health data on mount
+  useEffect(() => {
+    if (sessionReady && isAdmin) {
+      fetchSystemMetrics();
+    }
+  }, [sessionReady, isAdmin, fetchSystemMetrics]);
 
   // Extract fetchDashboardStats to be reusable
   const fetchDashboardStats = async () => {
@@ -163,8 +174,19 @@ export default function AdminDashboard() {
   const totalLoginsMetric = getEngagementMetric('Total Logins');
 
   return (
-    <div className="p-6 space-y-8">
-      <div className="flex justify-between items-center">
+    <ErrorBoundary componentName="AdminDashboard">
+      <div className="p-6 space-y-8">
+        {/* Session Status Indicator */}
+        {!sessionReady && (
+          <div className="bg-warning/10 border border-warning/20 rounded-lg p-4 mb-6">
+            <div className="flex items-center space-x-2">
+              <RefreshCw className="h-4 w-4 animate-spin text-warning" />
+              <span className="text-warning">Initializing admin session...</span>
+            </div>
+          </div>
+        )}
+
+        <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-foreground mb-2">
             Analytics Dashboard
@@ -175,14 +197,14 @@ export default function AdminDashboard() {
         </div>
         <div className="flex items-center space-x-2">
           <Button 
-            onClick={refreshAnalytics} 
+            onClick={sessionReady ? refreshAnalytics : waitForSessionAndRefresh} 
             variant="outline" 
             size="sm"
             disabled={analyticsLoading}
             className="border-border"
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${analyticsLoading ? 'animate-spin' : ''}`} />
-            Refresh
+            {sessionReady ? 'Refresh' : 'Initialize'}
           </Button>
         </div>
       </div>
@@ -235,7 +257,7 @@ export default function AdminDashboard() {
 
       {/* System Health and Quick Actions */}
       <div className="grid gap-6 lg:grid-cols-3">
-        <SystemHealthWidget data={[]} loading={false} />
+        <SystemHealthWidget data={systemMetrics || []} loading={!sessionReady} />
         
         <Card className="bg-gradient-card border-border shadow-soft">
           <CardHeader>
@@ -307,16 +329,27 @@ export default function AdminDashboard() {
         </Card>
       </div>
 
-      {/* Error Display */}
-      {analyticsError && (
-        <Card className="bg-destructive/10 border-destructive/20 shadow-soft">
-          <CardContent className="p-4">
-            <p className="text-destructive text-sm">
-              Analytics Error: {analyticsError}
-            </p>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+        {/* Error Display */}
+        {analyticsError && (
+          <Card className="bg-destructive/10 border-destructive/20 shadow-soft">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <p className="text-destructive text-sm">
+                  Analytics Error: {analyticsError}
+                </p>
+                <Button 
+                  onClick={waitForSessionAndRefresh}
+                  variant="outline"
+                  size="sm"
+                  className="text-destructive border-destructive/20 hover:bg-destructive/10"
+                >
+                  Retry
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </ErrorBoundary>
   );
 }
