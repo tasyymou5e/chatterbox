@@ -25,6 +25,22 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
     }
   }, [loading]);
 
+  // Emergency timeout for stuck signOut
+  React.useEffect(() => {
+    if (signingOut) {
+      const timeout = setTimeout(() => {
+        console.warn('🔐 AdminRoute - SignOut timeout detected, triggering emergency logout');
+        // Access emergency logout from auth store
+        const authStore = (window as any).__authStore;
+        if (authStore) {
+          authStore.getState().emergencyLogout();
+        }
+      }, 12000); // 12 second timeout for signOut
+      
+      return () => clearTimeout(timeout);
+    }
+  }, [signingOut]);
+
   // Show emergency fallback if loading takes too long
   if (showEmergencyFallback) {
     return (

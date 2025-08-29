@@ -21,6 +21,7 @@ interface AuthState {
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<{ error: any }>;
   clearSignOutState: () => void;
+  emergencyLogout: () => void;
   fetchUserRole: (userId: string) => Promise<string | null>;
   checkAdminRole: (userId: string) => Promise<boolean>;
   
@@ -192,6 +193,9 @@ export const useAuthStore = create<AuthState>()(
 
           // Store cleanup function globally for unmounting
           (window as any).__authUnsubscribe = () => subscription.unsubscribe();
+          
+          // Store auth store reference for emergency recovery
+          (window as any).__authStore = { getState: get };
         },
 
         // Sign up
@@ -281,7 +285,7 @@ export const useAuthStore = create<AuthState>()(
           return { error };
         },
 
-        // Sign out
+        // Sign out with timeout protection
         signOut: async () => {
           const currentState = get();
           
@@ -291,22 +295,90 @@ export const useAuthStore = create<AuthState>()(
             return { error: null };
           }
 
-          console.log('🔐 Auth Store - Starting signOut');
+          console.log('🔐 Auth Store - Starting signOut with timeout protection');
           set({ signingOut: true });
           
           const { logActivity, endSession } = useAuthLogging();
           const currentUserId = currentState.user?.id;
           const currentSessionId = currentState.session?.access_token?.substring(0, 20);
 
-          const { error } = await supabase.auth.signOut();
-          
-          if (error) {
-            console.error('🔐 Auth Store - SignOut error:', error);
-            set({ signingOut: false }); // Reset signingOut on error
-          } else {
-            console.log('🔐 Auth Store - SignOut successful, clearing all state');
+          try {
+            // Timeout wrapper for signOut
+            const signOutWithTimeout = () => {
+              return Promise.race([
+                supabase.auth.signOut(),
+                new Promise((_, reject) => 
+                  setTimeout(() => reject(new Error('SignOut timeout')), 8000)
+                )
+              ]) as Promise<{ error: any }>;
+            };
+
+            const { error } = await signOutWithTimeout();
             
-            // Clear all auth state including persisted state
+            if (error) {
+              console.error('🔐 Auth Store - SignOut error:', error);
+              set({ signingOut: false });
+            } else {
+              console.log('🔐 Auth Store - SignOut successful, clearing all state');
+              
+              // Clear all auth state immediately
+              set({
+                user: null,
+                session: null,
+                userRole: null,
+                isAdmin: false,
+                loading: false,
+                sessionReady: false,
+                signingOut: false,
+              });
+              
+              // Force clear persisted state
+              try {
+                localStorage.removeItem('auth-store');
+                sessionStorage.clear();
+                console.log('🔐 Auth Store - Cleared persisted auth state');
+              } catch (e) {
+                console.warn('🔐 Auth Store - Could not clear persisted state:', e);
+              }
+
+              // Non-blocking auth logging with individual timeouts
+              if (currentUserId) {
+                Promise.race([
+                  logActivity(
+                    currentUserId,
+                    'logout',
+                    true,
+                    undefined,
+                    { 
+                      logoutTime: new Date().toISOString(),
+                      sessionDuration: currentState.session ? Date.now() - new Date(currentState.session.expires_at || '').getTime() : 0
+                    }
+                  ),
+                  new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Activity logging timeout')), 3000)
+                  )
+                ]).catch(error => {
+                  console.warn('🔐 Auth Store - Activity logging failed (non-blocking):', error);
+                });
+
+                if (currentSessionId) {
+                  Promise.race([
+                    endSession(currentSessionId),
+                    new Promise((_, reject) => 
+                      setTimeout(() => reject(new Error('End session timeout')), 3000)
+                    )
+                  ]).catch(error => {
+                    console.warn('🔐 Auth Store - End session failed (non-blocking):', error);
+                  });
+                }
+              }
+            }
+
+            return { error };
+          } catch (timeoutError) {
+            console.error('🔐 Auth Store - SignOut timeout, forcing logout:', timeoutError);
+            
+            // Emergency logout - clear state even if Supabase call failed
             set({
               user: null,
               session: null,
@@ -317,41 +389,42 @@ export const useAuthStore = create<AuthState>()(
               signingOut: false,
             });
             
-            // Force clear persisted state
             try {
               localStorage.removeItem('auth-store');
               sessionStorage.clear();
-              console.log('🔐 Auth Store - Cleared persisted auth state');
             } catch (e) {
-              console.warn('🔐 Auth Store - Could not clear persisted state:', e);
+              console.warn('🔐 Emergency logout - Could not clear storage:', e);
             }
 
-            // Log signout after successful signout
-            if (currentUserId) {
-              setTimeout(() => {
-                logActivity(
-                  currentUserId,
-                  'logout',
-                  true,
-                  undefined,
-                  { 
-                    logoutTime: new Date().toISOString(),
-                    sessionDuration: currentState.session ? Date.now() - new Date(currentState.session.expires_at || '').getTime() : 0
-                  }
-                );
-
-                if (currentSessionId) {
-                  endSession(currentSessionId);
-                }
-              }, 0);
-            }
+            return { error: timeoutError };
           }
-
-          return { error };
         },
 
         clearSignOutState: () => {
           set({ signingOut: false });
+        },
+
+        // Emergency logout for recovery
+        emergencyLogout: () => {
+          console.log('🔐 Auth Store - Emergency logout triggered');
+          
+          set({
+            user: null,
+            session: null,
+            userRole: null,
+            isAdmin: false,
+            loading: false,
+            sessionReady: false,
+            signingOut: false,
+          });
+          
+          try {
+            localStorage.removeItem('auth-store');
+            sessionStorage.clear();
+            console.log('🔐 Emergency logout - Cleared all state');
+          } catch (e) {
+            console.warn('🔐 Emergency logout - Storage clear failed:', e);
+          }
         },
       }),
       {
