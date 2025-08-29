@@ -21,12 +21,14 @@ import {
   Shield,
   Eye,
   Edit,
-  Trash2
+  Trash2,
+  Key
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { UserViewDialog } from '@/components/admin/UserViewDialog';
 import { UserEditDialog } from '@/components/admin/UserEditDialog';
 import { UserDeleteDialog } from '@/components/admin/UserDeleteDialog';
+import { UserPasswordResetDialog } from '@/components/admin/UserPasswordResetDialog';
 
 interface User {
   id: string;
@@ -47,6 +49,7 @@ export default function AdminUsers() {
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [passwordResetDialogOpen, setPasswordResetDialogOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -197,6 +200,11 @@ export default function AdminUsers() {
   const handleDeleteUser = (user: User) => {
     setSelectedUser(user);
     setDeleteDialogOpen(true);
+  };
+
+  const handlePasswordReset = (user: User) => {
+    setSelectedUser(user);
+    setPasswordResetDialogOpen(true);
   };
 
   const handleDialogSuccess = () => {
@@ -383,6 +391,7 @@ export default function AdminUsers() {
                         size="sm"
                         onClick={() => handleViewUser(user)}
                         className="text-blue-400 hover:text-blue-300 hover:bg-gray-700"
+                        title="View User"
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
@@ -391,14 +400,25 @@ export default function AdminUsers() {
                         size="sm"
                         onClick={() => handleEditUser(user)}
                         className="text-green-400 hover:text-green-300 hover:bg-gray-700"
+                        title="Edit User"
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
+                        onClick={() => handlePasswordReset(user)}
+                        className="text-yellow-400 hover:text-yellow-300 hover:bg-gray-700"
+                        title="Reset Password"
+                      >
+                        <Key className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => handleDeleteUser(user)}
                         className="text-red-400 hover:text-red-300 hover:bg-gray-700"
+                        title="Delete User"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -432,6 +452,13 @@ export default function AdminUsers() {
       <UserEditDialog
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
+        user={selectedUser}
+        onSuccess={handleDialogSuccess}
+      />
+
+      <UserPasswordResetDialog
+        open={passwordResetDialogOpen}
+        onOpenChange={setPasswordResetDialogOpen}
         user={selectedUser}
         onSuccess={handleDialogSuccess}
       />

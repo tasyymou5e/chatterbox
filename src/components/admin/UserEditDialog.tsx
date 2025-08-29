@@ -14,8 +14,10 @@ import {
   X,
   Shield,
   UserCheck,
-  Activity
+  Activity,
+  Key
 } from 'lucide-react';
+import { UserPasswordResetDialog } from './UserPasswordResetDialog';
 
 interface User {
   id: string;
@@ -48,6 +50,7 @@ export function UserEditDialog({ open, onOpenChange, user, onSuccess }: UserEdit
   });
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [passwordResetOpen, setPasswordResetOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -241,6 +244,32 @@ export function UserEditDialog({ open, onOpenChange, user, onSuccess }: UserEdit
               </div>
             )}
           </div>
+
+          <Separator className="bg-gray-700" />
+
+          {/* Password Reset Section */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                  <Key className="h-4 w-4" />
+                  Password Management
+                </h3>
+                <p className="text-sm text-gray-400 mt-1">
+                  Reset the user's password or require them to change it on next login
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setPasswordResetOpen(true)}
+                className="border-yellow-600 text-yellow-400 hover:bg-yellow-600 hover:text-white"
+              >
+                <Key className="h-4 w-4 mr-2" />
+                Reset Password
+              </Button>
+            </div>
+          </div>
         </div>
 
         <DialogFooter className="flex gap-2">
@@ -263,6 +292,17 @@ export function UserEditDialog({ open, onOpenChange, user, onSuccess }: UserEdit
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      {/* Password Reset Dialog */}
+      <UserPasswordResetDialog
+        open={passwordResetOpen}
+        onOpenChange={setPasswordResetOpen}
+        user={user}
+        onSuccess={() => {
+          setPasswordResetOpen(false);
+          onSuccess();
+        }}
+      />
     </Dialog>
   );
 }
