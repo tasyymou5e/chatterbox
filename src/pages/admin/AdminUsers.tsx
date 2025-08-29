@@ -24,6 +24,9 @@ import {
   Trash2
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { UserViewDialog } from '@/components/admin/UserViewDialog';
+import { UserEditDialog } from '@/components/admin/UserEditDialog';
+import { UserDeleteDialog } from '@/components/admin/UserDeleteDialog';
 
 interface User {
   id: string;
@@ -40,6 +43,10 @@ export default function AdminUsers() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -139,6 +146,25 @@ export default function AdminUsers() {
     admins: users.filter(u => u.roles.includes('admin')).length,
     parents: users.filter(u => u.roles.includes('parent')).length,
     children: users.filter(u => u.roles.includes('child')).length,
+  };
+
+  const handleViewUser = (user: User) => {
+    setSelectedUser(user);
+    setViewDialogOpen(true);
+  };
+
+  const handleEditUser = (user: User) => {
+    setSelectedUser(user);
+    setEditDialogOpen(true);
+  };
+
+  const handleDeleteUser = (user: User) => {
+    setSelectedUser(user);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDialogSuccess = () => {
+    fetchUsers();
   };
 
   if (loading) {
@@ -319,6 +345,7 @@ export default function AdminUsers() {
                       <Button
                         variant="ghost"
                         size="sm"
+                        onClick={() => handleViewUser(user)}
                         className="text-blue-400 hover:text-blue-300 hover:bg-gray-700"
                       >
                         <Eye className="h-4 w-4" />
@@ -326,6 +353,7 @@ export default function AdminUsers() {
                       <Button
                         variant="ghost"
                         size="sm"
+                        onClick={() => handleEditUser(user)}
                         className="text-green-400 hover:text-green-300 hover:bg-gray-700"
                       >
                         <Edit className="h-4 w-4" />
@@ -333,6 +361,7 @@ export default function AdminUsers() {
                       <Button
                         variant="ghost"
                         size="sm"
+                        onClick={() => handleDeleteUser(user)}
                         className="text-red-400 hover:text-red-300 hover:bg-gray-700"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -356,6 +385,27 @@ export default function AdminUsers() {
           )}
         </CardContent>
       </Card>
+
+      {/* Dialog Components */}
+      <UserViewDialog
+        open={viewDialogOpen}
+        onOpenChange={setViewDialogOpen}
+        user={selectedUser}
+      />
+      
+      <UserEditDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        user={selectedUser}
+        onSuccess={handleDialogSuccess}
+      />
+      
+      <UserDeleteDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        user={selectedUser}
+        onSuccess={handleDialogSuccess}
+      />
     </div>
   );
 }
