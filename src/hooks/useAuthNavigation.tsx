@@ -4,16 +4,23 @@ import { useAuthStore } from '@/stores/authStore';
 
 export const useAuthNavigation = () => {
   const navigate = useNavigate();
-  const { user, userRole, loading, session } = useAuthStore();
+  const { user, userRole, loading, session, isHydrated } = useAuthStore();
   const [navigationDebounce, setNavigationDebounce] = useState<NodeJS.Timeout | null>(null);
   const [sessionReady, setSessionReady] = useState(false);
+  const [navigationAttempts, setNavigationAttempts] = useState(0);
 
   // Track when session is ready for navigation
   useEffect(() => {
-    if (!loading && session !== undefined) {
+    if (!loading && session !== undefined && isHydrated) {
+      console.log('🔄 useAuthNavigation: Session ready for navigation', {
+        loading,
+        hasSession: !!session,
+        isHydrated,
+        timestamp: Date.now()
+      });
       setSessionReady(true);
     }
-  }, [loading, session]);
+  }, [loading, session, isHydrated]);
 
   useEffect(() => {
     // Clear any existing debounce timeout
@@ -24,15 +31,24 @@ export const useAuthNavigation = () => {
     // Make navigate available globally for auth context
     (window as any).__navigate = navigate;
 
-    // Handle initial navigation for authenticated users with debouncing
-    if (sessionReady && !loading && user && userRole) {
+    // Handle initial navigation for authenticated users with enhanced guards
+    if (sessionReady && !loading && user && userRole && isHydrated) {
       const currentPath = window.location.pathname;
+      
+      // Prevent navigation loops by tracking attempts
+      if (navigationAttempts > 3) {
+        console.warn('🚨 useAuthNavigation: Too many navigation attempts, stopping to prevent loop');
+        return;
+      }
       
       console.log('🔄 useAuthNavigation: Checking navigation -', {
         currentPath,
         userRole,
         loading,
-        sessionReady
+        sessionReady,
+        isHydrated,
+        navigationAttempts,
+        timestamp: Date.now()
       });
       
       // SKIP admin users - let AdminLogin handle admin navigation to prevent race conditions
@@ -43,10 +59,12 @@ export const useAuthNavigation = () => {
       
       // Only redirect non-admin users from auth page to prevent loops
       if (currentPath === '/auth' || currentPath === '/') {
-        console.log('🎯 useAuthNavigation: Redirecting from auth page');
+        console.log('🎯 useAuthNavigation: Redirecting from auth page, attempt:', navigationAttempts + 1);
+        setNavigationAttempts(prev => prev + 1);
         
-        // Debounce navigation to prevent race conditions
+        // Enhanced debounce navigation to prevent race conditions
         const timeout = setTimeout(() => {
+          console.log('🚀 useAuthNavigation: Executing navigation for', userRole);
           switch (userRole) {
             case 'parent':
               navigate('/parent-dashboard');
@@ -58,7 +76,7 @@ export const useAuthNavigation = () => {
               navigate('/parent-dashboard');
               break;
           }
-        }, 100);
+        }, 200); // Increased delay for better stability
         
         setNavigationDebounce(timeout);
       }

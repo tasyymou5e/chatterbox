@@ -14,6 +14,7 @@ interface AuthState {
   isCheckingRole: boolean;
   sessionReady: boolean;
   signingOut: boolean;
+  isHydrated: boolean;
   
   // Actions
   initialize: () => void;
@@ -49,6 +50,7 @@ export const useAuthStore = create<AuthState>()(
         isCheckingRole: false,
         sessionReady: false,
         signingOut: false,
+        isHydrated: false,
 
 
         // State setters
@@ -536,6 +538,12 @@ export const useAuthStore = create<AuthState>()(
           userRole: state.userRole,
           isAdmin: state.isAdmin,
         }),
+        onRehydrateStorage: () => (state) => {
+          console.log('🔄 AuthStore: Hydration complete');
+          if (state) {
+            state.isHydrated = true;
+          }
+        },
       }
     ),
     { name: 'AuthStore' }

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
+import { useAuthStore } from '@/stores/authStore';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { Heart, Users, Plus, Settings, LogOut, Target } from 'lucide-react';
@@ -16,20 +17,31 @@ interface Profile {
 
 const ParentDashboard = () => {
   const { user, signOut, loading } = useAuth();
+  const { isHydrated } = useAuthStore();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
 
   useEffect(() => {
-    if (!loading && !user) {
+    console.log('🏠 ParentDashboard: Auth state check', {
+      loading,
+      isHydrated,
+      user: user?.email,
+      timestamp: Date.now()
+    });
+
+    // Wait for both loading to complete AND store to be hydrated before making navigation decisions
+    if (!loading && isHydrated && !user) {
+      console.log('🏠 ParentDashboard: No user detected after hydration, redirecting to auth');
       navigate('/auth');
       return;
     }
 
-    if (user) {
+    if (user && isHydrated) {
+      console.log('🏠 ParentDashboard: User found and hydrated, fetching profile');
       fetchProfile();
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, isHydrated, navigate]);
 
   const fetchProfile = async () => {
     if (!user) return;
@@ -66,12 +78,14 @@ const ParentDashboard = () => {
     }
   };
 
-  if (loading || profileLoading) {
+  // Show loading if still loading auth or if store hasn't hydrated yet or profile loading
+  if (loading || !isHydrated || profileLoading) {
     return (
       <div className="min-h-screen bg-gradient-hero flex items-center justify-center">
         <div className="text-white text-center">
           <Heart className="h-12 w-12 mx-auto mb-4 animate-pulse" />
           <p>Loading your parent dashboard...</p>
+          {!isHydrated && <p className="text-sm opacity-75 mt-2">Initializing session...</p>}
         </div>
       </div>
     );

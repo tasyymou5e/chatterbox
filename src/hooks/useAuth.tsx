@@ -21,6 +21,7 @@ export const useAuth = (): AuthContextType => {
     session,
     userRole,
     loading,
+    isHydrated,
     initialize,
     signUp: storeSignUp,
     signIn: storeSignIn,
@@ -36,7 +37,7 @@ export const useAuth = (): AuthContextType => {
     user,
     session,
     userRole,
-    loading,
+    loading: loading || !isHydrated, // Include hydration state in loading
     signUp: storeSignUp,
     signIn: storeSignIn,
     signOut: storeSignOut,
