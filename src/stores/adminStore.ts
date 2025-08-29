@@ -35,9 +35,9 @@ export const useAdminStore = create<AdminState>()(
           const healthStore = useSystemHealthStore.getState();
           await healthStore.fetchSystemHealth();
 
-          // Transform health metrics to admin format
+          // Transform health metrics to admin format - keep service_name property
           const healthMetrics = healthStore.metrics.map(metric => ({
-            name: metric.service_name,
+            service_name: metric.service_name, // Keep original property name
             status: metric.status,
             responseTime: metric.response_time,
             uptime: metric.uptime_percentage,

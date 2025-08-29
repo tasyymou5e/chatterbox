@@ -1,15 +1,9 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { supabase } from '@/integrations/supabase/client';
+import type { SystemHealthMetric } from '@/types/systemHealth';
 
-interface SystemHealthMetric {
-  service_name: string;
-  status: 'healthy' | 'degraded' | 'down';
-  response_time?: number;
-  uptime_percentage?: number;
-  error_rate?: number;
-  metadata?: Record<string, any>;
-}
+// Interface imported from types file - no local definition needed
 
 interface SystemHealthState {
   metrics: SystemHealthMetric[];

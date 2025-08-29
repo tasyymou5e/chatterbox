@@ -24,42 +24,9 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
+import type { SystemError, SystemAlert, ErrorStatistics, CircuitBreakerState } from '@/types/systemHealth';
 
-interface SystemError {
-  id: string;
-  error_type: string;
-  severity: string;
-  message: string;
-  stack_trace?: string;
-  component_name?: string;
-  route_path?: string;
-  resolved: boolean;
-  created_at: string;
-  user_id?: string;
-  metadata: any;
-}
-
-interface ErrorStatistics {
-  total_errors: number;
-  critical_errors: number;
-  high_errors: number;
-  medium_errors: number;
-  low_errors: number;
-  resolved_errors: number;
-  top_error_components: string[];
-  error_rate_trend: number[];
-}
-
-interface SystemAlert {
-  id: string;
-  alert_type: string;
-  severity: string;
-  title: string;
-  description?: string;
-  acknowledged: boolean;
-  resolved: boolean;
-  created_at: string;
-}
+// Interfaces imported from types file - using centralized definitions
 
 const AdminSystemMonitoring = () => {
   const [errors, setErrors] = useState<SystemError[]>([]);
@@ -230,7 +197,10 @@ const AdminSystemMonitoring = () => {
         .limit(50);
       
       if (error) throw error;
-      setErrors(data || []);
+      setErrors((data || []).map(error => ({
+        ...error,
+        severity: error.severity as 'critical' | 'high' | 'medium' | 'low'
+      })));
       recordSuccess();
     } catch (error) {
       recordFailure(error instanceof Error ? error : new Error('Unknown error'));
@@ -251,7 +221,13 @@ const AdminSystemMonitoring = () => {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      setAlerts(data || []);
+      setAlerts((data || []).map(alert => ({
+        ...alert,
+        severity: alert.severity as 'critical' | 'high' | 'medium' | 'low',
+        metadata: (typeof alert.metadata === 'object' && alert.metadata !== null) 
+          ? alert.metadata as Record<string, any>
+          : {}
+      })));
       recordSuccess();
     } catch (error) {
       recordFailure(error instanceof Error ? error : new Error('Unknown error'));
