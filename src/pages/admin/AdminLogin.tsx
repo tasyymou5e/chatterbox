@@ -21,14 +21,18 @@ export default function AdminLogin() {
 
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    console.log('🔐 AdminLogin: Form submitted');
     setIsSigningIn(true);
 
     const formData = new FormData(e.currentTarget);
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
 
+    console.log('🔐 AdminLogin: Form data extracted, email:', email);
+
     // Validate inputs
     if (!email?.trim() || !password?.trim()) {
+      console.log('❌ AdminLogin: Validation failed - missing email or password');
       toast({
         title: "Input Required",
         description: "Please enter both email and password.",
@@ -39,9 +43,11 @@ export default function AdminLogin() {
     }
 
     try {
+      console.log('🔐 AdminLogin: Calling signIn function...');
       const { error } = await signIn(email, password);
 
       if (error) {
+        console.error('❌ AdminLogin: Sign in returned error:', error);
         // Categorize errors for better user experience
         let errorMessage = "An unexpected error occurred.";
         
@@ -55,19 +61,28 @@ export default function AdminLogin() {
           errorMessage = error.message;
         }
 
+        console.log('🔐 AdminLogin: Showing error toast:', errorMessage);
         toast({
           title: "Access Denied",
           description: errorMessage,
           variant: "destructive",
         });
       } else {
+        console.log('✅ AdminLogin: Sign in successful, checking auth state...');
+        console.log('✅ AdminLogin: Current user:', user?.email);
+        console.log('✅ AdminLogin: Current isAdmin:', isAdmin);
+        console.log('✅ AdminLogin: Current loading:', loading);
+        
         toast({
           title: "Admin Access Granted",
           description: "Welcome to the admin portal.",
         });
+        
+        console.log('🔐 AdminLogin: Navigating to admin dashboard...');
         navigate('/admin/dashboard');
       }
     } catch (error) {
+      console.error('❌ AdminLogin: Unexpected error during sign in:', error);
       toast({
         title: "Connection Error",
         description: "Unable to connect to the server. Please try again.",
@@ -75,6 +90,7 @@ export default function AdminLogin() {
       });
     }
 
+    console.log('🔐 AdminLogin: Setting isSigningIn to false');
     setIsSigningIn(false);
   };
 
