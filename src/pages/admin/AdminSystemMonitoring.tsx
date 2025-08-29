@@ -19,8 +19,13 @@ import {
   BarChart3,
   Wifi,
   WifiOff,
-  User
+  User,
+  FileText
 } from 'lucide-react';
+import { ApplicationLogs } from '@/components/admin/logs/ApplicationLogs';
+import { UserActivityLogs } from '@/components/admin/logs/UserActivityLogs';
+import { DatabaseLogs } from '@/components/admin/logs/DatabaseLogs';
+import { SystemHealthLogs } from '@/components/admin/logs/SystemHealthLogs';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
@@ -717,10 +722,14 @@ const AdminSystemMonitoring = () => {
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="errors" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="errors">Recent Errors</TabsTrigger>
           <TabsTrigger value="alerts">System Alerts</TabsTrigger>
           <TabsTrigger value="patterns">Error Patterns</TabsTrigger>
+          <TabsTrigger value="logs">
+            <FileText className="h-4 w-4 mr-2" />
+            Logs
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="errors">
@@ -908,6 +917,33 @@ const AdminSystemMonitoring = () => {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="logs">
+          <Tabs defaultValue="application" className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="application">Application</TabsTrigger>
+              <TabsTrigger value="activity">User Activity</TabsTrigger>
+              <TabsTrigger value="database">Database</TabsTrigger>
+              <TabsTrigger value="health">System Health</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="application">
+              <ApplicationLogs />
+            </TabsContent>
+
+            <TabsContent value="activity">
+              <UserActivityLogs />
+            </TabsContent>
+
+            <TabsContent value="database">
+              <DatabaseLogs />
+            </TabsContent>
+
+            <TabsContent value="health">
+              <SystemHealthLogs />
+            </TabsContent>
+          </Tabs>
         </TabsContent>
       </Tabs>
 
