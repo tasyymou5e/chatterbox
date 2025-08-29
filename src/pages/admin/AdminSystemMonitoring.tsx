@@ -69,8 +69,21 @@ const AdminSystemMonitoring = () => {
   const [selectedError, setSelectedError] = useState<SystemError | null>(null);
   const [authDebugInfo, setAuthDebugInfo] = useState<any>(null);
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'checking'>('checking');
+  
+  // Circuit breaker state
+  const [errorState, setErrorState] = useState({
+    consecutiveFailures: 0,
+    lastFailureTime: 0,
+    isCircuitOpen: false
+  });
+  
   const { toast } = useToast();
   const { user, session, isAdmin, loading: authLoading } = useAdminAuth();
+
+  // Circuit breaker configuration
+  const CIRCUIT_BREAKER_THRESHOLD = 3;
+  const CIRCUIT_BREAKER_TIMEOUT = 30000; // 30 seconds
+  const RATE_LIMIT_DELAY = 2000; // 2 seconds between calls
 
   const validateAuthAndConnection = async () => {
     try {
@@ -130,29 +143,85 @@ const AdminSystemMonitoring = () => {
     }
   };
 
-  const fetchErrorStatistics = async (retryCount = 0) => {
-    try {
-      const { data, error } = await supabase.rpc('get_error_statistics', { days_back: 7 });
-      if (error) {
-        if (error.code === 'PGRST116' && retryCount < 2) {
-          console.log('Retrying error statistics fetch due to auth error...');
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          return fetchErrorStatistics(retryCount + 1);
-        }
-        throw error;
-      }
-      setStatistics(data[0] || null);
-    } catch (error) {
-      console.error('Failed to fetch error statistics:', error);
+  // Check if circuit breaker is open
+  const isCircuitBreakerOpen = () => {
+    if (!errorState.isCircuitOpen) return false;
+    
+    const now = Date.now();
+    if (now - errorState.lastFailureTime > CIRCUIT_BREAKER_TIMEOUT) {
+      // Reset circuit breaker
+      setErrorState({
+        consecutiveFailures: 0,
+        lastFailureTime: 0,
+        isCircuitOpen: false
+      });
+      return false;
+    }
+    return true;
+  };
+
+  const recordFailure = (error: Error) => {
+    const now = Date.now();
+    const newFailureCount = errorState.consecutiveFailures + 1;
+    
+    setErrorState({
+      consecutiveFailures: newFailureCount,
+      lastFailureTime: now,
+      isCircuitOpen: newFailureCount >= CIRCUIT_BREAKER_THRESHOLD
+    });
+    
+    console.error(`System monitoring error (${newFailureCount}/${CIRCUIT_BREAKER_THRESHOLD}):`, error);
+    
+    if (newFailureCount >= CIRCUIT_BREAKER_THRESHOLD) {
       toast({
-        title: 'Database Error',
-        description: `Failed to load error statistics: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        title: 'System Monitoring Disabled',
+        description: `Too many consecutive failures. Monitoring will resume in ${CIRCUIT_BREAKER_TIMEOUT / 1000} seconds.`,
         variant: 'destructive',
       });
     }
   };
 
-  const fetchRecentErrors = async (retryCount = 0) => {
+  const recordSuccess = () => {
+    setErrorState({
+      consecutiveFailures: 0,
+      lastFailureTime: 0,
+      isCircuitOpen: false
+    });
+  };
+
+  const fetchErrorStatistics = async () => {
+    if (isCircuitBreakerOpen()) {
+      console.log('Circuit breaker is open, skipping error statistics fetch');
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.rpc('get_error_statistics', { days_back: 7 });
+      if (error) {
+        // Check for specific SQL errors that indicate our fix worked
+        if (error.message?.includes('ungrouped column')) {
+          toast({
+            title: 'SQL Function Error',
+            description: 'Database function error detected. Please refresh the page.',
+            variant: 'destructive',
+          });
+          return;
+        }
+        throw error;
+      }
+      setStatistics(data[0] || null);
+      recordSuccess();
+    } catch (error) {
+      recordFailure(error instanceof Error ? error : new Error('Unknown error'));
+    }
+  };
+
+  const fetchRecentErrors = async () => {
+    if (isCircuitBreakerOpen()) {
+      console.log('Circuit breaker is open, skipping recent errors fetch');
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from('system_errors')
@@ -160,26 +229,20 @@ const AdminSystemMonitoring = () => {
         .order('created_at', { ascending: false })
         .limit(50);
       
-      if (error) {
-        if (error.code === 'PGRST116' && retryCount < 2) {
-          console.log('Retrying recent errors fetch due to auth error...');
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          return fetchRecentErrors(retryCount + 1);
-        }
-        throw error;
-      }
+      if (error) throw error;
       setErrors(data || []);
+      recordSuccess();
     } catch (error) {
-      console.error('Failed to fetch errors:', error);
-      toast({
-        title: 'Database Error',
-        description: `Failed to load recent errors: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        variant: 'destructive',
-      });
+      recordFailure(error instanceof Error ? error : new Error('Unknown error'));
     }
   };
 
-  const fetchSystemAlerts = async (retryCount = 0) => {
+  const fetchSystemAlerts = async () => {
+    if (isCircuitBreakerOpen()) {
+      console.log('Circuit breaker is open, skipping system alerts fetch');
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from('system_alerts')
@@ -187,22 +250,11 @@ const AdminSystemMonitoring = () => {
         .eq('resolved', false)
         .order('created_at', { ascending: false });
       
-      if (error) {
-        if (error.code === 'PGRST116' && retryCount < 2) {
-          console.log('Retrying system alerts fetch due to auth error...');
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          return fetchSystemAlerts(retryCount + 1);
-        }
-        throw error;
-      }
+      if (error) throw error;
       setAlerts(data || []);
+      recordSuccess();
     } catch (error) {
-      console.error('Failed to fetch alerts:', error);
-      toast({
-        title: 'Database Error',
-        description: `Failed to load system alerts: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        variant: 'destructive',
-      });
+      recordFailure(error instanceof Error ? error : new Error('Unknown error'));
     }
   };
 
@@ -277,18 +329,33 @@ const AdminSystemMonitoring = () => {
     // Wait for auth to be ready before initializing
     if (authLoading) return;
     
-    refreshData();
+    // Add rate limiting to prevent rapid-fire calls
+    const timeoutId = setTimeout(() => {
+      refreshData();
+    }, RATE_LIMIT_DELAY);
     
-    // Set up real-time subscriptions only if connected
+    // Set up real-time subscriptions only if connected and circuit breaker is closed
     let errorSubscription: any;
     let alertSubscription: any;
     
-    if (connectionStatus === 'connected') {
+    if (connectionStatus === 'connected' && !isCircuitBreakerOpen()) {
+      // Debounce real-time updates to prevent loops
+      let refreshTimeout: NodeJS.Timeout;
+      
+      const debouncedRefresh = () => {
+        clearTimeout(refreshTimeout);
+        refreshTimeout = setTimeout(() => {
+          if (!isCircuitBreakerOpen()) {
+            refreshData();
+          }
+        }, RATE_LIMIT_DELAY);
+      };
+
       errorSubscription = supabase
         .channel('system_errors_changes')
         .on('postgres_changes', 
           { event: '*', schema: 'public', table: 'system_errors' }, 
-          () => refreshData()
+          debouncedRefresh
         )
         .subscribe();
 
@@ -296,16 +363,17 @@ const AdminSystemMonitoring = () => {
         .channel('system_alerts_changes')
         .on('postgres_changes', 
           { event: '*', schema: 'public', table: 'system_alerts' }, 
-          () => refreshData()
+          debouncedRefresh
         )
         .subscribe();
     }
 
     return () => {
+      clearTimeout(timeoutId);
       if (errorSubscription) errorSubscription.unsubscribe();
       if (alertSubscription) alertSubscription.unsubscribe();
     };
-  }, [authLoading, connectionStatus]);
+  }, [authLoading, connectionStatus, errorState.isCircuitOpen]);
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
@@ -397,6 +465,35 @@ const AdminSystemMonitoring = () => {
               )}
               <Button onClick={refreshData} size="sm" variant="outline">
                 Retry Connection
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Circuit Breaker Alert */}
+      {errorState.isCircuitOpen && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            <div className="space-y-2">
+              <p>System monitoring temporarily disabled due to repeated failures.</p>
+              <p className="text-xs text-muted-foreground">
+                Monitoring will resume automatically in {Math.ceil((CIRCUIT_BREAKER_TIMEOUT - (Date.now() - errorState.lastFailureTime)) / 1000)} seconds.
+              </p>
+              <Button 
+                onClick={() => {
+                  setErrorState({
+                    consecutiveFailures: 0,
+                    lastFailureTime: 0,
+                    isCircuitOpen: false
+                  });
+                  refreshData();
+                }} 
+                size="sm" 
+                variant="outline"
+              >
+                Force Reset
               </Button>
             </div>
           </AlertDescription>
