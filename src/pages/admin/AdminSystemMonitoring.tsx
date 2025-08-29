@@ -332,7 +332,44 @@ const AdminSystemMonitoring = () => {
             <CardContent>
               <ScrollArea className="h-[600px]">
                 <div className="space-y-3">
-                  {errors.map((error) => (
+                  {errors.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <CheckCircle className="h-8 w-8 mx-auto mb-2" />
+                      <p className="text-lg font-medium">No errors found</p>
+                      <p className="text-sm">System is running smoothly</p>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="mt-4"
+                        onClick={async () => {
+                          try {
+                            await supabase.rpc('log_system_error', {
+                              p_error_type: 'test',
+                              p_severity: 'low', 
+                              p_message: 'Test error from admin panel',
+                              p_component_name: 'AdminSystemMonitoring',
+                              p_route_path: '/admin/monitoring'
+                            });
+                            toast({
+                              title: 'Success',
+                              description: 'Test error created successfully',
+                            });
+                            await refreshData();
+                          } catch (error) {
+                            console.error('Failed to create test error:', error);
+                            toast({
+                              title: 'Error',
+                              description: 'Failed to create test error',
+                              variant: 'destructive',
+                            });
+                          }
+                        }}
+                      >
+                        Create Test Error
+                      </Button>
+                    </div>
+                  ) : (
+                    errors.map((error) => (
                     <div
                       key={error.id}
                       className="flex items-start justify-between p-4 border rounded-lg hover:bg-muted/50 cursor-pointer"
@@ -376,7 +413,8 @@ const AdminSystemMonitoring = () => {
                         </Button>
                       )}
                     </div>
-                  ))}
+                    ))
+                  )}
                 </div>
               </ScrollArea>
             </CardContent>

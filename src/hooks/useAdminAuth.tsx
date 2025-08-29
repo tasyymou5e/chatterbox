@@ -30,6 +30,18 @@ export const useAdminAuth = (): AdminAuthContextType => {
     initialize();
   }, [initialize]);
 
+  // Enhanced debugging information
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      console.log('Auth State Debug:', {
+        user: user ? { id: user.id, email: user.email } : null,
+        session: session ? 'present' : 'null',
+        isAdmin,
+        loading
+      });
+    }
+  }, [user, session, isAdmin, loading]);
+
   return {
     user,
     session,
