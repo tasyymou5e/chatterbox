@@ -35,7 +35,7 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
         if (authStore) {
           authStore.getState().emergencyLogout();
         }
-      }, 12000); // 12 second timeout for signOut
+      }, 8000); // 8 second timeout for signOut (reduced for faster recovery)
       
       return () => clearTimeout(timeout);
     }

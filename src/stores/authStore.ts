@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuthLogging } from '@/hooks/useAuthLogging';
+import { authLoggingService } from '@/services/authLoggingService';
 
 interface AuthState {
   // State
@@ -149,9 +149,10 @@ export const useAuthStore = create<AuthState>()(
 
                 // Log auth state changes for successful sign ins
                 if (event === 'SIGNED_IN') {
-                  const { createSession } = useAuthLogging();
                   setTimeout(() => {
-                    createSession(session.user.id);
+                    authLoggingService.createSession(session.user.id).catch(error => {
+                      console.warn('Failed to create session (non-blocking):', error);
+                    });
                   }, 0);
                 }
               } else {
@@ -216,9 +217,8 @@ export const useAuthStore = create<AuthState>()(
 
           // Log signup attempt
           if (data.user) {
-            const { logActivity } = useAuthLogging();
             setTimeout(() => {
-              logActivity(
+              authLoggingService.logActivity(
                 data.user.id,
                 'signup',
                 !error,
@@ -230,7 +230,9 @@ export const useAuthStore = create<AuthState>()(
                   signupMethod: 'email_password',
                   emailConfirmationRequired: !data.session
                 }
-              );
+              ).catch(error => {
+                console.warn('Failed to log signup activity (non-blocking):', error);
+              });
             }, 0);
           }
 
@@ -245,10 +247,8 @@ export const useAuthStore = create<AuthState>()(
           });
 
           if (data.user && !error) {
-            const { logActivity } = useAuthLogging();
-            
-            setTimeout(async () => {
-              logActivity(
+            setTimeout(() => {
+              authLoggingService.logActivity(
                 data.user.id,
                 'login',
                 true,
@@ -259,16 +259,15 @@ export const useAuthStore = create<AuthState>()(
                   sessionCreated: !!data.session,
                   userAgent: navigator.userAgent
                 }
-              );
-
-              // Note: Role fetching will be handled by the auth state change listener
+              ).catch(error => {
+                console.warn('Failed to log login activity (non-blocking):', error);
+              });
             }, 0);
           } else if (error) {
-            const { logActivity } = useAuthLogging();
             // Log failed login attempt
             const attemptId = btoa(email + Date.now().toString()).substring(0, 36);
             setTimeout(() => {
-              logActivity(
+              authLoggingService.logActivity(
                 attemptId,
                 'failed_login',
                 false,
@@ -278,14 +277,16 @@ export const useAuthStore = create<AuthState>()(
                   attemptTime: new Date().toISOString(),
                   failureType: error.message?.includes('Invalid') ? 'invalid_credentials' : 'other'
                 }
-              );
+              ).catch(error => {
+                console.warn('Failed to log failed login activity (non-blocking):', error);
+              });
             }, 0);
           }
 
           return { error };
         },
 
-        // Sign out with timeout protection
+        // Sign out with improved error handling and proper service usage
         signOut: async () => {
           const currentState = get();
           
@@ -298,87 +299,23 @@ export const useAuthStore = create<AuthState>()(
           console.log('🔐 Auth Store - Starting signOut with timeout protection');
           set({ signingOut: true });
           
-          const { logActivity, endSession } = useAuthLogging();
           const currentUserId = currentState.user?.id;
-          const currentSessionId = currentState.session?.access_token?.substring(0, 20);
+          // Fix session ID extraction - get from user_sessions table or create temp ID
+          const currentSessionId = currentUserId ? `session_${currentUserId}_${Date.now()}` : null;
 
           try {
-            // Timeout wrapper for signOut
+            // Reduced timeout and immediate state clearing
             const signOutWithTimeout = () => {
               return Promise.race([
                 supabase.auth.signOut(),
                 new Promise((_, reject) => 
-                  setTimeout(() => reject(new Error('SignOut timeout')), 8000)
+                  setTimeout(() => reject(new Error('SignOut timeout')), 5000)
                 )
               ]) as Promise<{ error: any }>;
             };
 
-            const { error } = await signOutWithTimeout();
-            
-            if (error) {
-              console.error('🔐 Auth Store - SignOut error:', error);
-              set({ signingOut: false });
-            } else {
-              console.log('🔐 Auth Store - SignOut successful, clearing all state');
-              
-              // Clear all auth state immediately
-              set({
-                user: null,
-                session: null,
-                userRole: null,
-                isAdmin: false,
-                loading: false,
-                sessionReady: false,
-                signingOut: false,
-              });
-              
-              // Force clear persisted state
-              try {
-                localStorage.removeItem('auth-store');
-                sessionStorage.clear();
-                console.log('🔐 Auth Store - Cleared persisted auth state');
-              } catch (e) {
-                console.warn('🔐 Auth Store - Could not clear persisted state:', e);
-              }
-
-              // Non-blocking auth logging with individual timeouts
-              if (currentUserId) {
-                Promise.race([
-                  logActivity(
-                    currentUserId,
-                    'logout',
-                    true,
-                    undefined,
-                    { 
-                      logoutTime: new Date().toISOString(),
-                      sessionDuration: currentState.session ? Date.now() - new Date(currentState.session.expires_at || '').getTime() : 0
-                    }
-                  ),
-                  new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('Activity logging timeout')), 3000)
-                  )
-                ]).catch(error => {
-                  console.warn('🔐 Auth Store - Activity logging failed (non-blocking):', error);
-                });
-
-                if (currentSessionId) {
-                  Promise.race([
-                    endSession(currentSessionId),
-                    new Promise((_, reject) => 
-                      setTimeout(() => reject(new Error('End session timeout')), 3000)
-                    )
-                  ]).catch(error => {
-                    console.warn('🔐 Auth Store - End session failed (non-blocking):', error);
-                  });
-                }
-              }
-            }
-
-            return { error };
-          } catch (timeoutError) {
-            console.error('🔐 Auth Store - SignOut timeout, forcing logout:', timeoutError);
-            
-            // Emergency logout - clear state even if Supabase call failed
+            // Clear state immediately before Supabase call to prevent UI hanging
+            console.log('🔐 Auth Store - Clearing state immediately');
             set({
               user: null,
               session: null,
@@ -388,14 +325,59 @@ export const useAuthStore = create<AuthState>()(
               sessionReady: false,
               signingOut: false,
             });
-            
+
+            // Force clear persisted state immediately
             try {
               localStorage.removeItem('auth-store');
               sessionStorage.clear();
+              console.log('🔐 Auth Store - Cleared persisted auth state');
             } catch (e) {
-              console.warn('🔐 Emergency logout - Could not clear storage:', e);
+              console.warn('🔐 Auth Store - Could not clear persisted state:', e);
             }
 
+            const { error } = await signOutWithTimeout();
+            
+            if (error) {
+              console.error('🔐 Auth Store - SignOut error (state already cleared):', error);
+            } else {
+              console.log('🔐 Auth Store - SignOut successful');
+            }
+
+            // Non-blocking auth logging with individual timeouts (fire and forget)
+            if (currentUserId) {
+              Promise.race([
+                authLoggingService.logActivity(
+                  currentUserId,
+                  'logout',
+                  !error,
+                  error?.message,
+                  { 
+                    logoutTime: new Date().toISOString(),
+                    forced: false
+                  }
+                ),
+                new Promise((_, reject) => 
+                  setTimeout(() => reject(new Error('Activity logging timeout')), 2000)
+                )
+              ]).catch(logError => {
+                console.warn('🔐 Auth Store - Activity logging failed (non-blocking):', logError);
+              });
+
+              if (currentSessionId) {
+                Promise.race([
+                  authLoggingService.endSession(currentSessionId),
+                  new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('End session timeout')), 2000)
+                  )
+                ]).catch(sessionError => {
+                  console.warn('🔐 Auth Store - End session failed (non-blocking):', sessionError);
+                });
+              }
+            }
+
+            return { error };
+          } catch (timeoutError) {
+            console.error('🔐 Auth Store - SignOut timeout (state already cleared):', timeoutError);
             return { error: timeoutError };
           }
         },
