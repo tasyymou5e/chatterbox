@@ -66,12 +66,16 @@ const App = () => (
               } />
               <Route path="/admin/debug" element={
                 <ErrorBoundary componentName="AdminDebug">
-                  <AdminDebugPanel />
+                  <AdminRoute>
+                    <AdminDebugPanel />
+                  </AdminRoute>
                 </ErrorBoundary>
               } />
               <Route path="/admin/bootstrap" element={
                 <ErrorBoundary componentName="AdminBootstrap">
-                  <AdminBootstrap />
+                  <AdminRoute>
+                    <AdminBootstrap />
+                  </AdminRoute>
                 </ErrorBoundary>
               } />
               

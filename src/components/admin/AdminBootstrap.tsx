@@ -14,8 +14,8 @@ export const AdminBootstrap = () => {
   const [hasAdmins, setHasAdmins] = useState<boolean | null>(null);
   const [isChecking, setIsChecking] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
-  const [email, setEmail] = useState('admin@sparkle-path.com');
-  const [password, setPassword] = useState('SecureAdmin123!');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   useEffect(() => {
     checkForAdmins();
@@ -48,6 +48,16 @@ export const AdminBootstrap = () => {
       toast({
         title: "Missing Information",
         description: "Please provide both email and password",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate password strength
+    if (password.length < 8) {
+      toast({
+        title: "Weak Password",
+        description: "Password must be at least 8 characters long",
         variant: "destructive",
       });
       return;

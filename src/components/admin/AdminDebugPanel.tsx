@@ -22,8 +22,8 @@ export const AdminDebugPanel = () => {
   }
 
   const [testState, setTestState] = useState('Initial State');
-  const [adminEmail, setAdminEmail] = useState('admin@test.com');
-  const [adminPassword, setAdminPassword] = useState('admin123!');
+  const [adminEmail, setAdminEmail] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
   const [isCreatingAdmin, setIsCreatingAdmin] = useState(false);
 
   const handleTestClick = () => {
@@ -48,6 +48,16 @@ export const AdminDebugPanel = () => {
       toast({
         title: "Missing Information", 
         description: "Please provide both email and password",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate password strength
+    if (adminPassword.length < 8) {
+      toast({
+        title: "Weak Password",
+        description: "Password must be at least 8 characters long",
         variant: "destructive",
       });
       return;
