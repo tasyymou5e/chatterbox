@@ -13,12 +13,14 @@ interface AuthState {
   loading: boolean;
   isCheckingRole: boolean;
   sessionReady: boolean;
+  signingOut: boolean;
   
   // Actions
   initialize: () => void;
   signUp: (email: string, password: string, firstName?: string, lastName?: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<{ error: any }>;
+  clearSignOutState: () => void;
   fetchUserRole: (userId: string) => Promise<string | null>;
   checkAdminRole: (userId: string) => Promise<boolean>;
   
@@ -44,6 +46,7 @@ export const useAuthStore = create<AuthState>()(
         loading: true,
         isCheckingRole: false,
         sessionReady: false,
+        signingOut: false,
 
 
         // State setters
@@ -280,43 +283,75 @@ export const useAuthStore = create<AuthState>()(
 
         // Sign out
         signOut: async () => {
-          const { user, session } = get();
-          const currentUserId = user?.id;
-          const currentSessionId = session?.access_token?.substring(0, 20);
+          const currentState = get();
+          
+          // Prevent multiple signOut attempts
+          if (currentState.signingOut) {
+            console.log('🔐 Auth Store - SignOut already in progress, skipping');
+            return { error: null };
+          }
+
+          console.log('🔐 Auth Store - Starting signOut');
+          set({ signingOut: true });
+          
+          const { logActivity, endSession } = useAuthLogging();
+          const currentUserId = currentState.user?.id;
+          const currentSessionId = currentState.session?.access_token?.substring(0, 20);
 
           const { error } = await supabase.auth.signOut();
+          
+          if (error) {
+            console.error('🔐 Auth Store - SignOut error:', error);
+            set({ signingOut: false }); // Reset signingOut on error
+          } else {
+            console.log('🔐 Auth Store - SignOut successful, clearing all state');
+            
+            // Clear all auth state including persisted state
+            set({
+              user: null,
+              session: null,
+              userRole: null,
+              isAdmin: false,
+              loading: false,
+              sessionReady: false,
+              signingOut: false,
+            });
+            
+            // Force clear persisted state
+            try {
+              localStorage.removeItem('auth-store');
+              sessionStorage.clear();
+              console.log('🔐 Auth Store - Cleared persisted auth state');
+            } catch (e) {
+              console.warn('🔐 Auth Store - Could not clear persisted state:', e);
+            }
 
-          // Clear state
-          set({ 
-            userRole: null, 
-            isAdmin: false,
-            user: null,
-            session: null,
-            sessionReady: false
-          });
+            // Log signout after successful signout
+            if (currentUserId) {
+              setTimeout(() => {
+                logActivity(
+                  currentUserId,
+                  'logout',
+                  true,
+                  undefined,
+                  { 
+                    logoutTime: new Date().toISOString(),
+                    sessionDuration: currentState.session ? Date.now() - new Date(currentState.session.expires_at || '').getTime() : 0
+                  }
+                );
 
-          // Log signout
-          if (currentUserId && !error) {
-            const { logActivity, endSession } = useAuthLogging();
-            setTimeout(() => {
-              logActivity(
-                currentUserId,
-                'logout',
-                true,
-                undefined,
-                { 
-                  logoutTime: new Date().toISOString(),
-                  sessionDuration: session ? Date.now() - new Date(session.expires_at || '').getTime() : 0
+                if (currentSessionId) {
+                  endSession(currentSessionId);
                 }
-              );
-
-              if (currentSessionId) {
-                endSession(currentSessionId);
-              }
-            }, 0);
+              }, 0);
+            }
           }
 
           return { error };
+        },
+
+        clearSignOutState: () => {
+          set({ signingOut: false });
         },
       }),
       {

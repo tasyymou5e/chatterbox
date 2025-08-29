@@ -9,11 +9,12 @@ import {
   Settings, 
   LogOut,
   Shield,
-  Activity
+  Activity,
+  Loader2
 } from 'lucide-react';
 
 export default function AdminLayout() {
-  const { signOut, user } = useAdminAuth();
+  const { signOut, user, signingOut } = useAdminAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
@@ -31,7 +32,7 @@ export default function AdminLayout() {
         title: "Signed out successfully",
         description: "You have been logged out of the admin portal.",
       });
-      navigate('/admin/login');
+      // Let AdminRoute handle the redirect automatically - no manual navigation
     }
   };
 
@@ -127,10 +128,20 @@ export default function AdminLayout() {
                 variant="outline"
                 size="sm"
                 onClick={handleSignOut}
-                className="border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
+                disabled={signingOut}
+                className="border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white disabled:opacity-50"
               >
-                <LogOut className="h-4 w-4 mr-2" />
-                Sign Out
+                {signingOut ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Signing Out...
+                  </>
+                ) : (
+                  <>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign Out
+                  </>
+                )}
               </Button>
             </div>
           </div>

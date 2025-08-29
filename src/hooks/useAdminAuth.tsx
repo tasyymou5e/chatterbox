@@ -7,6 +7,7 @@ export interface AdminAuthContextType {
   session: any;
   loading: boolean;
   isAdmin: boolean;
+  signingOut: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<{ error: any }>;
 }
@@ -18,6 +19,7 @@ export const useAdminAuth = (): AdminAuthContextType => {
     session,
     loading,
     isAdmin,
+    signingOut,
     initialize,
     signIn: storeSignIn,
     signOut: storeSignOut
@@ -33,6 +35,7 @@ export const useAdminAuth = (): AdminAuthContextType => {
     session,
     loading,
     isAdmin,
+    signingOut,
     signIn: storeSignIn,
     signOut: storeSignOut
   };

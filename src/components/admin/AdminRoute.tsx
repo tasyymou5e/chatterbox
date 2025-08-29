@@ -8,7 +8,7 @@ interface AdminRouteProps {
 }
 
 export const AdminRoute = ({ children }: AdminRouteProps) => {
-  const { loading, user, isAdmin } = useAdminAuth();
+  const { loading, user, isAdmin, signingOut } = useAdminAuth();
 
   // Emergency timeout - if loading takes too long, show fallback
   const [showEmergencyFallback, setShowEmergencyFallback] = React.useState(false);
@@ -45,16 +45,19 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
     );
   }
 
-  // Show loading for admin check
-  if (loading) {
+  // Show loading for admin check or during signOut
+  if (loading || signingOut) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
-        <p className="text-sm text-muted-foreground">Verifying admin access...</p>
+        <p className="text-sm text-muted-foreground">
+          {signingOut ? 'Signing out...' : 'Verifying admin access...'}
+        </p>
       </div>
     );
   }
 
+  // Only redirect if not signing out (to prevent race condition)
   if (!user || !isAdmin) {
     return <Navigate to="/admin/login" replace />;
   }
