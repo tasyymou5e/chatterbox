@@ -1,18 +1,26 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
+import { useUIStore } from '@/stores/uiStore';
 
 interface AdminBootstrapRouteProps {
   children: React.ReactNode;
 }
 
 export const AdminBootstrapRoute = ({ children }: AdminBootstrapRouteProps) => {
-  const [loading, setLoading] = useState(true);
-  const [hasAdmins, setHasAdmins] = useState<boolean | null>(null);
+  const { 
+    getLoading, 
+    setLoading, 
+    setError 
+  } = useUIStore();
+  
+  const loading = getLoading('adminBootstrapCheck');
+  const [hasAdmins, setHasAdmins] = React.useState<boolean | null>(null);
 
   useEffect(() => {
     const checkForAdmins = async () => {
+      setLoading('adminBootstrapCheck', true);
       try {
         const { data, error } = await supabase
           .from('user_roles')
@@ -22,20 +30,22 @@ export const AdminBootstrapRoute = ({ children }: AdminBootstrapRouteProps) => {
         
         if (error) {
           console.error('Error checking for admins:', error);
+          setError('adminBootstrapCheck', 'Failed to check for existing admins');
           setHasAdmins(false);
         } else {
           setHasAdmins(data && data.length > 0);
         }
       } catch (error) {
         console.error('Error checking for admins:', error);
+        setError('adminBootstrapCheck', 'Unexpected error checking admins');
         setHasAdmins(false);
       } finally {
-        setLoading(false);
+        setLoading('adminBootstrapCheck', false);
       }
     };
 
     checkForAdmins();
-  }, []);
+  }, [setLoading, setError]);
 
   if (loading) {
     return (

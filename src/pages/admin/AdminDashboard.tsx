@@ -21,6 +21,8 @@ import { EngagementChart } from '@/components/analytics/EngagementChart';
 import { RetentionChart } from '@/components/analytics/RetentionChart';
 import { SystemHealthWidget } from '@/components/analytics/SystemHealthWidget';
 import { useAnalytics } from '@/hooks/useAnalytics';
+import { useUIStore } from '@/stores/uiStore';
+import { useAdminStore } from '@/stores/adminStore';
 
 interface DashboardStats {
   totalFamilies: number;
@@ -32,6 +34,17 @@ interface DashboardStats {
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
+  const { 
+    getLoading, 
+    setLoading, 
+    setError 
+  } = useUIStore();
+  const {
+    systemMetrics,
+    fetchSystemMetrics
+  } = useAdminStore();
+  
+  const dashboardLoading = getLoading('adminDashboard');
   const [stats, setStats] = useState<DashboardStats>({
     totalFamilies: 0,
     totalUsers: 0,
@@ -39,7 +52,6 @@ export default function AdminDashboard() {
     totalChildren: 0,
     recentSignups: 0,
   });
-  const [loading, setLoading] = useState(true);
   const { 
     engagementMetrics, 
     dailyAnalytics, 
@@ -55,6 +67,7 @@ export default function AdminDashboard() {
 
   // Extract fetchDashboardStats to be reusable
   const fetchDashboardStats = async () => {
+    setLoading('adminDashboard', true);
     try {
       // Get total families
       const { count: familiesCount } = await supabase
@@ -97,7 +110,7 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
     } finally {
-      setLoading(false);
+      setLoading('adminDashboard', false);
     }
   };
 
@@ -123,7 +136,7 @@ export default function AdminDashboard() {
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold text-white">
-          {loading ? '...' : value.toLocaleString()}
+          {dashboardLoading ? '...' : value.toLocaleString()}
         </div>
         <p className="text-xs text-gray-400">
           {description}
@@ -182,13 +195,13 @@ export default function AdminDashboard() {
           change={stats.recentSignups > 0 ? ((stats.recentSignups / stats.totalFamilies) * 100) : 0}
           trend={stats.recentSignups > 0 ? 'up' : 'stable'}
           icon={Home}
-          loading={loading}
+          loading={dashboardLoading}
         />
         <AnalyticsKPICard
           title="Total Users"
           value={stats.totalUsers}
           icon={Users}
-          loading={loading}
+          loading={dashboardLoading}
         />
         <AnalyticsKPICard
           title="Active Users"
@@ -210,7 +223,7 @@ export default function AdminDashboard() {
           title="Recent Signups"
           value={stats.recentSignups}
           icon={TrendingUp}
-          loading={loading}
+          loading={dashboardLoading}
         />
       </div>
 

@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { supabase } from '@/integrations/supabase/client';
 import FamilyNameSuggestions from './FamilyNameSuggestions';
+import { useUIStore } from '@/stores/uiStore';
 
 interface Child {
   firstName: string;
@@ -32,7 +33,14 @@ interface CreateTestFamilyDialogProps {
 export default function CreateTestFamilyDialog({ open, onOpenChange, onSuccess }: CreateTestFamilyDialogProps) {
   const { user } = useAdminAuth();
   const { toast } = useToast();
-  const [loading, setLoading] = useState(false);
+  const { 
+    getLoading, 
+    setLoading, 
+    setError,
+    clearError 
+  } = useUIStore();
+  
+  const loading = getLoading('createTestFamily');
   
   // Form state
   const [displayName, setDisplayName] = useState('');
@@ -133,7 +141,7 @@ export default function CreateTestFamilyDialog({ open, onOpenChange, onSuccess }
       return;
     }
 
-    setLoading(true);
+    setLoading('createTestFamily', true);
     try {
       const familyData = {
         displayName: displayName.trim(),
@@ -177,7 +185,7 @@ export default function CreateTestFamilyDialog({ open, onOpenChange, onSuccess }
         description: error instanceof Error ? error.message : "Unknown error occurred"
       });
     } finally {
-      setLoading(false);
+      setLoading('createTestFamily', false);
     }
   };
 

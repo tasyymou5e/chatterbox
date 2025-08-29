@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from './useAuth';
+import { useAuthStore } from '@/stores/authStore';
 
 export const useAuthNavigation = () => {
   const navigate = useNavigate();
-  const { user, userRole, loading } = useAuth();
+  const { user, userRole, loading } = useAuthStore();
 
   useEffect(() => {
     // Make navigate available globally for auth context

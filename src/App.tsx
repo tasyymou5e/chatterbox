@@ -3,8 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "@/hooks/useAuth";
-import { AdminAuthProvider } from "@/hooks/useAdminAuth";
+// Context providers removed - using Zustand stores now
 import { AdminRoute } from "@/components/admin/AdminRoute";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
@@ -41,9 +40,7 @@ const queryClient = new QueryClient({
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <AdminAuthProvider>
-        <TooltipProvider>
+    <TooltipProvider>
           <ErrorBoundary componentName="App">
             <Toaster />
             <Sonner />
@@ -127,8 +124,6 @@ const App = () => (
             </BrowserRouter>
           </ErrorBoundary>
         </TooltipProvider>
-      </AdminAuthProvider>
-    </AuthProvider>
   </QueryClientProvider>
 );
 
