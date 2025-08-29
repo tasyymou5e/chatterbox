@@ -2,6 +2,7 @@ import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { AdminErrorBoundary } from '@/components/admin/AdminErrorBoundary';
 import { 
   Users, 
   Home, 
@@ -150,7 +151,9 @@ export default function AdminLayout() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <Outlet />
+        <AdminErrorBoundary componentName="AdminMain">
+          <Outlet />
+        </AdminErrorBoundary>
       </main>
     </div>
   );
