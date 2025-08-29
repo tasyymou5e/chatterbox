@@ -40,10 +40,16 @@ src/
 ├── components/
 │   ├── admin/           # Admin-specific components
 │   ├── analytics/       # Data visualization components  
+│   ├── chores/          # Chore management components
+│   ├── games/           # Educational content components
 │   ├── reports/         # Reporting components
 │   └── ui/              # Reusable UI components (Shadcn)
 ├── hooks/               # Custom React hooks
 ├── pages/               # Route components
+│   ├── admin/           # Admin dashboard pages
+│   ├── children/        # Child-specific pages
+│   └── parent/          # Parent dashboard pages
+├── stores/              # Zustand state management
 ├── lib/                 # Utility functions
 └── integrations/        # External service integrations
     └── supabase/        # Supabase client and types
@@ -54,12 +60,18 @@ src/
 - **Component Variants**: Using `class-variance-authority` for type-safe styling
 - **Responsive Design**: Mobile-first approach with Tailwind breakpoints
 - **Dark Mode**: Theme-aware components using CSS variables
+- **Autism-Friendly Features**: Reduced motion, high contrast, calming colors
 
-#### State Management
-- **Authentication State**: Custom hooks (`useAuth`, `useAdminAuth`)
-- **Component State**: React hooks (useState, useEffect, useReducer)
-- **Form State**: React Hook Form with Zod validation
-- **Server State**: Direct Supabase queries (no additional state management library)
+#### State Management (CURRENT: Zustand-Based)
+- **Centralized Stores**: Zustand stores with TypeScript support
+  - `authStore`: Authentication state and actions
+  - `adminStore`: Admin-specific state management
+  - `choreStore`: Chore management state
+  - `gamificationStore`: Points, levels, achievements
+  - `analyticsStore`: Analytics data caching
+- **Bridge Adapters**: Compatibility layer for existing hooks
+- **Persistence**: Selected state persisted to localStorage
+- **DevTools**: Redux DevTools integration for debugging
 
 ### Backend Architecture
 
@@ -78,18 +90,45 @@ families: Family group definitions
 family_members: Parent-child relationships
 family_activity_logs: Family-specific audit logs
 
+-- Content management
+content_categories: Educational content organization
+content_items: Games, videos, articles, activities
+content_interactions: User engagement tracking
+content_favorites: User bookmarks
+
+-- Gamification system
+chore_categories: Chore organization
+chore_templates: Reusable chore definitions
+chores: Family-specific chore instances
+chore_assignments: Task assignments to children
+chore_completions: Completion tracking
+achievements: Achievement definitions
+user_achievements: Unlocked achievements
+user_points: Point tracking (current, lifetime, weekly, monthly)
+user_levels: Level progression tracking
+family_leaderboards: Family ranking system
+
 -- Analytics & monitoring
 analytics_metrics: System-wide metrics
 engagement_metrics: User engagement tracking
 system_health_metrics: Infrastructure monitoring
+system_errors: Error tracking and resolution
+system_alerts: Critical system notifications
+performance_metrics: Application performance data
+error_patterns: Error grouping and analysis
 daily_analytics: Materialized view for reporting
 ```
 
-##### Security Architecture
-- **Row Level Security (RLS)**: Enabled on all tables
-- **Security Definer Functions**: Prevent RLS recursion
+##### Security Architecture (HARDENED 2025)
+- **Row Level Security (RLS)**: Comprehensive policies on 28+ tables
+- **Security Definer Functions**: 15+ functions preventing RLS recursion
+  - `has_role()`: Role verification without recursion
+  - `is_family_creator()`: Family ownership checks
+  - `is_family_member()`: Family membership verification
 - **Role-Based Access**: Three-tier system (admin, parent, child)
-- **Data Isolation**: Users only see their authorized data
+- **Data Isolation**: Strict family-based data boundaries
+- **System Table Protection**: Service role and admin-only access
+- **Activity Logging**: Comprehensive audit trail for all operations
 
 #### Authentication Flow
 ```mermaid
