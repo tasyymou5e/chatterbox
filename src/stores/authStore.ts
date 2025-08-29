@@ -291,11 +291,11 @@ export const useAuthStore = create<AuthState>()(
           }
         },
 
-        // Enhanced signIn with atomic state updates to prevent race conditions
+        // Enhanced signIn with atomic state updates and detailed error logging
         signIn: async (email: string, password: string) => {
           try {
             set({ loading: true, isCheckingRole: true });
-            console.log('🔐 Starting sign in process for:', email);
+            console.log('🔐 AuthStore: Starting sign in for', email);
             
             const { data, error } = await supabase.auth.signInWithPassword({
               email,
@@ -303,12 +303,56 @@ export const useAuthStore = create<AuthState>()(
             });
 
             if (error) {
-              console.error('❌ Sign in error:', error);
+              console.error('🔐 AuthStore: Sign in error details:', {
+                code: error.status,
+                message: error.message,
+                name: error.name,
+                details: error
+              });
+              
+              // Enhanced error diagnostics for common login issues
+              if (error.message?.includes('Invalid login credentials')) {
+                console.error('🔐 AuthStore: Invalid credentials detected - possible causes:');
+                console.error('  • Password incorrect for user:', email);
+                console.error('  • Account locked or disabled');
+                console.error('  • ⚠️  LEAKED PASSWORD PROTECTION may be blocking login');
+                console.error('  • Email not confirmed (check email_confirmed_at in auth.users)');
+                console.error('  • Rate limiting active');
+                console.error('💡 Check Supabase Auth settings: https://supabase.com/dashboard/project/lxuqfgbukrrickanmmic/auth/providers');
+              }
+              
+              // Log failed login attempt
+              setTimeout(() => {
+                authLoggingService.logActivity(
+                  email, // Use email when user ID not available
+                  'failed_login',
+                  false,
+                  error.message,
+                  {
+                    email,
+                    errorCode: error.status,
+                    errorName: error.name,
+                    timestamp: new Date().toISOString(),
+                    attemptMethod: 'email_password'
+                  }
+                ).catch(logError => {
+                  console.warn('Failed to log failed login (non-blocking):', logError);
+                });
+              }, 0);
+              
               set({ loading: false, isCheckingRole: false });
               return { error };
             }
 
             if (data?.user && data?.session) {
+              console.log('🔐 AuthStore: Sign in successful, user details:', {
+                id: data.user.id,
+                email: data.user.email,
+                emailConfirmed: data.user.email_confirmed_at,
+                lastSignIn: data.user.last_sign_in_at,
+                provider: data.user.app_metadata?.provider
+              });
+              
               console.log('✅ Auth successful, establishing session synchronously...');
               
               // Synchronously check role to prevent race conditions
@@ -328,9 +372,9 @@ export const useAuthStore = create<AuthState>()(
                 sessionReady: true
               });
               
-              console.log('🎯 Auth state established atomically');
+              console.log('🎯 Auth state established atomically for', email);
 
-              // Log the sign-in activity asynchronously (non-blocking)
+              // Log successful sign-in activity asynchronously (non-blocking)
               setTimeout(() => {
                 authLoggingService.logActivity(
                   data.user.id,
@@ -341,7 +385,8 @@ export const useAuthStore = create<AuthState>()(
                     email: data.user.email,
                     role: userRole,
                     timestamp: new Date().toISOString(),
-                    loginMethod: 'email_password'
+                    loginMethod: 'email_password',
+                    provider: data.user.app_metadata?.provider || 'email'
                   }
                 ).catch(logError => {
                   console.warn('Failed to log sign-in activity (non-blocking):', logError);
@@ -351,7 +396,7 @@ export const useAuthStore = create<AuthState>()(
               return { error: null, user: data.user, isAdmin };
             }
 
-            console.error('❌ No user or session returned');
+            console.error('❌ No user or session returned despite successful auth');
             set({ loading: false, isCheckingRole: false });
             return { error: { message: 'No user or session returned' } };
           } catch (err: any) {
