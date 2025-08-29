@@ -216,7 +216,10 @@ const DatabaseLogs = () => {
   );
 };
 
-// Lazy load log components to avoid import issues temporarily
+import { ApplicationLogs } from '@/components/admin/ApplicationLogs';
+import { UserActivityLogs } from '@/components/admin/UserActivityLogs';
+import { SystemHealthLogs } from '@/components/admin/SystemHealthLogs';
+
 const LogsTabContent = () => {
   return (
     <Tabs defaultValue="application" className="w-full">
@@ -239,9 +242,7 @@ const LogsTabContent = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground">
-              Real application logging system with live error monitoring enabled
-            </p>
+            <ApplicationLogs />
           </CardContent>
         </Card>
       </TabsContent>
@@ -258,9 +259,7 @@ const LogsTabContent = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground">
-              User activity monitoring system ready - Real data from user_activity_logs
-            </p>
+            <UserActivityLogs />
           </CardContent>
         </Card>
       </TabsContent>
@@ -294,9 +293,7 @@ const LogsTabContent = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground">
-              Health monitoring system active - Performance metrics collection enabled
-            </p>
+            <SystemHealthLogs />
           </CardContent>
         </Card>
       </TabsContent>
