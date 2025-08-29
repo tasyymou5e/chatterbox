@@ -15,27 +15,43 @@ Empowering autistic children through technology, education, and family connectio
 
 ---
 
-## 🏗️ CURRENT ARCHITECTURE STATUS (2025)
+## 🏗️ CURRENT ARCHITECTURE STATUS (2025-08-29)
 
-### **State Management Migration (COMPLETED)**
-The application has fully migrated from React Context to Zustand for centralized state management:
+### **State Management Migration (✅ COMPLETED)**
+The application has successfully migrated from React Context to Zustand for centralized state management:
+
+**Core Zustand Stores:**
+- `authStore.ts` - Centralized authentication with session persistence
+- `uiStore.ts` - Global UI state management (loading, errors, modals)
+- `choreStore.ts` - Chore management operations and state
+- `analyticsStore.ts` - Analytics data caching and operations
+- `gamificationStore.ts` - Points, achievements, leaderboards
+- `adminStore.ts` - Admin-specific system metrics and operations
 
 ```typescript
-// NEW: Centralized Zustand Auth Store
+// Current: Enhanced Auth Store with Error Logging
 interface AuthState {
+  // State
   user: User | null;
   session: Session | null;
   userRole: string | null;
   isAdmin: boolean;
   loading: boolean;
-  // Actions
+  isCheckingRole: boolean;
+  sessionReady: boolean;
+  signingOut: boolean;
+  
+  // Enhanced Actions
   initialize: () => void;
   signUp: (email: string, password: string, firstName?: string, lastName?: string) => Promise<{ error: any }>;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signIn: (email: string, password: string) => Promise<{ error: any; user?: any; isAdmin?: boolean }>;
   signOut: () => Promise<{ error: any }>;
+  resetPassword: (email: string, userType?: 'admin' | 'user') => Promise<{ error: any }>;
+  fetchUserRole: (userId: string) => Promise<string | null>;
+  checkAdminRole: (userId: string) => Promise<boolean>;
 }
 
-// Bridge adapters maintain compatibility
+// Bridge adapters maintain backward compatibility
 export const useAuth = (): AuthContextType => {
   const store = useAuthStore();
   return {
@@ -45,26 +61,35 @@ export const useAuth = (): AuthContextType => {
     loading: store.loading,
     signUp: store.signUp,
     signIn: store.signIn,
-    signOut: store.signOut
+    signOut: store.signOut,
+    resetPassword: store.resetPassword
   };
 };
 ```
 
-### **Security Architecture (HARDENED + ENHANCED 2025)**
-Recent security fixes and new enhancements include:
+### **Security Architecture (HARDENED + ENHANCED 2025-08-29)**
+✅ **Recent Critical Security Fixes Completed:**
 - **RLS Policy Hardening**: Removed dangerous "deny all" policies
-- **Authentication Centralization**: Single source of truth for auth state
+- **Authentication Centralization**: Single Zustand store for all auth state
 - **Admin Security**: Proper role verification with security definer functions
-- **System Table Protection**: Service role and admin-only access for 14+ system tables
-- **🆕 Rate Limiting**: Comprehensive rate limiting on all edge functions
-- **🆕 Enhanced Password Security**: Strong password validation with autism-friendly feedback
-- **🆕 Admin Action Monitoring**: Enhanced audit logging for all administrative actions
-- **🆕 Security Utilities**: Centralized rate limiting and password validation systems
+- **System Table Protection**: Service role and admin-only access for 15+ system tables
+- **Enhanced Error Logging**: Comprehensive authentication error diagnostics
+- **Activity Logging Service**: All auth events logged with device info
+- **Profile Creation**: Automated profile creation for missing users
+- **Admin Action Monitoring**: Enhanced audit logging for all administrative actions
+
+#### **🔧 AUTHENTICATION ENHANCEMENTS (2025-08-29)**
+- **Enhanced Error Diagnostics**: Detailed logging for login failures
+- **Leaked Password Detection**: Built-in diagnostic warnings for auth issues
+- **Race Condition Prevention**: Atomic state updates in auth store
+- **Session Management**: Proper timeout handling and emergency logout
+- **Admin Role Verification**: Recursive-safe role checking with retries
 
 #### **⚠️ CRITICAL SECURITY WARNING**
 - **Leaked Password Protection**: Currently DISABLED in Supabase Auth settings
-- **Action Required**: Enable in Supabase Dashboard → Authentication → Settings
+- **Action Required**: Enable in Supabase Dashboard → Authentication → Settings  
 - **Risk Level**: HIGH - Users can use compromised passwords
+- **Recent Investigation**: Resolved papabear@wccgroup.net login issues via profile creation
 
 ---
 
@@ -115,56 +140,136 @@ Complex family creation handled by edge functions with atomic transactions:
 6. **Family Association**: Link all members to family structure
 7. **Activity Logging**: Record all creation activities for audit trail
 
-### **Authentication State Management (CURRENT)**
+### **Authentication State Management (CURRENT - ENHANCED 2025-08-29)**
 
-#### **Centralized Zustand Store**
+#### **Production-Ready Zustand Store with Enhanced Error Handling**
 ```typescript
-// Current Implementation: Single source of truth
+// Current Implementation: Enhanced authentication with detailed error diagnostics
 export const useAuthStore = create<AuthState>()(
   devtools(
     persist(
       (set, get) => ({
-        // State
+        // Enhanced State
         user: null,
         session: null,
         userRole: null,
         isAdmin: false,
         loading: true,
+        isCheckingRole: false,
+        sessionReady: false,
+        signingOut: false,
         
-        // Initialize auth listener
-        initialize: async () => {
-          const { data: { session }, error } = await supabase.auth.getSession();
-          if (session) {
-            set({ user: session.user, session });
-            await get().fetchUserRole(session.user.id);
-          }
-          
-          // Set up auth state change listener
-          supabase.auth.onAuthStateChange(async (event, session) => {
-            set({ user: session?.user || null, session });
-            if (session?.user) {
-              await get().fetchUserRole(session.user.id);
-            } else {
-              set({ userRole: null, isAdmin: false });
+        // Enhanced initialization with race condition prevention
+        initialize: () => {
+          // Set up auth state listener FIRST to prevent race conditions
+          const { data: { subscription } } = supabase.auth.onAuthStateChange(
+            async (event, session) => {
+              console.log('🔄 AuthStore: Auth state changed:', event);
+              
+              if (event === 'SIGNED_IN' && session) {
+                // Atomic state update to prevent race conditions
+                set({ 
+                  session, 
+                  user: session?.user ?? null,
+                  loading: false,
+                  sessionReady: true
+                });
+                
+                // Synchronous role checking
+                const role = await get().fetchUserRole(session.user.id);
+                const isAdmin = role === 'admin';
+                set({ userRole: role, isAdmin, isCheckingRole: false });
+              }
             }
-            set({ loading: false });
+          );
+          
+          // Check for existing session AFTER setting up listener
+          supabase.auth.getSession().then(({ data: { session } }) => {
+            set({ 
+              session, 
+              user: session?.user ?? null,
+              loading: false,
+              sessionReady: true
+            });
           });
         },
         
-        // Sign in with comprehensive logging
+        // Enhanced signIn with detailed error diagnostics
         signIn: async (email: string, password: string) => {
-          const { data, error } = await supabase.auth.signInWithPassword({
-            email,
-            password
-          });
-          
-          if (error) {
-            await get().logActivity(null, 'failed_login', false, error.message);
-            return { error };
+          try {
+            set({ loading: true, isCheckingRole: true });
+            
+            const { data, error } = await supabase.auth.signInWithPassword({
+              email,
+              password
+            });
+
+            if (error) {
+              // Enhanced error diagnostics for troubleshooting
+              if (error.message?.includes('Invalid login credentials')) {
+                console.error('🔐 AuthStore: Invalid credentials - possible causes:');
+                console.error('  • Password incorrect for user:', email);
+                console.error('  • ⚠️  LEAKED PASSWORD PROTECTION may be blocking login');
+                console.error('  • Account locked or email not confirmed');
+                console.error('💡 Check Supabase Auth settings');
+              }
+              
+              // Log failed attempt with comprehensive metadata
+              setTimeout(() => {
+                authLoggingService.logActivity(
+                  email,
+                  'failed_login',
+                  false,
+                  error.message,
+                  {
+                    errorCode: error.status,
+                    errorName: error.name,
+                    timestamp: new Date().toISOString(),
+                    attemptMethod: 'email_password'
+                  }
+                );
+              }, 0);
+              
+              set({ loading: false, isCheckingRole: false });
+              return { error };
+            }
+
+            // Synchronous role determination to prevent race conditions
+            const userRole = await get().fetchUserRole(data.user.id);
+            const isAdmin = userRole === 'admin';
+            
+            // Atomic state update for all auth data
+            set({
+              user: data.user,
+              session: data.session,
+              userRole,
+              isAdmin,
+              loading: false,
+              isCheckingRole: false,
+              sessionReady: true
+            });
+
+            // Async activity logging (non-blocking)
+            setTimeout(() => {
+              authLoggingService.logActivity(
+                data.user.id,
+                'login',
+                true,
+                undefined,
+                {
+                  role: userRole,
+                  loginMethod: 'email_password',
+                  timestamp: new Date().toISOString()
+                }
+              );
+            }, 0);
+
+            return { error: null, user: data.user, isAdmin };
+          } catch (err) {
+            console.error('💥 Sign in exception:', err);
+            set({ loading: false, isCheckingRole: false });
+            return { error: err };
           }
-          
-          await get().logActivity(data.user.id, 'login', true);
-          return { error: null };
         }
       }),
       {

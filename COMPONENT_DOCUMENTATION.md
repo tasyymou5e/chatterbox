@@ -486,17 +486,29 @@
 
 ## 🎣 Custom Hooks (`src/hooks/`)
 
-### Authentication Hooks
+### Authentication Hooks (CURRENT: Zustand Bridge Adapters)
 
 #### **useAuth.tsx**
-- **Purpose**: General authentication state management
+- **Purpose**: Bridge adapter for general authentication (uses Zustand authStore internally)
 - **Returns**: `user`, `session`, `userRole`, `loading`, auth methods
-- **Features**: Session persistence, role detection, auto-redirect
+- **Features**: Session persistence, role detection, auto-redirect, enhanced error logging
+- **Migration Status**: ✅ Migrated to use useAuthStore internally with full backward compatibility
 
 #### **useAdminAuth.tsx**
-- **Purpose**: Admin-specific authentication with enhanced security
-- **Returns**: Enhanced auth state with admin checks
-- **Features**: Admin role verification, security logging
+- **Purpose**: Admin-specific authentication bridge adapter with enhanced security
+- **Returns**: Enhanced auth state with admin checks using authStore
+- **Features**: Admin role verification, security logging, recursive-safe role checking
+- **Migration Status**: ✅ Migrated to use useAuthStore internally
+
+#### **useAuthStore** (Direct Zustand Store)
+- **Purpose**: Core authentication state management with enhanced error diagnostics
+- **Returns**: Full auth state with atomic updates and race condition prevention
+- **Features**: 
+  - Enhanced error diagnostics with detailed logging
+  - Atomic state updates to prevent race conditions
+  - Session timeout protection and emergency logout
+  - Comprehensive activity logging with device info
+  - Leaked password detection and diagnostic warnings
 
 #### **useAuthLogging.ts**
 - **Purpose**: Authentication event logging
