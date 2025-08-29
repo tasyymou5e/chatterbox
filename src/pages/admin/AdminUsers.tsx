@@ -55,36 +55,74 @@ export default function AdminUsers() {
 
   const fetchUsers = async () => {
     try {
-      // Get all profiles with their roles and families
+      setLoading(true);
+      console.log('Starting to fetch users...');
+
+      // Get all profiles
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (profilesError) throw profilesError;
+      if (profilesError) {
+        console.error('Profiles error:', profilesError);
+        throw profilesError;
+      }
+      console.log('Fetched profiles:', profiles?.length || 0, 'users');
 
       // Get user roles
       const { data: userRoles, error: rolesError } = await supabase
         .from('user_roles')
         .select('user_id, role');
 
-      if (rolesError) throw rolesError;
+      if (rolesError) {
+        console.error('Roles error:', rolesError);
+        throw rolesError;
+      }
+      console.log('Fetched roles for', userRoles?.length || 0, 'users');
 
-      // Get family memberships
+      // Get family memberships with explicit join
       const { data: familyMembers, error: familiesError } = await supabase
         .from('family_members')
         .select(`
           user_id,
-          families!inner(family_code, display_name)
+          family_id,
+          families:family_id (
+            family_code,
+            display_name
+          )
         `);
 
-      if (familiesError) throw familiesError;
+      if (familiesError) {
+        console.error('Families error:', familiesError);
+        throw familiesError;
+      }
+      console.log('Fetched family memberships:', familyMembers?.length || 0, 'memberships');
 
       // Combine the data
       const usersWithRolesAndFamilies: User[] = (profiles || []).map(profile => {
+        if (!profile.user_id) {
+          console.warn('Profile missing user_id:', profile);
+          return null;
+        }
+
         const userRoleEntries = userRoles?.filter(ur => ur.user_id === profile.user_id) || [];
         const userFamilyEntries = familyMembers?.filter(fm => fm.user_id === profile.user_id) || [];
         
+        const families = userFamilyEntries
+          .map(fm => {
+            // Handle both possible data structures
+            const familyData = fm.families;
+            if (familyData && typeof familyData === 'object') {
+              return {
+                family_code: familyData.family_code || '',
+                display_name: familyData.display_name || ''
+              };
+            }
+            return null;
+          })
+          .filter(Boolean);
+
         return {
           id: profile.user_id,
           email: profile.email || '',
@@ -92,20 +130,18 @@ export default function AdminUsers() {
           last_name: profile.last_name || '',
           created_at: profile.created_at,
           roles: userRoleEntries.map(ur => ur.role),
-          families: userFamilyEntries.map(fm => ({
-            family_code: fm.families.family_code,
-            display_name: fm.families.display_name
-          }))
+          families: families
         };
-      });
+      }).filter(Boolean) as User[];
 
+      console.log('Processed users:', usersWithRolesAndFamilies.length);
       setUsers(usersWithRolesAndFamilies);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching users:', error);
       toast({
         variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to load users'
+        title: 'Error Loading Users',
+        description: error?.message || 'Failed to load users. Please try again.'
       });
     } finally {
       setLoading(false);
