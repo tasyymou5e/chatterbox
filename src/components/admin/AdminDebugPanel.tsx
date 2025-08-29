@@ -63,6 +63,17 @@ export const AdminDebugPanel = () => {
       return;
     }
 
+    // Additional password strength checks
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/;
+    if (!passwordRegex.test(adminPassword)) {
+      toast({
+        title: "Weak Password",
+        description: "Password must contain uppercase, lowercase, number, and special character",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsCreatingAdmin(true);
     try {
       const result = await debugHookData.createTestAdmin(adminEmail, adminPassword);
@@ -172,7 +183,7 @@ export const AdminDebugPanel = () => {
                   type="email"
                   value={adminEmail}
                   onChange={(e) => setAdminEmail(e.target.value)}
-                  placeholder="admin@test.com"
+                  placeholder="Enter admin email"
                 />
               </div>
               <div className="space-y-2">
@@ -182,7 +193,7 @@ export const AdminDebugPanel = () => {
                   type="password"
                   value={adminPassword}
                   onChange={(e) => setAdminPassword(e.target.value)}
-                  placeholder="Strong password"
+                  placeholder="Enter secure password"
                 />
               </div>
             </div>

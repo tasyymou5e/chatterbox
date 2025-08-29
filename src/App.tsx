@@ -25,6 +25,7 @@ import AdminContent from "./pages/admin/AdminContent";
 import AdminSystemMonitoring from "./pages/admin/AdminSystemMonitoring";
 import { AdminDebugPanel } from "@/components/admin/AdminDebugPanel";
 import { AdminBootstrap } from "@/components/admin/AdminBootstrap";
+import { AdminBootstrapRoute } from "@/components/admin/AdminBootstrapRoute";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -73,9 +74,9 @@ const App = () => (
               } />
               <Route path="/admin/bootstrap" element={
                 <ErrorBoundary componentName="AdminBootstrap">
-                  <AdminRoute>
+                  <AdminBootstrapRoute>
                     <AdminBootstrap />
-                  </AdminRoute>
+                  </AdminBootstrapRoute>
                 </ErrorBoundary>
               } />
               
