@@ -20,6 +20,7 @@ interface AuthState {
   signUp: (email: string, password: string, firstName?: string, lastName?: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any; user?: any; isAdmin?: boolean }>;
   signOut: () => Promise<{ error: any }>;
+  resetPassword: (email: string) => Promise<{ error: any }>;
   clearSignOutState: () => void;
   emergencyLogout: () => void;
   fetchUserRole: (userId: string) => Promise<string | null>;
@@ -262,6 +263,28 @@ export const useAuthStore = create<AuthState>()(
            }
 
            return { error };
+        },
+
+        // Reset password
+        resetPassword: async (email: string) => {
+          try {
+            console.log('🔐 Sending password reset email to:', email);
+            
+            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+              redirectTo: `${window.location.origin}/admin/reset-password-confirm`,
+            });
+
+            if (error) {
+              console.error('❌ Password reset error:', error);
+              return { error };
+            }
+
+            console.log('✅ Password reset email sent successfully');
+            return { error: null };
+          } catch (err: any) {
+            console.error('💥 Password reset exception:', err);
+            return { error: err };
+          }
         },
 
         // Enhanced signIn with atomic state updates to prevent race conditions

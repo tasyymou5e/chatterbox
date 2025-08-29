@@ -16,6 +16,8 @@ import ChildrenTasksDashboard from "./pages/children/ChildrenTasksDashboard";
 import Reports from "./pages/Reports";
 import GamesCatalog from "./pages/GamesCatalog";
 import AdminLogin from "./pages/admin/AdminLogin";
+import PasswordReset from "./components/admin/PasswordReset";
+import ResetPasswordConfirm from "./pages/admin/ResetPasswordConfirm";
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminFamilies from "./pages/admin/AdminFamilies";
@@ -65,6 +67,16 @@ const App = () => {
                 <Route path="/admin/login" element={
                   <ErrorBoundary componentName="AdminLogin">
                     <AdminLogin />
+                  </ErrorBoundary>
+                } />
+                <Route path="/admin/reset-password" element={
+                  <ErrorBoundary componentName="PasswordReset">
+                    <PasswordReset />
+                  </ErrorBoundary>
+                } />
+                <Route path="/admin/reset-password-confirm" element={
+                  <ErrorBoundary componentName="ResetPasswordConfirm">
+                    <ResetPasswordConfirm />
                   </ErrorBoundary>
                 } />
                 <Route path="/admin/debug" element={

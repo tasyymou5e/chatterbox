@@ -180,6 +180,14 @@ export default function AdminLogin() {
                 For security purposes, all admin access is logged and monitored.
               </p>
               <Button
+                onClick={() => navigate('/admin/reset-password')}
+                variant="ghost"
+                size="sm"
+                className="text-xs text-blue-400 hover:text-blue-300"
+              >
+                Forgot Password?
+              </Button>
+              <Button
                 onClick={() => navigate('/admin/debug')}
                 variant="ghost"
                 size="sm"
