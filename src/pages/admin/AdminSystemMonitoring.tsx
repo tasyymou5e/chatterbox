@@ -27,6 +27,195 @@ import { useToast } from '@/hooks/use-toast';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import type { SystemError, SystemAlert, ErrorStatistics, CircuitBreakerState } from '@/types/systemHealth';
 
+// Database Logs Component
+const DatabaseLogs = () => {
+  const [logs, setLogs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [severityFilter, setSeverityFilter] = useState<string>('all');
+  const [logType, setLogType] = useState<string>('postgres');
+  const [refreshing, setRefreshing] = useState(false);
+
+  const postgresQuery = `
+    select identifier, postgres_logs.timestamp, id, event_message, parsed.error_severity 
+    from postgres_logs
+    cross join unnest(metadata) as m
+    cross join unnest(m.parsed) as parsed
+    order by timestamp desc
+    limit 100
+  `;
+
+  const authQuery = `
+    select id, auth_logs.timestamp, event_message, metadata.level, metadata.status, 
+           metadata.path, metadata.msg as msg, metadata.error 
+    from auth_logs
+    cross join unnest(metadata) as metadata
+    order by timestamp desc
+    limit 100
+  `;
+
+  const fetchLogs = async () => {
+    try {
+      setRefreshing(true);
+      
+      let query = postgresQuery;
+      if (logType === 'auth') query = authQuery;
+
+      const { data, error } = await supabase.functions.invoke('supabase-analytics-query', {
+        body: { 
+          query,
+          filters: {
+            severity: severityFilter !== 'all' ? severityFilter : undefined,
+            limit: 100
+          }
+        }
+      });
+
+      if (error) throw error;
+      setLogs(data || []);
+    } catch (error) {
+      console.error('Failed to fetch database logs:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLogs();
+    const interval = setInterval(fetchLogs, 30000);
+    return () => clearInterval(interval);
+  }, [logType, severityFilter]);
+
+  const filteredLogs = logs.filter(log => {
+    const matchesSearch = !searchTerm || 
+      log.event_message?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      log.identifier?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesSeverity = severityFilter === 'all' || 
+      log.error_severity?.toLowerCase() === severityFilter.toLowerCase() ||
+      log.level?.toLowerCase() === severityFilter.toLowerCase();
+    
+    return matchesSearch && matchesSeverity;
+  });
+
+  const formatTimestamp = (timestamp: number) => {
+    return new Date(timestamp / 1000).toLocaleString();
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex-1 relative">
+          <input
+            placeholder="Search logs..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full px-3 py-2 border border-input bg-background rounded-md"
+          />
+        </div>
+        
+        <select 
+          value={logType} 
+          onChange={(e) => setLogType(e.target.value)}
+          className="px-3 py-2 border border-input bg-background rounded-md"
+        >
+          <option value="postgres">PostgreSQL</option>
+          <option value="auth">Auth Logs</option>
+        </select>
+
+        <select 
+          value={severityFilter} 
+          onChange={(e) => setSeverityFilter(e.target.value)}
+          className="px-3 py-2 border border-input bg-background rounded-md"
+        >
+          <option value="all">All Levels</option>
+          <option value="log">LOG</option>
+          <option value="info">INFO</option>
+          <option value="warning">WARNING</option>
+          <option value="error">ERROR</option>
+        </select>
+
+        <button 
+          onClick={fetchLogs}
+          disabled={refreshing}
+          className="px-3 py-2 bg-primary text-primary-foreground rounded-md disabled:opacity-50"
+        >
+          {refreshing ? 'Loading...' : 'Refresh'}
+        </button>
+      </div>
+
+      <div className="text-sm text-muted-foreground">
+        Showing {filteredLogs.length} of {logs.length} logs
+        {searchTerm && ` matching "${searchTerm}"`}
+      </div>
+
+      {loading ? (
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">Loading database logs...</p>
+        </div>
+      ) : filteredLogs.length === 0 ? (
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">No logs found</p>
+        </div>
+      ) : (
+        <div className="border rounded-lg overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="border-b">
+                <tr>
+                  <th className="text-left p-3 font-medium">Timestamp</th>
+                  <th className="text-left p-3 font-medium">Severity</th>
+                  <th className="text-left p-3 font-medium">Message</th>
+                  <th className="text-left p-3 font-medium">Identifier</th>
+                  {logType === 'auth' && <th className="text-left p-3 font-medium">Status</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {filteredLogs.map((log, index) => (
+                  <tr key={log.id || index} className="border-b">
+                    <td className="p-3 text-xs font-mono">
+                      {formatTimestamp(log.timestamp)}
+                    </td>
+                    <td className="p-3">
+                      <span className={`px-2 py-1 rounded text-xs ${
+                        (log.error_severity || log.level || '').toLowerCase().includes('error') 
+                          ? 'bg-destructive text-destructive-foreground' 
+                          : 'bg-secondary text-secondary-foreground'
+                      }`}>
+                        {log.error_severity || log.level || 'LOG'}
+                      </span>
+                    </td>
+                    <td className="p-3 max-w-md truncate">
+                      {log.event_message || log.msg || 'No message'}
+                    </td>
+                    <td className="p-3 text-xs font-mono">
+                      {log.identifier || 'N/A'}
+                    </td>
+                    {logType === 'auth' && (
+                      <td className="p-3">
+                        {log.status && (
+                          <span className={`px-2 py-1 rounded text-xs ${
+                            log.status >= 400 
+                              ? 'bg-destructive text-destructive-foreground' 
+                              : 'bg-secondary text-secondary-foreground'
+                          }`}>
+                            {log.status}
+                          </span>
+                        )}
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 // Lazy load log components to avoid import issues temporarily
 const LogsTabContent = () => {
   return (
@@ -88,9 +277,7 @@ const LogsTabContent = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground">
-              Database logging system configured - Analytics API integration ready
-            </p>
+            <DatabaseLogs />
           </CardContent>
         </Card>
       </TabsContent>
