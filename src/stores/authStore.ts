@@ -20,7 +20,7 @@ interface AuthState {
   signUp: (email: string, password: string, firstName?: string, lastName?: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any; user?: any; isAdmin?: boolean }>;
   signOut: () => Promise<{ error: any }>;
-  resetPassword: (email: string) => Promise<{ error: any }>;
+  resetPassword: (email: string, userType?: 'admin' | 'user') => Promise<{ error: any }>;
   clearSignOutState: () => void;
   emergencyLogout: () => void;
   fetchUserRole: (userId: string) => Promise<string | null>;
@@ -265,13 +265,17 @@ export const useAuthStore = create<AuthState>()(
            return { error };
         },
 
-        // Reset password
-        resetPassword: async (email: string) => {
+        // Reset password - works for all user types
+        resetPassword: async (email: string, userType: 'admin' | 'user' = 'user') => {
           try {
-            console.log('🔐 Sending password reset email to:', email);
+            console.log('🔐 Sending password reset email to:', email, 'for', userType);
+            
+            const redirectUrl = userType === 'admin' 
+              ? `${window.location.origin}/admin/reset-password-confirm`
+              : `${window.location.origin}/auth?tab=reset-confirm`;
             
             const { error } = await supabase.auth.resetPasswordForEmail(email, {
-              redirectTo: `${window.location.origin}/admin/reset-password-confirm`,
+              redirectTo: redirectUrl,
             });
 
             if (error) {

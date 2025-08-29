@@ -49,6 +49,14 @@ Focus on calm, friendly, and accessible design tokens.
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
+    /* Success - using secondary green palette */
+    --success: 142 69% 58%;
+    --success-foreground: 0 0% 100%;
+
+    /* Warning - using accent orange palette */
+    --warning: 25 95% 65%;
+    --warning-foreground: 0 0% 100%;
+
     /* Gradients for beautiful backgrounds */
     --gradient-primary: linear-gradient(135deg, hsl(213 94% 68%), hsl(213 94% 78%));
     --gradient-secondary: linear-gradient(135deg, hsl(142 69% 58%), hsl(142 69% 68%));
@@ -113,6 +121,14 @@ Focus on calm, friendly, and accessible design tokens.
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
+
+    /* Success - using secondary green palette */
+    --success: 142 69% 58%;
+    --success-foreground: 0 0% 100%;
+
+    /* Warning - using accent orange palette */
+    --warning: 25 95% 65%;
+    --warning-foreground: 0 0% 100%;
 
     /* Update gradients for dark mode */
     --gradient-primary: linear-gradient(135deg, hsl(213 94% 68%), hsl(213 94% 58%));

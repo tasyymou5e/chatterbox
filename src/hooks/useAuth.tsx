@@ -11,6 +11,7 @@ export interface AuthContextType {
   signUp: (email: string, password: string, firstName?: string, lastName?: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any; user?: any; isAdmin?: boolean }>;
   signOut: () => Promise<{ error: any }>;
+  resetPassword: (email: string, userType?: 'admin' | 'user') => Promise<{ error: any }>;
 }
 
 // Bridge adapter hook that uses Zustand store internally
@@ -38,7 +39,8 @@ export const useAuth = (): AuthContextType => {
     loading,
     signUp: storeSignUp,
     signIn: storeSignIn,
-    signOut: storeSignOut
+    signOut: storeSignOut,
+    resetPassword: useAuthStore.getState().resetPassword
   };
 };
 
