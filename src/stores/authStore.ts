@@ -88,114 +88,116 @@ export const useAuthStore = create<AuthState>()(
           }
         },
 
-        // Helper function to check admin role
+        // Helper to check if user has admin role with retry logic
         checkAdminRole: async (userId: string): Promise<boolean> => {
           try {
-            console.log('🔍 Checking admin role for user:', userId);
+            console.log('🔐 Auth Store - Checking admin role for:', userId);
             
-            // Add timeout to prevent hanging
-            const timeoutPromise = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Admin role check timeout')), 10000)
-            );
-            
-            const queryPromise = supabase
-              .from('user_roles')
-              .select('role')
-              .eq('user_id', userId)
-              .eq('role', 'admin')
-              .maybeSingle();
-            
-            const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
+            const { data, error } = await supabase.rpc('has_role', { 
+              _user_id: userId, 
+              _role: 'admin' 
+            });
             
             if (error) {
               console.error('❌ Error checking admin role:', error);
               return false;
             }
             
-            const isAdmin = !!data;
-            console.log(`${isAdmin ? '✅' : '❌'} Admin role check result:`, { userId, isAdmin, data });
+            console.log('🔐 Auth Store - Admin role check result:', data);
+            return data || false;
             
-            return isAdmin;
           } catch (error) {
-            console.error('❌ Unexpected error checking admin role:', error);
+            console.error('🚨 Unexpected error checking admin role:', error);
             return false;
           }
         },
 
         // Initialize authentication
         initialize: () => {
-          const { setSession, setUser, setLoading, setUserRole, setIsAdmin, setIsCheckingRole, setSessionReady, fetchUserRole, checkAdminRole } = get();
+          const currentState = get();
+          if (currentState.sessionReady) {
+            console.log('🔐 Auth Store - Already initialized');
+            return;
+          }
 
-          // Set up auth state listener
+          console.log('🔐 Auth Store - Starting initialization');
+          set({ loading: true });
+
+          // Set up auth state listener FIRST
           const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (event, session) => {
-              setSession(session);
-              setUser(session?.user ?? null);
-              setLoading(false);
+              console.log(`🔐 Auth event: ${event}`, { 
+                hasSession: !!session, 
+                hasUser: !!session?.user,
+                userId: session?.user?.id,
+                email: session?.user?.email 
+              });
+              
+              const currentState = get();
+              set({ 
+                session, 
+                user: session?.user ?? null,
+                loading: false,
+                sessionReady: true
+              });
 
-              if (session?.user) {
-                setIsCheckingRole(true);
+              // Handle role checking when user signs in
+              if (session?.user && !currentState.signingOut) {
+                console.log('🔐 Auth Store - Checking user role for:', session.user.id);
+                set({ isCheckingRole: true });
                 
-                // Fetch both regular role and admin status
-                const [role, adminStatus] = await Promise.all([
-                  fetchUserRole(session.user.id),
-                  checkAdminRole(session.user.id)
-                ]);
-                
-                setUserRole(role);
-                setIsAdmin(adminStatus);
-                setIsCheckingRole(false);
-                setSessionReady(true);
-
-                // Log auth state changes for successful sign ins
-                if (event === 'SIGNED_IN') {
-                  setTimeout(() => {
-                    authLoggingService.createSession(session.user.id).catch(error => {
-                      console.warn('Failed to create session (non-blocking):', error);
-                    });
-                  }, 0);
+                try {
+                  const [role, isAdmin] = await Promise.all([
+                    get().fetchUserRole(session.user.id),
+                    get().checkAdminRole(session.user.id)
+                  ]);
+                  
+                  console.log('🔐 Auth Store - Role check complete:', { role, isAdmin });
+                  set({ 
+                    userRole: role, 
+                    isAdmin,
+                    isCheckingRole: false 
+                  });
+                } catch (error) {
+                  console.error('🚨 Auth Store - Role check failed (non-blocking):', error);
+                  // Don't block login if role check fails
+                  set({ 
+                    userRole: 'parent', // Default fallback role
+                    isAdmin: false,
+                    isCheckingRole: false 
+                  });
                 }
-              } else {
-                setUserRole(null);
-                setIsAdmin(false);
-                setIsCheckingRole(false);
-                setSessionReady(false);
+              } else if (!session?.user) {
+                console.log('🔐 Auth Store - Clearing user data (no session)');
+                // Clear role data when no user
+                set({ 
+                  userRole: null, 
+                  isAdmin: false,
+                  isCheckingRole: false 
+                });
               }
             }
           );
 
-          // Check for existing session asynchronously
-          (async () => {
-            try {
-              const { data: { session } } = await supabase.auth.getSession();
-              setSession(session);
-              setUser(session?.user ?? null);
-              setLoading(false);
-              
-              if (session?.user) {
-                setIsCheckingRole(true);
-                const [role, adminStatus] = await Promise.all([
-                  fetchUserRole(session.user.id),
-                  checkAdminRole(session.user.id)
-                ]);
-                setUserRole(role);
-                setIsAdmin(adminStatus);
-                setIsCheckingRole(false);
-                setSessionReady(true);
-              } else {
-                setSessionReady(false);
-              }
-            } catch (error) {
-              console.error('Error initializing auth:', error);
-              setLoading(false);
-              setIsCheckingRole(false);
-            }
-          })();
+          // Check for existing session AFTER setting up listener
+          supabase.auth.getSession().then(({ data: { session } }) => {
+            console.log('🔐 Auth Store - Initial session check:', { 
+              hasSession: !!session, 
+              hasUser: !!session?.user 
+            });
+            set({ 
+              session, 
+              user: session?.user ?? null,
+              loading: false,
+              sessionReady: true
+            });
+          }).catch(error => {
+            console.error('🚨 Auth Store - Initial session check failed:', error);
+            set({ loading: false, sessionReady: true });
+          });
 
-          // Store cleanup function globally for unmounting
+          // Store cleanup function
           (window as any).__authUnsubscribe = () => subscription.unsubscribe();
-          
-          // Store auth store reference for emergency recovery
           (window as any).__authStore = { getState: get };
         },
 
@@ -239,51 +241,71 @@ export const useAuthStore = create<AuthState>()(
           return { error };
         },
 
-        // Sign in
+        // Sign in with comprehensive debugging
         signIn: async (email: string, password: string) => {
-          const { data, error } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-          });
+          console.log('🔐 Auth Store - Starting signIn for:', email);
+          
+          try {
+            const { data, error } = await supabase.auth.signInWithPassword({
+              email,
+              password,
+            });
 
-          if (data.user && !error) {
-            setTimeout(() => {
-              authLoggingService.logActivity(
-                data.user.id,
-                'login',
-                true,
-                undefined,
-                { 
-                  email, 
-                  loginMethod: 'email_password',
-                  sessionCreated: !!data.session,
-                  userAgent: navigator.userAgent
-                }
-              ).catch(error => {
-                console.warn('Failed to log login activity (non-blocking):', error);
-              });
-            }, 0);
-          } else if (error) {
-            // Log failed login attempt
-            const attemptId = btoa(email + Date.now().toString()).substring(0, 36);
-            setTimeout(() => {
-              authLoggingService.logActivity(
-                attemptId,
-                'failed_login',
-                false,
-                error.message,
-                { 
-                  email, 
-                  attemptTime: new Date().toISOString(),
-                  failureType: error.message?.includes('Invalid') ? 'invalid_credentials' : 'other'
-                }
-              ).catch(error => {
-                console.warn('Failed to log failed login activity (non-blocking):', error);
-              });
-            }, 0);
+            console.log('🔐 Auth Store - Supabase signIn response:', { 
+              hasUser: !!data.user, 
+              hasSession: !!data.session, 
+              error: error?.message 
+            });
+
+            if (data.user && !error) {
+              console.log('🔐 Auth Store - Login successful, scheduling activity log');
+              
+              // Non-blocking activity logging - login should succeed even if this fails
+              setTimeout(() => {
+                authLoggingService.logActivity(
+                  data.user.id,
+                  'login',
+                  true,
+                  undefined,
+                  { 
+                    email, 
+                    loginMethod: 'email_password',
+                    sessionCreated: !!data.session,
+                    userAgent: navigator.userAgent
+                  }
+                ).catch(error => {
+                  console.warn('⚠️ Failed to log login activity (non-blocking):', error);
+                });
+              }, 100);
+              
+            } else if (error) {
+              console.log('🔐 Auth Store - Login failed:', error.message);
+              
+              // Log failed login attempt (non-blocking)
+              const attemptId = `failed_${Date.now()}`;
+              setTimeout(() => {
+                authLoggingService.logActivity(
+                  attemptId,
+                  'failed_login',
+                  false,
+                  error.message,
+                  { 
+                    email, 
+                    attemptTime: new Date().toISOString(),
+                    failureType: error.message?.includes('Invalid') ? 'invalid_credentials' : 'other'
+                  }
+                ).catch(logError => {
+                  console.warn('⚠️ Failed to log failed login activity (non-blocking):', logError);
+                });
+              }, 100);
+            }
+
+            return { error };
+            
+          } catch (unexpectedError) {
+            console.error('🚨 Auth Store - Unexpected error during signIn:', unexpectedError);
+            return { error: unexpectedError as any };
           }
-
-          return { error };
         },
 
         // Sign out with improved error handling and proper service usage
