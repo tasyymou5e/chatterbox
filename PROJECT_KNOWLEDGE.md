@@ -50,12 +50,21 @@ export const useAuth = (): AuthContextType => {
 };
 ```
 
-### **Security Architecture (HARDENED)**
-Recent security fixes include:
+### **Security Architecture (HARDENED + ENHANCED 2025)**
+Recent security fixes and new enhancements include:
 - **RLS Policy Hardening**: Removed dangerous "deny all" policies
 - **Authentication Centralization**: Single source of truth for auth state
 - **Admin Security**: Proper role verification with security definer functions
 - **System Table Protection**: Service role and admin-only access for 14+ system tables
+- **🆕 Rate Limiting**: Comprehensive rate limiting on all edge functions
+- **🆕 Enhanced Password Security**: Strong password validation with autism-friendly feedback
+- **🆕 Admin Action Monitoring**: Enhanced audit logging for all administrative actions
+- **🆕 Security Utilities**: Centralized rate limiting and password validation systems
+
+#### **⚠️ CRITICAL SECURITY WARNING**
+- **Leaked Password Protection**: Currently DISABLED in Supabase Auth settings
+- **Action Required**: Enable in Supabase Dashboard → Authentication → Settings
+- **Risk Level**: HIGH - Users can use compromised passwords
 
 ---
 
@@ -1174,17 +1183,27 @@ await supabase.rpc('refresh_daily_analytics_secure');
 
 ### **Edge Functions**
 ```typescript
-// Family creation endpoint
+// Admin password reset endpoint with enhanced security
+POST /functions/v1/admin-update-user
+Headers: { Authorization: Bearer <admin_jwt_token> }
+Body: {
+  userId: "user_uuid",
+  newPassword: "SecureP@ssw0rd123",
+  forcePasswordChange: false
+}
+Features: Rate limiting (3 resets per 15 minutes), Strong password validation, Activity logging
+
+// Family creation endpoint for admin testing
 POST /functions/v1/create-test-family
-Headers: { Authorization: Bearer <jwt_token> }
+Headers: { Authorization: Bearer <admin_jwt_token> }
 Body: {
   displayName: "Smith Family",
-  parentInfo: {
+  parent1: {
     firstName: "John",
-    lastName: "Smith",
+    lastName: "Smith", 
     email: "john.smith@example.com"
   },
-  parent2Info?: {
+  parent2?: {
     firstName: "Jane",
     lastName: "Smith",
     email: "jane.smith@example.com"
@@ -1193,12 +1212,14 @@ Body: {
     {
       firstName: "Alex",
       lastName: "Smith",
-      age: 8
+      email: "alex.smith@example.com"
     }
-  ]
+  ],
+  createdBy: "admin_user_id"
 }
+Features: Atomic family creation, Automatic user provisioning, Temporary password generation
 
-// Error collection endpoint
+// Error collection endpoint with rate limiting
 POST /functions/v1/error-collector
 Body: {
   errorType: "javascript_error",
@@ -1207,9 +1228,25 @@ Body: {
   stackTrace: "...",
   componentName: "GameCard",
   routePath: "/games",
-  userAgent: "...",
+  userId?: "user_uuid",
+  sessionId?: "session_id",
+  browserInfo: { userAgent: "...", language: "en-US" },
+  deviceInfo: { screenWidth: 1920, screenHeight: 1080 },
   metadata: { gameId: "abc123" }
 }
+Features: Rate limiting (50 errors per minute), Pattern deduplication, Critical error alerting
+
+// Analytics query endpoint for admin insights
+POST /functions/v1/supabase-analytics-query
+Headers: { Authorization: Bearer <admin_jwt_token> }
+Body: {
+  query: "SELECT * FROM postgres_logs ORDER BY timestamp DESC LIMIT 100",
+  filters: {
+    severity?: "ERROR",
+    limit?: 50
+  }
+}
+Features: Rate limiting (20 queries per minute), Secure admin-only access, Fallback data when RPC unavailable
 ```
 
 ---
@@ -1242,8 +1279,9 @@ Body: {
 
 ---
 
-**Documentation Version**: 3.0  
+**Documentation Version**: 3.1  
 **Last Updated**: 2025-08-29  
 **Migration Status**: Zustand Implementation Complete  
-**Security Status**: RLS Policies Hardened  
+**Security Status**: Enhanced with Rate Limiting & Password Validation  
+**🚨 Action Required**: Enable Leaked Password Protection in Supabase Auth  
 **Next Review**: Q1 2025

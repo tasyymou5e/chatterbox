@@ -1,5 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.0'
 import { corsHeaders } from '../_shared/cors.ts'
+import { adminActionLimiter, passwordResetLimiter, RateLimiter } from '../_shared/rate-limiter.ts'
+import { PasswordValidator } from '../_shared/password-validator.ts'
 
 console.log('Admin update user function initialized')
 
@@ -7,6 +9,20 @@ Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
+  }
+
+  // Apply rate limiting for admin actions
+  const adminRateCheck = adminActionLimiter.check(req);
+  if (!adminRateCheck.allowed) {
+    console.warn('Admin action rate limit exceeded');
+    return RateLimiter.createRateLimitResponse(adminRateCheck.resetTime);
+  }
+
+  // Apply stricter rate limiting for password resets specifically
+  const passwordRateCheck = passwordResetLimiter.check(req);
+  if (!passwordRateCheck.allowed) {
+    console.warn('Password reset rate limit exceeded');
+    return RateLimiter.createRateLimitResponse(passwordRateCheck.resetTime);
   }
 
   try {
@@ -65,10 +81,16 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Validate password strength
-    if (newPassword.length < 8) {
+    // Enhanced password validation
+    const passwordValidation = PasswordValidator.validate(newPassword);
+    if (!passwordValidation.isValid) {
       return new Response(
-        JSON.stringify({ error: 'Password must be at least 8 characters long' }),
+        JSON.stringify({ 
+          error: 'Password does not meet security requirements',
+          details: passwordValidation.feedback,
+          strength: PasswordValidator.getStrengthDescription(passwordValidation.score),
+          suggestions: PasswordValidator.generateSuggestions()
+        }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }

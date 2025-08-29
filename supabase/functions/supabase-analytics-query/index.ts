@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.0'
+import { analyticsQueryLimiter, RateLimiter } from '../_shared/rate-limiter.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,6 +11,13 @@ serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Apply rate limiting for analytics queries
+  const rateCheck = analyticsQueryLimiter.check(req);
+  if (!rateCheck.allowed) {
+    console.warn('Analytics query rate limit exceeded');
+    return RateLimiter.createRateLimitResponse(rateCheck.resetTime);
   }
 
   try {
