@@ -153,44 +153,28 @@ export const useAuthStore = create<AuthState>()(
                 });
                 console.log('✅ AuthStore: State updated with user and session');
 
-                // Handle role checking when user signs in - make completely non-blocking
+                // Handle role checking when user signs in - synchronous to prevent race conditions
                 if (!currentState.signingOut) {
                   console.log('🔐 AuthStore - Checking user role for:', session.user.id);
                   set({ isCheckingRole: true });
                   
-                  // Check admin role asynchronously - completely non-blocking
-                  setTimeout(async () => {
-                    try {
-                      console.log('👑 AuthStore: Starting admin role check (async)...');
-                      const adminStatus = await get().checkAdminRole(session.user.id);
-                      console.log('👑 AuthStore: Admin role check complete, setting status:', adminStatus);
-                      set({ isAdmin: adminStatus });
-                      console.log('👑 AuthStore: Admin status set in state');
-                    } catch (error) {
-                      console.warn('⚠️ AuthStore: Admin role check failed (non-critical):', error);
-                      set({ isAdmin: false });
-                    }
-                  }, 0);
-                  
-                  // Fetch user role asynchronously - completely non-blocking  
-                  setTimeout(async () => {
-                    try {
-                      console.log('🎭 AuthStore: Starting user role fetch (async)...');
-                      const role = await get().fetchUserRole(session.user.id);
-                      console.log('🎭 AuthStore: User role fetch complete, setting role:', role);
-                      set({ 
-                        userRole: role, 
-                        isCheckingRole: false 
-                      });
-                    } catch (error) {
-                      console.warn('⚠️ AuthStore: User role fetch failed (non-critical):', error);
-                      // Don't block login if role check fails
-                      set({ 
-                        userRole: 'parent', // Default fallback role
-                        isCheckingRole: false 
-                      });
-                    }
-                  }, 0);
+                  // Check role synchronously to prevent race conditions
+                  get().fetchUserRole(session.user.id).then(role => {
+                    const isAdmin = role === 'admin';
+                    console.log('👤 AuthStore: Role check complete:', { role, isAdmin });
+                    set({ 
+                      userRole: role, 
+                      isAdmin,
+                      isCheckingRole: false 
+                    });
+                  }).catch(error => {
+                    console.warn('⚠️ AuthStore: Role check failed:', error);
+                    set({ 
+                      userRole: 'parent',
+                      isAdmin: false,
+                      isCheckingRole: false 
+                    });
+                  });
                 }
               } else if (event === 'SIGNED_OUT') {
                 console.log('🚪 AuthStore: Processing SIGNED_OUT event...');
@@ -280,10 +264,10 @@ export const useAuthStore = create<AuthState>()(
            return { error };
         },
 
-        // Enhanced signIn with admin role verification and activity logging
+        // Enhanced signIn with atomic state updates to prevent race conditions
         signIn: async (email: string, password: string) => {
           try {
-            set({ loading: true });
+            set({ loading: true, isCheckingRole: true });
             console.log('🔐 Starting sign in process for:', email);
             
             const { data, error } = await supabase.auth.signInWithPassword({
@@ -293,38 +277,35 @@ export const useAuthStore = create<AuthState>()(
 
             if (error) {
               console.error('❌ Sign in error:', error);
-              set({ loading: false });
+              set({ loading: false, isCheckingRole: false });
               return { error };
             }
 
             if (data?.user && data?.session) {
-              console.log('✅ Auth successful, establishing session...');
+              console.log('✅ Auth successful, establishing session synchronously...');
               
-              // Wait longer for session to be properly established to prevent race conditions
-              await new Promise(resolve => setTimeout(resolve, 500));
-              
+              // Synchronously check role to prevent race conditions
               const userRole = await get().fetchUserRole(data.user.id);
               const isAdmin = userRole === 'admin';
               
-              console.log('👤 User role determined:', { userRole, isAdmin });
+              console.log('👤 User role determined synchronously:', { userRole, isAdmin });
               
-              // Set all auth state atomically to prevent race conditions
+              // Set ALL auth state atomically in single operation to prevent race conditions
               set({
                 user: data.user,
                 session: data.session,
                 userRole,
                 isAdmin,
-                loading: false
+                loading: false,
+                isCheckingRole: false,
+                sessionReady: true
               });
-
-              // Additional wait to ensure state is fully propagated
-              await new Promise(resolve => setTimeout(resolve, 200));
               
-              console.log('🎯 Auth state fully established');
+              console.log('🎯 Auth state established atomically');
 
-              // Log the sign-in activity using authLoggingService directly
-              try {
-                await authLoggingService.logActivity(
+              // Log the sign-in activity asynchronously (non-blocking)
+              setTimeout(() => {
+                authLoggingService.logActivity(
                   data.user.id,
                   'login',
                   true,
@@ -335,20 +316,20 @@ export const useAuthStore = create<AuthState>()(
                     timestamp: new Date().toISOString(),
                     loginMethod: 'email_password'
                   }
-                );
-              } catch (logError) {
-                console.warn('Failed to log sign-in activity:', logError);
-              }
+                ).catch(logError => {
+                  console.warn('Failed to log sign-in activity (non-blocking):', logError);
+                });
+              }, 0);
 
               return { error: null, user: data.user, isAdmin };
             }
 
             console.error('❌ No user or session returned');
-            set({ loading: false });
+            set({ loading: false, isCheckingRole: false });
             return { error: { message: 'No user or session returned' } };
           } catch (err: any) {
             console.error('💥 Sign in exception:', err);
-            set({ loading: false });
+            set({ loading: false, isCheckingRole: false });
             return { error: err };
           }
         },

@@ -14,8 +14,9 @@ export default function AdminLogin() {
   const navigate = useNavigate();
   const [isSigningIn, setIsSigningIn] = useState(false);
 
-  // Redirect if already authenticated as admin
-  if (!loading && user && isAdmin) {
+  // Enhanced redirect check - only if fully authenticated and admin status confirmed
+  if (!loading && user && isAdmin && user.id && user.email) {
+    console.log('✅ AdminLogin: User already authenticated as admin, redirecting');
     return <Navigate to="/admin/dashboard" replace />;
   }
 
@@ -71,18 +72,16 @@ export default function AdminLogin() {
         }
         setIsSigningIn(false);
       } else if (result.isAdmin) {
-        console.log('✅ Admin login successful, waiting before navigation...');
+        console.log('✅ Admin login successful, navigating immediately...');
         toast({
           title: "Welcome Admin",
           description: "Welcome back, Admin!",
         });
         
-        // Wait additional time to ensure auth state is fully established before navigation
-        // This prevents the race condition that causes login loops
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
+        // Navigate immediately since auth state is established atomically in signIn
         console.log('🔄 Navigating to admin dashboard...');
         navigate('/admin/dashboard');
+        setIsSigningIn(false);
       } else {
         console.error('❌ User is not an admin');
         toast({
