@@ -16,10 +16,14 @@ import {
   Eye,
   XCircle,
   Activity,
-  BarChart3
+  BarChart3,
+  Wifi,
+  WifiOff,
+  User
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
 
 interface SystemError {
   id: string;
@@ -63,24 +67,92 @@ const AdminSystemMonitoring = () => {
   const [alerts, setAlerts] = useState<SystemAlert[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedError, setSelectedError] = useState<SystemError | null>(null);
+  const [authDebugInfo, setAuthDebugInfo] = useState<any>(null);
+  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'checking'>('checking');
   const { toast } = useToast();
+  const { user, session, isAdmin, loading: authLoading } = useAdminAuth();
 
-  const fetchErrorStatistics = async () => {
+  const validateAuthAndConnection = async () => {
+    try {
+      setConnectionStatus('checking');
+      
+      // Check Supabase connection
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error) throw new Error(`Session error: ${error.message}`);
+      
+      // Test database connectivity with a simple query
+      const { data: testQuery, error: testError } = await supabase
+        .from('system_errors')
+        .select('count')
+        .limit(1);
+      
+      if (testError && testError.code === 'PGRST116') {
+        // Authentication required error
+        setAuthDebugInfo({
+          hasUser: !!user,
+          hasSession: !!session,
+          userId: user?.id,
+          userEmail: user?.email,
+          isAdmin,
+          authUid: session?.user?.id || 'null',
+          error: 'Database authentication failed - auth.uid() is null'
+        });
+        setConnectionStatus('disconnected');
+        return false;
+      } else if (testError) {
+        throw testError;
+      }
+      
+      setAuthDebugInfo({
+        hasUser: !!user,
+        hasSession: !!session,
+        userId: user?.id,
+        userEmail: user?.email,
+        isAdmin,
+        authUid: session?.user?.id,
+        status: 'connected'
+      });
+      setConnectionStatus('connected');
+      return true;
+      
+    } catch (error) {
+      console.error('Auth/Connection validation failed:', error);
+      setConnectionStatus('disconnected');
+      setAuthDebugInfo({
+        hasUser: !!user,
+        hasSession: !!session,
+        userId: user?.id,
+        userEmail: user?.email,
+        isAdmin,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+      return false;
+    }
+  };
+
+  const fetchErrorStatistics = async (retryCount = 0) => {
     try {
       const { data, error } = await supabase.rpc('get_error_statistics', { days_back: 7 });
-      if (error) throw error;
+      if (error) {
+        if (error.code === 'PGRST116' && retryCount < 2) {
+          console.log('Retrying error statistics fetch due to auth error...');
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          return fetchErrorStatistics(retryCount + 1);
+        }
+        throw error;
+      }
       setStatistics(data[0] || null);
     } catch (error) {
       console.error('Failed to fetch error statistics:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to load error statistics',
+        title: 'Database Error',
+        description: `Failed to load error statistics: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: 'destructive',
       });
     }
   };
 
-  const fetchRecentErrors = async () => {
+  const fetchRecentErrors = async (retryCount = 0) => {
     try {
       const { data, error } = await supabase
         .from('system_errors')
@@ -88,19 +160,26 @@ const AdminSystemMonitoring = () => {
         .order('created_at', { ascending: false })
         .limit(50);
       
-      if (error) throw error;
+      if (error) {
+        if (error.code === 'PGRST116' && retryCount < 2) {
+          console.log('Retrying recent errors fetch due to auth error...');
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          return fetchRecentErrors(retryCount + 1);
+        }
+        throw error;
+      }
       setErrors(data || []);
     } catch (error) {
       console.error('Failed to fetch errors:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to load recent errors',
+        title: 'Database Error',
+        description: `Failed to load recent errors: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: 'destructive',
       });
     }
   };
 
-  const fetchSystemAlerts = async () => {
+  const fetchSystemAlerts = async (retryCount = 0) => {
     try {
       const { data, error } = await supabase
         .from('system_alerts')
@@ -108,13 +187,20 @@ const AdminSystemMonitoring = () => {
         .eq('resolved', false)
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
+      if (error) {
+        if (error.code === 'PGRST116' && retryCount < 2) {
+          console.log('Retrying system alerts fetch due to auth error...');
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          return fetchSystemAlerts(retryCount + 1);
+        }
+        throw error;
+      }
       setAlerts(data || []);
     } catch (error) {
       console.error('Failed to fetch alerts:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to load system alerts',
+        title: 'Database Error',
+        description: `Failed to load system alerts: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: 'destructive',
       });
     }
@@ -122,6 +208,14 @@ const AdminSystemMonitoring = () => {
 
   const refreshData = async () => {
     setLoading(true);
+    
+    // Validate auth and connection first
+    const isValid = await validateAuthAndConnection();
+    if (!isValid) {
+      setLoading(false);
+      return;
+    }
+    
     await Promise.all([
       fetchErrorStatistics(),
       fetchRecentErrors(),
@@ -180,30 +274,38 @@ const AdminSystemMonitoring = () => {
   };
 
   useEffect(() => {
+    // Wait for auth to be ready before initializing
+    if (authLoading) return;
+    
     refreshData();
     
-    // Set up real-time subscriptions
-    const errorSubscription = supabase
-      .channel('system_errors_changes')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'system_errors' }, 
-        () => refreshData()
-      )
-      .subscribe();
+    // Set up real-time subscriptions only if connected
+    let errorSubscription: any;
+    let alertSubscription: any;
+    
+    if (connectionStatus === 'connected') {
+      errorSubscription = supabase
+        .channel('system_errors_changes')
+        .on('postgres_changes', 
+          { event: '*', schema: 'public', table: 'system_errors' }, 
+          () => refreshData()
+        )
+        .subscribe();
 
-    const alertSubscription = supabase
-      .channel('system_alerts_changes')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'system_alerts' }, 
-        () => refreshData()
-      )
-      .subscribe();
+      alertSubscription = supabase
+        .channel('system_alerts_changes')
+        .on('postgres_changes', 
+          { event: '*', schema: 'public', table: 'system_alerts' }, 
+          () => refreshData()
+        )
+        .subscribe();
+    }
 
     return () => {
-      errorSubscription.unsubscribe();
-      alertSubscription.unsubscribe();
+      if (errorSubscription) errorSubscription.unsubscribe();
+      if (alertSubscription) alertSubscription.unsubscribe();
     };
-  }, []);
+  }, [authLoading, connectionStatus]);
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
@@ -225,10 +327,15 @@ const AdminSystemMonitoring = () => {
     }
   };
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+        <div className="text-center">
+          <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground mx-auto mb-2" />
+          <p className="text-muted-foreground">
+            {authLoading ? 'Authenticating...' : 'Loading system data...'}
+          </p>
+        </div>
       </div>
     );
   }
@@ -238,13 +345,63 @@ const AdminSystemMonitoring = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">System Monitoring</h1>
-          <p className="text-muted-foreground">Error tracking and system health monitoring</p>
+          <div className="flex items-center space-x-4 mt-1">
+            <p className="text-muted-foreground">Error tracking and system health monitoring</p>
+            <div className="flex items-center space-x-2">
+              {connectionStatus === 'connected' ? (
+                <><Wifi className="h-4 w-4 text-green-500" /><span className="text-xs text-green-500">Connected</span></>
+              ) : connectionStatus === 'disconnected' ? (
+                <><WifiOff className="h-4 w-4 text-destructive" /><span className="text-xs text-destructive">Disconnected</span></>
+              ) : (
+                <><RefreshCw className="h-4 w-4 animate-spin text-yellow-500" /><span className="text-xs text-yellow-500">Checking...</span></>
+              )}
+            </div>
+          </div>
         </div>
-        <Button onClick={refreshData} variant="outline">
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Refresh
-        </Button>
+        <div className="flex items-center space-x-2">
+          <Button onClick={refreshData} variant="outline" disabled={connectionStatus !== 'connected'}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+          {authDebugInfo && (
+            <Button 
+              onClick={() => {
+                console.log('Auth Debug Info:', authDebugInfo);
+                toast({
+                  title: 'Auth Debug Info',
+                  description: `User: ${authDebugInfo.userEmail || 'None'}, Admin: ${authDebugInfo.isAdmin}, Status: ${authDebugInfo.status || authDebugInfo.error}`,
+                });
+              }} 
+              variant="ghost" 
+              size="sm"
+            >
+              <User className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </div>
+
+      {/* Connection Error Alert */}
+      {connectionStatus === 'disconnected' && (
+        <Alert variant="destructive">
+          <WifiOff className="h-4 w-4" />
+          <AlertDescription>
+            <div className="space-y-2">
+              <p>Database connection failed. This is usually an authentication issue.</p>
+              {authDebugInfo && (
+                <div className="text-xs font-mono bg-destructive/10 p-2 rounded">
+                  <p>User: {authDebugInfo.userEmail || 'None'}</p>
+                  <p>Admin: {String(authDebugInfo.isAdmin)}</p>
+                  <p>Error: {authDebugInfo.error}</p>
+                </div>
+              )}
+              <Button onClick={refreshData} size="sm" variant="outline">
+                Retry Connection
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* System Alerts */}
       {alerts.length > 0 && (
