@@ -48,20 +48,38 @@ const AdminSystemMonitoring = () => {
   const [authDebugInfo, setAuthDebugInfo] = useState<any>(null);
   const [connected, setConnected] = useState(true);
   
-  // Circuit breaker state - using ref to prevent re-render loops
+  // Circuit breaker state with enhanced tracking
   const circuitBreakerRef = useRef({
     consecutiveFailures: 0,
     lastFailureTime: 0,
-    isCircuitOpen: false
+    isCircuitOpen: false,
+    nextRetryTime: 0,
+    backoffMultiplier: 1
   });
+  
+  // Request deduplication tracking
+  const activeRequestsRef = useRef(new Set<string>());
+  
+  // Loop detection tracking
+  const callFrequencyRef = useRef({
+    lastRefresh: 0,
+    refreshCount: 0,
+    windowStart: Date.now()
+  });
+  
+  // Last refresh cooldown tracking
+  const lastRefreshTimeRef = useRef(0);
   
   const { toast } = useToast();
   const { user, session, isAdmin, loading: isAuthenticating } = useAdminAuth();
   const isAuthenticated = !!user && isAdmin;
 
-  // Circuit breaker configuration
+  // Enhanced circuit breaker configuration
   const CIRCUIT_BREAKER_THRESHOLD = 3;
-  const CIRCUIT_BREAKER_TIMEOUT = 30000; // 30 seconds
+  const CIRCUIT_BREAKER_BASE_TIMEOUT = 30000; // 30 seconds base
+  const MAX_REFRESH_FREQUENCY = 5; // max 5 refreshes per minute
+  const REFRESH_COOLDOWN = 10000; // 10 second cooldown between refreshes
+  const DEBOUNCE_TIME = 5000; // 5 second debounce for real-time updates
 
   const validateAuthAndConnection = useCallback(async () => {
     try {
@@ -110,18 +128,23 @@ const AdminSystemMonitoring = () => {
     }
   }, [user, session, isAdmin]);
 
-  // Check if circuit breaker is open
+  // Enhanced circuit breaker with exponential backoff
   const isCircuitBreakerOpen = useCallback(() => {
     const state = circuitBreakerRef.current;
     if (!state.isCircuitOpen) return false;
     
     const now = Date.now();
-    if (now - state.lastFailureTime > CIRCUIT_BREAKER_TIMEOUT) {
-      // Reset circuit breaker
+    const timeout = CIRCUIT_BREAKER_BASE_TIMEOUT * state.backoffMultiplier;
+    
+    if (now > state.nextRetryTime) {
+      // Reset circuit breaker with logging
+      console.log('🔧 Circuit breaker reset after timeout');
       circuitBreakerRef.current = {
         consecutiveFailures: 0,
         lastFailureTime: 0,
-        isCircuitOpen: false
+        isCircuitOpen: false,
+        nextRetryTime: 0,
+        backoffMultiplier: 1
       };
       return false;
     }
@@ -130,38 +153,63 @@ const AdminSystemMonitoring = () => {
 
   const recordFailure = useCallback(() => {
     const now = Date.now();
-    const newFailureCount = circuitBreakerRef.current.consecutiveFailures + 1;
+    const state = circuitBreakerRef.current;
+    const newFailureCount = state.consecutiveFailures + 1;
+    const newBackoffMultiplier = Math.min(state.backoffMultiplier * 2, 8); // Max 8x backoff
+    const timeout = CIRCUIT_BREAKER_BASE_TIMEOUT * newBackoffMultiplier;
     
     circuitBreakerRef.current = {
       consecutiveFailures: newFailureCount,
       lastFailureTime: now,
-      isCircuitOpen: newFailureCount >= CIRCUIT_BREAKER_THRESHOLD
+      isCircuitOpen: newFailureCount >= CIRCUIT_BREAKER_THRESHOLD,
+      nextRetryTime: now + timeout,
+      backoffMultiplier: newBackoffMultiplier
     };
     
+    console.log(`⚠️ Circuit breaker failure ${newFailureCount}/${CIRCUIT_BREAKER_THRESHOLD}, backoff: ${newBackoffMultiplier}x`);
+    
     if (newFailureCount >= CIRCUIT_BREAKER_THRESHOLD) {
+      console.log('🚨 Circuit breaker opened, next retry in', timeout / 1000, 'seconds');
       toast({
         title: 'System Monitoring Disabled',
-        description: `Too many consecutive failures. Monitoring will resume in ${CIRCUIT_BREAKER_TIMEOUT / 1000} seconds.`,
+        description: `Too many consecutive failures. Monitoring will resume in ${timeout / 1000} seconds.`,
         variant: 'destructive',
       });
     }
   }, [toast]);
 
   const recordSuccess = useCallback(() => {
+    const wasOpen = circuitBreakerRef.current.isCircuitOpen;
     circuitBreakerRef.current = {
       consecutiveFailures: 0,
       lastFailureTime: 0,
-      isCircuitOpen: false
+      isCircuitOpen: false,
+      nextRetryTime: 0,
+      backoffMultiplier: 1
     };
+    if (wasOpen) {
+      console.log('✅ Circuit breaker closed - system recovered');
+    }
   }, []);
 
   const fetchErrorStatistics = useCallback(async () => {
+    const requestId = 'error-statistics';
+    
     if (isCircuitBreakerOpen()) {
-      console.log('Circuit breaker is open, skipping error statistics fetch');
+      console.log('🚫 Circuit breaker is open, skipping error statistics fetch');
+      return;
+    }
+
+    // Request deduplication
+    if (activeRequestsRef.current.has(requestId)) {
+      console.log('🔄 Error statistics fetch already in progress, skipping duplicate');
       return;
     }
 
     try {
+      activeRequestsRef.current.add(requestId);
+      console.log('📊 Fetching error statistics...');
+      
       const { data, error } = await supabase.rpc('get_error_statistics', { days_back: 7 });
       if (error) {
         if (error.message?.includes('ungrouped column')) {
@@ -176,19 +224,33 @@ const AdminSystemMonitoring = () => {
       }
       setStatistics(data[0] || null);
       recordSuccess();
+      console.log('✅ Error statistics fetched successfully');
     } catch (error) {
-      console.error('Error fetching statistics:', error);
+      console.error('❌ Error fetching statistics:', error);
       recordFailure();
+    } finally {
+      activeRequestsRef.current.delete(requestId);
     }
   }, [isCircuitBreakerOpen, toast, recordSuccess, recordFailure]);
 
   const fetchRecentErrors = useCallback(async () => {
+    const requestId = 'recent-errors';
+    
     if (isCircuitBreakerOpen()) {
-      console.log('Circuit breaker is open, skipping recent errors fetch');
+      console.log('🚫 Circuit breaker is open, skipping recent errors fetch');
+      return;
+    }
+
+    // Request deduplication
+    if (activeRequestsRef.current.has(requestId)) {
+      console.log('🔄 Recent errors fetch already in progress, skipping duplicate');
       return;
     }
 
     try {
+      activeRequestsRef.current.add(requestId);
+      console.log('🐛 Fetching recent errors...');
+      
       const { data, error } = await supabase
         .from('system_errors')
         .select('*')
@@ -210,19 +272,33 @@ const AdminSystemMonitoring = () => {
           : undefined,
       })));
       recordSuccess();
+      console.log('✅ Recent errors fetched successfully');
     } catch (error) {
-      console.error('Error fetching recent errors:', error);
+      console.error('❌ Error fetching recent errors:', error);
       recordFailure();
+    } finally {
+      activeRequestsRef.current.delete(requestId);
     }
   }, [isCircuitBreakerOpen, recordSuccess, recordFailure]);
 
   const fetchSystemAlerts = useCallback(async () => {
+    const requestId = 'system-alerts';
+    
     if (isCircuitBreakerOpen()) {
-      console.log('Circuit breaker is open, skipping system alerts fetch');
+      console.log('🚫 Circuit breaker is open, skipping system alerts fetch');
+      return;
+    }
+
+    // Request deduplication
+    if (activeRequestsRef.current.has(requestId)) {
+      console.log('🔄 System alerts fetch already in progress, skipping duplicate');
       return;
     }
 
     try {
+      activeRequestsRef.current.add(requestId);
+      console.log('🚨 Fetching system alerts...');
+      
       const { data, error } = await supabase
         .from('system_alerts')
         .select('*')
@@ -238,57 +314,102 @@ const AdminSystemMonitoring = () => {
           : {}
       })));
       recordSuccess();
+      console.log('✅ System alerts fetched successfully');
     } catch (error) {
-      console.error('Error fetching system alerts:', error);
+      console.error('❌ Error fetching system alerts:', error);
       recordFailure();
+    } finally {
+      activeRequestsRef.current.delete(requestId);
     }
   }, [isCircuitBreakerOpen, recordSuccess, recordFailure]);
 
   // Stable refs for preventing useEffect loops
   const refreshDataRef = useRef<() => Promise<void>>();
   
-  // Memoized refresh function to prevent loops
+  // Enhanced refresh with loop detection and cooldown
   const stableRefreshData = useCallback(async () => {
     if (isCircuitBreakerOpen() || !isAuthenticated) return;
     
+    // Check cooldown period
+    const now = Date.now();
+    if (now - lastRefreshTimeRef.current < REFRESH_COOLDOWN) {
+      console.log('🕒 Refresh blocked by cooldown period');
+      return;
+    }
+    
+    // Loop detection
+    const timeWindow = 60000; // 1 minute window
+    const callTracker = callFrequencyRef.current;
+    
+    if (now - callTracker.windowStart > timeWindow) {
+      // Reset window
+      callTracker.windowStart = now;
+      callTracker.refreshCount = 0;
+    }
+    
+    callTracker.refreshCount++;
+    if (callTracker.refreshCount > MAX_REFRESH_FREQUENCY) {
+      console.warn('🚨 Excessive refresh frequency detected, blocking request');
+      toast({
+        title: 'System Protection',
+        description: 'Too many refresh attempts. Please wait a moment.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    lastRefreshTimeRef.current = now;
+    
     try {
+      console.log('🔄 Starting data refresh...');
       setLoading(true);
       await Promise.all([
         fetchErrorStatistics(),
         fetchRecentErrors(),
         fetchSystemAlerts()
       ]);
+      console.log('✅ Data refresh completed');
     } catch (error) {
-      console.error('Error refreshing data:', error);
+      console.error('❌ Error refreshing data:', error);
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated, fetchErrorStatistics, fetchRecentErrors, fetchSystemAlerts, isCircuitBreakerOpen]);
+  }, [isAuthenticated, fetchErrorStatistics, fetchRecentErrors, fetchSystemAlerts, isCircuitBreakerOpen, toast]);
 
   refreshDataRef.current = stableRefreshData;
 
-  // Effect for initial data loading and real-time subscriptions
+  // Effect for initial data loading and real-time subscriptions with enhanced loop prevention
   useEffect(() => {
     let mounted = true;
-    let refreshTimeout: NodeJS.Timeout;
+    let periodicRefreshInterval: NodeJS.Timeout;
     let errorStatsChannel: any;
     let alertsChannel: any;
 
     const initializeData = async () => {
       if (!mounted || isAuthenticating || !isAuthenticated) return;
       
+      console.log('🚀 Initializing system monitoring data...');
       await refreshDataRef.current?.();
     };
 
     const setupRealtimeSubscriptions = () => {
       if (!isAuthenticated) return;
 
-      // Debounced refresh function
+      // Enhanced debounced refresh with cooldown check
       const debouncedRefresh = debounce(() => {
-        if (mounted && !isCircuitBreakerOpen()) {
-          refreshDataRef.current?.();
+        if (!mounted || isCircuitBreakerOpen()) return;
+        
+        const now = Date.now();
+        if (now - lastRefreshTimeRef.current < REFRESH_COOLDOWN) {
+          console.log('🕒 Real-time refresh blocked by cooldown');
+          return;
         }
-      }, 2000); // Increased debounce time
+        
+        console.log('🔔 Real-time update triggered');
+        refreshDataRef.current?.();
+      }, DEBOUNCE_TIME);
+
+      console.log('📡 Setting up real-time subscriptions...');
 
       // Subscribe to system_errors changes
       errorStatsChannel = supabase
@@ -322,30 +443,33 @@ const AdminSystemMonitoring = () => {
     initializeData();
     setupRealtimeSubscriptions();
 
-    // Set up periodic refresh (every 60 seconds, less frequent)
-    const startPeriodicRefresh = () => {
-      refreshTimeout = setTimeout(() => {
-        if (mounted && !isCircuitBreakerOpen()) {
-          refreshDataRef.current?.().finally(() => {
-            if (mounted) startPeriodicRefresh();
-          });
-        }
-      }, 60000); // Increased to 60 seconds
-    };
-
-    startPeriodicRefresh();
+    // Replace recursive setTimeout with setInterval for periodic refresh
+    console.log('⏰ Setting up periodic refresh every 2 minutes...');
+    periodicRefreshInterval = setInterval(() => {
+      if (mounted && !isCircuitBreakerOpen()) {
+        console.log('⏰ periodic refresh triggered');
+        refreshDataRef.current?.();
+      }
+    }, 120000); // 2 minutes instead of 1 minute
 
     return () => {
+      console.log('🧹 Cleaning up system monitoring...');
       mounted = false;
-      if (refreshTimeout) clearTimeout(refreshTimeout);
+      
+      if (periodicRefreshInterval) {
+        clearInterval(periodicRefreshInterval);
+      }
       if (errorStatsChannel) {
         supabase.removeChannel(errorStatsChannel);
       }
       if (alertsChannel) {
         supabase.removeChannel(alertsChannel);
       }
+      
+      // Clear active requests on unmount
+      activeRequestsRef.current.clear();
     };
-  }, [isAuthenticating, isAuthenticated, isCircuitBreakerOpen]); // Removed problematic dependencies
+  }, [isAuthenticating, isAuthenticated]); // Properly stable dependencies
 
   const resolveError = async (errorId: string) => {
     try {
@@ -498,14 +622,16 @@ const AdminSystemMonitoring = () => {
             <div className="space-y-2">
               <p>System monitoring temporarily disabled due to repeated failures.</p>
               <p className="text-xs text-muted-foreground">
-                Monitoring will resume automatically in {Math.ceil((CIRCUIT_BREAKER_TIMEOUT - (Date.now() - circuitBreakerRef.current.lastFailureTime)) / 1000)} seconds.
+                Monitoring will resume automatically in {Math.ceil((circuitBreakerRef.current.nextRetryTime - Date.now()) / 1000)} seconds.
               </p>
               <Button 
                 onClick={() => {
                   circuitBreakerRef.current = {
                     consecutiveFailures: 0,
                     lastFailureTime: 0,
-                    isCircuitOpen: false
+                    isCircuitOpen: false,
+                    nextRetryTime: 0,
+                    backoffMultiplier: 1
                   };
                   stableRefreshData();
                 }} 

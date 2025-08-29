@@ -36,6 +36,8 @@ interface AnalyticsState {
   loading: boolean;
   error: string | null;
   retryCount: number;
+  instanceId: string;
+  lastRetryTime: number;
 
   // Actions
   fetchEngagementMetrics: () => Promise<void>;
@@ -58,6 +60,8 @@ export const useAnalyticsStore = create<AnalyticsState>()(
       loading: true,
       error: null,
       retryCount: 0,
+      instanceId: `analytics-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      lastRetryTime: 0,
 
       // Actions
       setError: (error) => set({ error }),
@@ -181,12 +185,37 @@ export const useAnalyticsStore = create<AnalyticsState>()(
           console.error('❌ Error fetching daily analytics:', err);
           const errorMsg = err?.message || 'Unknown error occurred';
           
-          // Implement retry logic for session timing issues
-          const currentRetryCount = get().retryCount;
+          // Enhanced retry logic with exponential backoff and instance tracking
+          const state = get();
+          const currentRetryCount = state.retryCount;
+          const now = Date.now();
+          const timeSinceLastRetry = now - state.lastRetryTime;
+          const minRetryInterval = 5000; // 5 seconds minimum between retries
+          
           if ((errorMsg.includes('Session not ready') || errorMsg.includes('permission denied')) && currentRetryCount < 3) {
-            console.log(`🔄 Retrying daily analytics (${currentRetryCount + 1}/3) in 2 seconds...`);
-            set({ retryCount: currentRetryCount + 1 });
-            setTimeout(() => get().fetchDailyAnalytics(), 2000);
+            // Prevent too frequent retries
+            if (timeSinceLastRetry < minRetryInterval) {
+              console.log(`⏳ Retry blocked - waiting ${minRetryInterval - timeSinceLastRetry}ms before retry`);
+              return;
+            }
+            
+            const backoffDelay = Math.min(2000 * Math.pow(2, currentRetryCount), 30000); // Exponential backoff, max 30s
+            console.log(`🔄 [${state.instanceId}] Retrying daily analytics (${currentRetryCount + 1}/3) in ${backoffDelay}ms...`);
+            
+            set({ 
+              retryCount: currentRetryCount + 1,
+              lastRetryTime: now 
+            });
+            
+            setTimeout(() => {
+              // Double-check instance ID to prevent cross-instance retries
+              const currentState = get();
+              if (currentState.instanceId === state.instanceId) {
+                currentState.fetchDailyAnalytics();
+              } else {
+                console.log('🚫 Retry cancelled - instance ID mismatch');
+              }
+            }, backoffDelay);
             return;
           }
           
