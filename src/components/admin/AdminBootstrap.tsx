@@ -16,6 +16,11 @@ export const AdminBootstrap = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  
+  // Check for force mode to allow additional admin creation
+  const urlParams = new URLSearchParams(window.location.search);
+  const forceMode = urlParams.get('force') === 'true';
+  const isAdditionalAdminMode = hasAdmins && forceMode;
 
   useEffect(() => {
     checkForAdmins();
@@ -76,6 +81,10 @@ export const AdminBootstrap = () => {
       });
 
       if (authError) {
+        // Handle "user already exists" error gracefully
+        if (authError.message.includes('User already registered')) {
+          throw new Error(`Email ${email} is already registered. Please use a different email.`);
+        }
         throw new Error(`Failed to create user: ${authError.message}`);
       }
 
@@ -95,7 +104,7 @@ export const AdminBootstrap = () => {
       }
 
       toast({
-        title: "Bootstrap Admin Created",
+        title: isAdditionalAdminMode ? "Additional Admin Created" : "Bootstrap Admin Created",
         description: `Admin user created successfully with email: ${email}`,
       });
 
@@ -125,7 +134,7 @@ export const AdminBootstrap = () => {
     );
   }
 
-  if (hasAdmins) {
+  if (hasAdmins && !forceMode) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
         <Card className="bg-gray-800 border-gray-700 max-w-md">
@@ -166,17 +175,30 @@ export const AdminBootstrap = () => {
               </div>
             </div>
             <CardTitle className="text-2xl font-bold text-white">
-              Bootstrap Admin
+              {isAdditionalAdminMode ? "Create Additional Admin" : "Bootstrap Admin"}
             </CardTitle>
             <CardDescription className="text-gray-400">
-              No admin users found. Create the first admin account.
+              {isAdditionalAdminMode 
+                ? "Create another admin user for the system"
+                : "No admin users found. Create the first admin account."
+              }
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="p-3 bg-yellow-900/20 border border-yellow-500/30 rounded">
-                <p className="text-yellow-400 text-sm">
-                  <strong>Bootstrap Mode:</strong> This will create the first admin user for your system.
+              <div className={`p-3 border rounded ${
+                isAdditionalAdminMode 
+                  ? "bg-blue-900/20 border-blue-500/30" 
+                  : "bg-yellow-900/20 border-yellow-500/30"
+              }`}>
+                <p className={`text-sm ${
+                  isAdditionalAdminMode ? "text-blue-400" : "text-yellow-400"
+                }`}>
+                  <strong>{isAdditionalAdminMode ? "Additional Admin Mode:" : "Bootstrap Mode:"}</strong> 
+                  {isAdditionalAdminMode 
+                    ? " This will create another admin user for your system."
+                    : " This will create the first admin user for your system."
+                  }
                 </p>
               </div>
 
@@ -211,25 +233,44 @@ export const AdminBootstrap = () => {
               <Button
                 onClick={createBootstrapAdmin}
                 disabled={isCreating}
-                className="w-full bg-orange-600 hover:bg-orange-700 text-white"
+                className={`w-full text-white ${
+                  isAdditionalAdminMode 
+                    ? "bg-blue-600 hover:bg-blue-700" 
+                    : "bg-orange-600 hover:bg-orange-700"
+                }`}
               >
                 {isCreating ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating Bootstrap Admin...
+                    {isAdditionalAdminMode ? "Creating Additional Admin..." : "Creating Bootstrap Admin..."}
                   </>
                 ) : (
                   <>
                     <UserPlus className="mr-2 h-4 w-4" />
-                    Create Bootstrap Admin
+                    {isAdditionalAdminMode ? "Create Additional Admin" : "Create Bootstrap Admin"}
                   </>
                 )}
               </Button>
 
               <div className="mt-4 pt-4 border-t border-gray-700">
                 <p className="text-xs text-gray-500 text-center">
-                  This bootstrap process is only available when no admin users exist.
+                  {isAdditionalAdminMode 
+                    ? "Additional admins can be created by existing administrators."
+                    : "This bootstrap process is only available when no admin users exist."
+                  }
                 </p>
+                {isAdditionalAdminMode && (
+                  <div className="mt-2 text-center">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate('/admin/login')}
+                      className="text-xs"
+                    >
+                      Back to Admin Login
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>

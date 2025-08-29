@@ -17,6 +17,10 @@ export const AdminBootstrapRoute = ({ children }: AdminBootstrapRouteProps) => {
   
   const loading = getLoading('adminBootstrapCheck');
   const [hasAdmins, setHasAdmins] = React.useState<boolean | null>(null);
+  
+  // Check for force parameter to bypass admin existence check
+  const urlParams = new URLSearchParams(window.location.search);
+  const forceMode = urlParams.get('force') === 'true';
 
   useEffect(() => {
     const checkForAdmins = async () => {
@@ -55,11 +59,11 @@ export const AdminBootstrapRoute = ({ children }: AdminBootstrapRouteProps) => {
     );
   }
 
-  // If admins exist, redirect to login
-  if (hasAdmins) {
+  // If admins exist and not in force mode, redirect to login
+  if (hasAdmins && !forceMode) {
     return <Navigate to="/admin/login" replace />;
   }
 
-  // If no admins exist, allow access to bootstrap
+  // Allow access to bootstrap if no admins exist OR if force mode is enabled
   return <>{children}</>;
 };

@@ -198,22 +198,32 @@ export const AdminDebugPanel = () => {
               </div>
             </div>
             
-            <Button
-              onClick={handleCreateTestAdmin}
-              disabled={isCreatingAdmin}
-            >
-              {isCreatingAdmin ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating Admin...
-                </>
-              ) : (
-                <>
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  Create Test Admin
-                </>
-              )}
-            </Button>
+            <div className="space-y-2">
+              <Button
+                onClick={handleCreateTestAdmin}
+                disabled={isCreatingAdmin}
+              >
+                {isCreatingAdmin ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating Admin...
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Create Test Admin
+                  </>
+                )}
+              </Button>
+              
+              <Button
+                onClick={() => navigate('/admin/bootstrap?force=true')}
+                variant="outline"
+                className="w-full"
+              >
+                Create Additional Admin (Bootstrap UI)
+              </Button>
+            </div>
           </CardContent>
         </Card>
       )}
