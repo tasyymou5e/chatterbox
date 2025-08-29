@@ -44,7 +44,7 @@ export default function AdminLogin() {
 
     try {
       console.log('🔐 AdminLogin: Calling signIn function...');
-      const { error } = await signIn(email, password);
+      const { error, user: signedInUser, isAdmin: adminStatus } = await signIn(email, password) as any;
 
       if (error) {
         console.error('❌ AdminLogin: Sign in returned error:', error);
@@ -68,18 +68,23 @@ export default function AdminLogin() {
           variant: "destructive",
         });
       } else {
-        console.log('✅ AdminLogin: Sign in successful, checking auth state...');
-        console.log('✅ AdminLogin: Current user:', user?.email);
-        console.log('✅ AdminLogin: Current isAdmin:', isAdmin);
-        console.log('✅ AdminLogin: Current loading:', loading);
+        console.log('✅ AdminLogin: Sign in successful - role check completed synchronously');
         
-        toast({
-          title: "Admin Access Granted",
-          description: "Welcome to the admin portal.",
-        });
-        
-        console.log('🔐 AdminLogin: Navigating to admin dashboard...');
-        navigate('/admin/dashboard');
+        if (adminStatus) {
+          console.log('✅ AdminLogin: Admin access confirmed directly from signIn');
+          toast({
+            title: "Admin Access Granted",
+            description: "Welcome to the admin portal.",
+          });
+          navigate('/admin/dashboard');
+        } else {
+          console.log('❌ AdminLogin: User authenticated but not admin');
+          toast({
+            title: "Access Denied", 
+            description: "This account does not have administrator privileges.",
+            variant: "destructive",
+          });
+        }
       }
     } catch (error) {
       console.error('❌ AdminLogin: Unexpected error during sign in:', error);
@@ -158,7 +163,7 @@ export default function AdminLogin() {
                 {isSigningIn ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Signing In...
+                    Signing In & Verifying Access...
                   </>
                 ) : (
                   'Sign In to Admin Portal'

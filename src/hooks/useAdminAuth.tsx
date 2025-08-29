@@ -8,7 +8,7 @@ export interface AdminAuthContextType {
   loading: boolean;
   isAdmin: boolean;
   signingOut: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signIn: (email: string, password: string) => Promise<{ error: any; user?: any; isAdmin?: boolean }>;
   signOut: () => Promise<{ error: any }>;
 }
 
