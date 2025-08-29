@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -26,7 +26,18 @@ import { useToast } from '@/hooks/use-toast';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import type { SystemError, SystemAlert, ErrorStatistics, CircuitBreakerState } from '@/types/systemHealth';
 
-// Interfaces imported from types file - using centralized definitions
+// Debounce utility function
+const debounce = (func: Function, wait: number) => {
+  let timeout: NodeJS.Timeout;
+  return function executedFunction(...args: any[]) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+};
 
 const AdminSystemMonitoring = () => {
   const [errors, setErrors] = useState<SystemError[]>([]);
@@ -35,39 +46,36 @@ const AdminSystemMonitoring = () => {
   const [loading, setLoading] = useState(true);
   const [selectedError, setSelectedError] = useState<SystemError | null>(null);
   const [authDebugInfo, setAuthDebugInfo] = useState<any>(null);
-  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'checking'>('checking');
+  const [connected, setConnected] = useState(true);
   
-  // Circuit breaker state
-  const [errorState, setErrorState] = useState({
+  // Circuit breaker state - using ref to prevent re-render loops
+  const circuitBreakerRef = useRef({
     consecutiveFailures: 0,
     lastFailureTime: 0,
     isCircuitOpen: false
   });
   
   const { toast } = useToast();
-  const { user, session, isAdmin, loading: authLoading } = useAdminAuth();
+  const { user, session, isAdmin, loading: isAuthenticating } = useAdminAuth();
+  const isAuthenticated = !!user && isAdmin;
 
   // Circuit breaker configuration
   const CIRCUIT_BREAKER_THRESHOLD = 3;
   const CIRCUIT_BREAKER_TIMEOUT = 30000; // 30 seconds
-  const RATE_LIMIT_DELAY = 2000; // 2 seconds between calls
 
-  const validateAuthAndConnection = async () => {
+  const validateAuthAndConnection = useCallback(async () => {
     try {
-      setConnectionStatus('checking');
-      
       // Check Supabase connection
       const { data: { session }, error } = await supabase.auth.getSession();
-      if (error) throw new Error(`Session error: ${error.message}`);
+      if (error) return { isValid: false, error: `Session error: ${error.message}` };
       
-      // Test database connectivity with a simple query
-      const { data: testQuery, error: testError } = await supabase
+      // Test database connectivity
+      const { error: testError } = await supabase
         .from('system_errors')
         .select('count')
         .limit(1);
       
       if (testError && testError.code === 'PGRST116') {
-        // Authentication required error
         setAuthDebugInfo({
           hasUser: !!user,
           hasSession: !!session,
@@ -77,10 +85,9 @@ const AdminSystemMonitoring = () => {
           authUid: session?.user?.id || 'null',
           error: 'Database authentication failed - auth.uid() is null'
         });
-        setConnectionStatus('disconnected');
-        return false;
+        return { isValid: false, error: 'Database authentication failed' };
       } else if (testError) {
-        throw testError;
+        return { isValid: false, error: testError.message };
       }
       
       setAuthDebugInfo({
@@ -92,52 +99,44 @@ const AdminSystemMonitoring = () => {
         authUid: session?.user?.id,
         status: 'connected'
       });
-      setConnectionStatus('connected');
-      return true;
+      return { isValid: true };
       
     } catch (error) {
       console.error('Auth/Connection validation failed:', error);
-      setConnectionStatus('disconnected');
-      setAuthDebugInfo({
-        hasUser: !!user,
-        hasSession: !!session,
-        userId: user?.id,
-        userEmail: user?.email,
-        isAdmin,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
-      return false;
+      return { 
+        isValid: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      };
     }
-  };
+  }, [user, session, isAdmin]);
 
   // Check if circuit breaker is open
-  const isCircuitBreakerOpen = () => {
-    if (!errorState.isCircuitOpen) return false;
+  const isCircuitBreakerOpen = useCallback(() => {
+    const state = circuitBreakerRef.current;
+    if (!state.isCircuitOpen) return false;
     
     const now = Date.now();
-    if (now - errorState.lastFailureTime > CIRCUIT_BREAKER_TIMEOUT) {
+    if (now - state.lastFailureTime > CIRCUIT_BREAKER_TIMEOUT) {
       // Reset circuit breaker
-      setErrorState({
+      circuitBreakerRef.current = {
         consecutiveFailures: 0,
         lastFailureTime: 0,
         isCircuitOpen: false
-      });
+      };
       return false;
     }
     return true;
-  };
+  }, []);
 
-  const recordFailure = (error: Error) => {
+  const recordFailure = useCallback(() => {
     const now = Date.now();
-    const newFailureCount = errorState.consecutiveFailures + 1;
+    const newFailureCount = circuitBreakerRef.current.consecutiveFailures + 1;
     
-    setErrorState({
+    circuitBreakerRef.current = {
       consecutiveFailures: newFailureCount,
       lastFailureTime: now,
       isCircuitOpen: newFailureCount >= CIRCUIT_BREAKER_THRESHOLD
-    });
-    
-    console.error(`System monitoring error (${newFailureCount}/${CIRCUIT_BREAKER_THRESHOLD}):`, error);
+    };
     
     if (newFailureCount >= CIRCUIT_BREAKER_THRESHOLD) {
       toast({
@@ -146,17 +145,17 @@ const AdminSystemMonitoring = () => {
         variant: 'destructive',
       });
     }
-  };
+  }, [toast]);
 
-  const recordSuccess = () => {
-    setErrorState({
+  const recordSuccess = useCallback(() => {
+    circuitBreakerRef.current = {
       consecutiveFailures: 0,
       lastFailureTime: 0,
       isCircuitOpen: false
-    });
-  };
+    };
+  }, []);
 
-  const fetchErrorStatistics = async () => {
+  const fetchErrorStatistics = useCallback(async () => {
     if (isCircuitBreakerOpen()) {
       console.log('Circuit breaker is open, skipping error statistics fetch');
       return;
@@ -165,7 +164,6 @@ const AdminSystemMonitoring = () => {
     try {
       const { data, error } = await supabase.rpc('get_error_statistics', { days_back: 7 });
       if (error) {
-        // Check for specific SQL errors that indicate our fix worked
         if (error.message?.includes('ungrouped column')) {
           toast({
             title: 'SQL Function Error',
@@ -179,11 +177,12 @@ const AdminSystemMonitoring = () => {
       setStatistics(data[0] || null);
       recordSuccess();
     } catch (error) {
-      recordFailure(error instanceof Error ? error : new Error('Unknown error'));
+      console.error('Error fetching statistics:', error);
+      recordFailure();
     }
-  };
+  }, [isCircuitBreakerOpen, toast, recordSuccess, recordFailure]);
 
-  const fetchRecentErrors = async () => {
+  const fetchRecentErrors = useCallback(async () => {
     if (isCircuitBreakerOpen()) {
       console.log('Circuit breaker is open, skipping recent errors fetch');
       return;
@@ -199,15 +198,25 @@ const AdminSystemMonitoring = () => {
       if (error) throw error;
       setErrors((data || []).map(error => ({
         ...error,
-        severity: error.severity as 'critical' | 'high' | 'medium' | 'low'
+        severity: error.severity as 'critical' | 'high' | 'medium' | 'low',
+        browser_info: error.browser_info && typeof error.browser_info === 'object' 
+          ? error.browser_info as Record<string, any>
+          : undefined,
+        device_info: error.device_info && typeof error.device_info === 'object' 
+          ? error.device_info as Record<string, any>
+          : undefined,
+        metadata: error.metadata && typeof error.metadata === 'object' 
+          ? error.metadata as Record<string, any>
+          : undefined,
       })));
       recordSuccess();
     } catch (error) {
-      recordFailure(error instanceof Error ? error : new Error('Unknown error'));
+      console.error('Error fetching recent errors:', error);
+      recordFailure();
     }
-  };
+  }, [isCircuitBreakerOpen, recordSuccess, recordFailure]);
 
-  const fetchSystemAlerts = async () => {
+  const fetchSystemAlerts = useCallback(async () => {
     if (isCircuitBreakerOpen()) {
       console.log('Circuit breaker is open, skipping system alerts fetch');
       return;
@@ -230,27 +239,113 @@ const AdminSystemMonitoring = () => {
       })));
       recordSuccess();
     } catch (error) {
-      recordFailure(error instanceof Error ? error : new Error('Unknown error'));
+      console.error('Error fetching system alerts:', error);
+      recordFailure();
     }
-  };
+  }, [isCircuitBreakerOpen, recordSuccess, recordFailure]);
 
-  const refreshData = async () => {
-    setLoading(true);
+  // Stable refs for preventing useEffect loops
+  const refreshDataRef = useRef<() => Promise<void>>();
+  
+  // Memoized refresh function to prevent loops
+  const stableRefreshData = useCallback(async () => {
+    if (isCircuitBreakerOpen() || !isAuthenticated) return;
     
-    // Validate auth and connection first
-    const isValid = await validateAuthAndConnection();
-    if (!isValid) {
+    try {
+      setLoading(true);
+      await Promise.all([
+        fetchErrorStatistics(),
+        fetchRecentErrors(),
+        fetchSystemAlerts()
+      ]);
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+    } finally {
       setLoading(false);
-      return;
     }
-    
-    await Promise.all([
-      fetchErrorStatistics(),
-      fetchRecentErrors(),
-      fetchSystemAlerts()
-    ]);
-    setLoading(false);
-  };
+  }, [isAuthenticated, fetchErrorStatistics, fetchRecentErrors, fetchSystemAlerts, isCircuitBreakerOpen]);
+
+  refreshDataRef.current = stableRefreshData;
+
+  // Effect for initial data loading and real-time subscriptions
+  useEffect(() => {
+    let mounted = true;
+    let refreshTimeout: NodeJS.Timeout;
+    let errorStatsChannel: any;
+    let alertsChannel: any;
+
+    const initializeData = async () => {
+      if (!mounted || isAuthenticating || !isAuthenticated) return;
+      
+      await refreshDataRef.current?.();
+    };
+
+    const setupRealtimeSubscriptions = () => {
+      if (!isAuthenticated) return;
+
+      // Debounced refresh function
+      const debouncedRefresh = debounce(() => {
+        if (mounted && !isCircuitBreakerOpen()) {
+          refreshDataRef.current?.();
+        }
+      }, 2000); // Increased debounce time
+
+      // Subscribe to system_errors changes
+      errorStatsChannel = supabase
+        .channel('system_errors_monitoring')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'system_errors'
+          },
+          debouncedRefresh
+        )
+        .subscribe();
+
+      // Subscribe to system_alerts changes  
+      alertsChannel = supabase
+        .channel('system_alerts_monitoring')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'system_alerts'
+          },
+          debouncedRefresh
+        )
+        .subscribe();
+    };
+
+    initializeData();
+    setupRealtimeSubscriptions();
+
+    // Set up periodic refresh (every 60 seconds, less frequent)
+    const startPeriodicRefresh = () => {
+      refreshTimeout = setTimeout(() => {
+        if (mounted && !isCircuitBreakerOpen()) {
+          refreshDataRef.current?.().finally(() => {
+            if (mounted) startPeriodicRefresh();
+          });
+        }
+      }, 60000); // Increased to 60 seconds
+    };
+
+    startPeriodicRefresh();
+
+    return () => {
+      mounted = false;
+      if (refreshTimeout) clearTimeout(refreshTimeout);
+      if (errorStatsChannel) {
+        supabase.removeChannel(errorStatsChannel);
+      }
+      if (alertsChannel) {
+        supabase.removeChannel(alertsChannel);
+      }
+    };
+  }, [isAuthenticating, isAuthenticated, isCircuitBreakerOpen]); // Removed problematic dependencies
 
   const resolveError = async (errorId: string) => {
     try {
@@ -262,7 +357,7 @@ const AdminSystemMonitoring = () => {
         description: 'Error marked as resolved',
       });
       
-      await refreshData();
+      await stableRefreshData();
     } catch (error) {
       console.error('Failed to resolve error:', error);
       toast({
@@ -290,7 +385,7 @@ const AdminSystemMonitoring = () => {
         description: 'Alert acknowledged',
       });
       
-      await refreshData();
+      await stableRefreshData();
     } catch (error) {
       console.error('Failed to acknowledge alert:', error);
       toast({
@@ -300,56 +395,6 @@ const AdminSystemMonitoring = () => {
       });
     }
   };
-
-  useEffect(() => {
-    // Wait for auth to be ready before initializing
-    if (authLoading) return;
-    
-    // Add rate limiting to prevent rapid-fire calls
-    const timeoutId = setTimeout(() => {
-      refreshData();
-    }, RATE_LIMIT_DELAY);
-    
-    // Set up real-time subscriptions only if connected and circuit breaker is closed
-    let errorSubscription: any;
-    let alertSubscription: any;
-    
-    if (connectionStatus === 'connected' && !isCircuitBreakerOpen()) {
-      // Debounce real-time updates to prevent loops
-      let refreshTimeout: NodeJS.Timeout;
-      
-      const debouncedRefresh = () => {
-        clearTimeout(refreshTimeout);
-        refreshTimeout = setTimeout(() => {
-          if (!isCircuitBreakerOpen()) {
-            refreshData();
-          }
-        }, RATE_LIMIT_DELAY);
-      };
-
-      errorSubscription = supabase
-        .channel('system_errors_changes')
-        .on('postgres_changes', 
-          { event: '*', schema: 'public', table: 'system_errors' }, 
-          debouncedRefresh
-        )
-        .subscribe();
-
-      alertSubscription = supabase
-        .channel('system_alerts_changes')
-        .on('postgres_changes', 
-          { event: '*', schema: 'public', table: 'system_alerts' }, 
-          debouncedRefresh
-        )
-        .subscribe();
-    }
-
-    return () => {
-      clearTimeout(timeoutId);
-      if (errorSubscription) errorSubscription.unsubscribe();
-      if (alertSubscription) alertSubscription.unsubscribe();
-    };
-  }, [authLoading, connectionStatus, errorState.isCircuitOpen]);
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
@@ -371,13 +416,13 @@ const AdminSystemMonitoring = () => {
     }
   };
 
-  if (loading || authLoading) {
+  if (loading || isAuthenticating) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground mx-auto mb-2" />
           <p className="text-muted-foreground">
-            {authLoading ? 'Authenticating...' : 'Loading system data...'}
+            {isAuthenticating ? 'Authenticating...' : 'Loading system data...'}
           </p>
         </div>
       </div>
@@ -392,18 +437,16 @@ const AdminSystemMonitoring = () => {
           <div className="flex items-center space-x-4 mt-1">
             <p className="text-muted-foreground">Error tracking and system health monitoring</p>
             <div className="flex items-center space-x-2">
-              {connectionStatus === 'connected' ? (
+              {connected ? (
                 <><Wifi className="h-4 w-4 text-green-500" /><span className="text-xs text-green-500">Connected</span></>
-              ) : connectionStatus === 'disconnected' ? (
-                <><WifiOff className="h-4 w-4 text-destructive" /><span className="text-xs text-destructive">Disconnected</span></>
               ) : (
-                <><RefreshCw className="h-4 w-4 animate-spin text-yellow-500" /><span className="text-xs text-yellow-500">Checking...</span></>
+                <><WifiOff className="h-4 w-4 text-destructive" /><span className="text-xs text-destructive">Disconnected</span></>
               )}
             </div>
           </div>
         </div>
         <div className="flex items-center space-x-2">
-          <Button onClick={refreshData} variant="outline" disabled={connectionStatus !== 'connected'}>
+          <Button onClick={stableRefreshData} variant="outline" disabled={isCircuitBreakerOpen()}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
@@ -426,7 +469,7 @@ const AdminSystemMonitoring = () => {
       </div>
 
       {/* Connection Error Alert */}
-      {connectionStatus === 'disconnected' && (
+      {!connected && (
         <Alert variant="destructive">
           <WifiOff className="h-4 w-4" />
           <AlertDescription>
@@ -439,7 +482,7 @@ const AdminSystemMonitoring = () => {
                   <p>Error: {authDebugInfo.error}</p>
                 </div>
               )}
-              <Button onClick={refreshData} size="sm" variant="outline">
+              <Button onClick={stableRefreshData} size="sm" variant="outline">
                 Retry Connection
               </Button>
             </div>
@@ -448,23 +491,23 @@ const AdminSystemMonitoring = () => {
       )}
 
       {/* Circuit Breaker Alert */}
-      {errorState.isCircuitOpen && (
+      {isCircuitBreakerOpen() && (
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
             <div className="space-y-2">
               <p>System monitoring temporarily disabled due to repeated failures.</p>
               <p className="text-xs text-muted-foreground">
-                Monitoring will resume automatically in {Math.ceil((CIRCUIT_BREAKER_TIMEOUT - (Date.now() - errorState.lastFailureTime)) / 1000)} seconds.
+                Monitoring will resume automatically in {Math.ceil((CIRCUIT_BREAKER_TIMEOUT - (Date.now() - circuitBreakerRef.current.lastFailureTime)) / 1000)} seconds.
               </p>
               <Button 
                 onClick={() => {
-                  setErrorState({
+                  circuitBreakerRef.current = {
                     consecutiveFailures: 0,
                     lastFailureTime: 0,
                     isCircuitOpen: false
-                  });
-                  refreshData();
+                  };
+                  stableRefreshData();
                 }} 
                 size="sm" 
                 variant="outline"
@@ -507,13 +550,13 @@ const AdminSystemMonitoring = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-destructive">{statistics.critical_errors}</div>
-              <p className="text-xs text-muted-foreground">Immediate attention</p>
+              <p className="text-xs text-muted-foreground">Require immediate attention</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Resolved Rate</CardTitle>
+              <CardTitle className="text-sm font-medium">Resolution Rate</CardTitle>
               <CheckCircle className="h-4 w-4 text-green-500" />
             </CardHeader>
             <CardContent>
@@ -522,127 +565,105 @@ const AdminSystemMonitoring = () => {
                   ? Math.round((statistics.resolved_errors / statistics.total_errors) * 100)
                   : 0}%
               </div>
-              <p className="text-xs text-muted-foreground">Resolution rate</p>
+              <p className="text-xs text-muted-foreground">{statistics.resolved_errors} resolved</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Error Trend</CardTitle>
-              <BarChart3 className="h-4 w-4 text-muted-foreground" />
+              {(statistics.error_rate_trend?.[statistics.error_rate_trend.length - 1] || 0) > 
+               (statistics.error_rate_trend?.[statistics.error_rate_trend.length - 2] || 0) ? (
+                <TrendingUp className="h-4 w-4 text-destructive" />
+              ) : (
+                <TrendingDown className="h-4 w-4 text-green-500" />
+              )}
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {statistics.error_rate_trend.length > 1 
-                  ? statistics.error_rate_trend[0] > statistics.error_rate_trend[statistics.error_rate_trend.length - 1]
-                    ? <TrendingDown className="h-6 w-6 text-green-500" />
-                    : <TrendingUp className="h-6 w-6 text-red-500" />
-                  : <Activity className="h-6 w-6 text-muted-foreground" />
-                }
+                {statistics.error_rate_trend?.[statistics.error_rate_trend.length - 1] || 0}
               </div>
-              <p className="text-xs text-muted-foreground">Trend direction</p>
+              <p className="text-xs text-muted-foreground">Errors today</p>
             </CardContent>
           </Card>
         </div>
       )}
 
-      <Tabs defaultValue="errors" className="space-y-4">
-        <TabsList>
+      {/* Main Content Tabs */}
+      <Tabs defaultValue="errors" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="errors">Recent Errors</TabsTrigger>
           <TabsTrigger value="alerts">System Alerts</TabsTrigger>
           <TabsTrigger value="patterns">Error Patterns</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="errors" className="space-y-4">
+        <TabsContent value="errors">
           <Card>
             <CardHeader>
               <CardTitle>Recent System Errors</CardTitle>
-              <CardDescription>Latest errors reported by the system</CardDescription>
+              <CardDescription>
+                Latest errors and exceptions from the application
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-[600px]">
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {errors.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <CheckCircle className="h-8 w-8 mx-auto mb-2" />
-                      <p className="text-lg font-medium">No errors found</p>
-                      <p className="text-sm">System is running smoothly</p>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="mt-4"
-                        onClick={async () => {
-                          try {
-                            await supabase.rpc('log_system_error', {
-                              p_error_type: 'test',
-                              p_severity: 'low', 
-                              p_message: 'Test error from admin panel',
-                              p_component_name: 'AdminSystemMonitoring',
-                              p_route_path: '/admin/monitoring'
-                            });
-                            toast({
-                              title: 'Success',
-                              description: 'Test error created successfully',
-                            });
-                            await refreshData();
-                          } catch (error) {
-                            console.error('Failed to create test error:', error);
-                            toast({
-                              title: 'Error',
-                              description: 'Failed to create test error',
-                              variant: 'destructive',
-                            });
-                          }
-                        }}
-                      >
-                        Create Test Error
-                      </Button>
+                    <div className="text-center py-8">
+                      <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+                      <p className="text-muted-foreground">No recent errors found</p>
                     </div>
                   ) : (
                     errors.map((error) => (
-                    <div
-                      key={error.id}
-                      className="flex items-start justify-between p-4 border rounded-lg hover:bg-muted/50 cursor-pointer"
-                      onClick={() => setSelectedError(error)}
-                    >
-                      <div className="flex items-start space-x-3">
-                        {getSeverityIcon(error.severity)}
-                        <div className="space-y-1">
-                          <div className="flex items-center space-x-2">
-                            <Badge className={getSeverityColor(error.severity)}>
-                              {error.severity}
-                            </Badge>
-                            {error.resolved && (
-                              <Badge variant="outline">
-                                <CheckCircle className="h-3 w-3 mr-1" />
-                                Resolved
+                      <Card key={error.id} className="p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <Badge className={getSeverityColor(error.severity)}>
+                                {getSeverityIcon(error.severity)}
+                                <span className="ml-1">{error.severity.toUpperCase()}</span>
                               </Badge>
+                              <Badge variant="outline">{error.error_type}</Badge>
+                              {error.component_name && (
+                                <Badge variant="secondary">{error.component_name}</Badge>
+                              )}
+                            </div>
+                            <h4 className="font-medium mb-1">{error.message}</h4>
+                            <div className="text-sm text-muted-foreground space-y-1">
+                              <p>
+                                <Clock className="h-3 w-3 inline mr-1" />
+                                {new Date(error.created_at).toLocaleString()}
+                              </p>
+                              {error.route_path && (
+                                <p>Route: {error.route_path}</p>
+                              )}
+                              {error.user_id && (
+                                <p>User: {error.user_id}</p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSelectedError(error)}
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              View
+                            </Button>
+                            {!error.resolved && (
+                              <Button
+                                variant="default"
+                                size="sm"
+                                onClick={() => resolveError(error.id)}
+                              >
+                                <CheckCircle className="h-4 w-4 mr-1" />
+                                Resolve
+                              </Button>
                             )}
                           </div>
-                          <p className="font-medium text-sm">{error.message}</p>
-                          <div className="text-xs text-muted-foreground space-x-2">
-                            {error.component_name && <span>Component: {error.component_name}</span>}
-                            {error.route_path && <span>Route: {error.route_path}</span>}
-                            <span>
-                              <Clock className="h-3 w-3 inline mr-1" />
-                              {new Date(error.created_at).toLocaleString()}
-                            </span>
-                          </div>
                         </div>
-                      </div>
-                      {!error.resolved && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            resolveError(error.id);
-                          }}
-                        >
-                          Resolve
-                        </Button>
-                      )}
-                    </div>
+                      </Card>
                     ))
                   )}
                 </div>
@@ -651,79 +672,204 @@ const AdminSystemMonitoring = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="alerts" className="space-y-4">
+        <TabsContent value="alerts">
           <Card>
             <CardHeader>
-              <CardTitle>Active System Alerts</CardTitle>
-              <CardDescription>Critical system notifications requiring attention</CardDescription>
+              <CardTitle>System Alerts</CardTitle>
+              <CardDescription>
+                Active system alerts and notifications
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {alerts.map((alert) => (
-                  <div
-                    key={alert.id}
-                    className="flex items-start justify-between p-4 border rounded-lg"
-                  >
-                    <div className="flex items-start space-x-3">
-                      {getSeverityIcon(alert.severity)}
-                      <div className="space-y-1">
-                        <div className="flex items-center space-x-2">
-                          <Badge className={getSeverityColor(alert.severity)}>
-                            {alert.severity}
-                          </Badge>
-                          {alert.acknowledged && (
-                            <Badge variant="outline">Acknowledged</Badge>
-                          )}
-                        </div>
-                        <p className="font-medium">{alert.title}</p>
-                        {alert.description && (
-                          <p className="text-sm text-muted-foreground">{alert.description}</p>
-                        )}
-                        <p className="text-xs text-muted-foreground">
-                          <Clock className="h-3 w-3 inline mr-1" />
-                          {new Date(alert.created_at).toLocaleString()}
-                        </p>
-                      </div>
+              <ScrollArea className="h-[600px]">
+                <div className="space-y-4">
+                  {alerts.length === 0 ? (
+                    <div className="text-center py-8">
+                      <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+                      <p className="text-muted-foreground">No active alerts</p>
                     </div>
-                    {!alert.acknowledged && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => acknowledgeAlert(alert.id)}
-                      >
-                        Acknowledge
-                      </Button>
-                    )}
-                  </div>
-                ))}
-                {alerts.length === 0 && (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <CheckCircle className="h-8 w-8 mx-auto mb-2" />
-                    No active alerts
-                  </div>
-                )}
-              </div>
+                  ) : (
+                    alerts.map((alert) => (
+                      <Card key={alert.id} className="p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <Badge className={getSeverityColor(alert.severity)}>
+                                {getSeverityIcon(alert.severity)}
+                                <span className="ml-1">{alert.severity.toUpperCase()}</span>
+                              </Badge>
+                              <Badge variant="outline">{alert.alert_type}</Badge>
+                              {alert.acknowledged && (
+                                <Badge variant="secondary">Acknowledged</Badge>
+                              )}
+                            </div>
+                            <h4 className="font-medium mb-1">{alert.title}</h4>
+                            {alert.description && (
+                              <p className="text-sm text-muted-foreground mb-2">
+                                {alert.description}
+                              </p>
+                            )}
+                            <div className="text-sm text-muted-foreground space-y-1">
+                              <p>
+                                <Clock className="h-3 w-3 inline mr-1" />
+                                {new Date(alert.created_at).toLocaleString()}
+                              </p>
+                              {alert.triggered_by && (
+                                <p>Triggered by: {alert.triggered_by}</p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex space-x-2">
+                            {!alert.acknowledged && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => acknowledgeAlert(alert.id)}
+                              >
+                                <CheckCircle className="h-4 w-4 mr-1" />
+                                Acknowledge
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </Card>
+                    ))
+                  )}
+                </div>
+              </ScrollArea>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="patterns" className="space-y-4">
+        <TabsContent value="patterns">
           <Card>
             <CardHeader>
-              <CardTitle>Error Patterns</CardTitle>
-              <CardDescription>Recurring error patterns and trends</CardDescription>
+              <CardTitle>Error Patterns Analysis</CardTitle>
+              <CardDescription>
+                Identify trends and patterns in system errors
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                <BarChart3 className="h-8 w-8 mx-auto mb-2" />
-                Error pattern analysis coming soon
+              <div className="text-center py-8">
+                <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">Error pattern analysis coming soon...</p>
+                <Button 
+                  variant="outline" 
+                  className="mt-4"
+                  onClick={() => {
+                    // Create a test error for demonstration
+                    supabase.functions.invoke('error-collector', {
+                      body: {
+                        errorType: 'test_error',
+                        severity: 'low',
+                        message: 'Test error for monitoring dashboard',
+                        componentName: 'AdminSystemMonitoring',
+                        metadata: {
+                          source: 'manual_test',
+                          timestamp: new Date().toISOString()
+                        }
+                      }
+                    }).then(() => {
+                      toast({
+                        title: 'Test Error Created',
+                        description: 'A test error has been logged to the system',
+                      });
+                    });
+                  }}
+                >
+                  Create Test Error
+                </Button>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
 
-      {/* Error Details Modal would go here */}
+      {/* Error Detail Modal */}
+      {selectedError && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <Card className="w-full max-w-4xl max-h-[80vh] overflow-hidden">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Error Details</CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedError(null)}
+                >
+                  <XCircle className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[60vh]">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <h4 className="font-medium mb-2">Basic Information</h4>
+                      <div className="space-y-2 text-sm">
+                        <p><strong>ID:</strong> {selectedError.id}</p>
+                        <p><strong>Type:</strong> {selectedError.error_type}</p>
+                        <p><strong>Severity:</strong> {selectedError.severity}</p>
+                        <p><strong>Component:</strong> {selectedError.component_name || 'Unknown'}</p>
+                        <p><strong>Route:</strong> {selectedError.route_path || 'Unknown'}</p>
+                        <p><strong>User:</strong> {selectedError.user_id || 'Anonymous'}</p>
+                        <p><strong>Session:</strong> {selectedError.session_id || 'Unknown'}</p>
+                        <p><strong>Created:</strong> {new Date(selectedError.created_at).toLocaleString()}</p>
+                        <p><strong>Resolved:</strong> {selectedError.resolved ? 'Yes' : 'No'}</p>
+                      </div>
+                    </div>
+                    <div>
+                      <h4 className="font-medium mb-2">Device Information</h4>
+                      <div className="space-y-2 text-sm">
+                        {selectedError.browser_info && (
+                          <>
+                            <p><strong>User Agent:</strong> {selectedError.browser_info.userAgent}</p>
+                            <p><strong>Language:</strong> {selectedError.browser_info.language}</p>
+                            <p><strong>Platform:</strong> {selectedError.browser_info.platform}</p>
+                          </>
+                        )}
+                        {selectedError.device_info && (
+                          <>
+                            <p><strong>Screen:</strong> {selectedError.device_info.screenWidth}x{selectedError.device_info.screenHeight}</p>
+                            <p><strong>Window:</strong> {selectedError.device_info.windowWidth}x{selectedError.device_info.windowHeight}</p>
+                            <p><strong>Timezone:</strong> {selectedError.device_info.timezone}</p>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h4 className="font-medium mb-2">Error Message</h4>
+                    <pre className="bg-muted p-3 rounded text-sm overflow-auto">
+                      {selectedError.message}
+                    </pre>
+                  </div>
+
+                  {selectedError.stack_trace && (
+                    <div>
+                      <h4 className="font-medium mb-2">Stack Trace</h4>
+                      <pre className="bg-muted p-3 rounded text-xs overflow-auto max-h-60">
+                        {selectedError.stack_trace}
+                      </pre>
+                    </div>
+                  )}
+
+                  {selectedError.metadata && Object.keys(selectedError.metadata).length > 0 && (
+                    <div>
+                      <h4 className="font-medium mb-2">Metadata</h4>
+                      <pre className="bg-muted p-3 rounded text-xs overflow-auto">
+                        {JSON.stringify(selectedError.metadata, null, 2)}
+                      </pre>
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };

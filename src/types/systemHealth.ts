@@ -29,12 +29,18 @@ export interface SystemError {
   resolved: boolean;
   resolved_by?: string;
   resolved_at?: string;
+  user_id?: string;
+  session_id?: string;
+  stack_trace?: string;
+  browser_info?: Record<string, any>;
+  device_info?: Record<string, any>;
+  metadata?: Record<string, any>;
 }
 
 export interface SystemAlert {
   id: string;
   alert_type: string;
-  severity: 'critical' | 'high' | 'medium' | 'low';
+  severity: 'critical' | 'high' | 'medium' | 'low' | 'info';
   title: string;
   description?: string;
   acknowledged: boolean;
@@ -43,6 +49,7 @@ export interface SystemAlert {
   resolved: boolean;
   resolved_at?: string;
   created_at: string;
+  triggered_by?: string;
   metadata?: Record<string, any>;
 }
 
