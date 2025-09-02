@@ -2190,9 +2190,17 @@ export type Database = {
           achievement_name: string
         }[]
       }
+      cleanup_expired_data: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       compute_daily_analytics: {
         Args: { target_date?: string }
         Returns: undefined
+      }
+      detect_suspicious_activity: {
+        Args: { p_activity_type: string; p_metadata?: Json; p_user_id: string }
+        Returns: boolean
       }
       end_user_session: {
         Args: { session_id: string }
@@ -2358,6 +2366,15 @@ export type Database = {
       validate_password_strength: {
         Args: { password_text: string }
         Returns: Json
+      }
+      validate_user_permissions: {
+        Args: {
+          p_action: string
+          p_resource_id: string
+          p_resource_type: string
+          p_user_id: string
+        }
+        Returns: boolean
       }
     }
     Enums: {
