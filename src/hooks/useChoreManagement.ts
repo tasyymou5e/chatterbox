@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useChoreStore } from '@/stores/choreStore';
 import { useStoreResult } from '@/hooks/useStoreResult';
 
@@ -119,7 +119,7 @@ export const useChoreManagement = (familyId?: string) => {
   }, [familyId, setFamilyId]);
 
   // Wrapper functions with UI feedback
-  const createChoreFromTemplate = async (templateId: string, customizations?: Partial<Chore>) => {
+  const createChoreFromTemplate = async (templateId: string, customizations?: Partial<Chore>): Promise<any> => {
     const result = await storeCreateChoreFromTemplate(templateId, customizations);
     return handleResult(result, {
       successTitle: 'Success',
@@ -127,7 +127,7 @@ export const useChoreManagement = (familyId?: string) => {
     });
   };
 
-  const createCustomChore = async (choreData: Omit<Chore, 'id' | 'created_at' | 'updated_at' | 'family_id' | 'created_by'>) => {
+  const createCustomChore = async (choreData: Omit<Chore, 'id' | 'created_at' | 'updated_at' | 'family_id' | 'created_by'>): Promise<any> => {
     const result = await storeCreateCustomChore(choreData);
     return handleResult(result, {
       successTitle: 'Success',
@@ -140,7 +140,7 @@ export const useChoreManagement = (familyId?: string) => {
     assignedTo: string,
     dueDate?: string,
     recurrencePattern?: any
-  ) => {
+  ): Promise<any> => {
     const result = await storeAssignChore(choreId, assignedTo, dueDate, recurrencePattern);
     return handleResult(result, {
       successTitle: 'Success',
@@ -153,7 +153,7 @@ export const useChoreManagement = (familyId?: string) => {
     assignedTo: string;
     dueDate?: string;
     recurrencePattern?: any;
-  }>) => {
+  }>): Promise<any> => {
     const result = await storeBulkAssignChores(assignments);
     return handleResult(result, {
       successTitle: 'Success',
@@ -171,7 +171,7 @@ export const useChoreManagement = (familyId?: string) => {
       completion_notes?: string;
       parent_feedback?: string;
     }
-  ) => {
+  ): Promise<any> => {
     const result = await storeUpdateAssignmentStatus(assignmentId, status, completionData);
     return handleResult(result, {
       successTitle: 'Status Updated',
@@ -197,11 +197,11 @@ export const useChoreManagement = (familyId?: string) => {
     updateAssignmentStatus,
 
     // Refresh
-    refetch: () => Promise.all([
+    refetch: useCallback(() => Promise.all([
       fetchCategories(),
       fetchTemplates(), 
       fetchChores(),
       fetchAssignments(),
-    ]),
+    ]), [fetchCategories, fetchTemplates, fetchChores, fetchAssignments]),
   };
 };

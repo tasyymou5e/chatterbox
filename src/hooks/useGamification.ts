@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useGamificationStore } from '@/stores/gamificationStore';
 import { useStoreResult } from '@/hooks/useStoreResult';
@@ -140,7 +140,7 @@ export const useGamification = (familyId?: string) => {
     point_cost: number;
     reward_type?: 'points' | 'custom' | 'privilege' | 'activity';
     image_url?: string;
-  }) => {
+  }): Promise<any> => {
     const result = await storeAddWishlistItem(itemData);
     return handleResult(result, {
       successTitle: 'Success',
@@ -148,7 +148,7 @@ export const useGamification = (familyId?: string) => {
     });
   };
 
-  const redeemWishlistItem = async (itemId: string) => {
+  const redeemWishlistItem = async (itemId: string): Promise<any> => {
     const result = await storeRedeemWishlistItem(itemId);
     return handleResult(result, {
       successTitle: 'Success!',
@@ -156,10 +156,9 @@ export const useGamification = (familyId?: string) => {
     });
   };
 
-  const checkAchievements = async () => {
+  const checkAchievements = async (): Promise<void> => {
     // The store function handles its own error reporting and notifications
     await storeCheckAchievements();
-    return null;
   };
 
   return {
@@ -180,6 +179,6 @@ export const useGamification = (familyId?: string) => {
     checkAchievements,
 
     // Refresh
-    refetch,
+    refetch: useCallback(refetch, [refetch]),
   };
 };
