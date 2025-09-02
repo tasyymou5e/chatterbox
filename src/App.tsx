@@ -12,6 +12,7 @@ import Auth from "./pages/Auth";
 import About from "./pages/About";
 import ParentDashboard from "./pages/ParentDashboard";
 import ParentChoreManagement from "./pages/parent/ParentChoreManagement";
+import ParentConnectionManagement from "./pages/parent/ParentConnectionManagement";
 import ChildrenTasksDashboard from "./pages/children/ChildrenTasksDashboard";
 import Reports from "./pages/Reports";
 import GamesCatalog from "./pages/GamesCatalog";
@@ -59,6 +60,7 @@ const App = () => {
                 <Route path="/parent-dashboard" element={<ParentDashboard />} />
                 <Route path="/parent" element={<ParentDashboard />} />
                 <Route path="/parent/chores" element={<ParentChoreManagement />} />
+                <Route path="/parent/connections" element={<ParentConnectionManagement />} />
                 <Route path="/children/tasks" element={<ChildrenTasksDashboard />} />
                 <Route path="/reports" element={<Reports />} />
                 <Route path="/games" element={<GamesCatalog />} />

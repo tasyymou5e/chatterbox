@@ -5,3 +5,4 @@ export { useChoreStore } from './choreStore';
 export { useAnalyticsStore } from './analyticsStore';
 export { useGamificationStore } from './gamificationStore';
 export { useAdminStore } from './adminStore';
+export { useConnectionStore } from './connectionStore';

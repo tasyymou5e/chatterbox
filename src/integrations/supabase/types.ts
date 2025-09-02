@@ -118,6 +118,7 @@ export type Database = {
           updated_at: string
           verified_at: string | null
           verified_by: string | null
+          visibility_settings: Json | null
         }
         Insert: {
           assigned_at?: string
@@ -141,6 +142,7 @@ export type Database = {
           updated_at?: string
           verified_at?: string | null
           verified_by?: string | null
+          visibility_settings?: Json | null
         }
         Update: {
           assigned_at?: string
@@ -164,6 +166,7 @@ export type Database = {
           updated_at?: string
           verified_at?: string | null
           verified_by?: string | null
+          visibility_settings?: Json | null
         }
         Relationships: [
           {
@@ -904,6 +907,106 @@ export type Database = {
           },
         ]
       }
+      family_connections: {
+        Row: {
+          connected_at: string | null
+          connected_user_id: string
+          connection_metadata: Json | null
+          connection_role: Database["public"]["Enums"]["app_role"]
+          created_at: string
+          expires_at: string | null
+          family_id: string
+          id: string
+          invited_by: string
+          permissions: Json
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          connected_at?: string | null
+          connected_user_id: string
+          connection_metadata?: Json | null
+          connection_role: Database["public"]["Enums"]["app_role"]
+          created_at?: string
+          expires_at?: string | null
+          family_id: string
+          id?: string
+          invited_by: string
+          permissions?: Json
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          connected_at?: string | null
+          connected_user_id?: string
+          connection_metadata?: Json | null
+          connection_role?: Database["public"]["Enums"]["app_role"]
+          created_at?: string
+          expires_at?: string | null
+          family_id?: string
+          id?: string
+          invited_by?: string
+          permissions?: Json
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_connections_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      family_invitations: {
+        Row: {
+          accepted_at: string | null
+          connection_role: Database["public"]["Enums"]["app_role"]
+          created_at: string
+          expires_at: string
+          family_id: string
+          id: string
+          invitation_message: string | null
+          invited_by: string
+          invited_email: string
+          permissions: Json
+        }
+        Insert: {
+          accepted_at?: string | null
+          connection_role: Database["public"]["Enums"]["app_role"]
+          created_at?: string
+          expires_at?: string
+          family_id: string
+          id?: string
+          invitation_message?: string | null
+          invited_by: string
+          invited_email: string
+          permissions?: Json
+        }
+        Update: {
+          accepted_at?: string | null
+          connection_role?: Database["public"]["Enums"]["app_role"]
+          created_at?: string
+          expires_at?: string
+          family_id?: string
+          id?: string
+          invitation_message?: string | null
+          invited_by?: string
+          invited_email?: string
+          permissions?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_invitations_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       family_leaderboards: {
         Row: {
           achievements_unlocked: number | null
@@ -959,6 +1062,7 @@ export type Database = {
       }
       family_members: {
         Row: {
+          connection_metadata: Json | null
           created_at: string
           family_id: string
           id: string
@@ -968,6 +1072,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          connection_metadata?: Json | null
           created_at?: string
           family_id: string
           id?: string
@@ -977,6 +1082,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          connection_metadata?: Json | null
           created_at?: string
           family_id?: string
           id?: string
@@ -1445,6 +1551,7 @@ export type Database = {
           id: string
           metadata: Json | null
           progress: Json | null
+          shared_with_connections: Json | null
           unlocked_at: string
           user_id: string
         }
@@ -1454,6 +1561,7 @@ export type Database = {
           id?: string
           metadata?: Json | null
           progress?: Json | null
+          shared_with_connections?: Json | null
           unlocked_at?: string
           user_id: string
         }
@@ -1463,6 +1571,7 @@ export type Database = {
           id?: string
           metadata?: Json | null
           progress?: Json | null
+          shared_with_connections?: Json | null
           unlocked_at?: string
           user_id?: string
         }
@@ -1863,11 +1972,23 @@ export type Database = {
           total_errors: number
         }[]
       }
+      has_connection_permission: {
+        Args: {
+          family_id_param: string
+          permission_key: string
+          user_id_param: string
+        }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_family_connection: {
+        Args: { family_id_param: string; user_id_param: string }
         Returns: boolean
       }
       is_family_creator: {

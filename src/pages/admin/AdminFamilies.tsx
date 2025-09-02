@@ -37,7 +37,7 @@ import { useAuthStore } from '@/stores/authStore';
 interface FamilyMember {
   id: string;
   user_id: string;
-  role: 'parent' | 'child' | 'admin';
+  role: 'parent' | 'child' | 'admin' | 'therapist' | 'teacher' | 'grandparent' | 'family_friend';
   joined_at: string;
   first_name?: string;
   last_name?: string;
