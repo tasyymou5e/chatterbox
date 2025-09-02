@@ -123,7 +123,7 @@ export const useAnalyticsStore = create<AnalyticsState>()(
           );
           
           const queryPromise = supabase.rpc('get_engagement_analytics', { days_back: 30 });
-          const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
+          const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as { data: any, error: any };
           
           if (error) throw error;
           set({ engagementMetrics: data || [] });
@@ -150,7 +150,7 @@ export const useAnalyticsStore = create<AnalyticsState>()(
           );
           
           const queryPromise = supabase.rpc('get_daily_analytics_for_admins', { days_back: 30 });
-          const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
+          const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as { data: any, error: any };
           
           if (error) {
             console.error('❌ RPC Error details:', error);
@@ -181,9 +181,9 @@ export const useAnalyticsStore = create<AnalyticsState>()(
           
           console.log('✅ Daily analytics fetched successfully:', transformedData.length, 'records');
           set({ dailyAnalytics: transformedData, retryCount: 0 });
-        } catch (err: any) {
+        } catch (err: unknown) {
           console.error('❌ Error fetching daily analytics:', err);
-          const errorMsg = err?.message || 'Unknown error occurred';
+          const errorMsg = err instanceof Error ? err.message : 'Unknown error occurred';
           
           // Enhanced retry logic with exponential backoff and instance tracking
           const state = get();
@@ -238,7 +238,7 @@ export const useAnalyticsStore = create<AnalyticsState>()(
           );
           
           const queryPromise = supabase.rpc('calculate_user_retention', { days_back: 30 });
-          const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
+          const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as { data: any, error: any };
           
           if (error) throw error;
           set({ retentionData: data || [] });

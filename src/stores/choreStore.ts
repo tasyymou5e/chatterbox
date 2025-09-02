@@ -20,7 +20,7 @@ import {
   type AutismAccommodations,
   type CompletionData
 } from '@/types/chore';
-import { type Json } from '@/integrations/supabase/types';
+import { type Json, type Database } from '@/integrations/supabase/types';
 
 interface ChoreCategory {
   id: string;
@@ -339,11 +339,11 @@ export const useChoreStore = create<ChoreState>()(
 
           await fetchChores();
           return { success: true, result: createStoreSuccess(data, 'Chore created successfully') };
-        } catch (error: any) {
+        } catch (error: unknown) {
           console.error('Error creating chore:', error);
-          const storeError = error.name === 'ZodError' 
-            ? createStoreError('validation', 'Invalid input data', undefined, { validation: error.errors })
-            : createStoreError('network', error.message || 'Failed to create chore');
+          const storeError = (error as any)?.name === 'ZodError' 
+            ? createStoreError('validation', 'Invalid input data', undefined, { validation: (error as any).errors })
+            : createStoreError('network', error instanceof Error ? error.message : 'Failed to create chore');
           set({ error: storeError });
           return { success: false, error: storeError };
         }
@@ -395,11 +395,11 @@ export const useChoreStore = create<ChoreState>()(
 
           await fetchChores();
           return { success: true, result: createStoreSuccess(data, 'Custom chore created successfully') };
-        } catch (error: any) {
+        } catch (error: unknown) {
           console.error('Error creating custom chore:', error);
-          const storeError = error.name === 'ZodError' 
-            ? createStoreError('validation', 'Invalid input data', undefined, { validation: error.errors })
-            : createStoreError('network', error.message || 'Failed to create chore');
+          const storeError = (error as any)?.name === 'ZodError' 
+            ? createStoreError('validation', 'Invalid input data', undefined, { validation: (error as any).errors })
+            : createStoreError('network', error instanceof Error ? error.message : 'Failed to create chore');
           set({ error: storeError });
           return { success: false, error: storeError };
         }
@@ -444,9 +444,9 @@ export const useChoreStore = create<ChoreState>()(
 
           await fetchAssignments();
           return { success: true, result: createStoreSuccess(data, 'Chore assigned successfully') };
-        } catch (error: any) {
+        } catch (error: unknown) {
           console.error('Error assigning chore:', error);
-          const storeError = createStoreError('network', error.message || 'Failed to assign chore');
+          const storeError = createStoreError('network', error instanceof Error ? error.message : 'Failed to assign chore');
           set({ error: storeError });
           return { success: false, error: storeError };
         }
@@ -492,9 +492,9 @@ export const useChoreStore = create<ChoreState>()(
 
           await fetchAssignments();
           return { success: true, result: createStoreSuccess(data, `${assignments.length} chores assigned successfully`) };
-        } catch (error: any) {
+        } catch (error: unknown) {
           console.error('Error bulk assigning chores:', error);
-          const storeError = createStoreError('network', error.message || 'Failed to assign chores');
+          const storeError = createStoreError('network', error instanceof Error ? error.message : 'Failed to assign chores');
           set({ error: storeError });
           return { success: false, error: storeError };
         }
@@ -512,7 +512,7 @@ export const useChoreStore = create<ChoreState>()(
             return { success: false, error };
           }
 
-          const updateData: any = {
+          const updateData: Partial<Database['public']['Tables']['chore_assignments']['Update']> = {
             status,
             ...completionData,
           };
@@ -550,9 +550,9 @@ export const useChoreStore = create<ChoreState>()(
 
           await fetchAssignments();
           return { success: true, result: createStoreSuccess(data, 'Assignment updated successfully') };
-        } catch (error: any) {
+        } catch (error: unknown) {
           console.error('Error updating assignment:', error);
-          const storeError = createStoreError('network', error.message || 'Failed to update assignment');
+          const storeError = createStoreError('network', error instanceof Error ? error.message : 'Failed to update assignment');
           set({ error: storeError });
           return { success: false, error: storeError };
         }

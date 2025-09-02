@@ -4,6 +4,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { authLoggingService } from '@/services/authLoggingService';
 import { type AuthError, type AuthMetadata } from '@/types/auth';
+import { type Database } from '@/integrations/supabase/types';
 
 interface AuthState {
   // State
@@ -20,7 +21,7 @@ interface AuthState {
   // Actions
   initialize: () => void;
   signUp: (email: string, password: string, firstName?: string, lastName?: string) => Promise<{ error: AuthError | null }>;
-  signIn: (email: string, password: string) => Promise<{ error: AuthError | null; user?: any; isAdmin?: boolean }>;
+  signIn: (email: string, password: string) => Promise<{ error: AuthError | null; user?: User; isAdmin?: boolean }>;
   signOut: () => Promise<{ error: AuthError | null }>;
   resetPassword: (email: string, userType?: 'admin' | 'user') => Promise<{ error: AuthError | null }>;
   clearSignOutState: () => void;

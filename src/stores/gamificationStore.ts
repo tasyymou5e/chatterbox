@@ -17,7 +17,7 @@ import {
   type UserMetadata,
   type AchievementMetadata
 } from '@/types/gamification';
-import { type Json } from '@/integrations/supabase/types';
+import { type Json, type Database } from '@/integrations/supabase/types';
 
 interface UserLevel {
   id: string;
@@ -393,11 +393,11 @@ export const useGamificationStore = create<GamificationState>()(
 
           await fetchWishlistItems();
           return { success: true, result: createStoreSuccess(data, 'Wishlist item added successfully') };
-        } catch (error: any) {
+        } catch (error: unknown) {
           console.error('Error adding wishlist item:', error);
-          const storeError = error.name === 'ZodError' 
-            ? createStoreError('validation', 'Invalid input data', undefined, { validation: error.errors })
-            : createStoreError('network', error.message || 'Failed to add wishlist item');
+          const storeError = (error as any)?.name === 'ZodError' 
+            ? createStoreError('validation', 'Invalid input data', undefined, { validation: (error as any).errors })
+            : createStoreError('network', error instanceof Error ? error.message : 'Failed to add wishlist item');
           set({ error: storeError });
           return { success: false, error: storeError };
         }
@@ -487,9 +487,9 @@ export const useGamificationStore = create<GamificationState>()(
             success: true, 
             result: createStoreSuccess(redemption, `Redeemed "${item.item_name}" for ${item.point_cost} points`)
           };
-        } catch (error: any) {
+        } catch (error: unknown) {
           console.error('Error redeeming wishlist item:', error);
-          const storeError = createStoreError('network', error.message || 'Failed to redeem item');
+          const storeError = createStoreError('network', error instanceof Error ? error.message : 'Failed to redeem item');
           set({ error: storeError });
           return { success: false, error: storeError };
         }
@@ -514,14 +514,14 @@ export const useGamificationStore = create<GamificationState>()(
 
           if (data && data.length > 0) {
             // Log achievements earned - UI layer will handle notifications
-            console.log('🏆 Achievements earned:', data.map((a: any) => a.achievement_name));
+            console.log('🏆 Achievements earned:', data.map((a: any) => a.achievement_id));
 
             // Refresh achievements
             await fetchUserAchievements();
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           console.error('Error checking achievements:', error);
-          const storeError = createStoreError('network', error.message || 'Failed to check achievements');
+          const storeError = createStoreError('network', error instanceof Error ? error.message : 'Failed to check achievements');
           set({ error: storeError });
         }
       },

@@ -153,10 +153,10 @@ export const useSystemHealthStore = create<SystemHealthState>()(
 
           console.log('✅ System health metrics updated successfully');
 
-        } catch (err: any) {
+        } catch (err: unknown) {
           console.error('❌ Error fetching system health:', err);
           set({ 
-            error: `System health check failed: ${err.message}`,
+            error: `System health check failed: ${err instanceof Error ? err.message : String(err)}`,
             loading: false 
           });
 

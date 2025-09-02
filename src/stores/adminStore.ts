@@ -2,10 +2,11 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { supabase } from '@/integrations/supabase/client';
 import { useSystemHealthStore } from './systemHealthStore';
+import { type SystemHealthMetric } from '@/types/systemHealth';
 
 interface AdminState {
   // System metrics
-  systemMetrics: any[];
+  systemMetrics: SystemHealthMetric[];
   loading: boolean;
   error: string | null;
 
@@ -50,10 +51,10 @@ export const useAdminStore = create<AdminState>()(
             loading: false 
           });
 
-        } catch (error: any) {
+        } catch (error: unknown) {
           console.error('Error fetching system metrics:', error);
           set({ 
-            error: `Failed to fetch system metrics: ${error.message}`,
+            error: `Failed to fetch system metrics: ${error instanceof Error ? error.message : String(error)}`,
             loading: false,
             systemMetrics: [] 
           });

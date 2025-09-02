@@ -56,11 +56,11 @@ interface ConnectionState {
   // Actions
   fetchConnections: (familyId: string) => Promise<void>;
   fetchInvitations: (familyId: string) => Promise<void>;
-  sendInvitation: (invitation: Omit<FamilyInvitation, 'id' | 'created_at' | 'expires_at'>) => Promise<{ error: any }>;
-  updateConnection: (connectionId: string, updates: Partial<FamilyConnection>) => Promise<{ error: any }>;
-  removeConnection: (connectionId: string) => Promise<{ error: any }>;
-  acceptInvitation: (invitationId: string) => Promise<{ error: any }>;
-  declineInvitation: (invitationId: string) => Promise<{ error: any }>;
+  sendInvitation: (invitation: Omit<FamilyInvitation, 'id' | 'created_at' | 'expires_at'>) => Promise<{ error: Error | null }>;
+  updateConnection: (connectionId: string, updates: Partial<FamilyConnection>) => Promise<{ error: Error | null }>;
+  removeConnection: (connectionId: string) => Promise<{ error: Error | null }>;
+  acceptInvitation: (invitationId: string) => Promise<{ error: Error | null }>;
+  declineInvitation: (invitationId: string) => Promise<{ error: Error | null }>;
   
   // Utility
   setLoading: (loading: boolean) => void;
@@ -190,9 +190,9 @@ export const useConnectionStore = create<ConnectionState>()(
             return { error: null };
           } catch (error) {
             console.error('Error sending invitation:', error);
-            const errorMessage = (error as Error).message;
-            set({ error: errorMessage, loading: false });
-            return { error: errorMessage };
+            const err = error instanceof Error ? error : new Error(String(error));
+            set({ error: err.message, loading: false });
+            return { error: err };
           }
         },
 
@@ -217,9 +217,9 @@ export const useConnectionStore = create<ConnectionState>()(
             return { error: null };
           } catch (error) {
             console.error('Error updating connection:', error);
-            const errorMessage = (error as Error).message;
-            set({ error: errorMessage, loading: false });
-            return { error: errorMessage };
+            const err = error instanceof Error ? error : new Error(String(error));
+            set({ error: err.message, loading: false });
+            return { error: err };
           }
         },
 
@@ -244,9 +244,9 @@ export const useConnectionStore = create<ConnectionState>()(
             return { error: null };
           } catch (error) {
             console.error('Error removing connection:', error);
-            const errorMessage = (error as Error).message;
-            set({ error: errorMessage, loading: false });
-            return { error: errorMessage };
+            const err = error instanceof Error ? error : new Error(String(error));
+            set({ error: err.message, loading: false });
+            return { error: err };
           }
         },
 
@@ -295,9 +295,9 @@ export const useConnectionStore = create<ConnectionState>()(
             return { error: null };
           } catch (error) {
             console.error('Error accepting invitation:', error);
-            const errorMessage = (error as Error).message;
-            set({ error: errorMessage, loading: false });
-            return { error: errorMessage };
+            const err = error instanceof Error ? error : new Error(String(error));
+            set({ error: err.message, loading: false });
+            return { error: err };
           }
         },
 
@@ -319,9 +319,9 @@ export const useConnectionStore = create<ConnectionState>()(
             return { error: null };
           } catch (error) {
             console.error('Error declining invitation:', error);
-            const errorMessage = (error as Error).message;
-            set({ error: errorMessage, loading: false });
-            return { error: errorMessage };
+            const err = error instanceof Error ? error : new Error(String(error));
+            set({ error: err.message, loading: false });
+            return { error: err };
           }
         },
 
