@@ -398,34 +398,29 @@ export const useGamificationStore = create<GamificationState>()(
 
       redeemWishlistItem: async (itemId: string) => {
         const { userId, familyId, userPoints, wishlistItems, fetchUserPoints, fetchWishlistItems } = get();
-        if (!userId || !familyId) return null;
+        if (!userId || !familyId) {
+          const error = createStoreError('auth', 'Authentication required');
+          set({ error });
+          return { success: false, error };
+        }
 
         const item = wishlistItems.find(w => w.id === itemId);
         if (!item) {
-          toast({
-            title: 'Error',
-            description: 'Item not found',
-            variant: 'destructive',
-          });
-          return null;
+          const error = createStoreError('validation', 'Item not found');
+          set({ error });
+          return { success: false, error };
         }
 
         if (!userPoints || userPoints.current_points < item.point_cost) {
-          toast({
-            title: 'Not enough points',
-            description: `You need ${item.point_cost} points to redeem this item`,
-            variant: 'destructive',
-          });
-          return null;
+          const error = createStoreError('validation', `You need ${item.point_cost} points to redeem this item`);
+          set({ error });
+          return { success: false, error };
         }
 
         if (!item.is_approved) {
-          toast({
-            title: 'Item not approved',
-            description: 'This item needs parent approval before redemption',
-            variant: 'destructive',
-          });
-          return null;
+          const error = createStoreError('permission', 'This item needs parent approval before redemption');
+          set({ error });
+          return { success: false, error };
         }
 
         try {
@@ -443,12 +438,9 @@ export const useGamificationStore = create<GamificationState>()(
 
           if (redemptionError) {
             console.error('Error creating redemption:', redemptionError);
-            toast({
-              title: 'Error',
-              description: 'Failed to redeem item',
-              variant: 'destructive',
-            });
-            return null;
+            const error = createStoreError('network', 'Failed to redeem item', redemptionError.code, { error: redemptionError });
+            set({ error });
+            return { success: false, error };
           }
 
           // Update wishlist item
@@ -484,15 +476,15 @@ export const useGamificationStore = create<GamificationState>()(
             fetchWishlistItems(),
           ]);
 
-          toast({
-            title: 'Success!',
-            description: `Redeemed "${item.item_name}" for ${item.point_cost} points`,
-          });
-
-          return redemption;
-        } catch (error) {
+          return { 
+            success: true, 
+            result: createStoreSuccess(redemption, `Redeemed "${item.item_name}" for ${item.point_cost} points`)
+          };
+        } catch (error: any) {
           console.error('Error redeeming wishlist item:', error);
-          return null;
+          const storeError = createStoreError('network', error.message || 'Failed to redeem item');
+          set({ error: storeError });
+          return { success: false, error: storeError };
         }
       },
 
@@ -508,23 +500,22 @@ export const useGamificationStore = create<GamificationState>()(
 
           if (error) {
             console.error('Error checking achievements:', error);
+            const storeError = createStoreError('network', 'Failed to check achievements', error.code, { error });
+            set({ error: storeError });
             return;
           }
 
           if (data && data.length > 0) {
-            data.forEach((achievement: any) => {
-              toast({
-                title: '🏆 Achievement Unlocked!',
-                description: achievement.achievement_name,
-                duration: 5000,
-              });
-            });
+            // Log achievements earned - UI layer will handle notifications
+            console.log('🏆 Achievements earned:', data.map((a: any) => a.achievement_name));
 
             // Refresh achievements
             await fetchUserAchievements();
           }
-        } catch (error) {
+        } catch (error: any) {
           console.error('Error checking achievements:', error);
+          const storeError = createStoreError('network', error.message || 'Failed to check achievements');
+          set({ error: storeError });
         }
       },
 
