@@ -7,6 +7,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { Heart, Users, Plus, Settings, LogOut, Target } from 'lucide-react';
+import CreateChildAccountDialog from '@/components/parent/CreateChildAccountDialog';
 
 interface Profile {
   id: string;
@@ -21,6 +22,7 @@ const ParentDashboard = () => {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
+  const [showCreateChildDialog, setShowCreateChildDialog] = useState(false);
 
   useEffect(() => {
     console.log('🏠 ParentDashboard: Auth state check', {
@@ -196,7 +198,10 @@ const ParentDashboard = () => {
                 <p className="text-sm text-muted-foreground">
                   Set up personalized learning experiences tailored to your child's needs.
                 </p>
-                <Button className="w-full mt-4 bg-accent hover:bg-accent-hover">
+                <Button 
+                  className="w-full mt-4 bg-accent hover:bg-accent-hover"
+                  onClick={() => setShowCreateChildDialog(true)}
+                >
                   Create Child Account
                 </Button>
               </div>
@@ -242,6 +247,19 @@ const ParentDashboard = () => {
           </CardContent>
         </Card>
       </main>
+
+      {/* Create Child Account Dialog */}
+      <CreateChildAccountDialog
+        open={showCreateChildDialog}
+        onOpenChange={setShowCreateChildDialog}
+        onSuccess={() => {
+          // Could refresh family data here if needed
+          toast({
+            title: "Child account created",
+            description: "The child can now complete their account setup with the provided code.",
+          });
+        }}
+      />
     </div>
   );
 };

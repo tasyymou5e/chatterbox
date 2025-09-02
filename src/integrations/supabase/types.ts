@@ -251,6 +251,59 @@ export type Database = {
         }
         Relationships: []
       }
+      child_accounts: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          created_by: string
+          family_code: string
+          family_id: string
+          first_name: string
+          generated_email: string
+          id: string
+          last_name: string
+          metadata: Json | null
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          created_by: string
+          family_code: string
+          family_id: string
+          first_name: string
+          generated_email: string
+          id?: string
+          last_name: string
+          metadata?: Json | null
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string
+          family_code?: string
+          family_id?: string
+          first_name?: string
+          generated_email?: string
+          id?: string
+          last_name?: string
+          metadata?: Json | null
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "child_accounts_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chore_assignments: {
         Row: {
           assigned_at: string
@@ -2205,6 +2258,10 @@ export type Database = {
       end_user_session: {
         Args: { session_id: string }
         Returns: undefined
+      }
+      generate_child_account_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
       generate_family_code: {
         Args: Record<PropertyKey, never>

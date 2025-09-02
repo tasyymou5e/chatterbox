@@ -3,5 +3,8 @@ project_id = "lxuqfgbukrrickanmmic"
 [functions.create-test-family]
 verify_jwt = true
 
+[functions.create-child-account]
+verify_jwt = true
+
 [functions.admin-update-user]
 verify_jwt = true

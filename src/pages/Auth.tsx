@@ -10,11 +10,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { useAuthNavigation } from '@/hooks/useAuthNavigation';
 import { useAuthLogging } from '@/hooks/useAuthLogging';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, Heart, Mail, ArrowLeft, Shield, CheckCircle } from 'lucide-react';
+import { Loader2, Heart, Mail, ArrowLeft, Shield, CheckCircle, UserPlus } from 'lucide-react';
 import { PasswordStrengthIndicator } from '@/components/auth/PasswordStrengthIndicator';
 import { SecurityBanner } from '@/components/auth/SecurityBanner';
 
-type AuthTab = 'signup' | 'signin' | 'forgot-password' | 'reset-confirm';
+type AuthTab = 'signup' | 'signin' | 'forgot-password' | 'reset-confirm' | 'child-signup';
 
 const Auth = () => {
   const [searchParams] = useSearchParams();
@@ -29,6 +29,11 @@ const Auth = () => {
   const [isCheckingToken, setIsCheckingToken] = useState(false);
   const [isResetComplete, setIsResetComplete] = useState(false);
   
+  // Child signup states
+  const [childAccountCode, setChildAccountCode] = useState('');
+  const [childSignupPassword, setChildSignupPassword] = useState('');
+  const [childAccountData, setChildAccountData] = useState<any>(null);
+  
   const { signUp, signIn, resetPassword } = useAuth();
   const { logActivity, createSession } = useAuthLogging();
   const navigate = useNavigate();
@@ -41,8 +46,12 @@ const Auth = () => {
     const tab = searchParams.get('tab') as AuthTab;
     const accessToken = searchParams.get('access_token');
     const refreshToken = searchParams.get('refresh_token');
+    const code = searchParams.get('code'); // Child signup code
     
-    if (tab === 'reset-confirm' && accessToken && refreshToken) {
+    if (tab === 'child-signup' && code) {
+      setActiveTab('child-signup');
+      setChildAccountCode(code);
+    } else if (tab === 'reset-confirm' && accessToken && refreshToken) {
       setActiveTab('reset-confirm');
       setIsCheckingToken(true);
       
@@ -64,7 +73,7 @@ const Auth = () => {
         }
         setIsCheckingToken(false);
       });
-    } else if (tab && ['signup', 'signin', 'forgot-password'].includes(tab)) {
+    } else if (tab && ['signup', 'signin', 'forgot-password', 'child-signup'].includes(tab)) {
       setActiveTab(tab);
     }
   }, [searchParams]);
@@ -259,6 +268,125 @@ const Auth = () => {
     setIsLoading(false);
   };
 
+  const handleChildSignup = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    const formData = new FormData(e.currentTarget);
+    const accountCode = formData.get('account-code') as string;
+    const password = formData.get('child-password') as string;
+    const confirmPassword = formData.get('child-confirm-password') as string;
+
+    if (password !== confirmPassword) {
+      toast({
+        title: 'Passwords do not match',
+        description: 'Please ensure both passwords are identical.',
+        variant: 'destructive',
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      // First, verify the child account code and get account details
+      const { data: childAccount, error: fetchError } = await supabase
+        .from('child_accounts')
+        .select('*')
+        .eq('family_code', accountCode)
+        .eq('status', 'pending')
+        .single();
+
+      if (fetchError || !childAccount) {
+        throw new Error('Invalid account code or account already completed');
+      }
+
+      // Create the auth user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: childAccount.generated_email,
+        password: password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            first_name: childAccount.first_name,
+            last_name: childAccount.last_name,
+            account_type: 'child'
+          }
+        }
+      });
+
+      if (authError) throw authError;
+
+      if (!authData.user) {
+        throw new Error('Failed to create user account');
+      }
+
+      // Update child account record with the new user ID
+      const { error: updateError } = await supabase
+        .from('child_accounts')
+        .update({
+          user_id: authData.user.id,
+          status: 'completed',
+          completed_at: new Date().toISOString()
+        })
+        .eq('id', childAccount.id);
+
+      if (updateError) {
+        console.error('Failed to update child account:', updateError);
+      }
+
+      // Remove default parent role and add child role
+      await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', authData.user.id)
+        .eq('role', 'parent');
+
+      await supabase
+        .from('user_roles')
+        .insert({
+          user_id: authData.user.id,
+          role: 'child'
+        });
+
+      // Add to family_members table
+      await supabase
+        .from('family_members')
+        .insert({
+          family_id: childAccount.family_id,
+          user_id: authData.user.id,
+          role: 'child',
+          invited_by: childAccount.created_by
+        });
+
+      toast({
+        title: 'Account Created Successfully!',
+        description: `Welcome ${childAccount.first_name}! Your account has been set up and linked to your family.`,
+      });
+
+      // Sign in the newly created user
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: childAccount.generated_email,
+        password: password,
+      });
+
+      if (signInError) {
+        console.error('Auto sign-in failed:', signInError);
+        // Switch to sign in tab if auto sign-in fails
+        setActiveTab('signin');
+      }
+
+    } catch (err: any) {
+      const errorDetails = getErrorMessage(err);
+      toast({
+        title: errorDetails.title,
+        description: errorDetails.description,
+        variant: 'destructive',
+      });
+    }
+
+    setIsLoading(false);
+  };
+
   const handleResetPasswordConfirm = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
@@ -353,17 +481,34 @@ const Auth = () => {
             <CardDescription>
               {activeTab === 'forgot-password' 
                 ? 'Reset your password' 
+                : activeTab === 'child-signup'
+                ? 'Complete your child account setup'
                 : 'Create an account or sign in to get started'
               }
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as AuthTab)} className="w-full">
-              {activeTab !== 'forgot-password' && activeTab !== 'reset-confirm' && (
+              {activeTab !== 'forgot-password' && activeTab !== 'reset-confirm' && activeTab !== 'child-signup' && (
                 <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="signup">Sign Up</TabsTrigger>
                   <TabsTrigger value="signin">Sign In</TabsTrigger>
                 </TabsList>
+              )}
+              
+              {activeTab === 'child-signup' && (
+                <div className="mb-4 text-center">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setActiveTab('signin')}
+                    className="p-0 h-auto"
+                  >
+                    <ArrowLeft className="h-4 w-4 mr-1" />
+                    Back to Sign In
+                  </Button>
+                </div>
               )}
               
               <TabsContent value="signup">
@@ -480,19 +625,126 @@ const Auth = () => {
                   
                   {/* Forgot Password Link */}
                   <div className="text-center pt-2">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setActiveTab('forgot-password')}
-                      className="text-xs text-primary hover:text-primary-hover"
-                    >
-                      Forgot your password?
-                    </Button>
+                    <p className="text-xs text-muted-foreground">
+                      Don't have an account code?{' '}
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('signin')}
+                        className="text-primary hover:text-primary-hover underline"
+                      >
+                        Ask your parent to create one for you
+                      </button>
+                      {' or '}
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('child-signup')}
+                        className="text-accent hover:text-accent-hover underline"
+                      >
+                        I have a code
+                      </button>
+                    </p>
                   </div>
                 </form>
               </TabsContent>
+              
+              <TabsContent value="child-signup">
+                <div className="space-y-4">
+                  <div className="text-center mb-6">
+                    <div className="flex justify-center mb-4">
+                      <div className="p-3 bg-accent/10 rounded-full">
+                        <UserPlus className="h-8 w-8 text-accent" />
+                      </div>
+                    </div>
+                    <h3 className="text-lg font-semibold">Complete Your Account</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Enter the account code your parent gave you and create your password
+                    </p>
+                  </div>
 
+                  <form onSubmit={handleChildSignup} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="account-code">Account Code</Label>
+                      <Input
+                        id="account-code"
+                        name="account-code"
+                        type="text"
+                        placeholder="CHILD-XXXXXXXX"
+                        required
+                        value={childAccountCode}
+                        onChange={(e) => setChildAccountCode(e.target.value.toUpperCase())}
+                        className="font-mono"
+                        aria-describedby="account-code-help"
+                      />
+                      <p id="account-code-help" className="text-xs text-muted-foreground">
+                        This is the code your parent gave you to set up your account
+                      </p>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="child-password">Create Your Password</Label>
+                      <Input
+                        id="child-password"
+                        name="child-password"
+                        type="password"
+                        placeholder="Create a secure password"
+                        required
+                        minLength={8}
+                        value={childSignupPassword}
+                        onChange={(e) => setChildSignupPassword(e.target.value)}
+                        aria-describedby="child-password-requirements"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="child-confirm-password">Confirm Password</Label>
+                      <Input
+                        id="child-confirm-password"
+                        name="child-confirm-password"
+                        type="password"
+                        placeholder="Confirm your password"
+                        required
+                        minLength={8}
+                        aria-describedby="child-confirm-password-help"
+                      />
+                    </div>
+                    
+                    {/* Password Strength Indicator */}
+                    <PasswordStrengthIndicator 
+                      password={childSignupPassword} 
+                      className="mt-3"
+                    />
+                    
+                    <Button
+                      type="submit"
+                      className="w-full bg-accent hover:bg-accent-hover"
+                      disabled={isLoading || !childAccountCode}
+                    >
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Setting Up Your Account...
+                        </>
+                      ) : (
+                        'Complete Account Setup'
+                      )}
+                    </Button>
+                  </form>
+                  
+                  <div className="text-center pt-2">
+                    <p className="text-xs text-muted-foreground">
+                      Don't have an account code?{' '}
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('signin')}
+                        className="text-primary hover:text-primary-hover underline"
+                      >
+                        Ask your parent to create one for you
+                      </button>
+                    </p>
+                  </div>
+                </div>
+              </TabsContent>
+              
               <TabsContent value="forgot-password">
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 mb-4">
