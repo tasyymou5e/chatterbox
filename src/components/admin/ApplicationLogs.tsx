@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { RefreshCw, Search, Download, AlertTriangle, AlertCircle, Info, Bug } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { SystemError } from '@/types/systemHealth';
+import type { BrowserInfo, DeviceInfo, ErrorMetadata } from '@/types/supabase';
+import { logger } from '@/utils/logger';
 
 export const ApplicationLogs = () => {
   const [logs, setLogs] = useState<SystemError[]>([]);
@@ -41,12 +43,12 @@ export const ApplicationLogs = () => {
       setLogs((data || []).map(error => ({
         ...error,
         severity: error.severity as 'critical' | 'high' | 'medium' | 'low',
-        browser_info: (error.browser_info as Record<string, any>) || {},
-        device_info: (error.device_info as Record<string, any>) || {},
-        metadata: (error.metadata as Record<string, any>) || {}
+        browser_info: (error.browser_info as BrowserInfo) || {},
+        device_info: (error.device_info as DeviceInfo) || {},
+        metadata: (error.metadata as ErrorMetadata) || {}
       })));
-    } catch (error: any) {
-      console.error('Error fetching application logs:', error);
+    } catch (error: unknown) {
+      logger.error('Error fetching application logs', error instanceof Error ? error : new Error(String(error)));
       toast({
         title: "Error",
         description: "Failed to fetch application logs",

@@ -1,15 +1,16 @@
 // Bridge adapter - migrated to use Zustand store internally
 import { useEffect } from 'react';
 import { useAuthStore } from '@/stores/authStore';
+import type { User, Session, SupabaseError } from '@/types/supabase';
 
 export interface AdminAuthContextType {
-  user: any;
-  session: any;
+  user: User | null;
+  session: Session | null;
   loading: boolean;
   isAdmin: boolean;
   signingOut: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: any; user?: any; isAdmin?: boolean }>;
-  signOut: () => Promise<{ error: any }>;
+  signIn: (email: string, password: string) => Promise<{ error: SupabaseError | null; user?: User | null; isAdmin?: boolean }>;
+  signOut: () => Promise<{ error: SupabaseError | null }>;
 }
 
 // Bridge adapter hook that uses Zustand store internally
@@ -48,8 +49,8 @@ export const useAdminAuth = (): AdminAuthContextType => {
     loading,
     isAdmin,
     signingOut,
-    signIn: storeSignIn,
-    signOut: storeSignOut
+    signIn: storeSignIn as (email: string, password: string) => Promise<{ error: SupabaseError | null; user?: User | null; isAdmin?: boolean }>,
+    signOut: storeSignOut as () => Promise<{ error: SupabaseError | null }>
   };
 };
 
