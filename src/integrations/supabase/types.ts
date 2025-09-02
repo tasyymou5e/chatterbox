@@ -1956,7 +1956,14 @@ export type Database = {
         | "collaboration"
         | "milestone"
         | "special"
-      app_role: "admin" | "parent" | "child"
+      app_role:
+        | "admin"
+        | "parent"
+        | "child"
+        | "therapist"
+        | "teacher"
+        | "grandparent"
+        | "family_friend"
       approval_status: "pending" | "approved" | "rejected"
       chore_difficulty: "easy" | "medium" | "hard"
       chore_status:
@@ -2102,7 +2109,15 @@ export const Constants = {
         "milestone",
         "special",
       ],
-      app_role: ["admin", "parent", "child"],
+      app_role: [
+        "admin",
+        "parent",
+        "child",
+        "therapist",
+        "teacher",
+        "grandparent",
+        "family_friend",
+      ],
       approval_status: ["pending", "approved", "rejected"],
       chore_difficulty: ["easy", "medium", "hard"],
       chore_status: [
