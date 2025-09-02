@@ -334,9 +334,9 @@ export const useConnectionStore = create<ConnectionState>()(
       {
         name: 'connection-store',
         partialize: (state) => ({
-          // Only persist non-sensitive data
-          connections: [],
-          invitations: [],
+          // Only persist loading and error state, refresh data on app load
+          loading: false,
+          error: null,
         }),
       }
     ),

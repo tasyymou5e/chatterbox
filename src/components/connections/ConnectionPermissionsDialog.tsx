@@ -30,10 +30,10 @@ const roleLabels = {
 };
 
 const roleColors = {
-  therapist: 'bg-blue-100 text-blue-800',
-  teacher: 'bg-green-100 text-green-800',
-  grandparent: 'bg-purple-100 text-purple-800',
-  family_friend: 'bg-orange-100 text-orange-800'
+  therapist: 'bg-primary/10 text-primary',
+  teacher: 'bg-secondary/10 text-secondary',
+  grandparent: 'bg-accent/10 text-accent',
+  family_friend: 'bg-muted text-muted-foreground'
 };
 
 export function ConnectionPermissionsDialog({ 

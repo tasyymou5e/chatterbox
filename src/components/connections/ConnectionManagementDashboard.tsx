@@ -21,17 +21,17 @@ const roleLabels = {
 };
 
 const roleColors = {
-  therapist: 'bg-blue-100 text-blue-800',
-  teacher: 'bg-green-100 text-green-800',
-  grandparent: 'bg-purple-100 text-purple-800',
-  family_friend: 'bg-orange-100 text-orange-800'
+  therapist: 'bg-primary/10 text-primary',
+  teacher: 'bg-secondary/10 text-secondary',
+  grandparent: 'bg-accent/10 text-accent',
+  family_friend: 'bg-muted text-muted-foreground'
 };
 
 const statusColors = {
-  pending: 'bg-yellow-100 text-yellow-800',
-  accepted: 'bg-green-100 text-green-800',
-  declined: 'bg-red-100 text-red-800',
-  revoked: 'bg-gray-100 text-gray-800'
+  pending: 'bg-warning/10 text-warning',
+  accepted: 'bg-success/10 text-success',
+  declined: 'bg-destructive/10 text-destructive',
+  revoked: 'bg-muted text-muted-foreground'
 };
 
 export function ConnectionManagementDashboard({ familyId }: ConnectionManagementDashboardProps) {
@@ -133,7 +133,7 @@ export function ConnectionManagementDashboard({ familyId }: ConnectionManagement
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
-              <Mail className="h-8 w-8 text-orange-500" />
+              <Mail className="h-8 w-8 text-accent" />
               <div>
                 <p className="text-2xl font-bold text-foreground">{pendingInvitations.length}</p>
                 <p className="text-sm text-muted-foreground">Pending Invitations</p>
@@ -145,7 +145,7 @@ export function ConnectionManagementDashboard({ familyId }: ConnectionManagement
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
-              <Shield className="h-8 w-8 text-green-500" />
+              <Shield className="h-8 w-8 text-success" />
               <div>
                 <p className="text-2xl font-bold text-foreground">
                   {activeConnections.filter(c => c.permissions.can_view_progress).length}
@@ -267,9 +267,9 @@ export function ConnectionManagementDashboard({ familyId }: ConnectionManagement
                       Expires: {new Date(invitation.expires_at).toLocaleDateString()}
                     </p>
                   </div>
-                  <Badge variant="outline" className="text-orange-600">
-                    Pending
-                  </Badge>
+                   <Badge variant="outline" className="text-warning">
+                     Pending
+                   </Badge>
                 </div>
               ))}
             </div>
