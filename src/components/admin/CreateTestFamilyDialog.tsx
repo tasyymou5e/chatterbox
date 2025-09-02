@@ -113,12 +113,21 @@ export default function CreateTestFamilyDialog({ open, onOpenChange, onSuccess }
       return false;
     }
 
-    // Validate Parent 2 (all or nothing)
+    // Improved Parent 2 validation with clearer messaging
     const parent2HasAny = parent2.firstName.trim() || parent2.lastName.trim() || parent2.email.trim();
     const parent2HasAll = parent2.firstName.trim() && parent2.lastName.trim() && parent2.email.trim();
     
     if (parent2HasAny && !parent2HasAll) {
-      toast({ variant: "destructive", title: "Parent 2: Please fill all fields or leave all empty" });
+      const missingFields = [];
+      if (!parent2.firstName.trim()) missingFields.push('First Name');
+      if (!parent2.lastName.trim()) missingFields.push('Last Name');
+      if (!parent2.email.trim()) missingFields.push('Email');
+      
+      toast({ 
+        variant: "destructive", 
+        title: "Parent 2 Information Incomplete",
+        description: `Please complete these fields: ${missingFields.join(', ')} - or leave all Parent 2 fields empty for single-parent families.`
+      });
       return false;
     }
 

@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { UserPlus, Shield, CheckCircle, Loader2 } from 'lucide-react';
+import { UserPlus, Shield, CheckCircle, Loader2, AlertTriangle, RefreshCw } from 'lucide-react';
+import { cError, cInfo } from '@/utils/conditionalLogger';
 
 export const AdminBootstrap = () => {
   const { toast } = useToast();
@@ -35,13 +36,13 @@ export const AdminBootstrap = () => {
         .limit(1);
       
       if (error) {
-        console.error('Error checking for admins:', error);
+        cError('Error checking for admins', error);
         setHasAdmins(false);
       } else {
         setHasAdmins(data && data.length > 0);
       }
     } catch (error) {
-      console.error('Error checking for admins:', error);
+      cError('Error checking for admins', error);
       setHasAdmins(false);
     } finally {
       setIsChecking(false);
@@ -112,10 +113,25 @@ export const AdminBootstrap = () => {
       await checkForAdmins();
 
     } catch (error) {
-      console.error('Bootstrap admin creation error:', error);
+      cError('Bootstrap admin creation error', error);
+      
+      // Provide user guidance based on error type
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      let userGuidance = '';
+      
+      if (errorMessage.includes('already registered')) {
+        userGuidance = ' Try using a different email address.';
+      } else if (errorMessage.includes('network')) {
+        userGuidance = ' Please check your internet connection and try again.';
+      } else if (errorMessage.includes('role')) {
+        userGuidance = ' The user was created but admin privileges could not be assigned. Contact support.';
+      } else {
+        userGuidance = ' Please try again or contact support if the issue persists.';
+      }
+      
       toast({
         title: "Failed to Create Admin",
-        description: error instanceof Error ? error.message : 'Unknown error occurred',
+        description: errorMessage + userGuidance,
         variant: "destructive",
       });
     } finally {

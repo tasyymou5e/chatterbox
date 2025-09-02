@@ -1,7 +1,8 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
-import { Loader2 } from 'lucide-react';
+import { Loader2, RefreshCw, AlertCircle } from 'lucide-react';
+import { cLog, cWarn, cInfo } from '@/utils/conditionalLogger';
 
 interface AdminRouteProps {
   children: React.ReactNode;
@@ -19,16 +20,16 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
   React.useEffect(() => {
     const debugInfo = `Loading: ${loading}, User: ${user ? 'present' : 'null'}, IsAdmin: ${isAdmin}, SigningOut: ${signingOut}`;
     setAuthDebugInfo(debugInfo);
-    console.log('🛡️ AdminRoute auth state:', debugInfo);
+    cLog('AdminRoute auth state', debugInfo);
   }, [loading, user, isAdmin, signingOut]);
 
   React.useEffect(() => {
     if (loading) {
-      console.log('⏳ AdminRoute: Starting loading timeout (20s)');
+      cInfo('Starting loading timeout (15s)');
       const timeout = setTimeout(() => {
-        console.warn('🚨 Emergency timeout: Loading took too long (>20s)');
+        cWarn('Loading timeout exceeded - providing recovery options');
         setEmergencyLoadingTimeout(true);
-      }, 20000); // Increased to 20 seconds
+      }, 15000); // Reduced to 15 seconds with better UX
 
       return () => clearTimeout(timeout);
     } else {
@@ -38,11 +39,11 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
 
   React.useEffect(() => {
     if (signingOut) {
-      console.log('⏳ AdminRoute: Starting sign out timeout (10s)');
+      cInfo('Starting sign out timeout (8s)');
       const timeout = setTimeout(() => {
-        console.warn('🚨 Emergency timeout: Sign out took too long (>10s)');
+        cWarn('Sign out timeout exceeded - providing recovery options');
         setEmergencySignOutTimeout(true);
-      }, 10000); // Increased to 10 seconds
+      }, 8000); // Reduced to 8 seconds with better UX
 
       return () => clearTimeout(timeout);
     } else {
@@ -50,14 +51,27 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
     }
   }, [signingOut]);
 
-  // Show loading state with debug info
+  // Show enhanced loading state with progress indicators
   if (loading && !emergencyLoadingTimeout) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="mt-4 text-gray-300">Loading admin panel...</p>
-          <p className="mt-2 text-xs text-gray-500">{authDebugInfo}</p>
+        <div className="text-center max-w-md">
+          <div className="animate-spin rounded-full h-20 w-20 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-6 text-gray-300 text-lg font-medium">Loading Admin Panel</p>
+          <p className="mt-2 text-sm text-gray-400">Authenticating and loading dashboard...</p>
+          <div className="mt-4 px-4 py-2 bg-gray-800 rounded-lg">
+            <p className="text-xs text-gray-500">{authDebugInfo}</p>
+          </div>
+          <div className="mt-6">
+            <p className="text-xs text-gray-600">Taking longer than expected?</p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="mt-2 text-blue-400 hover:text-blue-300 text-sm underline flex items-center gap-1 mx-auto"
+            >
+              <RefreshCw className="h-3 w-3" />
+              Refresh Page
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -75,38 +89,57 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
     );
   }
 
-  // Emergency fallback UI with recovery options
+  // Enhanced emergency fallback UI with better guidance
   if (emergencyLoadingTimeout || emergencySignOutTimeout) {
     const handleEmergencyReset = () => {
-      console.log('🚨 Emergency reset triggered');
+      cInfo('Emergency reset triggered by user');
       // Clear all auth state and redirect to login
       localStorage.clear();
       sessionStorage.clear();
       window.location.href = '/admin/login';
     };
 
+    const isSignOutIssue = emergencySignOutTimeout;
+
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="bg-red-900/50 border border-red-500 rounded-lg p-6 max-w-md text-center">
-          <h2 className="text-red-400 font-semibold mb-2">Authentication Timeout</h2>
-          <p className="text-gray-300 mb-2 text-sm">
-            The authentication process is taking longer than expected.
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
+        <div className="bg-gray-800 border border-amber-500 rounded-lg p-8 max-w-lg text-center">
+          <div className="flex justify-center mb-4">
+            <AlertCircle className="h-12 w-12 text-amber-500" />
+          </div>
+          <h2 className="text-amber-400 font-semibold text-xl mb-3">
+            {isSignOutIssue ? 'Sign Out Timeout' : 'Authentication Timeout'}
+          </h2>
+          <p className="text-gray-300 mb-3 text-sm leading-relaxed">
+            {isSignOutIssue 
+              ? 'The sign out process is taking longer than expected. This might be due to network issues.'
+              : 'The authentication process is taking longer than expected. This could be due to network connectivity or server response issues.'
+            }
           </p>
-          <p className="text-xs text-gray-500 mb-4">{authDebugInfo}</p>
-          <div className="space-y-2">
+          
+          <div className="bg-gray-700 rounded-lg p-3 mb-6">
+            <p className="text-xs text-gray-400 font-mono">{authDebugInfo}</p>
+          </div>
+
+          <div className="space-y-3">
             <button
               onClick={() => window.location.reload()}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors"
             >
+              <RefreshCw className="h-4 w-4" />
               Refresh Page
             </button>
             <button
               onClick={handleEmergencyReset}
-              className="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm"
+              className="w-full bg-amber-600 hover:bg-amber-700 text-white px-4 py-3 rounded-lg text-sm font-medium transition-colors"
             >
-              Reset & Return to Login
+              Clear Cache & Return to Login
             </button>
           </div>
+          
+          <p className="mt-4 text-xs text-gray-500">
+            If this issue persists, please check your network connection or contact support.
+          </p>
         </div>
       </div>
     );
@@ -114,11 +147,11 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
 
   // Improved session validation - ensure we have both user and session
   if (!user || !isAdmin) {
-    console.log('🔄 AdminRoute: Redirecting to login - User:', !!user, 'IsAdmin:', isAdmin);
+    cInfo('Redirecting to login', { hasUser: !!user, isAdmin });
     return <Navigate to="/admin/login" replace />;
   }
 
   // Additional validation: ensure we have a complete auth state
-  console.log('✅ AdminRoute: Auth validated, rendering protected content');
+  cInfo('Auth validated, rendering protected content');
   return <>{children}</>;
 };

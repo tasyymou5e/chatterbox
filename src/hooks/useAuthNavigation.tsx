@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
+import { cLog, cWarn, cInfo } from '@/utils/conditionalLogger';
 
 export const useAuthNavigation = () => {
   const navigate = useNavigate();
@@ -12,7 +13,7 @@ export const useAuthNavigation = () => {
   // Track when session is ready for navigation
   useEffect(() => {
     if (!loading && session !== undefined && isHydrated) {
-      console.log('🔄 useAuthNavigation: Session ready for navigation', {
+      cLog('Session ready for navigation', {
         loading,
         hasSession: !!session,
         isHydrated,
@@ -35,13 +36,20 @@ export const useAuthNavigation = () => {
     if (sessionReady && !loading && user && userRole && isHydrated) {
       const currentPath = window.location.pathname;
       
-      // Prevent navigation loops by tracking attempts
+      // Prevent navigation loops with better user feedback
       if (navigationAttempts > 3) {
-        console.warn('🚨 useAuthNavigation: Too many navigation attempts, stopping to prevent loop');
+        cWarn('Too many navigation attempts detected - providing user guidance', {
+          attempts: navigationAttempts,
+          currentPath,
+          userRole
+        });
+        // Reset attempts and provide recovery mechanism
+        setNavigationAttempts(0);
+        setSessionReady(false);
         return;
       }
       
-      console.log('🔄 useAuthNavigation: Checking navigation -', {
+      cLog('Checking navigation', {
         currentPath,
         userRole,
         loading,
@@ -53,18 +61,18 @@ export const useAuthNavigation = () => {
       
       // SKIP admin users - let AdminLogin handle admin navigation to prevent race conditions
       if (userRole === 'admin') {
-        console.log('🔄 useAuthNavigation: Skipping navigation for admin user - AdminLogin will handle');
+        cInfo('Skipping navigation for admin user - AdminLogin will handle');
         return;
       }
       
       // Only redirect non-admin users from auth page to prevent loops
       if (currentPath === '/auth' || currentPath === '/') {
-        console.log('🎯 useAuthNavigation: Redirecting from auth page, attempt:', navigationAttempts + 1);
+        cInfo('Redirecting from auth page', { attempt: navigationAttempts + 1 });
         setNavigationAttempts(prev => prev + 1);
         
         // Enhanced debounce navigation to prevent race conditions
         const timeout = setTimeout(() => {
-          console.log('🚀 useAuthNavigation: Executing navigation for', userRole);
+          cInfo('Executing navigation', { userRole });
           switch (userRole) {
             case 'parent':
               navigate('/parent-dashboard');

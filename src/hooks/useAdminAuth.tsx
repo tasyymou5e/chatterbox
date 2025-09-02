@@ -2,6 +2,7 @@
 import { useEffect } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import type { User, Session, SupabaseError } from '@/types/supabase';
+import { cLog } from '@/utils/conditionalLogger';
 
 export interface AdminAuthContextType {
   user: User | null;
@@ -34,7 +35,7 @@ export const useAdminAuth = (): AdminAuthContextType => {
   // Enhanced debugging information
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      console.log('Auth State Debug:', {
+      cLog('Admin Auth State Debug', {
         user: user ? { id: user.id, email: user.email } : null,
         session: session ? 'present' : 'null',
         isAdmin,
