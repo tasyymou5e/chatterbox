@@ -62,6 +62,51 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_audit_logs: {
+        Row: {
+          admin_user_id: string
+          created_at: string
+          id: string
+          ip_address: unknown | null
+          metadata: Json | null
+          new_values: Json | null
+          old_values: Json | null
+          operation_type: string
+          session_id: string | null
+          target_id: string | null
+          target_table: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          admin_user_id: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          metadata?: Json | null
+          new_values?: Json | null
+          old_values?: Json | null
+          operation_type: string
+          session_id?: string | null
+          target_id?: string | null
+          target_table?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          admin_user_id?: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          metadata?: Json | null
+          new_values?: Json | null
+          old_values?: Json | null
+          operation_type?: string
+          session_id?: string | null
+          target_id?: string | null
+          target_table?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       analytics_metrics: {
         Row: {
           created_at: string | null
@@ -92,6 +137,117 @@ export type Database = {
           metric_type?: string
           metric_value?: number
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      archived_system_errors: {
+        Row: {
+          archived_at: string
+          browser_info: Json | null
+          component_name: string | null
+          device_info: Json | null
+          error_type: string
+          id: string
+          message: string
+          metadata: Json | null
+          original_created_at: string
+          original_id: string
+          resolved: boolean | null
+          resolved_at: string | null
+          resolved_by: string | null
+          route_path: string | null
+          session_id: string | null
+          severity: string
+          stack_trace: string | null
+          user_id: string | null
+        }
+        Insert: {
+          archived_at?: string
+          browser_info?: Json | null
+          component_name?: string | null
+          device_info?: Json | null
+          error_type: string
+          id?: string
+          message: string
+          metadata?: Json | null
+          original_created_at: string
+          original_id: string
+          resolved?: boolean | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          route_path?: string | null
+          session_id?: string | null
+          severity: string
+          stack_trace?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          archived_at?: string
+          browser_info?: Json | null
+          component_name?: string | null
+          device_info?: Json | null
+          error_type?: string
+          id?: string
+          message?: string
+          metadata?: Json | null
+          original_created_at?: string
+          original_id?: string
+          resolved?: boolean | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          route_path?: string | null
+          session_id?: string | null
+          severity?: string
+          stack_trace?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      archived_user_activity_logs: {
+        Row: {
+          activity_type: string
+          archived_at: string
+          device_info: Json | null
+          failure_reason: string | null
+          id: string
+          ip_address: unknown | null
+          metadata: Json | null
+          original_created_at: string
+          original_id: string
+          session_id: string | null
+          success: boolean | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          activity_type: string
+          archived_at?: string
+          device_info?: Json | null
+          failure_reason?: string | null
+          id?: string
+          ip_address?: unknown | null
+          metadata?: Json | null
+          original_created_at: string
+          original_id: string
+          session_id?: string | null
+          success?: boolean | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          activity_type?: string
+          archived_at?: string
+          device_info?: Json | null
+          failure_reason?: string | null
+          id?: string
+          ip_address?: unknown | null
+          metadata?: Json | null
+          original_created_at?: string
+          original_id?: string
+          session_id?: string | null
+          success?: boolean | null
+          user_agent?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -636,6 +792,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      daily_analytics_data: {
+        Row: {
+          achievements_unlocked: number | null
+          active_users: number
+          avg_session_duration: number | null
+          chores_completed: number | null
+          computed_at: string
+          date: string
+          engagement_score: number | null
+          id: string
+          metadata: Json | null
+          new_signups: number
+          points_earned: number | null
+          total_families: number
+          total_users: number
+          updated_at: string
+        }
+        Insert: {
+          achievements_unlocked?: number | null
+          active_users?: number
+          avg_session_duration?: number | null
+          chores_completed?: number | null
+          computed_at?: string
+          date: string
+          engagement_score?: number | null
+          id?: string
+          metadata?: Json | null
+          new_signups?: number
+          points_earned?: number | null
+          total_families?: number
+          total_users?: number
+          updated_at?: string
+        }
+        Update: {
+          achievements_unlocked?: number | null
+          active_users?: number
+          avg_session_duration?: number | null
+          chores_completed?: number | null
+          computed_at?: string
+          date?: string
+          engagement_score?: number | null
+          id?: string
+          metadata?: Json | null
+          new_signups?: number
+          points_earned?: number | null
+          total_families?: number
+          total_users?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       daily_streaks: {
         Row: {
@@ -1400,6 +1607,51 @@ export type Database = {
           },
         ]
       }
+      security_audit_logs: {
+        Row: {
+          created_at: string
+          event_details: Json
+          event_type: string
+          id: string
+          ip_address: unknown | null
+          resolved: boolean | null
+          resolved_at: string | null
+          resolved_by: string | null
+          session_id: string | null
+          severity: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_details?: Json
+          event_type: string
+          id?: string
+          ip_address?: unknown | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          session_id?: string | null
+          severity?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_details?: Json
+          event_type?: string
+          id?: string
+          ip_address?: unknown | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          session_id?: string | null
+          severity?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       system_alerts: {
         Row: {
           acknowledged: boolean | null
@@ -1891,6 +2143,14 @@ export type Database = {
       }
     }
     Functions: {
+      archive_old_activity_logs: {
+        Args: { days_to_keep?: number }
+        Returns: number
+      }
+      archive_old_system_errors: {
+        Args: { days_to_keep?: number }
+        Returns: number
+      }
       calculate_chore_points: {
         Args: {
           base_points: number
@@ -1929,6 +2189,10 @@ export type Database = {
           achievement_id: string
           achievement_name: string
         }[]
+      }
+      compute_daily_analytics: {
+        Args: { target_date?: string }
+        Returns: undefined
       }
       end_user_session: {
         Args: { session_id: string }
@@ -1999,6 +2263,18 @@ export type Database = {
         Args: { family_id_param: string; user_id_param: string }
         Returns: boolean
       }
+      log_admin_operation: {
+        Args: {
+          p_admin_user_id: string
+          p_metadata?: Json
+          p_new_values?: Json
+          p_old_values?: Json
+          p_operation_type: string
+          p_target_id?: string
+          p_target_table?: string
+        }
+        Returns: string
+      }
       log_family_activity: {
         Args: {
           p_activity_details?: Json
@@ -2006,6 +2282,16 @@ export type Database = {
           p_family_id: string
           p_member_role: Database["public"]["Enums"]["app_role"]
           p_parent_user_id?: string
+          p_user_id: string
+        }
+        Returns: string
+      }
+      log_security_event: {
+        Args: {
+          p_event_details?: Json
+          p_event_type: string
+          p_session_id?: string
+          p_severity: string
           p_user_id: string
         }
         Returns: string
