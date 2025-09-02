@@ -1,103 +1,102 @@
+// Bridge adapter - migrated to use Zustand store internally
 import { useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useGamificationStore } from '@/stores/gamificationStore';
 import { useStoreResult } from '@/hooks/useStoreResult';
+import { useUIStore } from '@/stores/uiStore';
+import { withRetry, type RetryState } from '@/services/storeUtils';
 
-interface UserLevel {
+// Re-export interfaces for backward compatibility
+export interface UserLevel {
   id: string;
   user_id: string;
-  family_id: string;
-  current_level: number;
-  current_xp: number;
-  total_xp: number;
+  level: number;
+  experience_points: number;
   level_name: string;
-  next_level_xp: number;
-  level_up_date: string | null;
+  next_level_threshold: number;
+  created_at: string;
+  updated_at: string;
 }
 
-interface UserPoints {
+export interface UserPoints {
   id: string;
   user_id: string;
   family_id: string;
-  current_points: number;
+  total_points: number;
+  available_points: number;
   lifetime_points: number;
-  points_spent: number;
-  weekly_points: number;
-  monthly_points: number;
-  last_reset_date: string;
+  created_at: string;
+  updated_at: string;
 }
 
-interface Achievement {
+export interface Achievement {
   id: string;
-  name: string;
+  title: string;
   description: string;
-  icon: string | null;
-  achievement_type: 'streak' | 'skill' | 'collaboration' | 'milestone' | 'special';
-  unlock_criteria: any;
-  point_reward: number;
-  xp_reward: number;
-  rarity: string;
-  is_secret: boolean;
+  icon: string;
+  category: string;
+  points_reward: number;
+  requirements: any;
   is_active: boolean;
+  created_at: string;
 }
 
-interface UserAchievement {
+export interface UserAchievement {
   id: string;
   user_id: string;
-  family_id: string;
   achievement_id: string;
-  unlocked_at: string;
-  progress: any;
-  metadata: any;
-  achievements: Achievement;
+  earned_at: string;
+  points_earned: number;
 }
 
-interface WishlistItem {
+export interface WishlistItem {
   id: string;
   user_id: string;
   family_id: string;
-  item_name: string;
-  description: string | null;
-  point_cost: number;
-  reward_type: 'points' | 'custom' | 'privilege' | 'activity';
-  image_url: string | null;
-  is_approved: boolean;
-  approved_by: string | null;
-  approved_at: string | null;
+  title: string;
+  description?: string;
+  points_cost: number;
+  category?: string;
   is_redeemed: boolean;
-  redeemed_at: string | null;
+  redeemed_at?: string;
+  created_at: string;
+  updated_at: string;
 }
 
-interface DailyStreak {
+export interface DailyStreak {
   id: string;
   user_id: string;
   family_id: string;
-  streak_type: string;
-  current_streak: number;
+  streak_count: number;
+  last_activity_date: string;
   longest_streak: number;
-  last_activity_date: string | null;
-  streak_start_date: string | null;
-  bonus_multiplier: number;
+  total_days_active: number;
+  created_at: string;
+  updated_at: string;
 }
 
-interface FamilyLeaderboard {
-  id: string;
-  family_id: string;
+export interface FamilyLeaderboard {
   user_id: string;
-  leaderboard_type: string;
-  points: number;
+  user_name: string;
+  total_points: number;
+  level: number;
+  achievements_count: number;
+  current_streak: number;
   rank: number;
-  chores_completed: number;
-  achievements_unlocked: number;
-  collaboration_score: number;
-  period_start: string;
-  period_end: string;
-  profiles: {
-    first_name: string | null;
-    last_name: string | null;
-  } | null;
 }
 
+// Individual loading states interface
+interface GamificationLoadingStates {
+  addWishlistItem: boolean;
+  redeemWishlistItem: boolean;
+  checkAchievements: boolean;
+  fetchUserLevel: boolean;
+  fetchUserPoints: boolean;
+  fetchAchievements: boolean;
+  fetchLeaderboard: boolean;
+}
+
+// Bridge adapter hook that uses Zustand store internally  
 export const useGamification = (familyId?: string) => {
   const { user } = useAuth();
   const {
@@ -118,14 +117,30 @@ export const useGamification = (familyId?: string) => {
     refetch
   } = useGamificationStore();
 
+  const { setLoading, getLoading } = useUIStore();
   const handleResult = useStoreResult();
 
-  // Set user and family ID when available
+  // Generate loading keys for this user/family
+  const getLoadingKey = useCallback((operation: string) => 
+    `gamification-${operation}-${user?.id || 'unknown'}-${familyId || 'global'}`, [user?.id, familyId]);
+
+  // Individual loading state getters
+  const loadingStates: GamificationLoadingStates = {
+    addWishlistItem: getLoading(getLoadingKey('add-wishlist')),
+    redeemWishlistItem: getLoading(getLoadingKey('redeem-wishlist')),
+    checkAchievements: getLoading(getLoadingKey('check-achievements')),
+    fetchUserLevel: getLoading(getLoadingKey('fetch-level')),
+    fetchUserPoints: getLoading(getLoadingKey('fetch-points')),
+    fetchAchievements: getLoading(getLoadingKey('fetch-achievements')),
+    fetchLeaderboard: getLoading(getLoadingKey('fetch-leaderboard')),
+  };
+
+  // Set user ID and family ID when available
   useEffect(() => {
-    if (user) {
+    if (user?.id) {
       setUserId(user.id);
     }
-  }, [user, setUserId]);
+  }, [user?.id, setUserId]);
 
   useEffect(() => {
     if (familyId) {
@@ -133,7 +148,7 @@ export const useGamification = (familyId?: string) => {
     }
   }, [familyId, setFamilyId]);
 
-  // Wrapper functions with UI feedback
+  // Enhanced wrapper functions with individual loading states and retry logic
   const addWishlistItem = async (itemData: {
     item_name: string;
     description?: string;
@@ -141,25 +156,72 @@ export const useGamification = (familyId?: string) => {
     reward_type?: 'points' | 'custom' | 'privilege' | 'activity';
     image_url?: string;
   }): Promise<any> => {
-    const result = await storeAddWishlistItem(itemData);
-    return handleResult(result, {
-      successTitle: 'Success',
-      errorTitle: 'Error adding item'
-    });
+    const loadingKey = getLoadingKey('add-wishlist');
+    setLoading(loadingKey, true);
+    
+    try {
+      const result = await withRetry(
+        () => storeAddWishlistItem(itemData),
+        { maxRetries: 2 }
+      );
+      
+      return handleResult(result, {
+        successTitle: 'Item Added to Wishlist',
+        errorTitle: 'Failed to add wishlist item'
+      });
+    } finally {
+      setLoading(loadingKey, false);
+    }
   };
 
   const redeemWishlistItem = async (itemId: string): Promise<any> => {
-    const result = await storeRedeemWishlistItem(itemId);
-    return handleResult(result, {
-      successTitle: 'Success!',
-      errorTitle: 'Error redeeming item'
-    });
+    const loadingKey = getLoadingKey('redeem-wishlist');
+    setLoading(loadingKey, true);
+    
+    try {
+      const result = await withRetry(
+        () => storeRedeemWishlistItem(itemId),
+        { maxRetries: 2 }
+      );
+      
+      return handleResult(result, {
+        successTitle: 'Item Redeemed Successfully!',
+        errorTitle: 'Failed to redeem item'
+      });
+    } finally {
+      setLoading(loadingKey, false);
+    }
   };
 
   const checkAchievements = async (): Promise<void> => {
-    // The store function handles its own error reporting and notifications
-    await storeCheckAchievements();
+    const loadingKey = getLoadingKey('check-achievements');
+    setLoading(loadingKey, true);
+    
+    try {
+      await withRetry(
+        async () => {
+          await storeCheckAchievements();
+          return { success: true, result: { data: null, message: 'Achievements checked' } };
+        },
+        { maxRetries: 1 }
+      );
+    } finally {
+      setLoading(loadingKey, false);
+    }
   };
+
+  // Retry functions for failed operations
+  const retryAddWishlistItem = useCallback(async (itemData: any) => {
+    return addWishlistItem(itemData);
+  }, []);
+
+  const retryRedeemWishlistItem = useCallback(async (itemId: string) => {
+    return redeemWishlistItem(itemId);
+  }, []);
+
+  const retryCheckAchievements = useCallback(async () => {
+    return checkAchievements();
+  }, []);
 
   return {
     // Data
@@ -170,13 +232,26 @@ export const useGamification = (familyId?: string) => {
     wishlistItems,
     dailyStreaks,
     leaderboard,
+    
+    // Global loading/error (for backward compatibility)
     loading,
     error,
-
-    // Actions
+    
+    // Individual loading states
+    loadingStates,
+    isAddingWishlistItem: loadingStates.addWishlistItem,
+    isRedeemingWishlistItem: loadingStates.redeemWishlistItem,
+    isCheckingAchievements: loadingStates.checkAchievements,
+    
+    // Core operations with enhanced error handling
     addWishlistItem,
     redeemWishlistItem,
     checkAchievements,
+    
+    // Retry functions
+    retryAddWishlistItem,
+    retryRedeemWishlistItem,
+    retryCheckAchievements,
 
     // Refresh
     refetch: useCallback(refetch, [refetch]),

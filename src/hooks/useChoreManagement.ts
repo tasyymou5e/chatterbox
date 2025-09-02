@@ -1,94 +1,84 @@
+// Bridge adapter - migrated to use Zustand store internally
 import { useEffect, useCallback } from 'react';
 import { useChoreStore } from '@/stores/choreStore';
 import { useStoreResult } from '@/hooks/useStoreResult';
+import { useUIStore } from '@/stores/uiStore';
+import { withRetry } from '@/services/storeUtils';
 
-interface ChoreCategory {
+// Re-export interfaces for backward compatibility - using any to avoid type conflicts
+export interface ChoreCategory {
   id: string;
   name: string;
-  description: string | null;
-  icon: string | null;
-  color: string;
-  autism_friendly_features: any;
-  sort_order: number;
-  is_active: boolean;
+  description?: string;
+  color?: string;
+  icon?: string;
+  created_at: string;
 }
 
-interface ChoreTemplate {
+export interface ChoreTemplate {
   id: string;
   title: string;
-  description: string | null;
-  category_id: string | null;
+  description?: string;
+  category_id: string;
   estimated_duration: number;
   difficulty: 'easy' | 'medium' | 'hard';
   base_points: number;
-  age_min: number;
-  age_max: number;
-  autism_accommodations: any;
-  instructions: any[];
-  sensory_considerations: any;
-  is_active: boolean;
-}
-
-interface Chore {
-  id: string;
-  family_id: string;
-  template_id: string | null;
-  title: string;
-  description: string | null;
-  category_id: string | null;
-  estimated_duration: number;
-  difficulty: 'easy' | 'medium' | 'hard';
-  base_points: number;
-  instructions: any[];
-  custom_settings: any;
-  is_active: boolean;
-  created_by: string;
+  instructions?: any[];
+  age_min?: number;
+  age_max?: number;
   created_at: string;
   updated_at: string;
 }
 
-interface ChoreAssignment {
+export interface Chore {
+  id: string;
+  title: string;
+  description?: string;
+  category_id: string;
+  family_id: string;
+  created_by: string;
+  estimated_duration: number;
+  difficulty: 'easy' | 'medium' | 'hard';
+  base_points: number;
+  instructions?: any[];
+  is_active: boolean;
+  template_id?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ChoreAssignment {
   id: string;
   chore_id: string;
   family_id: string;
   assigned_to: string;
   assigned_by: string;
-  due_date: string | null;
-  recurrence_pattern: any;
+  due_date?: string;
   status: 'assigned' | 'in_progress' | 'completed' | 'verified' | 'overdue';
-  points_earned: number;
-  time_bonus: number;
-  streak_bonus: number;
-  completion_notes: string | null;
-  parent_feedback: string | null;
-  is_verified: boolean;
-  verified_by: string | null;
-  verified_at: string | null;
-  assigned_at: string;
-  started_at: string | null;
-  completed_at: string | null;
+  completed_at?: string;
+  started_at?: string;
+  points_earned?: number;
+  time_bonus?: number;
+  streak_bonus?: number;
+  completion_notes?: string;
+  parent_feedback?: string;
   created_at: string;
   updated_at: string;
-  chores?: {
-    id: string;
-    title: string;
-    description: string | null;
-    estimated_duration: number;
-    difficulty: string;
-    base_points: number;
-    instructions: any[];
-    chore_categories?: {
-      name: string;
-      icon: string | null;
-      color: string;
-    };
-  };
-  profiles?: {
-    first_name: string | null;
-    last_name: string | null;
-  };
 }
 
+// Individual loading states interface
+interface ChoreLoadingStates {
+  createChore: boolean;
+  assignChore: boolean;
+  bulkAssign: boolean;
+  updateStatus: boolean;
+  fetchCategories: boolean;
+  fetchTemplates: boolean;
+  fetchChores: boolean;
+  fetchAssignments: boolean;
+}
+
+// Bridge adapter hook that uses Zustand store internally
 export const useChoreManagement = (familyId?: string) => {
   const {
     categories,
@@ -109,7 +99,24 @@ export const useChoreManagement = (familyId?: string) => {
     updateAssignmentStatus: storeUpdateAssignmentStatus
   } = useChoreStore();
 
+  const { setLoading, getLoading } = useUIStore();
   const handleResult = useStoreResult();
+
+  // Generate loading keys for this family
+  const getLoadingKey = useCallback((operation: string) => 
+    `chore-${operation}-${familyId || 'global'}`, [familyId]);
+
+  // Individual loading state getters
+  const loadingStates: ChoreLoadingStates = {
+    createChore: getLoading(getLoadingKey('create')),
+    assignChore: getLoading(getLoadingKey('assign')),
+    bulkAssign: getLoading(getLoadingKey('bulk-assign')),
+    updateStatus: getLoading(getLoadingKey('update-status')),
+    fetchCategories: getLoading(getLoadingKey('fetch-categories')),
+    fetchTemplates: getLoading(getLoadingKey('fetch-templates')),
+    fetchChores: getLoading(getLoadingKey('fetch-chores')),
+    fetchAssignments: getLoading(getLoadingKey('fetch-assignments')),
+  };
 
   // Set family ID and fetch initial data
   useEffect(() => {
@@ -118,21 +125,43 @@ export const useChoreManagement = (familyId?: string) => {
     }
   }, [familyId, setFamilyId]);
 
-  // Wrapper functions with UI feedback
+  // Enhanced wrapper functions with individual loading states and retry logic
   const createChoreFromTemplate = async (templateId: string, customizations?: Partial<Chore>): Promise<any> => {
-    const result = await storeCreateChoreFromTemplate(templateId, customizations);
-    return handleResult(result, {
-      successTitle: 'Success',
-      errorTitle: 'Error creating chore'
-    });
+    const loadingKey = getLoadingKey('create');
+    setLoading(loadingKey, true);
+    
+    try {
+      const result = await withRetry(
+        () => storeCreateChoreFromTemplate(templateId, customizations as any),
+        { maxRetries: 2 }
+      );
+      
+      return handleResult(result, {
+        successTitle: 'Chore Created',
+        errorTitle: 'Failed to create chore from template'
+      });
+    } finally {
+      setLoading(loadingKey, false);
+    }
   };
 
   const createCustomChore = async (choreData: Omit<Chore, 'id' | 'created_at' | 'updated_at' | 'family_id' | 'created_by'>): Promise<any> => {
-    const result = await storeCreateCustomChore(choreData);
-    return handleResult(result, {
-      successTitle: 'Success',
-      errorTitle: 'Error creating chore'
-    });
+    const loadingKey = getLoadingKey('create');
+    setLoading(loadingKey, true);
+    
+    try {
+      const result = await withRetry(
+        () => storeCreateCustomChore(choreData as any),
+        { maxRetries: 2 }
+      );
+      
+      return handleResult(result, {
+        successTitle: 'Custom Chore Created',
+        errorTitle: 'Failed to create custom chore'
+      });
+    } finally {
+      setLoading(loadingKey, false);
+    }
   };
 
   const assignChore = async (
@@ -141,11 +170,22 @@ export const useChoreManagement = (familyId?: string) => {
     dueDate?: string,
     recurrencePattern?: any
   ): Promise<any> => {
-    const result = await storeAssignChore(choreId, assignedTo, dueDate, recurrencePattern);
-    return handleResult(result, {
-      successTitle: 'Success',
-      errorTitle: 'Error assigning chore'
-    });
+    const loadingKey = getLoadingKey('assign');
+    setLoading(loadingKey, true);
+    
+    try {
+      const result = await withRetry(
+        () => storeAssignChore(choreId, assignedTo, dueDate, recurrencePattern),
+        { maxRetries: 2 }
+      );
+      
+      return handleResult(result, {
+        successTitle: 'Chore Assigned',
+        errorTitle: 'Failed to assign chore'
+      });
+    } finally {
+      setLoading(loadingKey, false);
+    }
   };
 
   const bulkAssignChores = async (assignments: Array<{
@@ -154,11 +194,22 @@ export const useChoreManagement = (familyId?: string) => {
     dueDate?: string;
     recurrencePattern?: any;
   }>): Promise<any> => {
-    const result = await storeBulkAssignChores(assignments);
-    return handleResult(result, {
-      successTitle: 'Success',
-      errorTitle: 'Error assigning chores'
-    });
+    const loadingKey = getLoadingKey('bulk-assign');
+    setLoading(loadingKey, true);
+    
+    try {
+      const result = await withRetry(
+        () => storeBulkAssignChores(assignments),
+        { maxRetries: 2 }
+      );
+      
+      return handleResult(result, {
+        successTitle: `${assignments.length} Chores Assigned`,
+        errorTitle: 'Failed to bulk assign chores'
+      });
+    } finally {
+      setLoading(loadingKey, false);
+    }
   };
 
   const updateAssignmentStatus = async (
@@ -172,13 +223,44 @@ export const useChoreManagement = (familyId?: string) => {
       parent_feedback?: string;
     }
   ): Promise<any> => {
-    const result = await storeUpdateAssignmentStatus(assignmentId, status, completionData);
-    return handleResult(result, {
-      successTitle: 'Status Updated',
-      errorTitle: 'Error updating assignment',
-      showSuccess: false // Don't show success toast for status updates
-    });
+    const loadingKey = getLoadingKey('update-status');
+    setLoading(loadingKey, true);
+    
+    try {
+      const result = await withRetry(
+        () => storeUpdateAssignmentStatus(assignmentId, status as any, completionData),
+        { maxRetries: 2 }
+      );
+      
+      return handleResult(result, {
+        successTitle: 'Status Updated',
+        errorTitle: 'Failed to update assignment status'
+      });
+    } finally {
+      setLoading(loadingKey, false);
+    }
   };
+
+  // Retry functions for failed operations
+  const retryCreateChore = useCallback(async (templateId?: string, choreData?: any, customizations?: any) => {
+    if (templateId) {
+      return createChoreFromTemplate(templateId, customizations);
+    } else {
+      return createCustomChore(choreData);
+    }
+  }, []);
+
+  const retryAssignChore = useCallback(async (choreId: string, assignedTo: string, dueDate?: string, recurrencePattern?: any) => {
+    return assignChore(choreId, assignedTo, dueDate, recurrencePattern);
+  }, []);
+
+  const retryBulkAssign = useCallback(async (assignments: Array<any>) => {
+    return bulkAssignChores(assignments);
+  }, []);
+
+  const retryUpdateStatus = useCallback(async (assignmentId: string, status: any, completionData?: any) => {
+    return updateAssignmentStatus(assignmentId, status, completionData);
+  }, []);
 
   return {
     // Data
@@ -186,17 +268,32 @@ export const useChoreManagement = (familyId?: string) => {
     templates,
     chores,
     assignments,
+    
+    // Global loading/error (for backward compatibility)
     loading,
     error,
-
-    // Actions
+    
+    // Individual loading states
+    loadingStates,
+    isCreatingChore: loadingStates.createChore,
+    isAssigningChore: loadingStates.assignChore,
+    isBulkAssigning: loadingStates.bulkAssign,
+    isUpdatingStatus: loadingStates.updateStatus,
+    
+    // Core operations with enhanced error handling
     createChoreFromTemplate,
     createCustomChore,
     assignChore,
     bulkAssignChores,
     updateAssignmentStatus,
+    
+    // Retry functions
+    retryCreateChore,
+    retryAssignChore,
+    retryBulkAssign,
+    retryUpdateStatus,
 
-    // Refresh
+    // Refresh with individual loading states
     refetch: useCallback(() => Promise.all([
       fetchCategories(),
       fetchTemplates(), 
