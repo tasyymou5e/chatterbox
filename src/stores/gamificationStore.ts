@@ -11,6 +11,13 @@ import {
   type StoreResult,
   type StoreError
 } from '@/services/storeUtils';
+import { 
+  type AchievementCriteria,
+  type UserProgress,
+  type UserMetadata,
+  type AchievementMetadata
+} from '@/types/gamification';
+import { type Json } from '@/integrations/supabase/types';
 
 interface UserLevel {
   id: string;
@@ -42,7 +49,7 @@ interface Achievement {
   description: string;
   icon: string | null;
   achievement_type: 'streak' | 'skill' | 'collaboration' | 'milestone' | 'special';
-  unlock_criteria: any;
+  unlock_criteria: Json;
   point_reward: number;
   xp_reward: number;
   rarity: string;
@@ -56,8 +63,8 @@ interface UserAchievement {
   family_id: string;
   achievement_id: string;
   unlocked_at: string;
-  progress: any;
-  metadata: any;
+  progress: Json;
+  metadata: Json;
   achievements: Achievement;
 }
 
@@ -268,7 +275,7 @@ export const useGamificationStore = create<GamificationState>()(
             return;
           }
 
-          set({ userAchievements: data as any || [] });
+          set({ userAchievements: (data as unknown as UserAchievement[]) || [] });
         } catch (error) {
           console.error('Error fetching user achievements:', error);
         }
@@ -344,7 +351,7 @@ export const useGamificationStore = create<GamificationState>()(
             return;
           }
 
-          set({ leaderboard: data as any || [] });
+          set({ leaderboard: (data as unknown as FamilyLeaderboard[]) || [] });
         } catch (error) {
           console.error('Error fetching leaderboard:', error);
         }

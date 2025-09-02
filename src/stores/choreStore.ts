@@ -11,6 +11,16 @@ import {
   type StoreResult,
   type StoreError
 } from '@/services/storeUtils';
+import { 
+  type InstructionStep,
+  type RecurrencePattern,
+  type ChoreSettings,
+  type AutismFriendlyFeatures,
+  type SensoryConsiderations,
+  type AutismAccommodations,
+  type CompletionData
+} from '@/types/chore';
+import { type Json } from '@/integrations/supabase/types';
 
 interface ChoreCategory {
   id: string;
@@ -18,7 +28,7 @@ interface ChoreCategory {
   description: string | null;
   icon: string | null;
   color: string;
-  autism_friendly_features: any;
+  autism_friendly_features: Json;
   sort_order: number;
   is_active: boolean;
 }
@@ -33,9 +43,9 @@ interface ChoreTemplate {
   base_points: number;
   age_min: number;
   age_max: number;
-  autism_accommodations: any;
-  instructions: any[];
-  sensory_considerations: any;
+  autism_accommodations: Json;
+  instructions: Json;
+  sensory_considerations: Json;
   is_active: boolean;
 }
 
@@ -49,8 +59,8 @@ interface Chore {
   estimated_duration: number;
   difficulty: 'easy' | 'medium' | 'hard';
   base_points: number;
-  instructions: any[];
-  custom_settings: any;
+  instructions: Json;
+  custom_settings: Json;
   is_active: boolean;
   created_by: string;
   created_at: string;
@@ -64,7 +74,7 @@ interface ChoreAssignment {
   assigned_to: string;
   assigned_by: string;
   due_date: string | null;
-  recurrence_pattern: any;
+  recurrence_pattern: Json;
   status: 'assigned' | 'in_progress' | 'completed' | 'verified' | 'overdue';
   points_earned: number;
   time_bonus: number;
@@ -86,7 +96,7 @@ interface ChoreAssignment {
     estimated_duration: number;
     difficulty: string;
     base_points: number;
-    instructions: any[];
+    instructions: Json;
     chore_categories?: {
       name: string;
       icon: string | null;
@@ -117,9 +127,9 @@ interface ChoreState {
   fetchAssignments: () => Promise<void>;
   createChoreFromTemplate: (templateId: string, customizations?: Partial<Chore>) => Promise<StoreResult>;
   createCustomChore: (choreData: Omit<Chore, 'id' | 'created_at' | 'updated_at' | 'family_id' | 'created_by'>) => Promise<StoreResult>;
-  assignChore: (choreId: string, assignedTo: string, dueDate?: string, recurrencePattern?: any) => Promise<StoreResult>;
-  bulkAssignChores: (assignments: Array<{ choreId: string; assignedTo: string; dueDate?: string; recurrencePattern?: any; }>) => Promise<StoreResult>;
-  updateAssignmentStatus: (assignmentId: string, status: ChoreAssignment['status'], completionData?: { points_earned?: number; time_bonus?: number; streak_bonus?: number; completion_notes?: string; parent_feedback?: string; }) => Promise<StoreResult>;
+  assignChore: (choreId: string, assignedTo: string, dueDate?: string, recurrencePattern?: Json) => Promise<StoreResult>;
+  bulkAssignChores: (assignments: Array<{ choreId: string; assignedTo: string; dueDate?: string; recurrencePattern?: Json; }>) => Promise<StoreResult>;
+  updateAssignmentStatus: (assignmentId: string, status: ChoreAssignment['status'], completionData?: CompletionData) => Promise<StoreResult>;
   refetch: () => Promise<void>;
   clearError: () => void;
 }
@@ -186,7 +196,7 @@ export const useChoreStore = create<ChoreState>()(
             return;
           }
 
-          set({ templates: data as any || [] });
+          set({ templates: (data as unknown as ChoreTemplate[]) || [] });
         } catch (error) {
           console.error('Error fetching templates:', error);
         }
@@ -223,7 +233,7 @@ export const useChoreStore = create<ChoreState>()(
             return;
           }
 
-          set({ chores: data as any || [] });
+          set({ chores: (data as unknown as Chore[]) || [] });
         } catch (error) {
           console.error('Error fetching chores:', error);
         }
@@ -266,7 +276,7 @@ export const useChoreStore = create<ChoreState>()(
             return;
           }
 
-          set({ assignments: data as any || [] });
+          set({ assignments: (data as unknown as ChoreAssignment[]) || [] });
         } catch (error) {
           console.error('Error fetching assignments:', error);
         }
@@ -290,7 +300,7 @@ export const useChoreStore = create<ChoreState>()(
             return { success: false, error };
           }
 
-          // Validate and sanitize customizations
+          // Convert strongly typed data to JSON-compatible format for database
           const choreData = {
             family_id: familyId,
             template_id: templateId,
@@ -300,8 +310,8 @@ export const useChoreStore = create<ChoreState>()(
             estimated_duration: customizations?.estimated_duration || template.estimated_duration,
             difficulty: customizations?.difficulty || template.difficulty,
             base_points: customizations?.base_points || template.base_points,
-            instructions: customizations?.instructions || template.instructions,
-            custom_settings: customizations?.custom_settings || {},
+            instructions: (customizations?.instructions as Json) || template.instructions,
+            custom_settings: (customizations?.custom_settings as Json) || {},
             created_by: userId,
           };
 
@@ -350,11 +360,13 @@ export const useChoreStore = create<ChoreState>()(
         try {
           const userId = requireAuth();
 
-          // Validate and sanitize input
+          // Convert strongly typed data to JSON-compatible format for database
           const sanitizedData = {
             ...choreData,
             title: sanitizeInput(choreData.title),
             description: choreData.description ? sanitizeInput(choreData.description) : null,
+            instructions: choreData.instructions as Json,
+            custom_settings: choreData.custom_settings as Json,
             family_id: familyId,
             created_by: userId,
           };
@@ -393,7 +405,7 @@ export const useChoreStore = create<ChoreState>()(
         }
       },
 
-      assignChore: async (choreId: string, assignedTo: string, dueDate?: string, recurrencePattern?: any) => {
+      assignChore: async (choreId: string, assignedTo: string, dueDate?: string, recurrencePattern?: Json) => {
         const { familyId, fetchAssignments } = get();
         if (!familyId) {
           const error = createStoreError('validation', 'Family ID is required');
@@ -440,7 +452,7 @@ export const useChoreStore = create<ChoreState>()(
         }
       },
 
-      bulkAssignChores: async (assignments: Array<{ choreId: string; assignedTo: string; dueDate?: string; recurrencePattern?: any; }>) => {
+      bulkAssignChores: async (assignments: Array<{ choreId: string; assignedTo: string; dueDate?: string; recurrencePattern?: Json; }>) => {
         const { familyId, fetchAssignments } = get();
         if (!familyId) {
           const error = createStoreError('validation', 'Family ID is required');
@@ -488,7 +500,7 @@ export const useChoreStore = create<ChoreState>()(
         }
       },
 
-      updateAssignmentStatus: async (assignmentId: string, status: ChoreAssignment['status'], completionData?: { points_earned?: number; time_bonus?: number; streak_bonus?: number; completion_notes?: string; parent_feedback?: string; }) => {
+      updateAssignmentStatus: async (assignmentId: string, status: ChoreAssignment['status'], completionData?: CompletionData) => {
         const { fetchAssignments } = get();
 
         try {

@@ -3,6 +3,7 @@ import { devtools, persist } from 'zustand/middleware';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { authLoggingService } from '@/services/authLoggingService';
+import { type AuthError, type AuthMetadata } from '@/types/auth';
 
 interface AuthState {
   // State
@@ -18,10 +19,10 @@ interface AuthState {
   
   // Actions
   initialize: () => void;
-  signUp: (email: string, password: string, firstName?: string, lastName?: string) => Promise<{ error: any }>;
-  signIn: (email: string, password: string) => Promise<{ error: any; user?: any; isAdmin?: boolean }>;
-  signOut: () => Promise<{ error: any }>;
-  resetPassword: (email: string, userType?: 'admin' | 'user') => Promise<{ error: any }>;
+  signUp: (email: string, password: string, firstName?: string, lastName?: string) => Promise<{ error: AuthError | null }>;
+  signIn: (email: string, password: string) => Promise<{ error: AuthError | null; user?: any; isAdmin?: boolean }>;
+  signOut: () => Promise<{ error: AuthError | null }>;
+  resetPassword: (email: string, userType?: 'admin' | 'user') => Promise<{ error: AuthError | null }>;
   clearSignOutState: () => void;
   emergencyLogout: () => void;
   fetchUserRole: (userId: string) => Promise<string | null>;
@@ -242,9 +243,17 @@ export const useAuthStore = create<AuthState>()(
             },
           });
 
-          // Log signup attempt
+          // Log signup attempt with proper metadata
           if (data.user) {
             setTimeout(() => {
+              const metadata: AuthMetadata = {
+                signupMethod: 'email_password',
+                deviceInfo: {
+                  userAgent: navigator.userAgent,
+                  isMobile: /Mobile|Tablet|Android|iOS/.test(navigator.userAgent)
+                }
+              };
+              
               authLoggingService.logActivity(
                 data.user.id,
                 'signup',
@@ -255,15 +264,16 @@ export const useAuthStore = create<AuthState>()(
                   firstName, 
                   lastName,
                   signupMethod: 'email_password',
-                  emailConfirmationRequired: !data.session
+                  emailConfirmationRequired: !data.session,
+                  ...metadata
                 }
-              ).catch(error => {
-                console.warn('Failed to log signup activity (non-blocking):', error);
+              ).catch(logError => {
+                console.warn('Failed to log signup activity (non-blocking):', logError);
               });
             }, 0);
            }
 
-           return { error };
+           return { error: error as AuthError | null };
         },
 
         // Reset password - works for all user types
@@ -286,9 +296,9 @@ export const useAuthStore = create<AuthState>()(
 
             console.log('✅ Password reset email sent successfully');
             return { error: null };
-          } catch (err: any) {
+          } catch (err: unknown) {
             console.error('💥 Password reset exception:', err);
-            return { error: err };
+            return { error: err as AuthError };
           }
         },
 
@@ -375,8 +385,17 @@ export const useAuthStore = create<AuthState>()(
               
               console.log('🎯 Auth state established atomically for', email);
 
-              // Log successful sign-in activity asynchronously (non-blocking)
+              // Log successful sign-in activity asynchronously (non-blocking) with metadata
               setTimeout(() => {
+                const metadata: AuthMetadata = {
+                  loginMethod: 'email_password',
+                  provider: data.user.app_metadata?.provider || 'email',
+                  deviceInfo: {
+                    userAgent: navigator.userAgent,
+                    isMobile: /Mobile|Tablet|Android|iOS/.test(navigator.userAgent)
+                  }
+                };
+                
                 authLoggingService.logActivity(
                   data.user.id,
                   'login',
@@ -386,8 +405,7 @@ export const useAuthStore = create<AuthState>()(
                     email: data.user.email,
                     role: userRole,
                     timestamp: new Date().toISOString(),
-                    loginMethod: 'email_password',
-                    provider: data.user.app_metadata?.provider || 'email'
+                    ...metadata
                   }
                 ).catch(logError => {
                   console.warn('Failed to log sign-in activity (non-blocking):', logError);
@@ -399,11 +417,11 @@ export const useAuthStore = create<AuthState>()(
 
             console.error('❌ No user or session returned despite successful auth');
             set({ loading: false, isCheckingRole: false });
-            return { error: { message: 'No user or session returned' } };
-          } catch (err: any) {
+            return { error: { message: 'No user or session returned' } as AuthError };
+          } catch (err: unknown) {
             console.error('💥 Sign in exception:', err);
             set({ loading: false, isCheckingRole: false });
-            return { error: err };
+            return { error: err as AuthError };
           }
         },
 
@@ -432,7 +450,7 @@ export const useAuthStore = create<AuthState>()(
                 new Promise((_, reject) => 
                   setTimeout(() => reject(new Error('SignOut timeout')), 5000)
                 )
-              ]) as Promise<{ error: any }>;
+              ]) as Promise<{ error: AuthError | null }>;
             };
 
             // Clear state immediately before Supabase call to prevent UI hanging
