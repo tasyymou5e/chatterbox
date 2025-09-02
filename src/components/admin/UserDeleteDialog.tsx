@@ -7,6 +7,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { cError } from '@/utils/conditionalLogger';
+import { getErrorMessage } from '@/types/interfaces';
 import { 
   AlertTriangle,
   Trash2,
@@ -81,12 +83,12 @@ export function UserDeleteDialog({ open, onOpenChange, user, onSuccess }: UserDe
       // Reset form state
       setConfirmationText('');
       setConfirmDeletion(false);
-    } catch (error: any) {
-      console.error('Error deleting user:', error);
+    } catch (error: unknown) {
+      cError('Error deleting user', error);
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: error.message || 'Failed to delete user'
+        description: getErrorMessage(error)
       });
     } finally {
       setLoading(false);

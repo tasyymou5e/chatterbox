@@ -7,6 +7,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, Copy, RefreshCw, Key, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { cError } from '@/utils/conditionalLogger';
+import { getErrorMessage } from '@/types/interfaces';
 
 interface User {
   id: string;
@@ -160,11 +162,11 @@ export const UserPasswordResetDialog: React.FC<UserPasswordResetDialogProps> = (
       onOpenChange(false);
       onSuccess?.();
 
-    } catch (error: any) {
-      console.error('Password reset error:', error);
+    } catch (error: unknown) {
+      cError('Password reset error', error);
       toast({
         title: "Password Reset Failed",
-        description: error.message || "An unexpected error occurred while resetting the password.",
+        description: getErrorMessage(error),
         variant: "destructive",
       });
     } finally {

@@ -6,6 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { RefreshCw, Search, Download, User, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { cError } from '@/utils/conditionalLogger';
+import type { ActivityLogRecord, DeviceInfoData, ActivityMetadata } from '@/types/interfaces';
 
 interface UserActivityLog {
   id: string;
@@ -13,11 +15,11 @@ interface UserActivityLog {
   activity_type: string;
   ip_address: string | null;
   user_agent: string | null;
-  device_info: any;
+  device_info: DeviceInfoData;
   session_id: string | null;
   success: boolean;
   failure_reason: string | null;
-  metadata: any;
+  metadata: ActivityMetadata;
   created_at: string;
   timestamp: string;
 }
@@ -63,8 +65,8 @@ export const UserActivityLogs = () => {
         device_info: (log.device_info as Record<string, any>) || {},
         metadata: (log.metadata as Record<string, any>) || {}
       })));
-    } catch (error: any) {
-      console.error('Error fetching user activity logs:', error);
+    } catch (error: unknown) {
+      cError('Error fetching user activity logs', error);
       toast({
         title: "Error",
         description: "Failed to fetch user activity logs",

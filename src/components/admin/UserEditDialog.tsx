@@ -8,6 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { cError } from '@/utils/conditionalLogger';
+import { getErrorMessage } from '@/types/interfaces';
 import { 
   Users, 
   Save,
@@ -127,12 +129,12 @@ export function UserEditDialog({ open, onOpenChange, user, onSuccess }: UserEdit
       
       onSuccess();
       onOpenChange(false);
-    } catch (error: any) {
-      console.error('Error updating user:', error);
+    } catch (error: unknown) {
+      cError('Error updating user', error);
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: error.message || 'Failed to update user'
+        description: getErrorMessage(error)
       });
     } finally {
       setLoading(false);

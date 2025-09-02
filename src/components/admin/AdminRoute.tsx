@@ -2,7 +2,8 @@ import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { Loader2, RefreshCw, AlertCircle } from 'lucide-react';
-import { cLog, cWarn, cInfo } from '@/utils/conditionalLogger';
+import { cLog, cWarn, cInfo, cError } from '@/utils/conditionalLogger';
+import type { ErrorContext } from '@/types/interfaces';
 
 interface AdminRouteProps {
   children: React.ReactNode;
@@ -15,6 +16,10 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
   const [emergencyLoadingTimeout, setEmergencyLoadingTimeout] = React.useState(false);
   const [emergencySignOutTimeout, setEmergencySignOutTimeout] = React.useState(false);
   const [authDebugInfo, setAuthDebugInfo] = React.useState<string>('');
+
+  const handleError = (error: unknown, context: ErrorContext) => {
+    cError('Auth error in AdminRoute', error, context);
+  };
 
   // Debug auth state changes
   React.useEffect(() => {

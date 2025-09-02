@@ -3,6 +3,7 @@ import { AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
+import { cError } from '@/utils/conditionalLogger';
 
 interface Props {
   children: ReactNode;
@@ -64,7 +65,7 @@ class ErrorBoundary extends Component<Props, State> {
         }
       });
     } catch (err) {
-      console.error('Failed to log error boundary error:', err);
+      cError('Failed to log error boundary error', err);
     }
   }
 

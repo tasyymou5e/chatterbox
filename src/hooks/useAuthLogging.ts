@@ -1,4 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
+import { cError } from '@/utils/conditionalLogger';
+import type { ActivityMetadata } from '@/types/interfaces';
 
 // Utility functions for enhanced authentication logging
 export const useAuthLogging = () => {
@@ -21,7 +23,7 @@ export const useAuthLogging = () => {
     activityType: 'login' | 'logout' | 'signup' | 'failed_login' | 'password_reset' | 'session_expired',
     success: boolean = true,
     failureReason?: string,
-    metadata: any = {}
+    metadata: ActivityMetadata = {}
   ) => {
     try {
       const deviceInfo = getDeviceInfo();
@@ -34,21 +36,21 @@ export const useAuthLogging = () => {
         p_session_id: sessionId,
         p_success: success,
         p_failure_reason: failureReason,
-        p_metadata: {
+        p_metadata: JSON.parse(JSON.stringify({
           ...metadata,
           timestamp: new Date().toISOString(),
           browserInfo: {
-            vendor: (navigator as any).vendor,
-            product: navigator.product,
-            appName: navigator.appName,
-            appVersion: navigator.appVersion
+            vendor: (navigator as any).vendor || '',
+            product: navigator.product || '',
+            appName: navigator.appName || '',
+            appVersion: navigator.appVersion || ''
           }
-        }
+        }))
       });
 
       return sessionId;
     } catch (error) {
-      console.error('Failed to log activity:', error);
+      cError('Failed to log activity', error);
       return null;
     }
   };
@@ -67,13 +69,13 @@ export const useAuthLogging = () => {
       }).select().single();
 
       if (error) {
-        console.error('Failed to create session:', error);
+        cError('Failed to create session', error);
         return null;
       }
 
       return data;
     } catch (error) {
-      console.error('Failed to create session:', error);
+      cError('Failed to create session', error);
       return null;
     }
   };
@@ -82,7 +84,7 @@ export const useAuthLogging = () => {
     try {
       await supabase.rpc('end_user_session', { session_id: sessionId });
     } catch (error) {
-      console.error('Failed to end session:', error);
+      cError('Failed to end session', error);
     }
   };
 
@@ -92,7 +94,7 @@ export const useAuthLogging = () => {
     memberRole: 'admin' | 'parent' | 'child',
     activityType: string,
     parentUserId?: string,
-    activityDetails: any = {}
+    activityDetails: ActivityMetadata = {}
   ) => {
     try {
       await supabase.rpc('log_family_activity', {
@@ -101,14 +103,14 @@ export const useAuthLogging = () => {
         p_member_role: memberRole,
         p_activity_type: activityType,
         p_parent_user_id: parentUserId,
-        p_activity_details: {
+        p_activity_details: JSON.parse(JSON.stringify({
           ...activityDetails,
           timestamp: new Date().toISOString(),
           deviceInfo: getDeviceInfo()
-        }
+        }))
       });
     } catch (error) {
-      console.error('Failed to log family activity:', error);
+      cError('Failed to log family activity', error);
     }
   };
 
@@ -126,7 +128,7 @@ export const useAuthLogging = () => {
         .lte('timestamp', endDate.toISOString());
 
       if (error) {
-        console.error('Failed to fetch security summary:', error);
+        cError('Failed to fetch security summary', error);
         return null;
       }
 
@@ -141,7 +143,7 @@ export const useAuthLogging = () => {
 
       return summary;
     } catch (error) {
-      console.error('Failed to get security summary:', error);
+      cError('Failed to get security summary', error);
       return null;
     }
   };

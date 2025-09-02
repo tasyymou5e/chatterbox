@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import { cLog, cWarn, cInfo } from '@/utils/conditionalLogger';
+import '@/types/interfaces'; // Import for Window interface extension
 
 export const useAuthNavigation = () => {
   const navigate = useNavigate();
@@ -29,8 +30,8 @@ export const useAuthNavigation = () => {
       clearTimeout(navigationDebounce);
     }
 
-    // Make navigate available globally for auth context
-    (window as any).__navigate = navigate;
+    // Make navigate available globally for auth context with proper typing
+    window.__navigate = navigate;
 
     // Handle initial navigation for authenticated users with enhanced guards
     if (sessionReady && !loading && user && userRole && isHydrated) {
@@ -103,7 +104,7 @@ export const useAuthNavigation = () => {
   // Clean up global navigate on unmount
   useEffect(() => {
     return () => {
-      delete (window as any).__navigate;
+      delete window.__navigate;
       if (navigationDebounce) {
         clearTimeout(navigationDebounce);
       }

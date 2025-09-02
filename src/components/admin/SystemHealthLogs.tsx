@@ -6,6 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { RefreshCw, Search, Download, Activity, TrendingUp, Clock, Zap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { cError } from '@/utils/conditionalLogger';
+import type { PerformanceMetricData, PerformanceMetadata } from '@/types/interfaces';
 
 interface PerformanceMetric {
   id: string;
@@ -15,7 +17,7 @@ interface PerformanceMetric {
   component_name: string | null;
   route_path: string | null;
   user_id: string | null;
-  metadata: any;
+  metadata: PerformanceMetadata;
   created_at: string;
 }
 
@@ -54,9 +56,12 @@ export const SystemHealthLogs = () => {
 
       if (error) throw error;
 
-      setLogs(data || []);
-    } catch (error: any) {
-      console.error('Error fetching performance metrics:', error);
+      setLogs((data || []).map(log => ({
+        ...log,
+        metadata: (log.metadata as any) || {}
+      })));
+    } catch (error: unknown) {
+      cError('Error fetching performance metrics', error);
       toast({
         title: "Error",
         description: "Failed to fetch performance metrics",
