@@ -222,9 +222,8 @@ export const useAuthStore = create<AuthState>()(
             set({ loading: false, sessionReady: true });
           });
 
-          // Store cleanup function
-          (window as any).__authUnsubscribe = () => subscription.unsubscribe();
-          (window as any).__authStore = { getState: get };
+          // Store cleanup function (secure - no window exposure)
+          return () => subscription.unsubscribe();
         },
 
         // Sign up

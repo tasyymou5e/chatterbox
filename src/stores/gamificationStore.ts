@@ -1,7 +1,16 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { 
+  wishlistInputSchema, 
+  getCurrentUserId, 
+  requireAuth, 
+  sanitizeInput,
+  createStoreError,
+  createStoreSuccess,
+  type StoreResult,
+  type StoreError
+} from '@/services/storeUtils';
 
 interface UserLevel {
   id: string;
@@ -108,6 +117,7 @@ interface GamificationState {
   dailyStreaks: DailyStreak[];
   leaderboard: FamilyLeaderboard[];
   loading: boolean;
+  error: StoreError | null;
   userId: string | null;
   familyId: string | null;
 
@@ -121,10 +131,11 @@ interface GamificationState {
   fetchWishlistItems: () => Promise<void>;
   fetchDailyStreaks: () => Promise<void>;
   fetchLeaderboard: (type?: string) => Promise<void>;
-  addWishlistItem: (itemData: { item_name: string; description?: string; point_cost: number; reward_type?: 'points' | 'custom' | 'privilege' | 'activity'; image_url?: string; }) => Promise<any>;
-  redeemWishlistItem: (itemId: string) => Promise<any>;
+  addWishlistItem: (itemData: { item_name: string; description?: string; point_cost: number; reward_type?: 'points' | 'custom' | 'privilege' | 'activity'; image_url?: string; }) => Promise<StoreResult>;
+  redeemWishlistItem: (itemId: string) => Promise<StoreResult>;
   checkAchievements: () => Promise<void>;
   refetch: () => Promise<void>;
+  clearError: () => void;
 }
 
 export const useGamificationStore = create<GamificationState>()(
@@ -139,8 +150,11 @@ export const useGamificationStore = create<GamificationState>()(
       dailyStreaks: [],
       leaderboard: [],
       loading: true,
+      error: null,
       userId: null,
       familyId: null,
+
+      clearError: () => set({ error: null }),
 
       // Actions
       setUserId: (userId) => {
@@ -336,43 +350,49 @@ export const useGamificationStore = create<GamificationState>()(
         }
       },
 
-      addWishlistItem: async (itemData: { item_name: string; description?: string; point_cost: number; reward_type?: 'points' | 'custom' | 'privilege' | 'activity'; image_url?: string; }) => {
+      addWishlistItem: async (itemData) => {
         const { userId, familyId, fetchWishlistItems } = get();
-        if (!userId || !familyId) return null;
+        if (!userId || !familyId) {
+          const error = createStoreError('auth', 'Authentication required');
+          set({ error });
+          return { success: false, error };
+        }
 
         try {
+          // Validate and sanitize input
+          wishlistInputSchema.parse(itemData);
+          
+          const sanitizedData = {
+            ...itemData,
+            item_name: sanitizeInput(itemData.item_name),
+            description: itemData.description ? sanitizeInput(itemData.description) : undefined,
+            user_id: userId,
+            family_id: familyId,
+            reward_type: itemData.reward_type || 'custom',
+          };
+
           const { data, error } = await supabase
             .from('wishlist_items')
-            .insert({
-              ...itemData,
-              user_id: userId,
-              family_id: familyId,
-              reward_type: itemData.reward_type || 'custom',
-            })
+            .insert(sanitizedData)
             .select()
             .single();
 
           if (error) {
             console.error('Error adding wishlist item:', error);
-            toast({
-              title: 'Error',
-              description: 'Failed to add wishlist item',
-              variant: 'destructive',
-            });
-            return null;
+            const storeError = createStoreError('network', 'Failed to add wishlist item', error.code, { error });
+            set({ error: storeError });
+            return { success: false, error: storeError };
           }
 
           await fetchWishlistItems();
-          
-          toast({
-            title: 'Success',
-            description: 'Wishlist item added successfully',
-          });
-
-          return data;
-        } catch (error) {
+          return { success: true, result: createStoreSuccess(data, 'Wishlist item added successfully') };
+        } catch (error: any) {
           console.error('Error adding wishlist item:', error);
-          return null;
+          const storeError = error.name === 'ZodError' 
+            ? createStoreError('validation', 'Invalid input data', undefined, { validation: error.errors })
+            : createStoreError('network', error.message || 'Failed to add wishlist item');
+          set({ error: storeError });
+          return { success: false, error: storeError };
         }
       },
 

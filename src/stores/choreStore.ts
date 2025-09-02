@@ -1,7 +1,16 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { 
+  choreInputSchema, 
+  getCurrentUserId, 
+  requireAuth, 
+  sanitizeInput,
+  createStoreError,
+  createStoreSuccess,
+  type StoreResult,
+  type StoreError
+} from '@/services/storeUtils';
 
 interface ChoreCategory {
   id: string;
@@ -97,6 +106,7 @@ interface ChoreState {
   chores: Chore[];
   assignments: ChoreAssignment[];
   loading: boolean;
+  error: StoreError | null;
   familyId: string | null;
 
   // Actions
@@ -105,12 +115,13 @@ interface ChoreState {
   fetchTemplates: () => Promise<void>;
   fetchChores: () => Promise<void>;
   fetchAssignments: () => Promise<void>;
-  createChoreFromTemplate: (templateId: string, customizations?: Partial<Chore>) => Promise<any>;
-  createCustomChore: (choreData: Omit<Chore, 'id' | 'created_at' | 'updated_at' | 'family_id' | 'created_by'>) => Promise<any>;
-  assignChore: (choreId: string, assignedTo: string, dueDate?: string, recurrencePattern?: any) => Promise<any>;
-  bulkAssignChores: (assignments: Array<{ choreId: string; assignedTo: string; dueDate?: string; recurrencePattern?: any; }>) => Promise<any[]>;
-  updateAssignmentStatus: (assignmentId: string, status: ChoreAssignment['status'], completionData?: { points_earned?: number; time_bonus?: number; streak_bonus?: number; completion_notes?: string; parent_feedback?: string; }) => Promise<any>;
+  createChoreFromTemplate: (templateId: string, customizations?: Partial<Chore>) => Promise<StoreResult>;
+  createCustomChore: (choreData: Omit<Chore, 'id' | 'created_at' | 'updated_at' | 'family_id' | 'created_by'>) => Promise<StoreResult>;
+  assignChore: (choreId: string, assignedTo: string, dueDate?: string, recurrencePattern?: any) => Promise<StoreResult>;
+  bulkAssignChores: (assignments: Array<{ choreId: string; assignedTo: string; dueDate?: string; recurrencePattern?: any; }>) => Promise<StoreResult>;
+  updateAssignmentStatus: (assignmentId: string, status: ChoreAssignment['status'], completionData?: { points_earned?: number; time_bonus?: number; streak_bonus?: number; completion_notes?: string; parent_feedback?: string; }) => Promise<StoreResult>;
   refetch: () => Promise<void>;
+  clearError: () => void;
 }
 
 export const useChoreStore = create<ChoreState>()(
@@ -122,6 +133,7 @@ export const useChoreStore = create<ChoreState>()(
       chores: [],
       assignments: [],
       loading: true,
+      error: null,
       familyId: null,
 
       // Actions
@@ -131,6 +143,8 @@ export const useChoreStore = create<ChoreState>()(
           get().refetch();
         }
       },
+
+      clearError: () => set({ error: null }),
 
       fetchCategories: async () => {
         try {
@@ -260,37 +274,46 @@ export const useChoreStore = create<ChoreState>()(
 
       createChoreFromTemplate: async (templateId: string, customizations?: Partial<Chore>) => {
         const { familyId, templates, fetchChores } = get();
-        if (!familyId) return null;
-
-        // Get user from auth store
-        const user = (window as any).__authUser; // Temporary solution
-        if (!user) return null;
-
-        const template = templates.find(t => t.id === templateId);
-        if (!template) {
-          toast({
-            title: 'Error',
-            description: 'Template not found',
-            variant: 'destructive',
-          });
-          return null;
+        if (!familyId) {
+          const error = createStoreError('validation', 'Family ID is required');
+          set({ error });
+          return { success: false, error };
         }
 
-        const choreData = {
-          family_id: familyId,
-          template_id: templateId,
-          title: customizations?.title || template.title,
-          description: customizations?.description || template.description,
-          category_id: customizations?.category_id || template.category_id,
-          estimated_duration: customizations?.estimated_duration || template.estimated_duration,
-          difficulty: customizations?.difficulty || template.difficulty,
-          base_points: customizations?.base_points || template.base_points,
-          instructions: customizations?.instructions || template.instructions,
-          custom_settings: customizations?.custom_settings || {},
-          created_by: user.id,
-        };
-
         try {
+          const userId = requireAuth();
+          
+          const template = templates.find(t => t.id === templateId);
+          if (!template) {
+            const error = createStoreError('validation', 'Template not found');
+            set({ error });
+            return { success: false, error };
+          }
+
+          // Validate and sanitize customizations
+          const choreData = {
+            family_id: familyId,
+            template_id: templateId,
+            title: sanitizeInput(customizations?.title || template.title),
+            description: customizations?.description ? sanitizeInput(customizations.description) : template.description,
+            category_id: customizations?.category_id || template.category_id,
+            estimated_duration: customizations?.estimated_duration || template.estimated_duration,
+            difficulty: customizations?.difficulty || template.difficulty,
+            base_points: customizations?.base_points || template.base_points,
+            instructions: customizations?.instructions || template.instructions,
+            custom_settings: customizations?.custom_settings || {},
+            created_by: userId,
+          };
+
+          // Validate input
+          choreInputSchema.parse({
+            title: choreData.title,
+            description: choreData.description,
+            estimated_duration: choreData.estimated_duration,
+            difficulty: choreData.difficulty,
+            base_points: choreData.base_points,
+          });
+
           const { data, error } = await supabase
             .from('chores')
             .insert(choreData)
@@ -299,87 +322,101 @@ export const useChoreStore = create<ChoreState>()(
 
           if (error) {
             console.error('Error creating chore:', error);
-            toast({
-              title: 'Error',
-              description: 'Failed to create chore',
-              variant: 'destructive',
-            });
-            return null;
+            const storeError = createStoreError('network', 'Failed to create chore', error.code, { error });
+            set({ error: storeError });
+            return { success: false, error: storeError };
           }
 
           await fetchChores();
-          
-          toast({
-            title: 'Success',
-            description: 'Chore created successfully',
-          });
-
-          return data;
-        } catch (error) {
+          return { success: true, result: createStoreSuccess(data, 'Chore created successfully') };
+        } catch (error: any) {
           console.error('Error creating chore:', error);
-          return null;
+          const storeError = error.name === 'ZodError' 
+            ? createStoreError('validation', 'Invalid input data', undefined, { validation: error.errors })
+            : createStoreError('network', error.message || 'Failed to create chore');
+          set({ error: storeError });
+          return { success: false, error: storeError };
         }
       },
 
       createCustomChore: async (choreData: Omit<Chore, 'id' | 'created_at' | 'updated_at' | 'family_id' | 'created_by'>) => {
         const { familyId, fetchChores } = get();
-        if (!familyId) return null;
-
-        // Get user from auth store
-        const user = (window as any).__authUser; // Temporary solution
-        if (!user) return null;
+        if (!familyId) {
+          const error = createStoreError('validation', 'Family ID is required');
+          set({ error });
+          return { success: false, error };
+        }
 
         try {
+          const userId = requireAuth();
+
+          // Validate and sanitize input
+          const sanitizedData = {
+            ...choreData,
+            title: sanitizeInput(choreData.title),
+            description: choreData.description ? sanitizeInput(choreData.description) : null,
+            family_id: familyId,
+            created_by: userId,
+          };
+
+          // Validate input
+          choreInputSchema.parse({
+            title: sanitizedData.title,
+            description: sanitizedData.description,
+            estimated_duration: sanitizedData.estimated_duration,
+            difficulty: sanitizedData.difficulty,
+            base_points: sanitizedData.base_points,
+          });
+
           const { data, error } = await supabase
             .from('chores')
-            .insert({
-              ...choreData,
-              family_id: familyId,
-              created_by: user.id,
-            })
+            .insert(sanitizedData)
             .select()
             .single();
 
           if (error) {
             console.error('Error creating custom chore:', error);
-            toast({
-              title: 'Error',
-              description: 'Failed to create chore',
-              variant: 'destructive',
-            });
-            return null;
+            const storeError = createStoreError('network', 'Failed to create chore', error.code, { error });
+            set({ error: storeError });
+            return { success: false, error: storeError };
           }
 
           await fetchChores();
-          
-          toast({
-            title: 'Success',
-            description: 'Custom chore created successfully',
-          });
-
-          return data;
-        } catch (error) {
+          return { success: true, result: createStoreSuccess(data, 'Custom chore created successfully') };
+        } catch (error: any) {
           console.error('Error creating custom chore:', error);
-          return null;
+          const storeError = error.name === 'ZodError' 
+            ? createStoreError('validation', 'Invalid input data', undefined, { validation: error.errors })
+            : createStoreError('network', error.message || 'Failed to create chore');
+          set({ error: storeError });
+          return { success: false, error: storeError };
         }
       },
 
       assignChore: async (choreId: string, assignedTo: string, dueDate?: string, recurrencePattern?: any) => {
         const { familyId, fetchAssignments } = get();
-        if (!familyId) return null;
-
-        // Get user from auth store
-        const user = (window as any).__authUser; // Temporary solution
-        if (!user) return null;
+        if (!familyId) {
+          const error = createStoreError('validation', 'Family ID is required');
+          set({ error });
+          return { success: false, error };
+        }
 
         try {
+          const userId = requireAuth();
+
+          if (!choreId || !assignedTo) {
+            const error = createStoreError('validation', 'Chore ID and assigned user are required');
+            set({ error });
+            return { success: false, error };
+          }
+
           const { data, error } = await supabase
             .from('chore_assignments')
             .insert({
               chore_id: choreId,
               family_id: familyId,
               assigned_to: assignedTo,
-              assigned_by: user.id,
+              assigned_by: userId,
               due_date: dueDate,
               recurrence_pattern: recurrencePattern || {},
             })
@@ -388,46 +425,47 @@ export const useChoreStore = create<ChoreState>()(
 
           if (error) {
             console.error('Error assigning chore:', error);
-            toast({
-              title: 'Error',
-              description: 'Failed to assign chore',
-              variant: 'destructive',
-            });
-            return null;
+            const storeError = createStoreError('network', 'Failed to assign chore', error.code, { error });
+            set({ error: storeError });
+            return { success: false, error: storeError };
           }
 
           await fetchAssignments();
-          
-          toast({
-            title: 'Success',
-            description: 'Chore assigned successfully',
-          });
-
-          return data;
-        } catch (error) {
+          return { success: true, result: createStoreSuccess(data, 'Chore assigned successfully') };
+        } catch (error: any) {
           console.error('Error assigning chore:', error);
-          return null;
+          const storeError = createStoreError('network', error.message || 'Failed to assign chore');
+          set({ error: storeError });
+          return { success: false, error: storeError };
         }
       },
 
       bulkAssignChores: async (assignments: Array<{ choreId: string; assignedTo: string; dueDate?: string; recurrencePattern?: any; }>) => {
         const { familyId, fetchAssignments } = get();
-        if (!familyId) return [];
-
-        // Get user from auth store
-        const user = (window as any).__authUser; // Temporary solution
-        if (!user) return [];
-
-        const assignmentData = assignments.map(assignment => ({
-          chore_id: assignment.choreId,
-          family_id: familyId,
-          assigned_to: assignment.assignedTo,
-          assigned_by: user.id,
-          due_date: assignment.dueDate,
-          recurrence_pattern: assignment.recurrencePattern || {},
-        }));
+        if (!familyId) {
+          const error = createStoreError('validation', 'Family ID is required');
+          set({ error });
+          return { success: false, error };
+        }
 
         try {
+          const userId = requireAuth();
+
+          if (!assignments || assignments.length === 0) {
+            const error = createStoreError('validation', 'No assignments provided');
+            set({ error });
+            return { success: false, error };
+          }
+
+          const assignmentData = assignments.map(assignment => ({
+            chore_id: assignment.choreId,
+            family_id: familyId,
+            assigned_to: assignment.assignedTo,
+            assigned_by: userId,
+            due_date: assignment.dueDate,
+            recurrence_pattern: assignment.recurrencePattern || {},
+          }));
+
           const { data, error } = await supabase
             .from('chore_assignments')
             .insert(assignmentData)
@@ -435,50 +473,55 @@ export const useChoreStore = create<ChoreState>()(
 
           if (error) {
             console.error('Error bulk assigning chores:', error);
-            toast({
-              title: 'Error',
-              description: 'Failed to assign chores',
-              variant: 'destructive',
-            });
-            return [];
+            const storeError = createStoreError('network', 'Failed to assign chores', error.code, { error });
+            set({ error: storeError });
+            return { success: false, error: storeError };
           }
 
           await fetchAssignments();
-          
-          toast({
-            title: 'Success',
-            description: `${assignments.length} chores assigned successfully`,
-          });
-
-          return data;
-        } catch (error) {
+          return { success: true, result: createStoreSuccess(data, `${assignments.length} chores assigned successfully`) };
+        } catch (error: any) {
           console.error('Error bulk assigning chores:', error);
-          return [];
+          const storeError = createStoreError('network', error.message || 'Failed to assign chores');
+          set({ error: storeError });
+          return { success: false, error: storeError };
         }
       },
 
       updateAssignmentStatus: async (assignmentId: string, status: ChoreAssignment['status'], completionData?: { points_earned?: number; time_bonus?: number; streak_bonus?: number; completion_notes?: string; parent_feedback?: string; }) => {
         const { fetchAssignments } = get();
 
-        // Get user from auth store
-        const user = (window as any).__authUser; // Temporary solution
-
-        const updateData: any = {
-          status,
-          ...completionData,
-        };
-
-        if (status === 'completed') {
-          updateData.completed_at = new Date().toISOString();
-        } else if (status === 'in_progress') {
-          updateData.started_at = new Date().toISOString();
-        } else if (status === 'verified') {
-          updateData.is_verified = true;
-          updateData.verified_at = new Date().toISOString();
-          updateData.verified_by = user?.id;
-        }
-
         try {
+          const userId = getCurrentUserId();
+
+          if (!assignmentId) {
+            const error = createStoreError('validation', 'Assignment ID is required');
+            set({ error });
+            return { success: false, error };
+          }
+
+          const updateData: any = {
+            status,
+            ...completionData,
+          };
+
+          if (completionData?.completion_notes) {
+            updateData.completion_notes = sanitizeInput(completionData.completion_notes);
+          }
+          if (completionData?.parent_feedback) {
+            updateData.parent_feedback = sanitizeInput(completionData.parent_feedback);
+          }
+
+          if (status === 'completed') {
+            updateData.completed_at = new Date().toISOString();
+          } else if (status === 'in_progress') {
+            updateData.started_at = new Date().toISOString();
+          } else if (status === 'verified') {
+            updateData.is_verified = true;
+            updateData.verified_at = new Date().toISOString();
+            updateData.verified_by = userId;
+          }
+
           const { data, error } = await supabase
             .from('chore_assignments')
             .update(updateData)
@@ -488,19 +531,18 @@ export const useChoreStore = create<ChoreState>()(
 
           if (error) {
             console.error('Error updating assignment:', error);
-            toast({
-              title: 'Error',
-              description: 'Failed to update assignment',
-              variant: 'destructive',
-            });
-            return null;
+            const storeError = createStoreError('network', 'Failed to update assignment', error.code, { error });
+            set({ error: storeError });
+            return { success: false, error: storeError };
           }
 
           await fetchAssignments();
-          return data;
-        } catch (error) {
+          return { success: true, result: createStoreSuccess(data, 'Assignment updated successfully') };
+        } catch (error: any) {
           console.error('Error updating assignment:', error);
-          return null;
+          const storeError = createStoreError('network', error.message || 'Failed to update assignment');
+          set({ error: storeError });
+          return { success: false, error: storeError };
         }
       },
 
