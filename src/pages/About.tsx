@@ -91,7 +91,7 @@ const About = () => {
             <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">SH</span>
             </div>
-            <span className="font-bold text-xl text-foreground">Spectrum Harmony</span>
+            <span className="font-bold text-xl text-foreground">Chatterbox</span>
           </div>
           
           <div className="flex items-center gap-4">
@@ -120,7 +120,7 @@ const About = () => {
               Supporting Families, Empowering Children
             </h1>
             <p className="text-xl md:text-2xl text-white/90 mb-8 max-w-4xl mx-auto leading-relaxed">
-              Spectrum Harmony transforms how families with autistic children navigate daily life through 
+              Chatterbox transforms how families with autistic children navigate daily life through 
               technology, structure, and compassionate support systems designed for real-world success.
             </p>
           </div>
@@ -131,7 +131,7 @@ const About = () => {
               <h2 className="text-2xl font-bold text-white mb-4">Our Mission</h2>
               <p className="text-white/90 text-lg leading-relaxed max-w-3xl mx-auto">
                 We believe every autistic child deserves tools that celebrate their unique strengths while 
-                supporting their growth. Spectrum Harmony provides families with comprehensive resources to 
+                supporting their growth. Chatterbox provides families with comprehensive resources to 
                 create structure, reduce stress, and build lasting positive outcomes together.
               </p>
             </CardContent>
@@ -230,7 +230,7 @@ const About = () => {
             <CardContent className="p-8 text-center">
               <h2 className="text-3xl font-bold mb-4">Ready to Transform Your Family's Journey?</h2>
               <p className="text-lg opacity-90 mb-6 max-w-2xl mx-auto">
-                Join thousands of families who have found structure, support, and success with Spectrum Harmony. 
+                Join thousands of families who have found structure, support, and success with Chatterbox. 
                 Start building a more organized, connected, and joyful family life today.
               </p>
               <Button 

@@ -81,7 +81,7 @@ const ParentChoreManagement = () => {
               <div className="flex items-center gap-3">
                 <Heart className="h-8 w-8 text-primary" />
                 <div>
-                  <h1 className="text-xl font-bold text-foreground">Spectrum Harmony Parent Portal</h1>
+                  <h1 className="text-xl font-bold text-foreground">Chatterbox Parent Portal</h1>
                   <p className="text-sm text-muted-foreground">Choose family to manage</p>
                 </div>
               </div>
@@ -138,7 +138,7 @@ const ParentChoreManagement = () => {
               <div className="flex items-center gap-3">
                 <Heart className="h-8 w-8 text-primary" />
                 <div>
-                  <h1 className="text-xl font-bold text-foreground">Spectrum Harmony Parent Portal</h1>
+                  <h1 className="text-xl font-bold text-foreground">Chatterbox Parent Portal</h1>
                   <p className="text-sm text-muted-foreground">Chore Management</p>
                 </div>
               </div>
@@ -177,7 +177,7 @@ const ParentChoreManagement = () => {
             <div className="flex items-center gap-3">
               <Heart className="h-8 w-8 text-primary" />
               <div>
-                <h1 className="text-xl font-bold text-foreground">Spectrum Harmony Parent Portal</h1>
+                <h1 className="text-xl font-bold text-foreground">Chatterbox Parent Portal</h1>
                 <p className="text-sm text-muted-foreground">
                   Managing: {families.find(f => f.id === selectedFamily)?.display_name}
                 </p>

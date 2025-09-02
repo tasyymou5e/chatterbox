@@ -92,7 +92,7 @@ const ChildrenTasksDashboard = () => {
               <div className="flex items-center gap-3">
                 <Heart className="h-8 w-8 text-primary" />
                 <div>
-                  <h1 className="text-xl font-bold text-foreground">Spectrum Harmony</h1>
+                  <h1 className="text-xl font-bold text-foreground">Chatterbox</h1>
                   <p className="text-sm text-muted-foreground">Choose your family</p>
                 </div>
               </div>
@@ -149,7 +149,7 @@ const ChildrenTasksDashboard = () => {
               <div className="flex items-center gap-3">
                 <Heart className="h-8 w-8 text-primary" />
                 <div>
-                  <h1 className="text-xl font-bold text-foreground">Spectrum Harmony</h1>
+                  <h1 className="text-xl font-bold text-foreground">Chatterbox</h1>
                   <p className="text-sm text-muted-foreground">My Tasks</p>
                 </div>
               </div>
@@ -188,7 +188,7 @@ const ChildrenTasksDashboard = () => {
             <div className="flex items-center gap-3">
               <Heart className="h-8 w-8 text-primary" />
               <div>
-                <h1 className="text-xl font-bold text-foreground">Spectrum Harmony</h1>
+                <h1 className="text-xl font-bold text-foreground">Chatterbox</h1>
                 <p className="text-sm text-muted-foreground">
                   {families.find(f => f.id === selectedFamily)?.display_name} Tasks
                 </p>

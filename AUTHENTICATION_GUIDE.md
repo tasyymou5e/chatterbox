@@ -5,7 +5,7 @@
 
 ## 🔐 AUTHENTICATION ARCHITECTURE OVERVIEW
 
-The Spectrum Harmony application uses a centralized Zustand-based authentication system with enhanced error diagnostics and comprehensive activity logging.
+The Chatterbox application uses a centralized Zustand-based authentication system with enhanced error diagnostics and comprehensive activity logging.
 
 ### **Current Authentication Stack**
 - **Frontend**: Zustand authStore with bridge adapter compatibility

@@ -192,7 +192,7 @@ export default function AdminDashboard() {
             Analytics Dashboard
           </h1>
           <p className="text-muted-foreground">
-            Comprehensive insights and system monitoring for Spectrum Harmony
+            Comprehensive insights and system monitoring for Chatterbox
           </p>
         </div>
         <div className="flex items-center space-x-2">

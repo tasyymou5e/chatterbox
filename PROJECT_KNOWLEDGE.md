@@ -1,11 +1,11 @@
-# Spectrum Harmony - Enhanced Project Knowledge Base
+# Chatterbox - Enhanced Project Knowledge Base
 **Comprehensive Technical Documentation, Site Logic, Database Schema Design & System Architecture**
 
 ---
 
 ## 📋 PROJECT OVERVIEW
 
-**Project Name:** Spectrum Harmony  
+**Project Name:** Chatterbox  
 **Purpose:** A comprehensive web platform designed for autistic children, featuring educational games, communication support, and family engagement tools  
 **Technology Stack:** React + TypeScript + Vite + Supabase + Tailwind CSS + Zustand  
 **Target Users:** Autistic children, their parents/caregivers, and administrators  
