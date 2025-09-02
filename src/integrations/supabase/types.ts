@@ -2069,6 +2069,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      validate_password_strength: {
+        Args: { password_text: string }
+        Returns: Json
+      }
     }
     Enums: {
       achievement_type:
