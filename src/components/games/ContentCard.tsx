@@ -1,8 +1,8 @@
 import React from 'react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Heart, Play, Star } from 'lucide-react';
+import { Heart, Play, Star, Shield, ShieldX, Sparkles } from 'lucide-react';
 
 interface ContentItem {
   id: string;
@@ -27,9 +27,18 @@ interface ContentCardProps {
   isFavorited: boolean;
   onFavorite: () => void;
   onClick: () => void;
+  showCurationControls?: boolean;
+  onContentCuration?: (contentId: string, accessType: 'allowed' | 'blocked' | 'featured') => void;
 }
 
-function ContentCardComponent({ item, isFavorited, onFavorite, onClick }: ContentCardProps) {
+function ContentCardComponent({ 
+  item, 
+  isFavorited, 
+  onFavorite, 
+  onClick, 
+  showCurationControls = false,
+  onContentCuration
+}: ContentCardProps) {
   const getContentIcon = (type: string) => {
     switch (type) {
       case 'game': return '🎮';
@@ -155,17 +164,62 @@ function ContentCardComponent({ item, isFavorited, onFavorite, onClick }: Conten
           )}
         </div>
       </CardContent>
+
+      {/* Phase 2: Family Content Curation Controls */}
+      {showCurationControls && onContentCuration && (
+        <CardFooter className="pt-2 pb-4 px-4">
+          <div className="flex flex-wrap gap-1 w-full">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={(e) => {
+                e.stopPropagation();
+                onContentCuration(item.id, 'featured');
+              }}
+              className="flex-1 text-xs"
+            >
+              <Sparkles className="h-3 w-3 mr-1" />
+              Feature
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={(e) => {
+                e.stopPropagation();
+                onContentCuration(item.id, 'allowed');
+              }}
+              className="flex-1 text-xs"
+            >
+              <Shield className="h-3 w-3 mr-1" />
+              Allow
+            </Button>
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={(e) => {
+                e.stopPropagation();
+                onContentCuration(item.id, 'blocked');
+              }}
+              className="flex-1 text-xs"
+            >
+              <ShieldX className="h-3 w-3 mr-1" />
+              Block
+            </Button>
+          </div>
+        </CardFooter>
+      )}
     </Card>
   );
 }
 
-// Phase 1: Performance optimization with React.memo
+// Phase 2: Enhanced Performance optimization with React.memo
 export const ContentCard = React.memo(ContentCardComponent, (prevProps, nextProps) => {
   return (
     prevProps.item.id === nextProps.item.id &&
     prevProps.isFavorited === nextProps.isFavorited &&
     prevProps.item.title === nextProps.item.title &&
     prevProps.item.thumbnail_url === nextProps.item.thumbnail_url &&
-    prevProps.item.is_free === nextProps.item.is_free
+    prevProps.item.is_free === nextProps.item.is_free &&
+    prevProps.showCurationControls === nextProps.showCurationControls
   );
 });

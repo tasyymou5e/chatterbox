@@ -1220,6 +1220,58 @@ export type Database = {
           },
         ]
       }
+      family_content_access: {
+        Row: {
+          access_type: string | null
+          added_by: string | null
+          content_item_id: string
+          created_at: string | null
+          family_id: string
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          access_type?: string | null
+          added_by?: string | null
+          content_item_id: string
+          created_at?: string | null
+          family_id: string
+          id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          access_type?: string | null
+          added_by?: string | null
+          content_item_id?: string
+          created_at?: string | null
+          family_id?: string
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_content_access_added_by_fkey"
+            columns: ["added_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "family_content_access_content_item_id_fkey"
+            columns: ["content_item_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "family_content_access_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       family_invitations: {
         Row: {
           accepted_at: string | null
