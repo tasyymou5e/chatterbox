@@ -88,32 +88,24 @@ export const useAuthStore = create<AuthState>()(
 
             return null;
           } catch (error) {
-            console.error('Error fetching user role:', error);
             return null;
           }
         },
 
         // Helper to check if user has admin role with retry logic
         checkAdminRole: async (userId: string): Promise<boolean> => {
-          console.log('👑 AuthStore: Checking admin role for user:', userId);
           try {
-            console.log('👑 AuthStore: Calling has_role RPC function...');
             const { data, error } = await supabase.rpc('has_role', {
               _user_id: userId,
               _role: 'admin'
             });
 
             if (error) {
-              console.error('❌ AuthStore: Admin role check RPC failed:', error.message, error);
               return false;
             }
 
-            console.log('✅ AuthStore: Admin role check RPC successful, result:', data);
-            const isAdmin = data || false;
-            console.log('👑 AuthStore: Final admin status:', isAdmin);
-            return isAdmin;
+            return data || false;
           } catch (error) {
-            console.error('❌ AuthStore: Admin role check exception:', error);
             return false;
           }
         },
@@ -122,58 +114,37 @@ export const useAuthStore = create<AuthState>()(
         initialize: () => {
           const currentState = get();
           if (currentState.sessionReady) {
-            console.log('🔐 Auth Store - Already initialized');
             return;
           }
 
-          console.log('🔐 Auth Store - Starting initialization');
           set({ loading: true });
 
           // Set up auth state listener FIRST
           const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (event, session) => {
-              console.log('🔄 AuthStore: Auth state changed:', event);
-              console.log('🔄 AuthStore: Session data:', {
-                user_id: session?.user?.id,
-                user_email: session?.user?.email,
-                access_token: session?.access_token ? 'present' : 'missing',
-                expires_at: session?.expires_at
-              });
-              
               const currentState = get();
-              console.log('🔄 AuthStore: Current state before update:', {
-                currentUser: currentState.user?.email,
-                currentIsAdmin: currentState.isAdmin,
-                currentLoading: currentState.loading
-              });
               
               if (event === 'SIGNED_IN' && session) {
-                console.log('✅ AuthStore: Processing SIGNED_IN event...');
-                console.log('✅ AuthStore: Setting user and session in state...');
                 set({ 
                   session, 
                   user: session?.user ?? null,
                   loading: false,
                   sessionReady: true
                 });
-                console.log('✅ AuthStore: State updated with user and session');
 
                 // Handle role checking when user signs in - synchronous to prevent race conditions
                 if (!currentState.signingOut) {
-                  console.log('🔐 AuthStore - Checking user role for:', session.user.id);
                   set({ isCheckingRole: true });
                   
                   // Check role synchronously to prevent race conditions
                   get().fetchUserRole(session.user.id).then(role => {
                     const isAdmin = role === 'admin';
-                    console.log('👤 AuthStore: Role check complete:', { role, isAdmin });
                     set({ 
                       userRole: role, 
                       isAdmin,
                       isCheckingRole: false 
                     });
                   }).catch(error => {
-                    console.warn('⚠️ AuthStore: Role check failed:', error);
                     set({ 
                       userRole: 'parent',
                       isAdmin: false,
@@ -182,37 +153,26 @@ export const useAuthStore = create<AuthState>()(
                   });
                 }
               } else if (event === 'SIGNED_OUT') {
-                console.log('🚪 AuthStore: Processing SIGNED_OUT event...');
                 set({ 
                   session, 
                   user: session?.user ?? null,
                   loading: false,
                   sessionReady: true
                 });
-                console.log('🚪 AuthStore: Clearing user data (signed out)');
                 // Clear role data when no user
                 set({ 
                   userRole: null, 
                   isAdmin: false,
                   isCheckingRole: false 
                 });
-                console.log('🚪 AuthStore: State cleared for sign out');
               } else if (event === 'TOKEN_REFRESHED' && session) {
-                console.log('🔄 AuthStore: Processing TOKEN_REFRESHED event...');
                 set({ session, user: session.user });
-                console.log('🔄 AuthStore: Session refreshed in state');
               }
-              
-              console.log('🔄 AuthStore: Auth state change processing complete');
             }
           );
 
           // Check for existing session AFTER setting up listener
           supabase.auth.getSession().then(({ data: { session } }) => {
-            console.log('🔐 Auth Store - Initial session check:', { 
-              hasSession: !!session, 
-              hasUser: !!session?.user 
-            });
             set({ 
               session, 
               user: session?.user ?? null,
@@ -220,7 +180,6 @@ export const useAuthStore = create<AuthState>()(
               sessionReady: true
             });
           }).catch(error => {
-            console.error('🚨 Auth Store - Initial session check failed:', error);
             set({ loading: false, sessionReady: true });
           });
 
@@ -255,22 +214,22 @@ export const useAuthStore = create<AuthState>()(
                 }
               };
               
-              authLoggingService.logActivity(
-                data.user.id,
-                'signup',
-                !error,
-                error?.message,
-                { 
-                  email, 
-                  firstName, 
-                  lastName,
-                  signupMethod: 'email_password',
-                  emailConfirmationRequired: !data.session,
-                  ...metadata
-                }
-              ).catch(logError => {
-                console.warn('Failed to log signup activity (non-blocking):', logError);
-              });
+               authLoggingService.logActivity(
+                 data.user.id,
+                 'signup',
+                 !error,
+                 error?.message,
+                 { 
+                   email, 
+                   firstName, 
+                   lastName,
+                   signupMethod: 'email_password',
+                   emailConfirmationRequired: !data.session,
+                   ...metadata
+                 }
+               ).catch(() => {
+                 // Log failure silently
+               });
             }, 0);
            }
 
@@ -280,8 +239,6 @@ export const useAuthStore = create<AuthState>()(
         // Reset password - works for all user types
         resetPassword: async (email: string, userType: 'admin' | 'user' = 'user') => {
           try {
-            console.log('🔐 Sending password reset email to:', email, 'for', userType);
-            
             const redirectUrl = userType === 'admin' 
               ? `${window.location.origin}/admin/reset-password-confirm`
               : `${window.location.origin}/auth?tab=reset-confirm`;
@@ -291,14 +248,11 @@ export const useAuthStore = create<AuthState>()(
             });
 
             if (error) {
-              console.error('❌ Password reset error:', error);
               return { error };
             }
 
-            console.log('✅ Password reset email sent successfully');
             return { error: null };
           } catch (err: unknown) {
-            console.error('💥 Password reset exception:', err);
             return { error: err as AuthError };
           }
         },
@@ -307,7 +261,6 @@ export const useAuthStore = create<AuthState>()(
         signIn: async (email: string, password: string) => {
           try {
             set({ loading: true, isCheckingRole: true });
-            console.log('🔐 AuthStore: Starting sign in for', email);
             
             const { data, error } = await supabase.auth.signInWithPassword({
               email,
@@ -315,24 +268,6 @@ export const useAuthStore = create<AuthState>()(
             });
 
             if (error) {
-              console.error('🔐 AuthStore: Sign in error details:', {
-                code: error.status,
-                message: error.message,
-                name: error.name,
-                details: error
-              });
-              
-              // Enhanced error diagnostics for common login issues
-              if (error.message?.includes('Invalid login credentials')) {
-                console.error('🔐 AuthStore: Invalid credentials detected - possible causes:');
-                console.error('  • Password incorrect for user:', email);
-                console.error('  • Account locked or disabled');
-                console.error('  • ⚠️  LEAKED PASSWORD PROTECTION may be blocking login');
-                console.error('  • Email not confirmed (check email_confirmed_at in auth.users)');
-                console.error('  • Rate limiting active');
-                console.error('💡 Check Supabase Auth settings: https://supabase.com/dashboard/project/lxuqfgbukrrickanmmic/auth/providers');
-              }
-              
               // Log failed login attempt
               setTimeout(() => {
                 authLoggingService.logActivity(
@@ -347,8 +282,8 @@ export const useAuthStore = create<AuthState>()(
                     timestamp: new Date().toISOString(),
                     attemptMethod: 'email_password'
                   }
-                ).catch(logError => {
-                  console.warn('Failed to log failed login (non-blocking):', logError);
+                ).catch(() => {
+                  // Log failure silently
                 });
               }, 0);
               
@@ -357,21 +292,9 @@ export const useAuthStore = create<AuthState>()(
             }
 
             if (data?.user && data?.session) {
-              console.log('🔐 AuthStore: Sign in successful, user details:', {
-                id: data.user.id,
-                email: data.user.email,
-                emailConfirmed: data.user.email_confirmed_at,
-                lastSignIn: data.user.last_sign_in_at,
-                provider: data.user.app_metadata?.provider
-              });
-              
-              console.log('✅ Auth successful, establishing session synchronously...');
-              
               // Synchronously check role to prevent race conditions
               const userRole = await get().fetchUserRole(data.user.id);
               const isAdmin = userRole === 'admin';
-              
-              console.log('👤 User role determined synchronously:', { userRole, isAdmin });
               
               // Set ALL auth state atomically in single operation to prevent race conditions
               set({
@@ -383,8 +306,6 @@ export const useAuthStore = create<AuthState>()(
                 isCheckingRole: false,
                 sessionReady: true
               });
-              
-              console.log('🎯 Auth state established atomically for', email);
 
               // Log successful sign-in activity asynchronously (non-blocking) with metadata
               setTimeout(() => {
@@ -408,19 +329,17 @@ export const useAuthStore = create<AuthState>()(
                     timestamp: new Date().toISOString(),
                     ...metadata
                   }
-                ).catch(logError => {
-                  console.warn('Failed to log sign-in activity (non-blocking):', logError);
+                ).catch(() => {
+                  // Log failure silently
                 });
               }, 0);
 
               return { error: null, user: data.user, isAdmin };
             }
 
-            console.error('❌ No user or session returned despite successful auth');
             set({ loading: false, isCheckingRole: false });
             return { error: { message: 'No user or session returned' } as AuthError };
           } catch (err: unknown) {
-            console.error('💥 Sign in exception:', err);
             set({ loading: false, isCheckingRole: false });
             return { error: err as AuthError };
           }
@@ -432,11 +351,9 @@ export const useAuthStore = create<AuthState>()(
           
           // Prevent multiple signOut attempts
           if (currentState.signingOut) {
-            console.log('🔐 Auth Store - SignOut already in progress, skipping');
             return { error: null };
           }
 
-          console.log('🔐 Auth Store - Starting signOut with timeout protection');
           set({ signingOut: true });
           
           const currentUserId = currentState.user?.id;
@@ -455,7 +372,6 @@ export const useAuthStore = create<AuthState>()(
             };
 
             // Clear state immediately before Supabase call to prevent UI hanging
-            console.log('🔐 Auth Store - Clearing state immediately');
             set({
               user: null,
               session: null,
@@ -470,18 +386,11 @@ export const useAuthStore = create<AuthState>()(
             try {
               localStorage.removeItem('auth-store');
               sessionStorage.clear();
-              console.log('🔐 Auth Store - Cleared persisted auth state');
             } catch (e) {
-              console.warn('🔐 Auth Store - Could not clear persisted state:', e);
+              // Silent fail
             }
 
             const { error } = await signOutWithTimeout();
-            
-            if (error) {
-              console.error('🔐 Auth Store - SignOut error (state already cleared):', error);
-            } else {
-              console.log('🔐 Auth Store - SignOut successful');
-            }
 
             // Non-blocking auth logging with individual timeouts (fire and forget)
             if (currentUserId) {
@@ -499,8 +408,8 @@ export const useAuthStore = create<AuthState>()(
                 new Promise((_, reject) => 
                   setTimeout(() => reject(new Error('Activity logging timeout')), 2000)
                 )
-              ]).catch(logError => {
-                console.warn('🔐 Auth Store - Activity logging failed (non-blocking):', logError);
+              ]).catch(() => {
+                // Silent fail
               });
 
               if (currentSessionId) {
@@ -509,15 +418,14 @@ export const useAuthStore = create<AuthState>()(
                   new Promise((_, reject) => 
                     setTimeout(() => reject(new Error('End session timeout')), 2000)
                   )
-                ]).catch(sessionError => {
-                  console.warn('🔐 Auth Store - End session failed (non-blocking):', sessionError);
+                ]).catch(() => {
+                  // Silent fail
                 });
               }
             }
 
             return { error };
           } catch (timeoutError) {
-            console.error('🔐 Auth Store - SignOut timeout (state already cleared):', timeoutError);
             return { error: timeoutError };
           }
         },
@@ -528,8 +436,6 @@ export const useAuthStore = create<AuthState>()(
 
         // Emergency logout for recovery
         emergencyLogout: () => {
-          console.log('🔐 Auth Store - Emergency logout triggered');
-          
           set({
             user: null,
             session: null,
@@ -543,9 +449,8 @@ export const useAuthStore = create<AuthState>()(
           try {
             localStorage.removeItem('auth-store');
             sessionStorage.clear();
-            console.log('🔐 Emergency logout - Cleared all state');
           } catch (e) {
-            console.warn('🔐 Emergency logout - Storage clear failed:', e);
+            // Silent fail
           }
         },
       }),
@@ -557,7 +462,6 @@ export const useAuthStore = create<AuthState>()(
           isAdmin: state.isAdmin,
         }),
         onRehydrateStorage: () => (state) => {
-          console.log('🔄 AuthStore: Hydration complete');
           if (state) {
             state.isHydrated = true;
           }
