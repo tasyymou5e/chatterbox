@@ -716,6 +716,13 @@ export type Database = {
             referencedRelation: "content_items"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "content_favorites_content_item_id_fkey"
+            columns: ["content_item_id"]
+            isOneToOne: false
+            referencedRelation: "popular_content"
+            referencedColumns: ["id"]
+          },
         ]
       }
       content_interactions: {
@@ -758,6 +765,13 @@ export type Database = {
             columns: ["content_item_id"]
             isOneToOne: false
             referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_interactions_content_item_id_fkey"
+            columns: ["content_item_id"]
+            isOneToOne: false
+            referencedRelation: "popular_content"
             referencedColumns: ["id"]
           },
         ]
@@ -1261,6 +1275,13 @@ export type Database = {
             columns: ["content_item_id"]
             isOneToOne: false
             referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "family_content_access_content_item_id_fkey"
+            columns: ["content_item_id"]
+            isOneToOne: false
+            referencedRelation: "popular_content"
             referencedColumns: ["id"]
           },
           {
@@ -2245,6 +2266,27 @@ export type Database = {
           total_users: number | null
         }
         Relationships: []
+      }
+      popular_content: {
+        Row: {
+          age_max: number | null
+          age_min: number | null
+          category_id: string | null
+          favorite_count: number | null
+          id: string | null
+          interaction_count: number | null
+          popularity_score: number | null
+          title: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "content_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Functions: {
