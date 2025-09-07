@@ -2395,6 +2395,19 @@ export type Database = {
           total_errors: number
         }[]
       }
+      get_popular_content: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          age_max: number
+          age_min: number
+          category_id: string
+          favorite_count: number
+          id: string
+          interaction_count: number
+          popularity_score: number
+          title: string
+        }[]
+      }
       has_connection_permission: {
         Args: {
           family_id_param: string

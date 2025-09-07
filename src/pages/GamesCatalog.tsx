@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,8 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Heart, Search, Play, Star, Shield, ShieldX, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { useCatalogCache } from '@/hooks/useCatalogCache';
+import { realtimeManager } from '@/services/RealtimeManager';
 import { ContentCard } from '@/components/games/ContentCard';
 import { CategoryFilter } from '@/components/games/CategoryFilter';
+import { VirtualizedContentGrid } from '@/components/games/VirtualizedContentGrid';
 
 interface ContentItem {
   id: string;
@@ -42,38 +45,48 @@ interface Favorite {
 }
 
 export default function GamesCatalog() {
-  const [contentItems, setContentItems] = useState<ContentItem[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [favorites, setFavorites] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
   const [realtimeConnected, setRealtimeConnected] = useState(false);
   const [userFamily, setUserFamily] = useState<string | null>(null);
   const [isParent, setIsParent] = useState(false);
   const [showCuration, setShowCuration] = useState(false);
+  const [useVirtualScrolling, setUseVirtualScrolling] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [ageFilter, setAgeFilter] = useState('all');
   const { user } = useAuth();
   const { toast } = useToast();
 
-  // Function to handle realtime state updates
-  const updateCatalogState = useCallback((prev: ContentItem[], payload: any) => {
+  // Phase 3: Use advanced caching strategy
+  const {
+    categories,
+    contentItems,
+    favorites,
+    isLoading,
+    invalidateContentCache,
+    invalidateFavoritesCache,
+    preloadPopularContent,
+    cacheStats
+  } = useCatalogCache(userFamily || undefined);
+  // Phase 3: Optimized realtime state updates
+  const updateCatalogState = useCallback((payload: any) => {
+    console.log('GamesCatalog: Received realtime update:', payload.eventType);
+    
     switch (payload.eventType) {
       case 'INSERT':
         if (payload.new.approval_status === 'approved' && payload.new.is_active) {
-          return [...prev, payload.new];
+          invalidateContentCache();
         }
-        return prev;
+        break;
       case 'UPDATE':
-        return prev.map(item => 
-          item.id === payload.new.id ? payload.new : item
-        ).filter(item => item.approval_status === 'approved' && item.is_active);
+        if (payload.new.approval_status === 'approved' && payload.new.is_active) {
+          invalidateContentCache();
+        }
+        break;
       case 'DELETE':
-        return prev.filter(item => item.id !== payload.old.id);
-      default:
-        return prev;
+        invalidateContentCache();
+        break;
     }
-  }, []);
+  }, [invalidateContentCache]);
 
   // Get user's family and role on mount
   useEffect(() => {
@@ -103,142 +116,82 @@ export default function GamesCatalog() {
     };
     
     getUserFamilyAndRole();
-    fetchData();
+    
+    // Phase 3: Preload popular content for better performance
     if (user) {
-      fetchFavorites();
+      preloadPopularContent();
     }
-  }, [user]);
+  }, [user, preloadPopularContent]);
 
-  // Phase 2: Family-Specific Realtime Channel Setup
+  // Phase 3: Optimized Realtime with Connection Pooling
   useEffect(() => {
-    if (!userFamily) {
-      // Fallback to global channel if no family
-      const channel = supabase
-        .channel('global-catalog-updates')
-        .on('postgres_changes', {
-          event: '*',
-          schema: 'public',
-          table: 'content_items',
-          filter: 'is_active=eq.true'
-        }, (payload) => {
-          setContentItems(prev => updateCatalogState(prev, payload));
-        })
-        .on('postgres_changes', {
-          event: '*',
-          schema: 'public',
-          table: 'content_categories'
-        }, () => {
-          fetchData();
-        })
-        .subscribe((status) => {
-          if (status === 'SUBSCRIBED') {
-            setRealtimeConnected(true);
-          } else if (status === 'CHANNEL_ERROR') {
-            setRealtimeConnected(false);
-            console.error('Realtime channel error');
-          }
-        });
-
-      return () => {
-        supabase.removeChannel(channel);
-        setRealtimeConnected(false);
-      };
-    }
-
-    // Family-specific channel subscription
-    const channel = supabase
-      .channel(`family-catalog-${userFamily}`)
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'content_items'
-      }, (payload) => {
-        // RLS will filter content automatically
-        setContentItems(prev => updateCatalogState(prev, payload));
-      })
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'content_categories'
-      }, () => {
-        fetchData();
-      })
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'family_content_access',
-        filter: `family_id=eq.${userFamily}`
-      }, () => {
-        // Refresh when family content access changes
-        fetchData();
-      })
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          setRealtimeConnected(true);
-        } else if (status === 'CHANNEL_ERROR') {
-          setRealtimeConnected(false);
-          console.error('Family realtime channel error');
-        }
-      });
-
-    return () => {
-      supabase.removeChannel(channel);
-      setRealtimeConnected(false);
-    };
-  }, [updateCatalogState, userFamily]);
-
-  const fetchData = useCallback(async () => {
-    try {
-      const [itemsResult, categoriesResult] = await Promise.all([
-        supabase
-          .from('content_items')
-          .select(`
-            *,
-            content_categories (name, icon)
-          `)
-          .eq('approval_status', 'approved')
-          .eq('is_active', true)
-          .order('sort_order'),
-        supabase
-          .from('content_categories')
-          .select('*')
-          .eq('is_active', true)
-          .order('sort_order')
-      ]);
-
-      if (itemsResult.error) throw itemsResult.error;
-      if (categoriesResult.error) throw categoriesResult.error;
-
-      setContentItems(itemsResult.data || []);
-      setCategories(categoriesResult.data || []);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load content",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [toast]);
-
-  const fetchFavorites = useCallback(async () => {
     if (!user) return;
 
-    try {
-      const { data, error } = await supabase
-        .from('content_favorites')
-        .select('content_item_id')
-        .eq('user_id', user.id);
+    let unsubscribeContent: (() => void) | undefined;
+    let unsubscribeCategories: (() => void) | undefined;
+    let unsubscribeFamilyAccess: (() => void) | undefined;
 
-      if (error) throw error;
+    if (userFamily) {
+      // Family-specific subscriptions
+      console.log(`Setting up family realtime for family: ${userFamily}`);
+      
+      unsubscribeContent = realtimeManager.subscribeFamilyChannel(
+        userFamily,
+        'content_items',
+        updateCatalogState
+      );
 
-      setFavorites(data?.map((fav: Favorite) => fav.content_item_id) || []);
-    } catch (error) {
-      console.error('Error fetching favorites:', error);
+      unsubscribeCategories = realtimeManager.subscribeFamilyChannel(
+        userFamily,
+        'content_categories',
+        () => invalidateContentCache()
+      );
+
+      unsubscribeFamilyAccess = realtimeManager.subscribeFamilyChannel(
+        userFamily,
+        'family_content_access',
+        () => invalidateContentCache(),
+        `family_id=eq.${userFamily}`
+      );
+
+      setRealtimeConnected(true);
+    } else {
+      // Global subscriptions for users without families
+      console.log('Setting up global realtime channels');
+      
+      unsubscribeContent = realtimeManager.subscribeGlobalChannel(
+        'content_items',
+        updateCatalogState,
+        'is_active=eq.true'
+      );
+
+      unsubscribeCategories = realtimeManager.subscribeGlobalChannel(
+        'content_categories',
+        () => invalidateContentCache()
+      );
+
+      setRealtimeConnected(true);
     }
-  }, [user]);
+
+    // Cleanup function
+    return () => {
+      console.log('Cleaning up realtime subscriptions');
+      unsubscribeContent?.();
+      unsubscribeCategories?.();
+      unsubscribeFamilyAccess?.();
+      setRealtimeConnected(false);
+    };
+  }, [user, userFamily, updateCatalogState, invalidateContentCache]);
+
+  const fetchData = useCallback(async () => {
+    // This is now handled by useCatalogCache hook
+    console.log('fetchData called - delegating to cache system');
+  }, []);
+
+  const fetchFavorites = useCallback(async () => {
+    // This is now handled by useCatalogCache hook
+    console.log('fetchFavorites called - delegating to cache system');
+  }, []);
 
   const handleFavorite = useCallback(async (contentId: string) => {
     if (!user) {
@@ -261,8 +214,7 @@ export default function GamesCatalog() {
           .eq('user_id', user.id);
 
         if (error) throw error;
-
-        setFavorites(prev => prev.filter(id => id !== contentId));
+        invalidateFavoritesCache();
       } else {
         const { error } = await supabase
           .from('content_favorites')
@@ -272,8 +224,7 @@ export default function GamesCatalog() {
           }]);
 
         if (error) throw error;
-
-        setFavorites(prev => [...prev, contentId]);
+        invalidateFavoritesCache();
       }
     } catch (error) {
       console.error('Error toggling favorite:', error);
@@ -283,7 +234,7 @@ export default function GamesCatalog() {
         variant: "destructive"
       });
     }
-  }, [user, favorites, toast]);
+  }, [user, favorites, toast, invalidateFavoritesCache]);
 
   const handleContentClick = useCallback(async (item: ContentItem) => {
     // Log the interaction
@@ -345,7 +296,7 @@ export default function GamesCatalog() {
       });
 
       // Refresh data to reflect changes
-      fetchData();
+      invalidateContentCache();
     } catch (error) {
       console.error('Error updating content access:', error);
       toast({
@@ -354,37 +305,50 @@ export default function GamesCatalog() {
         variant: "destructive"
       });
     }
-  }, [user, userFamily, isParent, toast, fetchData]);
+  }, [user, userFamily, isParent, toast, invalidateContentCache]);
 
-  const filteredItems = contentItems.filter(item => {
-    const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
-    
-    const matchesCategory = selectedCategory === 'all' || item.category_id === selectedCategory;
-    
-    const matchesAge = ageFilter === 'all' || (
-      ageFilter === '3-5' && item.age_min <= 5 && item.age_max >= 3
-    ) || (
-      ageFilter === '6-8' && item.age_min <= 8 && item.age_max >= 6
-    ) || (
-      ageFilter === '9-12' && item.age_min <= 12 && item.age_max >= 9
-    ) || (
-      ageFilter === '13+' && item.age_max >= 13
-    );
-    
-    return matchesSearch && matchesCategory && matchesAge;
-  });
+  // Phase 3: Optimized filtering with memoization for large datasets
+  const filteredItems = useMemo(() => {
+    return contentItems.filter(item => {
+      const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           item.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           item.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+      
+      const matchesCategory = selectedCategory === 'all' || item.category_id === selectedCategory;
+      
+      const matchesAge = ageFilter === 'all' || (
+        ageFilter === '3-5' && item.age_min <= 5 && item.age_max >= 3
+      ) || (
+        ageFilter === '6-8' && item.age_min <= 8 && item.age_max >= 6
+      ) || (
+        ageFilter === '9-12' && item.age_min <= 12 && item.age_max >= 9
+      ) || (
+        ageFilter === '13+' && item.age_max >= 13
+      );
+      
+      return matchesSearch && matchesCategory && matchesAge;
+    });
+  }, [contentItems, searchTerm, selectedCategory, ageFilter]);
 
-  if (loading) {
+  // Phase 3: Automatically enable virtual scrolling for large datasets
+  useEffect(() => {
+    setUseVirtualScrolling(filteredItems.length > 100);
+  }, [filteredItems.length]);
+
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-6">
         <div className="flex flex-col items-center justify-center h-64">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
           <p className="text-muted-foreground">Loading content catalog...</p>
-          {realtimeConnected && (
-            <p className="text-xs text-green-600 mt-2">✓ Real-time updates enabled</p>
-          )}
+          <div className="mt-2 text-xs text-muted-foreground space-y-1">
+            {realtimeConnected && (
+              <p className="text-green-600">✓ {userFamily ? 'Family channel' : 'Global channel'} active</p>
+            )}
+            {process.env.NODE_ENV === 'development' && (
+              <p>Cache stats: {JSON.stringify(cacheStats)}</p>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -420,6 +384,16 @@ export default function GamesCatalog() {
                 className="text-xs"
               >
                 {showCuration ? 'Hide' : 'Show'} Content Management
+              </Button>
+            )}
+            {process.env.NODE_ENV === 'development' && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setUseVirtualScrolling(!useVirtualScrolling)}
+                className="text-xs"
+              >
+                {useVirtualScrolling ? 'Disable' : 'Enable'} Virtual Scrolling
               </Button>
             )}
           </div>
@@ -490,19 +464,30 @@ export default function GamesCatalog() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredItems.map((item) => (
-            <ContentCard
-              key={item.id}
-              item={item}
-              isFavorited={favorites.includes(item.id)}
-              onFavorite={() => handleFavorite(item.id)}
-              onClick={() => handleContentClick(item)}
-              showCurationControls={showCuration && isParent}
-              onContentCuration={handleContentCuration}
-            />
-          ))}
-        </div>
+        {!useVirtualScrolling ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredItems.map((item) => (
+              <ContentCard
+                key={item.id}
+                item={item}
+                isFavorited={favorites.includes(item.id)}
+                onFavorite={() => handleFavorite(item.id)}
+                onClick={() => handleContentClick(item)}
+                showCurationControls={showCuration && isParent}
+                onContentCuration={handleContentCuration}
+              />
+            ))}
+          </div>
+        ) : (
+          <VirtualizedContentGrid
+            items={filteredItems}
+            favorites={favorites}
+            onFavorite={handleFavorite}
+            onContentClick={handleContentClick}
+            showCurationControls={showCuration && isParent}
+            onContentCuration={handleContentCuration}
+          />
+        )}
 
         {/* No Results */}
         {filteredItems.length === 0 && (
