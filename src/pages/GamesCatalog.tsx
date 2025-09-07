@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -46,11 +46,31 @@ export default function GamesCatalog() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [realtimeConnected, setRealtimeConnected] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [ageFilter, setAgeFilter] = useState('all');
   const { user } = useAuth();
   const { toast } = useToast();
+
+  // Function to handle realtime state updates
+  const updateCatalogState = useCallback((prev: ContentItem[], payload: any) => {
+    switch (payload.eventType) {
+      case 'INSERT':
+        if (payload.new.approval_status === 'approved' && payload.new.is_active) {
+          return [...prev, payload.new];
+        }
+        return prev;
+      case 'UPDATE':
+        return prev.map(item => 
+          item.id === payload.new.id ? payload.new : item
+        ).filter(item => item.approval_status === 'approved' && item.is_active);
+      case 'DELETE':
+        return prev.filter(item => item.id !== payload.old.id);
+      default:
+        return prev;
+    }
+  }, []);
 
   useEffect(() => {
     fetchData();
@@ -59,7 +79,41 @@ export default function GamesCatalog() {
     }
   }, [user]);
 
-  const fetchData = async () => {
+  // Phase 1: Global Realtime Channel Setup
+  useEffect(() => {
+    const channel = supabase
+      .channel('global-catalog-updates')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'content_items',
+        filter: 'is_active=eq.true'
+      }, (payload) => {
+        setContentItems(prev => updateCatalogState(prev, payload));
+      })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'content_categories'
+      }, () => {
+        fetchData(); // Simple refresh for categories
+      })
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          setRealtimeConnected(true);
+        } else if (status === 'CHANNEL_ERROR') {
+          setRealtimeConnected(false);
+          console.error('Realtime channel error');
+        }
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+      setRealtimeConnected(false);
+    };
+  }, [updateCatalogState]);
+
+  const fetchData = useCallback(async () => {
     try {
       const [itemsResult, categoriesResult] = await Promise.all([
         supabase
@@ -93,9 +147,9 @@ export default function GamesCatalog() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
-  const fetchFavorites = async () => {
+  const fetchFavorites = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -110,9 +164,9 @@ export default function GamesCatalog() {
     } catch (error) {
       console.error('Error fetching favorites:', error);
     }
-  };
+  }, [user]);
 
-  const handleFavorite = async (contentId: string) => {
+  const handleFavorite = useCallback(async (contentId: string) => {
     if (!user) {
       toast({
         title: "Please sign in",
@@ -155,9 +209,9 @@ export default function GamesCatalog() {
         variant: "destructive"
       });
     }
-  };
+  }, [user, favorites, toast]);
 
-  const handleContentClick = async (item: ContentItem) => {
+  const handleContentClick = useCallback(async (item: ContentItem) => {
     // Log the interaction
     if (user) {
       try {
@@ -185,7 +239,7 @@ export default function GamesCatalog() {
 
     // Open the content
     window.open(item.url, '_blank', 'noopener,noreferrer');
-  };
+  }, [user]);
 
   const filteredItems = contentItems.filter(item => {
     const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -210,8 +264,12 @@ export default function GamesCatalog() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="flex flex-col items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
+          <p className="text-muted-foreground">Loading content catalog...</p>
+          {realtimeConnected && (
+            <p className="text-xs text-green-600 mt-2">✓ Real-time updates enabled</p>
+          )}
         </div>
       </div>
     );
@@ -228,6 +286,11 @@ export default function GamesCatalog() {
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Discover educational games, videos, and interactive content designed for children with autism and special needs
           </p>
+          {realtimeConnected && (
+            <div className="mt-3 text-xs text-green-600 bg-green-50 inline-block px-3 py-1 rounded-full">
+              ✓ Real-time updates active
+            </div>
+          )}
         </div>
 
         {/* Search and Filters */}

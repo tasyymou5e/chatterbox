@@ -1,3 +1,4 @@
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -16,7 +17,7 @@ interface CategoryFilterProps {
   onCategoryChange: (categoryId: string) => void;
 }
 
-export function CategoryFilter({ categories, selectedCategory, onCategoryChange }: CategoryFilterProps) {
+function CategoryFilterComponent({ categories, selectedCategory, onCategoryChange }: CategoryFilterProps) {
   const getIcon = (iconName: string) => {
     const Icon = (LucideIcons as any)[iconName];
     return Icon ? <Icon className="h-5 w-5" /> : <LucideIcons.Circle className="h-5 w-5" />;
@@ -72,3 +73,15 @@ export function CategoryFilter({ categories, selectedCategory, onCategoryChange 
     </div>
   );
 }
+
+// Phase 1: Performance optimization with React.memo
+export const CategoryFilter = React.memo(CategoryFilterComponent, (prevProps, nextProps) => {
+  return (
+    prevProps.selectedCategory === nextProps.selectedCategory &&
+    prevProps.categories.length === nextProps.categories.length &&
+    prevProps.categories.every((cat, index) => 
+      cat.id === nextProps.categories[index]?.id &&
+      cat.name === nextProps.categories[index]?.name
+    )
+  );
+});

@@ -1,3 +1,4 @@
+import React from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -28,7 +29,7 @@ interface ContentCardProps {
   onClick: () => void;
 }
 
-export function ContentCard({ item, isFavorited, onFavorite, onClick }: ContentCardProps) {
+function ContentCardComponent({ item, isFavorited, onFavorite, onClick }: ContentCardProps) {
   const getContentIcon = (type: string) => {
     switch (type) {
       case 'game': return '🎮';
@@ -157,3 +158,14 @@ export function ContentCard({ item, isFavorited, onFavorite, onClick }: ContentC
     </Card>
   );
 }
+
+// Phase 1: Performance optimization with React.memo
+export const ContentCard = React.memo(ContentCardComponent, (prevProps, nextProps) => {
+  return (
+    prevProps.item.id === nextProps.item.id &&
+    prevProps.isFavorited === nextProps.isFavorited &&
+    prevProps.item.title === nextProps.item.title &&
+    prevProps.item.thumbnail_url === nextProps.item.thumbnail_url &&
+    prevProps.item.is_free === nextProps.item.is_free
+  );
+});
