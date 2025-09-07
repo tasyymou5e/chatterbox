@@ -2337,9 +2337,22 @@ export type Database = {
           achievement_name: string
         }[]
       }
+      check_rate_limit: {
+        Args: {
+          p_max_attempts?: number
+          p_operation: string
+          p_time_window?: unknown
+          p_user_id: string
+        }
+        Returns: boolean
+      }
       cleanup_expired_data: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      cleanup_expired_sessions: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       compute_daily_analytics: {
         Args: { target_date?: string }
@@ -2543,6 +2556,14 @@ export type Database = {
           p_xp_earned?: number
         }
         Returns: undefined
+      }
+      validate_family_access: {
+        Args: {
+          p_family_id: string
+          p_required_role?: Database["public"]["Enums"]["app_role"]
+          p_user_id: string
+        }
+        Returns: boolean
       }
       validate_password_strength: {
         Args: { password_text: string }
