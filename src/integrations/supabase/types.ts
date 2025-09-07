@@ -716,13 +716,6 @@ export type Database = {
             referencedRelation: "content_items"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "content_favorites_content_item_id_fkey"
-            columns: ["content_item_id"]
-            isOneToOne: false
-            referencedRelation: "popular_content"
-            referencedColumns: ["id"]
-          },
         ]
       }
       content_interactions: {
@@ -765,13 +758,6 @@ export type Database = {
             columns: ["content_item_id"]
             isOneToOne: false
             referencedRelation: "content_items"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "content_interactions_content_item_id_fkey"
-            columns: ["content_item_id"]
-            isOneToOne: false
-            referencedRelation: "popular_content"
             referencedColumns: ["id"]
           },
         ]
@@ -1278,13 +1264,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "family_content_access_content_item_id_fkey"
-            columns: ["content_item_id"]
-            isOneToOne: false
-            referencedRelation: "popular_content"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "family_content_access_family_id_fkey"
             columns: ["family_id"]
             isOneToOne: false
@@ -1645,6 +1624,56 @@ export type Database = {
           value?: number
         }
         Relationships: []
+      }
+      popular_content_cache: {
+        Row: {
+          age_max: number | null
+          age_min: number | null
+          category_id: string | null
+          content_item_id: string | null
+          created_at: string | null
+          favorite_count: number | null
+          id: string
+          interaction_count: number | null
+          last_updated: string | null
+          popularity_score: number | null
+          title: string | null
+        }
+        Insert: {
+          age_max?: number | null
+          age_min?: number | null
+          category_id?: string | null
+          content_item_id?: string | null
+          created_at?: string | null
+          favorite_count?: number | null
+          id?: string
+          interaction_count?: number | null
+          last_updated?: string | null
+          popularity_score?: number | null
+          title?: string | null
+        }
+        Update: {
+          age_max?: number | null
+          age_min?: number | null
+          category_id?: string | null
+          content_item_id?: string | null
+          created_at?: string | null
+          favorite_count?: number | null
+          id?: string
+          interaction_count?: number | null
+          last_updated?: string | null
+          popularity_score?: number | null
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "popular_content_cache_content_item_id_fkey"
+            columns: ["content_item_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -2267,27 +2296,6 @@ export type Database = {
         }
         Relationships: []
       }
-      popular_content: {
-        Row: {
-          age_max: number | null
-          age_min: number | null
-          category_id: string | null
-          favorite_count: number | null
-          id: string | null
-          interaction_count: number | null
-          popularity_score: number | null
-          title: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "content_items_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "content_categories"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
     }
     Functions: {
       archive_old_activity_logs: {
@@ -2357,6 +2365,10 @@ export type Database = {
       compute_daily_analytics: {
         Args: { target_date?: string }
         Returns: undefined
+      }
+      create_child_account_secure: {
+        Args: { p_family_id: string; p_first_name: string; p_last_name: string }
+        Returns: string
       }
       detect_suspicious_activity: {
         Args: { p_activity_type: string; p_metadata?: Json; p_user_id: string }
@@ -2540,6 +2552,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      refresh_popular_content_cache: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       resolve_system_error: {
         Args: { error_id: string }
         Returns: boolean
@@ -2602,6 +2618,13 @@ export type Database = {
         | "completed"
         | "verified"
         | "overdue"
+      connection_role:
+        | "grandparent"
+        | "uncle"
+        | "aunt"
+        | "family_friend"
+        | "caregiver"
+        | "tutor"
       content_type: "game" | "video" | "website" | "app"
       interaction_type: "view" | "click" | "launch" | "complete" | "favorite"
       reward_type: "points" | "custom" | "privilege" | "activity"
@@ -2756,6 +2779,14 @@ export const Constants = {
         "completed",
         "verified",
         "overdue",
+      ],
+      connection_role: [
+        "grandparent",
+        "uncle",
+        "aunt",
+        "family_friend",
+        "caregiver",
+        "tutor",
       ],
       content_type: ["game", "video", "website", "app"],
       interaction_type: ["view", "click", "launch", "complete", "favorite"],
