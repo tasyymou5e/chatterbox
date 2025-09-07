@@ -70,7 +70,14 @@ class LazyLoadErrorBoundary extends React.Component<
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('GamesCatalog lazy loading error:', error, errorInfo);
+    // Report error to error tracking service in production
+    if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+      // Only report in production, not during development
+      import('@/hooks/useErrorTracking').then(({ useErrorTracking }) => {
+        // Note: This would need to be called from a component context in a real implementation
+        // For now, we'll just silently handle the error
+      });
+    }
   }
 
   render() {

@@ -38,7 +38,6 @@ class RealtimeManager {
     }
 
     this.subscribers.get(subscriptionKey)!.add(callback);
-    console.log(`RealtimeManager: Added subscriber to ${subscriptionKey}. Total: ${this.subscribers.get(subscriptionKey)!.size}`);
 
     // Return unsubscribe function
     return () => {
@@ -74,8 +73,6 @@ class RealtimeManager {
     filter?: string
   ): void {
     try {
-      console.log(`RealtimeManager: Creating channel ${channelName} for table ${table}`);
-      
       const channel = supabase.channel(channelName);
       
       // Configure postgres changes listener
@@ -90,14 +87,13 @@ class RealtimeManager {
       }
 
       channel.on('postgres_changes', config, (payload) => {
-        console.log(`RealtimeManager: Received event for ${subscriptionKey}:`, payload);
         const callbacks = this.subscribers.get(subscriptionKey);
         if (callbacks) {
           callbacks.forEach(callback => {
             try {
               callback(payload);
             } catch (error) {
-              console.error(`RealtimeManager: Error in callback for ${subscriptionKey}:`, error);
+              // Silent error handling in production
             }
           });
         }
@@ -105,25 +101,18 @@ class RealtimeManager {
 
       // Handle connection status
       channel.subscribe((status, err) => {
-        console.log(`RealtimeManager: Channel ${channelName} status:`, status);
-        
         if (status === 'SUBSCRIBED') {
           this.reconnectAttempts = 0; // Reset on successful connection
-          console.log(`RealtimeManager: Successfully subscribed to ${channelName}`);
         } else if (status === 'CHANNEL_ERROR') {
-          console.error(`RealtimeManager: Channel error for ${channelName}:`, err);
           this.handleReconnect(subscriptionKey, channelName, table, filter);
         } else if (status === 'TIMED_OUT') {
-          console.warn(`RealtimeManager: Channel timeout for ${channelName}`);
           this.handleReconnect(subscriptionKey, channelName, table, filter);
         }
       });
 
       this.channels.set(subscriptionKey, channel);
-      console.log(`RealtimeManager: Channel created and stored for ${subscriptionKey}`);
       
     } catch (error) {
-      console.error(`RealtimeManager: Failed to create channel ${channelName}:`, error);
       this.handleReconnect(subscriptionKey, channelName, table, filter);
     }
   }
@@ -136,14 +125,11 @@ class RealtimeManager {
     filter?: string
   ): void {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error(`RealtimeManager: Max reconnection attempts reached for ${channelName}`);
       return;
     }
 
     this.reconnectAttempts++;
     const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1); // Exponential backoff
-    
-    console.log(`RealtimeManager: Attempting reconnection ${this.reconnectAttempts}/${this.maxReconnectAttempts} for ${channelName} in ${delay}ms`);
     
     setTimeout(() => {
       // Clean up existing channel
@@ -152,7 +138,7 @@ class RealtimeManager {
         try {
           supabase.removeChannel(existingChannel);
         } catch (error) {
-          console.warn(`RealtimeManager: Error removing existing channel:`, error);
+          // Silent fail in production
         }
         this.channels.delete(subscriptionKey);
       }
@@ -167,17 +153,15 @@ class RealtimeManager {
     const callbacks = this.subscribers.get(subscriptionKey);
     if (callbacks) {
       callbacks.delete(callback);
-      console.log(`RealtimeManager: Removed subscriber from ${subscriptionKey}. Remaining: ${callbacks.size}`);
       
       // If no more subscribers, clean up the channel
       if (callbacks.size === 0) {
         const channel = this.channels.get(subscriptionKey);
         if (channel) {
-          console.log(`RealtimeManager: Cleaning up channel ${subscriptionKey}`);
           try {
             supabase.removeChannel(channel);
           } catch (error) {
-            console.warn(`RealtimeManager: Error removing channel:`, error);
+            // Silent fail in production
           }
           this.channels.delete(subscriptionKey);
         }
@@ -198,13 +182,11 @@ class RealtimeManager {
 
   // Manual cleanup for all connections
   cleanup(): void {
-    console.log('RealtimeManager: Cleaning up all channels');
-    
     for (const [key, channel] of this.channels) {
       try {
         supabase.removeChannel(channel);
       } catch (error) {
-        console.warn(`RealtimeManager: Error cleaning up channel ${key}:`, error);
+        // Silent fail in production
       }
     }
     

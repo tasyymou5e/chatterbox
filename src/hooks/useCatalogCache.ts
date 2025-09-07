@@ -41,12 +41,9 @@ export const useCatalogCache = (userFamily?: string) => {
     // Try cache first
     const cached = cacheManager.get<ContentItem[]>(cacheKey);
     if (cached) {
-      console.log(`Cache hit for ${cacheKey}`);
       return cached;
     }
 
-    console.log(`Cache miss for ${cacheKey}, fetching from database`);
-    
     // Fetch from database
     const { data, error } = await supabase
       .from('content_items')
@@ -77,12 +74,9 @@ export const useCatalogCache = (userFamily?: string) => {
       // Try cache first
       const cached = cacheManager.get<Category[]>(cacheKey);
       if (cached) {
-        console.log('Cache hit for categories');
         return cached;
       }
 
-      console.log('Cache miss for categories, fetching from database');
-      
       const { data, error } = await supabase
         .from('content_categories')
         .select('*')
@@ -124,12 +118,9 @@ export const useCatalogCache = (userFamily?: string) => {
       // Try cache first
       const cached = cacheManager.get<string[]>(cacheKey);
       if (cached) {
-        console.log('Cache hit for favorites');
         return cached;
       }
 
-      console.log('Cache miss for favorites, fetching from database');
-      
       const { data, error } = await supabase
         .from('content_favorites')
         .select('content_item_id')
@@ -177,7 +168,7 @@ export const useCatalogCache = (userFamily?: string) => {
         cacheManager.set('popular_content', data, { ttl: 15 * 60 * 1000 }); // 15 minutes
       }
     } catch (error) {
-      console.warn('Failed to preload popular content:', error);
+      // Silent fail in production
     }
   };
 

@@ -2408,6 +2408,14 @@ export type Database = {
           title: string
         }[]
       }
+      get_safe_family_profile_data: {
+        Args: { p_user_id: string }
+        Returns: {
+          first_name: string
+          last_name: string
+          user_id: string
+        }[]
+      }
       has_connection_permission: {
         Args: {
           family_id_param: string
@@ -2467,6 +2475,15 @@ export type Database = {
           p_user_id: string
         }
         Returns: string
+      }
+      log_sensitive_data_access: {
+        Args: {
+          p_operation: string
+          p_table_name: string
+          p_target_user_id?: string
+          p_user_id: string
+        }
+        Returns: undefined
       }
       log_system_error: {
         Args: {

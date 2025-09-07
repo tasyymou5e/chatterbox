@@ -50,7 +50,7 @@ class CacheManager {
     try {
       localStorage.setItem(`cache_${key}`, JSON.stringify(item));
     } catch (error) {
-      console.warn('Failed to store in localStorage:', error);
+      // Silent fail for localStorage errors in production
     }
   }
 
@@ -78,7 +78,7 @@ class CacheManager {
         }
       }
     } catch (error) {
-      console.warn('Failed to read from localStorage:', error);
+      // Silent fail for localStorage errors in production
     }
 
     return null;
@@ -95,7 +95,7 @@ class CacheManager {
     try {
       localStorage.removeItem(`cache_${key}`);
     } catch (error) {
-      console.warn('Failed to remove from localStorage:', error);
+      // Silent fail for localStorage errors in production
     }
   }
 
@@ -112,7 +112,7 @@ class CacheManager {
         }
       });
     } catch (error) {
-      console.warn('Failed to clear localStorage cache:', error);
+      // Silent fail for localStorage errors in production
     }
   }
 
@@ -124,7 +124,7 @@ class CacheManager {
         try {
           localStorage.removeItem(`cache_${key}`);
         } catch (error) {
-          console.warn('Failed to cleanup localStorage:', error);
+          // Silent fail for localStorage errors in production
         }
       }
     }
