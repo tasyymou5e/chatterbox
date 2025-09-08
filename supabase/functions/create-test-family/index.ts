@@ -27,6 +27,7 @@ interface CreateFamilyRequest {
   cleanupFirst?: boolean; // Whether to cleanup existing test data first
   forceUniqueEmails?: boolean; // Whether to auto-generate unique emails for conflicts
   emailSuffix?: string; // Custom suffix for email generation
+  customPassword?: string; // Custom password to use instead of auto-generated
 }
 
 interface CreateFamilyResponse {
@@ -122,7 +123,8 @@ serve(async (req) => {
       createdBy,
       cleanupFirst = false,
       forceUniqueEmails = true,
-      emailSuffix
+      emailSuffix,
+      customPassword
     }: CreateFamilyRequest = await req.json();
     
     // Validate required fields
@@ -253,7 +255,7 @@ serve(async (req) => {
     // Create auth users and profiles for all family members with enhanced error handling
     const createdMembers = [];
     const failedMembers = [];
-    const tempPassword = `temp${Date.now()}${Math.random().toString(36).substring(2, 6)}`;
+    const tempPassword = customPassword || `temp${Date.now()}${Math.random().toString(36).substring(2, 6)}`;
 
     for (const member of familyMembers) {
       try {

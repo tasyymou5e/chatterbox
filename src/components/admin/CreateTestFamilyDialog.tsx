@@ -7,12 +7,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Plus, Minus, Loader2, Users, Mail, CheckCircle2, Trash2, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+import { Plus, Minus, Loader2, Users, Mail, CheckCircle2, Trash2, AlertTriangle, CheckCircle, XCircle, Key, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { supabase } from '@/integrations/supabase/client';
 import FamilyNameSuggestions from './FamilyNameSuggestions';
 import { useUIStore } from '@/stores/uiStore';
+import TestFamilyResultsDialog from './TestFamilyResultsDialog';
+import { PasswordStrengthIndicator } from '../auth/PasswordStrengthIndicator';
 
 interface Child {
   firstName: string;
@@ -55,6 +57,14 @@ export default function CreateTestFamilyDialog({ open, onOpenChange, onSuccess }
   const [forceUniqueEmails, setForceUniqueEmails] = useState(true);
   const [testFamilyCount, setTestFamilyCount] = useState<number | null>(null);
   const [cleanupLoading, setCleanupLoading] = useState(false);
+  
+  // Password options state
+  const [useCustomPassword, setUseCustomPassword] = useState(false);
+  const [customPassword, setCustomPassword] = useState('');
+  
+  // Results dialog state
+  const [showResults, setShowResults] = useState(false);
+  const [creationResults, setCreationResults] = useState<any>(null);
 
   // Load test family count when dialog opens
   useEffect(() => {
@@ -164,6 +174,9 @@ export default function CreateTestFamilyDialog({ open, onOpenChange, onSuccess }
     setChildren([]);
     setCleanupFirst(false);
     setForceUniqueEmails(true);
+    setUseCustomPassword(false);
+    setCustomPassword('');
+    setCreationResults(null);
   };
 
   const validateForm = () => {
@@ -195,12 +208,23 @@ export default function CreateTestFamilyDialog({ open, onOpenChange, onSuccess }
       return false;
     }
 
-    // Validate children
+      // Validate children
     for (const child of children) {
       if (!child.firstName.trim() || !child.lastName.trim()) {
         toast({ variant: "destructive", title: "All children must have first and last names" });
         return false;
       }
+    }
+
+    // Validate custom password if enabled
+    if (useCustomPassword && !customPassword.trim()) {
+      toast({ variant: "destructive", title: "Custom password is required when enabled" });
+      return false;
+    }
+
+    if (useCustomPassword && customPassword.length < 8) {
+      toast({ variant: "destructive", title: "Custom password must be at least 8 characters" });
+      return false;
     }
 
     return true;
@@ -235,7 +259,8 @@ export default function CreateTestFamilyDialog({ open, onOpenChange, onSuccess }
         })),
         createdBy: user.id,
         cleanupFirst,
-        forceUniqueEmails
+        forceUniqueEmails,
+        customPassword: useCustomPassword ? customPassword : undefined
       };
 
       const { data, error } = await supabase.functions.invoke('create-test-family', {
@@ -244,38 +269,15 @@ export default function CreateTestFamilyDialog({ open, onOpenChange, onSuccess }
 
       if (error) throw error;
 
-      if (data?.success) {
-        // Handle mixed results (some successes, some failures)
-        const successCount = data.members?.filter((m: any) => m.success)?.length || 0;
-        const failureCount = data.members?.filter((m: any) => !m.success)?.length || 0;
-        
-        if (successCount > 0) {
-          let description = `Family "${data.familyCode}" created with ${successCount} members`;
-          
-          if (data.cleanupResults) {
-            description += `\nCleanup performed: ${data.cleanupResults.familiesDeleted} families, ${data.cleanupResults.usersDeleted} users removed`;
-          }
-          
-          if (failureCount > 0) {
-            description += `\nNote: ${failureCount} members failed to create`;
-            // Show failed members in console for debugging
-            const failedMembers = data.members?.filter((m: any) => !m.success);
-            console.warn('Failed to create members:', failedMembers);
-          }
-          
-          toast({
-            title: "✅ Test Family Created Successfully!",
-            description,
-          });
-          
-          resetForm();
-          onOpenChange(false);
-          onSuccess?.();
-        } else {
-          throw new Error('All family members failed to create');
-        }
+      if (data?.success || data?.members?.some((m: any) => m.success)) {
+        // Store results and show results dialog
+        setCreationResults(data);
+        setShowResults(true);
+        resetForm();
+        onOpenChange(false);
+        onSuccess?.();
       } else {
-        throw new Error(data?.error || 'Unknown error occurred');
+        throw new Error(data?.error || 'All family members failed to create');
       }
     } catch (error) {
       console.error('Error creating test family:', error);
@@ -362,6 +364,44 @@ export default function CreateTestFamilyDialog({ open, onOpenChange, onSuccess }
                     Example: john@example.com → john.test.1704123456.abc1@example.com
                   </AlertDescription>
                 </Alert>
+              )}
+              
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="use-custom-password"
+                  checked={useCustomPassword}
+                  onCheckedChange={(checked) => setUseCustomPassword(checked as boolean)}
+                />
+                <Label htmlFor="use-custom-password" className="text-sm">
+                  Use custom password for all users
+                </Label>
+              </div>
+              
+              {useCustomPassword && (
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="custom-password" className="flex items-center gap-2">
+                      <Key className="h-4 w-4" />
+                      Custom Password
+                    </Label>
+                    <Input
+                      id="custom-password"
+                      type="password"
+                      value={customPassword}
+                      onChange={(e) => setCustomPassword(e.target.value)}
+                      placeholder="Enter password for all users"
+                    />
+                  </div>
+                  {customPassword && (
+                    <PasswordStrengthIndicator password={customPassword} />
+                  )}
+                  <Alert>
+                    <Shield className="h-4 w-4" />
+                    <AlertDescription className="text-sm">
+                      This password will be used for all family members. Users should change it after first login.
+                    </AlertDescription>
+                  </Alert>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -602,6 +642,12 @@ export default function CreateTestFamilyDialog({ open, onOpenChange, onSuccess }
           </Button>
         </div>
       </DialogContent>
+      
+      <TestFamilyResultsDialog
+        open={showResults}
+        onOpenChange={setShowResults}
+        results={creationResults}
+      />
     </Dialog>
   );
 }
