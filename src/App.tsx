@@ -8,7 +8,8 @@ import { useEffect } from "react";
 import { AdminRoute } from "@/components/admin/AdminRoute";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { useAutoErrorLogging } from "@/hooks/useAutoErrorLogging";
-import { usePerformanceMonitoringSafe } from "@/hooks/usePerformanceMonitoringSafe";
+// Performance monitoring temporarily disabled to fix cache issues
+// import { usePerformanceMonitoringSafe } from "@/hooks/usePerformanceMonitoringSafe";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import About from "./pages/About";
@@ -46,44 +47,21 @@ const queryClient = new QueryClient({
 // Simplified admin routing and enhanced error boundaries
 
 const App = () => {
-  // Enable automatic error logging and safe performance monitoring
+  // Enable automatic error logging
   useAutoErrorLogging();
   
-  // Safely initialize performance monitoring with error handling
-  let performanceMonitoring;
-  try {
-    performanceMonitoring = usePerformanceMonitoringSafe();
-  } catch (error) {
-    console.warn('Performance monitoring disabled due to error:', error);
-    performanceMonitoring = {
-      measurePageLoad: () => {},
-      measureApiResponse: () => {},
-      measureMemoryUsage: () => {}
-    };
-  }
+  // Performance monitoring temporarily disabled to fix cache/hot-reload issues
+  // TODO: Re-enable once browser cache is cleared and stable
   
-  const { measurePageLoad, measureApiResponse, measureMemoryUsage } = performanceMonitoring;
-
-  // Measure initial page load performance with error handling
+  // Feature flag for performance monitoring (disabled for now)
+  const ENABLE_PERFORMANCE_MONITORING = false;
+  
   useEffect(() => {
-    try {
-      measurePageLoad();
-      measureMemoryUsage();
-      
-      // Set up periodic memory monitoring
-      const memoryInterval = setInterval(() => {
-        try {
-          measureMemoryUsage();
-        } catch (error) {
-          console.warn('Memory monitoring error:', error);
-        }
-      }, 30000); // Every 30 seconds
-      
-      return () => clearInterval(memoryInterval);
-    } catch (error) {
-      console.warn('Performance monitoring initialization error:', error);
+    if (ENABLE_PERFORMANCE_MONITORING) {
+      // Performance monitoring will be re-enabled here later
+      console.log('Performance monitoring would be initialized here');
     }
-  }, [measurePageLoad, measureMemoryUsage]);
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
