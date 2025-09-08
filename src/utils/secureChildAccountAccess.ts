@@ -26,12 +26,41 @@ export interface SafeChildAccountInfo {
 
 /**
  * Validate child account access using family code and email (for account completion)
+ * Now includes expiration checking
  */
 export const validateChildAccountAccess = async (
   familyCode: string, 
   email: string
-): Promise<boolean> => {
+): Promise<{ valid: boolean; expired?: boolean; error?: string }> => {
   try {
+    // First check if the account exists and get expiration info
+    const { data: account, error: fetchError } = await supabase
+      .from('child_accounts')
+      .select('id, expires_at, status')
+      .eq('family_code', familyCode)
+      .eq('generated_email', email)
+      .single();
+
+    if (fetchError) {
+      console.error('Error fetching child account:', fetchError);
+      return { valid: false, error: 'Account not found' };
+    }
+
+    if (!account) {
+      return { valid: false, error: 'Invalid family code or email' };
+    }
+
+    // Check if account has expired
+    if (account.expires_at && new Date(account.expires_at) < new Date()) {
+      return { valid: false, expired: true, error: 'Account access code has expired' };
+    }
+
+    // Check if already completed
+    if (account.status !== 'pending') {
+      return { valid: false, error: 'Account has already been activated' };
+    }
+
+    // Use RPC for additional security validation
     const { data, error } = await supabase.rpc('validate_child_account_access', {
       p_family_code: familyCode,
       p_email: email
@@ -39,13 +68,13 @@ export const validateChildAccountAccess = async (
 
     if (error) {
       console.error('Error validating child account access:', error);
-      return false;
+      return { valid: false, error: 'Validation failed' };
     }
 
-    return data || false;
+    return { valid: data || false };
   } catch (error) {
     console.error('Error in validateChildAccountAccess:', error);
-    return false;
+    return { valid: false, error: 'An unexpected error occurred' };
   }
 };
 
@@ -150,10 +179,13 @@ export const completeChildAccount = async (
   userId: string
 ): Promise<{ success: boolean; error?: string }> => {
   try {
-    // First validate access
-    const isValid = await validateChildAccountAccess(familyCode, email);
-    if (!isValid) {
-      return { success: false, error: 'Invalid family code or email' };
+    // First validate access with enhanced error handling
+    const validation = await validateChildAccountAccess(familyCode, email);
+    if (!validation.valid) {
+      if (validation.expired) {
+        return { success: false, error: 'This account access code has expired. Please ask your parent to create a new one.' };
+      }
+      return { success: false, error: validation.error || 'Invalid family code or email' };
     }
 
     // Update the child account with user_id and mark as completed

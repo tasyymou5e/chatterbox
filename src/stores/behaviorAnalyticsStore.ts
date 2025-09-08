@@ -129,6 +129,25 @@ export const useBehaviorAnalyticsStore = create<BehaviorAnalyticsState>()(
 
       trackBehavioralEvent: async (event: Omit<BehavioralEvent, 'id' | 'timestamp'>) => {
         try {
+          // Check if user has given consent for behavioral tracking
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) return;
+
+          const { data: hasConsent, error: consentError } = await supabase.rpc(
+            'has_behavioral_tracking_consent', 
+            { p_user_id: user.id }
+          );
+
+          if (consentError) {
+            console.error('Error checking tracking consent:', consentError);
+            return;
+          }
+
+          if (!hasConsent) {
+            console.log('Behavioral tracking skipped - user has not given consent');
+            return;
+          }
+
           const { error } = await supabase
             .from('behavioral_events')
             .insert({

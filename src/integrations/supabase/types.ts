@@ -361,6 +361,8 @@ export type Database = {
           completed_at: string | null
           created_at: string
           created_by: string
+          creation_attempt_count: number | null
+          expires_at: string | null
           family_code: string
           family_id: string
           first_name: string
@@ -375,6 +377,8 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           created_by: string
+          creation_attempt_count?: number | null
+          expires_at?: string | null
           family_code: string
           family_id: string
           first_name: string
@@ -389,6 +393,8 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           created_by?: string
+          creation_attempt_count?: number | null
+          expires_at?: string | null
           family_code?: string
           family_id?: string
           first_name?: string
@@ -2495,6 +2501,36 @@ export type Database = {
           },
         ]
       }
+      user_privacy_settings: {
+        Row: {
+          analytics_sharing_consent: boolean
+          behavioral_tracking_consent: boolean
+          created_at: string
+          data_retention_days: number
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          analytics_sharing_consent?: boolean
+          behavioral_tracking_consent?: boolean
+          created_at?: string
+          data_retention_days?: number
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          analytics_sharing_consent?: boolean
+          behavioral_tracking_consent?: boolean
+          created_at?: string
+          data_retention_days?: number
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -2707,6 +2743,10 @@ export type Database = {
           achievement_name: string
         }[]
       }
+      check_child_account_rate_limit: {
+        Args: { p_family_id: string; p_parent_id: string }
+        Returns: boolean
+      }
       check_rate_limit: {
         Args: {
           p_max_attempts?: number
@@ -2715,6 +2755,10 @@ export type Database = {
           p_user_id: string
         }
         Returns: boolean
+      }
+      cleanup_expired_child_accounts: {
+        Args: Record<PropertyKey, never>
+        Returns: number
       }
       cleanup_expired_data: {
         Args: Record<PropertyKey, never>
@@ -2815,6 +2859,10 @@ export type Database = {
           last_name: string
           user_id: string
         }[]
+      }
+      has_behavioral_tracking_consent: {
+        Args: { p_user_id: string }
+        Returns: boolean
       }
       has_connection_permission: {
         Args: {

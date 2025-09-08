@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { validateChildAccountAccess, completeChildAccount } from '@/utils/secureChildAccountAccess';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -288,7 +289,7 @@ const Auth = () => {
     }
 
     try {
-      // First, verify the child account code and get account details
+      // Get the child account details first
       const { data: childAccount, error: fetchError } = await supabase
         .from('child_accounts')
         .select('*')
@@ -297,7 +298,20 @@ const Auth = () => {
         .single();
 
       if (fetchError || !childAccount) {
-        throw new Error('Invalid account code or account already completed');
+        setAuthError('Invalid account code or setup incomplete');
+        return;
+      }
+
+      // Enhanced validation with expiration checking
+      const validation = await validateChildAccountAccess(accountCode, childAccount.generated_email);
+      
+      if (!validation.valid) {
+        if (validation.expired) {
+          setAuthError('This account access code has expired. Please ask your parent to create a new one.');
+        } else {
+          setAuthError(validation.error || 'Invalid account code or setup incomplete');
+        }
+        return;
       }
 
       // Create the auth user
@@ -320,33 +334,31 @@ const Auth = () => {
         throw new Error('Failed to create user account');
       }
 
-      // Update child account record with the new user ID
-      const { error: updateError } = await supabase
-        .from('child_accounts')
-        .update({
-          user_id: authData.user.id,
-          status: 'completed',
-          completed_at: new Date().toISOString()
-        })
-        .eq('id', childAccount.id);
-
-      if (updateError) {
-        console.error('Failed to update child account:', updateError);
+      // Complete the child account setup using secure function
+      const result = await completeChildAccount(accountCode, childAccount.generated_email, authData.user.id);
+      
+      if (!result.success) {
+        setAuthError(result.error || 'Failed to complete account setup');
+        return;
       }
 
-      // Remove default parent role and add child role
-      await supabase
-        .from('user_roles')
-        .delete()
-        .eq('user_id', authData.user.id)
-        .eq('role', 'parent');
+      // Navigate to appropriate dashboard
+      navigate('/children/tasks');
+      
+      toast({
+        title: "Account setup complete!",
+        description: `Welcome ${childAccount.first_name}! Your account is ready to use.`,
+      });
 
-      await supabase
-        .from('user_roles')
-        .insert({
-          user_id: authData.user.id,
-          role: 'child'
-        });
+    } catch (error) {
+      console.error('Error during child account setup:', error);
+      setAuthError('Failed to complete account setup. Please try again.');
+      setLoading(false);
+    }
+  };
+
+  // Regular user signup with enhanced error handling
+  const handleSignUp = async (e: React.FormEvent) => {
 
       // Add to family_members table
       await supabase
