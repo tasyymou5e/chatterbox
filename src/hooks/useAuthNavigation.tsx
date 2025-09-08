@@ -60,21 +60,18 @@ export const useAuthNavigation = () => {
         timestamp: Date.now()
       });
       
-      // SKIP admin users - let AdminLogin handle admin navigation to prevent race conditions
-      if (userRole === 'admin') {
-        cInfo('Skipping navigation for admin user - AdminLogin will handle');
-        return;
-      }
-      
-      // Only redirect non-admin users from auth page to prevent loops
+      // Only redirect users from auth page to prevent loops
       if (currentPath === '/auth' || currentPath === '/') {
-        cInfo('Redirecting from auth page', { attempt: navigationAttempts + 1 });
+        cInfo('Redirecting from auth page', { attempt: navigationAttempts + 1, userRole });
         setNavigationAttempts(prev => prev + 1);
         
         // Enhanced debounce navigation to prevent race conditions
         const timeout = setTimeout(() => {
           cInfo('Executing navigation', { userRole });
           switch (userRole) {
+            case 'admin':
+              navigate('/admin/dashboard');
+              break;
             case 'parent':
               navigate('/parent-dashboard');
               break;
