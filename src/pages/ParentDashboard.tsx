@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useAuth } from '@/hooks/useAuth';
 import { useAuthStore } from '@/stores/authStore';
 import { supabase } from '@/integrations/supabase/client';
+import { getCurrentUserFamilies } from '@/utils/secureFamilyAccess';
 import { toast } from '@/hooks/use-toast';
 import { Heart, Users, Plus, Settings, LogOut, Target } from 'lucide-react';
 import CreateChildAccountDialog from '@/components/parent/CreateChildAccountDialog';
@@ -49,6 +50,11 @@ const ParentDashboard = () => {
     if (!user) return;
 
     try {
+      // Use secure family access for better security
+      const userFamilies = await getCurrentUserFamilies();
+      console.log('User families:', userFamilies);
+      
+      // Keep existing profile fetch for other data
       const { data, error } = await supabase
         .from('profiles')
         .select('*')

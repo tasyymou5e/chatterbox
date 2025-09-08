@@ -2780,6 +2780,10 @@ export type Database = {
         Args: { p_activity_type: string; p_metadata?: Json; p_user_id: string }
         Returns: boolean
       }
+      detect_suspicious_family_access: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       end_user_session: {
         Args: { session_id: string }
         Returns: undefined
@@ -2839,6 +2843,14 @@ export type Database = {
           total_errors: number
         }[]
       }
+      get_family_safe_data: {
+        Args: { family_id_param: string }
+        Returns: {
+          created_at: string
+          display_name: string
+          id: string
+        }[]
+      }
       get_popular_content: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -2872,6 +2884,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      has_family_access: {
+        Args: { family_id_param: string; user_id_param?: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -2887,7 +2903,15 @@ export type Database = {
         Args: { family_id_param: string; user_id_param: string }
         Returns: boolean
       }
+      is_family_creator_secure: {
+        Args: { family_id_param: string; user_id_param: string }
+        Returns: boolean
+      }
       is_family_member: {
+        Args: { family_id_param: string; user_id_param: string }
+        Returns: boolean
+      }
+      is_family_member_secure: {
         Args: { family_id_param: string; user_id_param: string }
         Returns: boolean
       }
@@ -2902,6 +2926,16 @@ export type Database = {
           p_target_table?: string
         }
         Returns: string
+      }
+      log_family_access: {
+        Args: {
+          p_access_type: string
+          p_details?: Json
+          p_family_id: string
+          p_success: boolean
+          p_user_id: string
+        }
+        Returns: undefined
       }
       log_family_activity: {
         Args: {

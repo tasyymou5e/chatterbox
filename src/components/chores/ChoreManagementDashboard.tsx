@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useChoreManagement } from '@/hooks/useChoreManagement';
 import { supabase } from '@/integrations/supabase/client';
+import { getSecureFamilyInfo, getSecureFamilyMembers } from '@/utils/secureFamilyAccess';
 import { toast } from '@/hooks/use-toast';
 import { 
   Plus, 

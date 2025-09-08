@@ -25,6 +25,7 @@ import { useUIStore } from '@/stores/uiStore';
 import { useAdminStore } from '@/stores/adminStore';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { useAuthStore } from '@/stores/authStore';
+import SecurityDashboardCard from '@/components/admin/SecurityDashboardCard';
 
 interface DashboardStats {
   totalFamilies: number;
