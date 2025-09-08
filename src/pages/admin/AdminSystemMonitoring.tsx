@@ -29,6 +29,11 @@ import type { SystemError, SystemAlert, ErrorStatistics, CircuitBreakerState } f
 
 // Database Logs Component
 const DatabaseLogs = () => {
+  // CRITICAL DEBUG: Component mount detection
+  console.error('🚨 DatabaseLogs component mounted!');
+  console.warn('⚠️ DatabaseLogs rendering...');
+  alert('DatabaseLogs component mounted!'); // Backup debug method
+  
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -55,51 +60,56 @@ const DatabaseLogs = () => {
   `;
 
   const fetchLogs = async () => {
+    console.error('🚨 fetchLogs function called for logType:', logType);
+    alert('fetchLogs function executed!'); // Backup debug method
+    
     try {
       setRefreshing(true);
+      console.error('🚨 Creating sample data...');
       
       // Use sample data based on real database logs structure
       let sampleLogs;
       
       if (logType === 'postgres') {
+        console.error('🚨 Creating postgres sample data...');
         sampleLogs = [
           {
-            id: crypto.randomUUID(),
+            id: 'static-id-1', // Replace crypto.randomUUID() for debugging
             timestamp: 1757360819537000,
             identifier: "lxuqfgbukrrickanmmic",
             event_message: "connection authenticated: user=\"authenticator\" method=trust (/etc/postgresql/pg_hba.conf:85)",
             error_severity: "LOG"
           },
           {
-            id: crypto.randomUUID(),
+            id: 'static-id-2',
             timestamp: 1757360819532000,
             identifier: "lxuqfgbukrrickanmmic",
             event_message: "connection authorized: user=authenticator database=postgres application_name=postgrest SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
             error_severity: "LOG"
           },
           {
-            id: crypto.randomUUID(),
+            id: 'static-id-3',
             timestamp: 1757360770450000,
             identifier: "lxuqfgbukrrickanmmic",
             event_message: "connection authorized: user=supabase_admin database=postgres application_name=postgres_exporter",
             error_severity: "LOG"
           },
           {
-            id: crypto.randomUUID(),
+            id: 'static-id-4',
             timestamp: 1757360705618000,
             identifier: "lxuqfgbukrrickanmmic",
             event_message: "connection authorized: user=supabase_admin database=postgres application_name=psql SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
             error_severity: "LOG"
           },
           {
-            id: crypto.randomUUID(),
+            id: 'static-id-5',
             timestamp: 1757360604092000,
             identifier: "lxuqfgbukrrickanmmic",
             event_message: "connection authenticated: identity=\"supabase_read_only_user\" method=scram-sha-256 (/etc/postgresql/pg_hba.conf:94)",
             error_severity: "LOG"
           },
           {
-            id: crypto.randomUUID(),
+            id: 'static-id-6',
             timestamp: 1757360502686000,
             identifier: "lxuqfgbukrrickanmmic",
             event_message: "connection authorized: user=supabase_admin database=postgres application_name=realtime_subscription_manager_pub SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
@@ -107,10 +117,11 @@ const DatabaseLogs = () => {
           }
         ];
       } else {
+        console.error('🚨 Creating auth sample data...');
         // Auth logs sample data
         sampleLogs = [
           {
-            id: crypto.randomUUID(),
+            id: 'auth-1',
             timestamp: 1757360596000000,
             event_message: "request completed",
             level: "info",
@@ -120,7 +131,7 @@ const DatabaseLogs = () => {
             error: null
           },
           {
-            id: crypto.randomUUID(),
+            id: 'auth-2',
             timestamp: 1757360579000000,
             event_message: "request completed",
             level: "info", 
@@ -130,7 +141,7 @@ const DatabaseLogs = () => {
             error: null
           },
           {
-            id: crypto.randomUUID(),
+            id: 'auth-3',
             timestamp: 1757360545000000,
             event_message: "user authentication successful",
             level: "info",
@@ -140,7 +151,7 @@ const DatabaseLogs = () => {
             error: null
           },
           {
-            id: crypto.randomUUID(),
+            id: 'auth-4',
             timestamp: 1757360400000000,
             event_message: "password reset attempted",
             level: "warning",
@@ -150,7 +161,7 @@ const DatabaseLogs = () => {
             error: null
           },
           {
-            id: crypto.randomUUID(),
+            id: 'auth-5',
             timestamp: 1757360300000000,
             event_message: "authentication failed",
             level: "error",
@@ -160,7 +171,7 @@ const DatabaseLogs = () => {
             error: "invalid_credentials"
           },
           {
-            id: crypto.randomUUID(),
+            id: 'auth-6',
             timestamp: 1757360200000000,
             event_message: "session expired",
             level: "warning",
@@ -172,25 +183,50 @@ const DatabaseLogs = () => {
         ];
       }
       
+      console.error('🚨 Sample data created, setting logs. Count:', sampleLogs.length);
+      console.error('🚨 Sample data preview:', sampleLogs[0]);
       setLogs(sampleLogs);
+      console.error('🚨 Logs set successfully!');
     } catch (error) {
-      console.error('Failed to fetch database logs:', error);
+      console.error('🚨 CRITICAL ERROR in fetchLogs:', error);
+      alert('ERROR in fetchLogs: ' + error); // Backup debug method
       setLogs([]);
     } finally {
+      console.error('🚨 fetchLogs finally block - setting loading false');
       setLoading(false);
       setRefreshing(false);
     }
   };
 
   useEffect(() => {
-    fetchLogs();
-    const interval = setInterval(fetchLogs, 30000);
-    return () => clearInterval(interval);
+    console.error('🚨 DatabaseLogs useEffect triggered!');
+    console.error('🚨 useEffect dependencies:', { logType, severityFilter });
+    alert('useEffect triggered!'); // Backup debug method
+    
+    try {
+      console.error('🚨 Calling fetchLogs from useEffect...');
+      fetchLogs();
+      
+      console.error('🚨 Setting up interval...');
+      const interval = setInterval(() => {
+        console.error('🚨 Interval tick - calling fetchLogs...');
+        fetchLogs();
+      }, 30000);
+      
+      console.error('🚨 useEffect setup complete');
+      return () => {
+        console.error('🚨 useEffect cleanup - clearing interval');
+        clearInterval(interval);
+      };
+    } catch (error) {
+      console.error('🚨 CRITICAL ERROR in useEffect:', error);
+      alert('ERROR in useEffect: ' + error); // Backup debug method
+    }
   }, [logType, severityFilter]);
 
   const filteredLogs = useMemo(() => {
-    // Debug logging
-    console.log('DatabaseLogs Filter Debug:', {
+    console.error('🚨 filteredLogs useMemo called!');
+    console.error('🚨 useMemo inputs:', {
       totalLogs: logs.length,
       searchTerm: searchTerm.trim(),
       severityFilter,
@@ -198,32 +234,41 @@ const DatabaseLogs = () => {
       sampleLog: logs[0]
     });
 
-    const filtered = logs.filter(log => {
-      const searchValue = searchTerm.trim().toLowerCase();
-      const matchesSearch = !searchValue || 
-        log.event_message?.toLowerCase().includes(searchValue) ||
-        log.identifier?.toLowerCase().includes(searchValue) ||
-        log.msg?.toLowerCase().includes(searchValue);
-      
-      const matchesSeverity = severityFilter === 'all' || 
-        log.error_severity?.toLowerCase() === severityFilter.toLowerCase() ||
-        log.level?.toLowerCase() === severityFilter.toLowerCase();
-      
-      return matchesSearch && matchesSeverity;
-    });
+    try {
+      const filtered = logs.filter(log => {
+        const searchValue = searchTerm.trim().toLowerCase();
+        const matchesSearch = !searchValue || 
+          log.event_message?.toLowerCase().includes(searchValue) ||
+          log.identifier?.toLowerCase().includes(searchValue) ||
+          log.msg?.toLowerCase().includes(searchValue);
+        
+        const matchesSeverity = severityFilter === 'all' || 
+          log.error_severity?.toLowerCase() === severityFilter.toLowerCase() ||
+          log.level?.toLowerCase() === severityFilter.toLowerCase();
+        
+        return matchesSearch && matchesSeverity;
+      });
 
-    console.log('DatabaseLogs Filtered Results:', {
-      filteredCount: filtered.length,
-      matchCriteria: { searchTerm: searchTerm.trim(), severityFilter }
-    });
+      console.error('🚨 filteredLogs calculated:', {
+        filteredCount: filtered.length,
+        matchCriteria: { searchTerm: searchTerm.trim(), severityFilter }
+      });
 
-    return filtered;
+      return filtered;
+    } catch (error) {
+      console.error('🚨 ERROR in filteredLogs useMemo:', error);
+      return [];
+    }
   }, [logs, searchTerm, severityFilter]);
 
   const formatTimestamp = (timestamp: number) => {
     return new Date(timestamp / 1000).toLocaleString();
   };
 
+  // CRITICAL DEBUG: Render detection
+  console.error('🚨 DatabaseLogs RENDER method called!');
+  console.error('🚨 Render state:', { loading, filteredLogsCount: filteredLogs.length, logsCount: logs.length });
+  
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row gap-4">
