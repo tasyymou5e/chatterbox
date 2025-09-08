@@ -2958,6 +2958,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      validate_child_account_access: {
+        Args: { p_email: string; p_family_code: string }
+        Returns: boolean
+      }
       validate_family_access: {
         Args: {
           p_family_id: string

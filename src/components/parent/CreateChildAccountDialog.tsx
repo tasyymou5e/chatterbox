@@ -8,6 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { Loader2, UserPlus, Copy, CheckCircle2, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { createChildAccount, ChildAccountInfo } from '@/utils/secureChildAccountAccess';
 import { supabase } from '@/integrations/supabase/client';
 
 interface CreateChildAccountDialogProps {
@@ -64,23 +65,44 @@ export default function CreateChildAccountDialog({ open, onOpenChange, onSuccess
       return;
     }
 
+    // Get user's family first
+    const { data: userFamily } = await supabase
+      .from('families')
+      .select('id')
+      .eq('created_by', user.id)
+      .single();
+
+    if (!userFamily) {
+      toast({ 
+        variant: "destructive", 
+        title: "No family found", 
+        description: "Please create a family first before adding children." 
+      });
+      return;
+    }
+
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('create-child-account', {
-        body: {
-          firstName: firstName.trim(),
-          lastName: lastName.trim(),
-          parentUserId: user.id
-        }
-      });
+      const result = await createChildAccount(
+        userFamily.id,
+        firstName.trim(),
+        lastName.trim()
+      );
 
-      if (error) throw error;
-
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to create child account');
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to create child account');
       }
 
-      setCreatedAccount(data.childAccount);
+      if (result.childAccount) {
+        setCreatedAccount({
+          id: result.childAccount.id,
+          firstName: result.childAccount.first_name,
+          lastName: result.childAccount.last_name,
+          email: result.childAccount.generated_email,
+          accountCode: result.childAccount.family_code,
+          status: result.childAccount.status
+        });
+      }
       
       toast({
         title: "✅ Child Account Created!",
