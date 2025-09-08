@@ -95,6 +95,7 @@ export const getAdminProfiles = async (): Promise<AdminProfile[]> => {
       return [];
     }
 
+    // Profiles are now secured by RLS policies - no additional masking needed for admins
     return data || [];
   } catch (error) {
     console.error('Error in getAdminProfiles:', error);

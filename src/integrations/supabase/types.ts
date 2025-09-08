@@ -2843,6 +2843,16 @@ export type Database = {
           total_errors: number
         }[]
       }
+      get_family_behavioral_summary: {
+        Args: { p_family_id: string }
+        Returns: {
+          avg_session_duration: number
+          child_user_id: string
+          last_activity_date: string
+          most_used_features: string[]
+          total_sessions: number
+        }[]
+      }
       get_family_safe_data: {
         Args: { family_id_param: string }
         Returns: {
@@ -2983,6 +2993,22 @@ export type Database = {
         }
         Returns: string
       }
+      log_system_error_secure: {
+        Args: {
+          p_browser_info?: Json
+          p_component_name?: string
+          p_device_info?: Json
+          p_error_type: string
+          p_message: string
+          p_metadata?: Json
+          p_route_path?: string
+          p_session_id?: string
+          p_severity: string
+          p_stack_trace?: string
+          p_user_id?: string
+        }
+        Returns: string
+      }
       log_user_activity: {
         Args: {
           p_activity_type: string
@@ -2995,6 +3021,10 @@ export type Database = {
           p_user_agent?: string
           p_user_id: string
         }
+        Returns: string
+      }
+      mask_email: {
+        Args: { email_text: string }
         Returns: string
       }
       refresh_analytics_automated: {

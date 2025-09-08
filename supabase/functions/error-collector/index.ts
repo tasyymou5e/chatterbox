@@ -70,8 +70,8 @@ serve(async (req) => {
       )
     ).map(b => b.toString(16).padStart(2, '0')).join('');
 
-    // Log the error using the database function
-    const { data: errorId, error: logError } = await supabase.rpc('log_system_error', {
+    // Log the error using the secure database function with data sanitization
+    const { data: errorId, error: logError } = await supabase.rpc('log_system_error_secure', {
       p_error_type: errorReport.errorType,
       p_severity: errorReport.severity,
       p_message: errorReport.message,
