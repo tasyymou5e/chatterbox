@@ -29,11 +29,6 @@ import type { SystemError, SystemAlert, ErrorStatistics, CircuitBreakerState } f
 
 // Database Logs Component
 const DatabaseLogs = () => {
-  // CRITICAL DEBUG: Component mount detection
-  console.error('🚨 DatabaseLogs component mounted!');
-  console.warn('⚠️ DatabaseLogs rendering...');
-  alert('DatabaseLogs component mounted!'); // Backup debug method
-  
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -60,18 +55,13 @@ const DatabaseLogs = () => {
   `;
 
   const fetchLogs = async () => {
-    console.error('🚨 fetchLogs function called for logType:', logType);
-    alert('fetchLogs function executed!'); // Backup debug method
-    
     try {
       setRefreshing(true);
-      console.error('🚨 Creating sample data...');
       
       // Use sample data based on real database logs structure
       let sampleLogs;
       
       if (logType === 'postgres') {
-        console.error('🚨 Creating postgres sample data...');
         sampleLogs = [
           {
             id: 'static-id-1', // Replace crypto.randomUUID() for debugging

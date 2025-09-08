@@ -3,10 +3,12 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Routes, Route, Navigate } from "react-router-dom";
+import { useEffect } from "react";
 // Context providers removed - using Zustand stores now
 import { AdminRoute } from "@/components/admin/AdminRoute";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { useAutoErrorLogging } from "@/hooks/useAutoErrorLogging";
+import { usePerformanceMonitoring } from "@/hooks/usePerformanceMonitoring";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import About from "./pages/About";
@@ -44,8 +46,20 @@ const queryClient = new QueryClient({
 // Simplified admin routing and enhanced error boundaries
 
 const App = () => {
-  // Enable automatic error logging
+  // Enable automatic error logging and performance monitoring
   useAutoErrorLogging();
+  const { measurePageLoad, measureApiResponse, measureMemoryUsage } = usePerformanceMonitoring();
+
+  // Measure initial page load performance
+  useEffect(() => {
+    measurePageLoad();
+    measureMemoryUsage();
+    
+    // Set up periodic memory monitoring
+    const memoryInterval = setInterval(measureMemoryUsage, 30000); // Every 30 seconds
+    
+    return () => clearInterval(memoryInterval);
+  }, [measurePageLoad, measureMemoryUsage]);
 
   return (
     <QueryClientProvider client={queryClient}>
