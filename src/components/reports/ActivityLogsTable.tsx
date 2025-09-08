@@ -86,7 +86,7 @@ const ActivityLogsTable = () => {
         .from('user_activity_logs')
         .select(`
           *,
-          profiles!user_activity_logs_user_id_fkey (
+          profiles (
             first_name,
             last_name,
             email
