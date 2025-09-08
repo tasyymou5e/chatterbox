@@ -107,6 +107,66 @@ export type Database = {
         }
         Relationships: []
       }
+      analytics_insights: {
+        Row: {
+          acknowledged: boolean | null
+          acknowledged_at: string | null
+          actionable: boolean | null
+          confidence_score: number | null
+          created_at: string
+          description: string
+          expires_at: string | null
+          family_id: string
+          id: string
+          insight_category: string
+          insight_type: string
+          priority: string | null
+          recommendations: Json | null
+          supporting_data: Json | null
+          title: string
+          user_id: string | null
+          valid_from: string | null
+        }
+        Insert: {
+          acknowledged?: boolean | null
+          acknowledged_at?: string | null
+          actionable?: boolean | null
+          confidence_score?: number | null
+          created_at?: string
+          description: string
+          expires_at?: string | null
+          family_id: string
+          id?: string
+          insight_category: string
+          insight_type: string
+          priority?: string | null
+          recommendations?: Json | null
+          supporting_data?: Json | null
+          title: string
+          user_id?: string | null
+          valid_from?: string | null
+        }
+        Update: {
+          acknowledged?: boolean | null
+          acknowledged_at?: string | null
+          actionable?: boolean | null
+          confidence_score?: number | null
+          created_at?: string
+          description?: string
+          expires_at?: string | null
+          family_id?: string
+          id?: string
+          insight_category?: string
+          insight_type?: string
+          priority?: string | null
+          recommendations?: Json | null
+          supporting_data?: Json | null
+          title?: string
+          user_id?: string | null
+          valid_from?: string | null
+        }
+        Relationships: []
+      }
       analytics_metrics: {
         Row: {
           created_at: string | null
@@ -247,6 +307,51 @@ export type Database = {
           session_id?: string | null
           success?: boolean | null
           user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      behavioral_events: {
+        Row: {
+          device_type: string | null
+          duration_seconds: number | null
+          event_category: string
+          event_data: Json | null
+          event_type: string
+          family_id: string | null
+          id: string
+          interaction_element: string | null
+          page_path: string | null
+          session_id: string | null
+          timestamp: string
+          user_id: string
+        }
+        Insert: {
+          device_type?: string | null
+          duration_seconds?: number | null
+          event_category: string
+          event_data?: Json | null
+          event_type: string
+          family_id?: string | null
+          id?: string
+          interaction_element?: string | null
+          page_path?: string | null
+          session_id?: string | null
+          timestamp?: string
+          user_id: string
+        }
+        Update: {
+          device_type?: string | null
+          duration_seconds?: number | null
+          event_category?: string
+          event_data?: Json | null
+          event_type?: string
+          family_id?: string | null
+          id?: string
+          interaction_element?: string | null
+          page_path?: string | null
+          session_id?: string | null
+          timestamp?: string
           user_id?: string
         }
         Relationships: []
@@ -655,6 +760,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      comparative_benchmarks: {
+        Row: {
+          age_group: string
+          benchmark_type: string
+          benchmark_value: number
+          created_at: string
+          id: string
+          metadata: Json | null
+          percentile_rank: number
+          period_end: string
+          period_start: string
+          sample_size: number | null
+        }
+        Insert: {
+          age_group: string
+          benchmark_type: string
+          benchmark_value: number
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          percentile_rank: number
+          period_end: string
+          period_start: string
+          sample_size?: number | null
+        }
+        Update: {
+          age_group?: string
+          benchmark_type?: string
+          benchmark_value?: number
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          percentile_rank?: number
+          period_end?: string
+          period_start?: string
+          sample_size?: number | null
+        }
+        Relationships: []
       }
       content_categories: {
         Row: {
@@ -1413,6 +1557,90 @@ export type Database = {
           },
         ]
       }
+      gamification_effectiveness: {
+        Row: {
+          achievements_unlocked: number | null
+          created_at: string
+          date_tracked: string
+          effectiveness_metrics: Json | null
+          engagement_score: number | null
+          family_id: string
+          feature_usage: Json | null
+          id: string
+          mini_games_played: number | null
+          motivation_level: number | null
+          points_earned: number | null
+          session_length_minutes: number | null
+          social_interactions: number | null
+          user_id: string
+        }
+        Insert: {
+          achievements_unlocked?: number | null
+          created_at?: string
+          date_tracked?: string
+          effectiveness_metrics?: Json | null
+          engagement_score?: number | null
+          family_id: string
+          feature_usage?: Json | null
+          id?: string
+          mini_games_played?: number | null
+          motivation_level?: number | null
+          points_earned?: number | null
+          session_length_minutes?: number | null
+          social_interactions?: number | null
+          user_id: string
+        }
+        Update: {
+          achievements_unlocked?: number | null
+          created_at?: string
+          date_tracked?: string
+          effectiveness_metrics?: Json | null
+          engagement_score?: number | null
+          family_id?: string
+          feature_usage?: Json | null
+          id?: string
+          mini_games_played?: number | null
+          motivation_level?: number | null
+          points_earned?: number | null
+          session_length_minutes?: number | null
+          social_interactions?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      milestone_tracking: {
+        Row: {
+          achieved_at: string
+          family_id: string
+          id: string
+          metadata: Json | null
+          milestone_name: string
+          milestone_type: string
+          milestone_value: number
+          user_id: string
+        }
+        Insert: {
+          achieved_at?: string
+          family_id: string
+          id?: string
+          metadata?: Json | null
+          milestone_name: string
+          milestone_type: string
+          milestone_value: number
+          user_id: string
+        }
+        Update: {
+          achieved_at?: string
+          family_id?: string
+          id?: string
+          metadata?: Json | null
+          milestone_name?: string
+          milestone_type?: string
+          milestone_value?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       mini_game_scores: {
         Row: {
           bonus_points: number | null
@@ -1705,6 +1933,57 @@ export type Database = {
         }
         Relationships: []
       }
+      progress_snapshots: {
+        Row: {
+          achievements_unlocked: number | null
+          chores_completed_month: number | null
+          chores_completed_today: number | null
+          chores_completed_week: number | null
+          created_at: string
+          current_level: number | null
+          family_id: string
+          id: string
+          metadata: Json | null
+          snapshot_date: string
+          streak_count: number | null
+          total_points: number | null
+          total_xp: number | null
+          user_id: string
+        }
+        Insert: {
+          achievements_unlocked?: number | null
+          chores_completed_month?: number | null
+          chores_completed_today?: number | null
+          chores_completed_week?: number | null
+          created_at?: string
+          current_level?: number | null
+          family_id: string
+          id?: string
+          metadata?: Json | null
+          snapshot_date?: string
+          streak_count?: number | null
+          total_points?: number | null
+          total_xp?: number | null
+          user_id: string
+        }
+        Update: {
+          achievements_unlocked?: number | null
+          chores_completed_month?: number | null
+          chores_completed_today?: number | null
+          chores_completed_week?: number | null
+          created_at?: string
+          current_level?: number | null
+          family_id?: string
+          id?: string
+          metadata?: Json | null
+          snapshot_date?: string
+          streak_count?: number | null
+          total_points?: number | null
+          total_xp?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       reward_redemptions: {
         Row: {
           approval_notes: string | null
@@ -1948,6 +2227,78 @@ export type Database = {
           status?: string
           timestamp?: string | null
           uptime_percentage?: number | null
+        }
+        Relationships: []
+      }
+      task_performance_metrics: {
+        Row: {
+          actual_duration: number | null
+          assignment_id: string | null
+          chore_id: string | null
+          completion_date: string
+          completion_time: string | null
+          created_at: string
+          day_of_week: number | null
+          difficulty_level:
+            | Database["public"]["Enums"]["chore_difficulty"]
+            | null
+          efficiency_score: number | null
+          estimated_duration: number | null
+          family_id: string
+          id: string
+          metadata: Json | null
+          performance_category: string | null
+          quality_rating: number | null
+          seasonal_period: string | null
+          start_time: string | null
+          time_of_day: string | null
+          user_id: string
+        }
+        Insert: {
+          actual_duration?: number | null
+          assignment_id?: string | null
+          chore_id?: string | null
+          completion_date: string
+          completion_time?: string | null
+          created_at?: string
+          day_of_week?: number | null
+          difficulty_level?:
+            | Database["public"]["Enums"]["chore_difficulty"]
+            | null
+          efficiency_score?: number | null
+          estimated_duration?: number | null
+          family_id: string
+          id?: string
+          metadata?: Json | null
+          performance_category?: string | null
+          quality_rating?: number | null
+          seasonal_period?: string | null
+          start_time?: string | null
+          time_of_day?: string | null
+          user_id: string
+        }
+        Update: {
+          actual_duration?: number | null
+          assignment_id?: string | null
+          chore_id?: string | null
+          completion_date?: string
+          completion_time?: string | null
+          created_at?: string
+          day_of_week?: number | null
+          difficulty_level?:
+            | Database["public"]["Enums"]["chore_difficulty"]
+            | null
+          efficiency_score?: number | null
+          estimated_duration?: number | null
+          family_id?: string
+          id?: string
+          metadata?: Json | null
+          performance_category?: string | null
+          quality_rating?: number | null
+          seasonal_period?: string | null
+          start_time?: string | null
+          time_of_day?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -2324,6 +2675,17 @@ export type Database = {
           next_level_xp: number
         }[]
       }
+      calculate_performance_insights: {
+        Args: { p_days_back?: number; p_family_id: string }
+        Returns: {
+          description: string
+          insight_type: string
+          metric_value: number
+          recommendations: Json
+          title: string
+          trend: string
+        }[]
+      }
       calculate_user_retention: {
         Args: { days_back?: number }
         Returns: {
@@ -2378,12 +2740,25 @@ export type Database = {
         Args: { session_id: string }
         Returns: undefined
       }
+      generate_behavioral_insights: {
+        Args: { p_days_back?: number; p_user_id: string }
+        Returns: {
+          behavioral_patterns: Json
+          engagement_score: number
+          most_used_features: Json
+          peak_activity_time: string
+        }[]
+      }
       generate_child_account_code: {
         Args: Record<PropertyKey, never>
         Returns: string
       }
       generate_family_code: {
         Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      generate_progress_snapshot: {
+        Args: { p_family_id: string; p_user_id: string }
         Returns: string
       }
       get_daily_analytics_for_admins: {
