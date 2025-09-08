@@ -9,7 +9,6 @@ import { AdminRoute } from "@/components/admin/AdminRoute";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { useAutoErrorLogging } from "@/hooks/useAutoErrorLogging";
 import { usePerformanceMonitoringSafe } from "@/hooks/usePerformanceMonitoringSafe";
-// import { usePerformanceMonitoring } from "@/hooks/usePerformanceMonitoring"; // Temporarily disabled due to import error
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import About from "./pages/About";
@@ -49,17 +48,41 @@ const queryClient = new QueryClient({
 const App = () => {
   // Enable automatic error logging and safe performance monitoring
   useAutoErrorLogging();
-  const { measurePageLoad, measureApiResponse, measureMemoryUsage } = usePerformanceMonitoringSafe();
+  
+  // Safely initialize performance monitoring with error handling
+  let performanceMonitoring;
+  try {
+    performanceMonitoring = usePerformanceMonitoringSafe();
+  } catch (error) {
+    console.warn('Performance monitoring disabled due to error:', error);
+    performanceMonitoring = {
+      measurePageLoad: () => {},
+      measureApiResponse: () => {},
+      measureMemoryUsage: () => {}
+    };
+  }
+  
+  const { measurePageLoad, measureApiResponse, measureMemoryUsage } = performanceMonitoring;
 
-  // Measure initial page load performance
+  // Measure initial page load performance with error handling
   useEffect(() => {
-    measurePageLoad();
-    measureMemoryUsage();
-    
-    // Set up periodic memory monitoring
-    const memoryInterval = setInterval(measureMemoryUsage, 30000); // Every 30 seconds
-    
-    return () => clearInterval(memoryInterval);
+    try {
+      measurePageLoad();
+      measureMemoryUsage();
+      
+      // Set up periodic memory monitoring
+      const memoryInterval = setInterval(() => {
+        try {
+          measureMemoryUsage();
+        } catch (error) {
+          console.warn('Memory monitoring error:', error);
+        }
+      }, 30000); // Every 30 seconds
+      
+      return () => clearInterval(memoryInterval);
+    } catch (error) {
+      console.warn('Performance monitoring initialization error:', error);
+    }
   }, [measurePageLoad, measureMemoryUsage]);
 
   return (
