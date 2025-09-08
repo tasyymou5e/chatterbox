@@ -26,6 +26,7 @@ import { useAdminStore } from '@/stores/adminStore';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { useAuthStore } from '@/stores/authStore';
 import SecurityDashboardCard from '@/components/admin/SecurityDashboardCard';
+import EnhancedSecurityDashboard from '@/components/admin/EnhancedSecurityDashboard';
 
 interface DashboardStats {
   totalFamilies: number;
@@ -329,6 +330,9 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Enhanced Security Dashboard */}
+      <EnhancedSecurityDashboard />
 
         {/* Error Display */}
         {analyticsError && (

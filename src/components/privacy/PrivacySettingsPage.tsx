@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Shield, Save, RefreshCw, Trash2 } from 'lucide-react';
+import { Shield, Save, RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -9,7 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { getUserPrivacySettings, updatePrivacySettings, type PrivacySettings } from '@/utils/privacySettings';
-import { supabase } from '@/integrations/supabase/client';
+import PrivacyCompliancePanel from './PrivacyCompliancePanel';
 
 export default function PrivacySettingsPage() {
   const { toast } = useToast();
@@ -76,33 +76,8 @@ export default function PrivacySettingsPage() {
   };
 
   const handleDeleteAllData = async () => {
-    if (!confirm('Are you sure you want to delete all your behavioral data? This action cannot be undone.')) {
-      return;
-    }
-
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { error } = await supabase
-        .from('behavioral_events')
-        .delete()
-        .eq('user_id', user.id);
-
-      if (error) throw error;
-
-      toast({
-        title: 'Data deleted',
-        description: 'All your behavioral data has been permanently deleted.'
-      });
-    } catch (error) {
-      console.error('Error deleting data:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to delete your data. Please try again.'
-      });
-    }
+    // This functionality is now handled by the PrivacyCompliancePanel
+    console.log('Data deletion moved to Privacy Compliance Panel');
   };
 
   const updateSetting = <K extends keyof PrivacySettings>(key: K, value: PrivacySettings[K]) => {
@@ -229,29 +204,8 @@ export default function PrivacySettingsPage() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-red-600">Data Management</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <h3 className="font-medium mb-2">Delete All Behavioral Data</h3>
-            <p className="text-sm text-muted-foreground mb-3">
-              Permanently delete all your stored behavioral and analytics data. 
-              This action cannot be undone.
-            </p>
-            <Button 
-              variant="destructive" 
-              size="sm"
-              onClick={handleDeleteAllData}
-              className="flex items-center gap-2"
-            >
-              <Trash2 className="h-4 w-4" />
-              Delete All Data
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Privacy Compliance Panel */}
+      <PrivacyCompliancePanel />
 
       {/* Save Button */}
       {isDirty && (

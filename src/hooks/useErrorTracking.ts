@@ -63,16 +63,24 @@ export const useErrorTracking = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
+      // Check privacy consent before logging detailed error info
+      const { hasTrackingConsent } = await import('@/utils/privacySettings');
+      const hasConsent = user ? await hasTrackingConsent() : false;
+      
+      const errorPayload = {
+        ...errorInfo,
+        userId: user?.id,
+        sessionId: getSessionId(),
+        // Only include detailed browser/device info if user consented
+        browserInfo: hasConsent ? getBrowserInfo() : { userAgent: 'anonymized' },
+        deviceInfo: hasConsent ? getDeviceInfo() : { screenWidth: 0, screenHeight: 0 },
+        routePath: hasConsent ? window.location.pathname : '/anonymized',
+        timestamp: new Date().toISOString(),
+        privacyMode: !hasConsent
+      };
+      
       await supabase.functions.invoke('error-collector', {
-        body: {
-          ...errorInfo,
-          userId: user?.id,
-          sessionId: getSessionId(),
-          browserInfo: getBrowserInfo(),
-          deviceInfo: getDeviceInfo(),
-          routePath: window.location.pathname,
-          timestamp: new Date().toISOString(),
-        }
+        body: errorPayload
       });
     } catch (err) {
       // Fallback: log to console if error collection fails
