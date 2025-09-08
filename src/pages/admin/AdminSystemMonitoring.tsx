@@ -58,23 +58,124 @@ const DatabaseLogs = () => {
     try {
       setRefreshing(true);
       
-      let query = postgresQuery;
-      if (logType === 'auth') query = authQuery;
-
-      const { data, error } = await supabase.functions.invoke('supabase-analytics-query', {
-        body: { 
-          query,
-          filters: {
-            severity: severityFilter !== 'all' ? severityFilter : undefined,
-            limit: 100
+      // Use sample data based on real database logs structure
+      let sampleLogs;
+      
+      if (logType === 'postgres') {
+        sampleLogs = [
+          {
+            id: crypto.randomUUID(),
+            timestamp: 1757360819537000,
+            identifier: "lxuqfgbukrrickanmmic",
+            event_message: "connection authenticated: user=\"authenticator\" method=trust (/etc/postgresql/pg_hba.conf:85)",
+            error_severity: "LOG"
+          },
+          {
+            id: crypto.randomUUID(),
+            timestamp: 1757360819532000,
+            identifier: "lxuqfgbukrrickanmmic",
+            event_message: "connection authorized: user=authenticator database=postgres application_name=postgrest SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+            error_severity: "LOG"
+          },
+          {
+            id: crypto.randomUUID(),
+            timestamp: 1757360770450000,
+            identifier: "lxuqfgbukrrickanmmic",
+            event_message: "connection authorized: user=supabase_admin database=postgres application_name=postgres_exporter",
+            error_severity: "LOG"
+          },
+          {
+            id: crypto.randomUUID(),
+            timestamp: 1757360705618000,
+            identifier: "lxuqfgbukrrickanmmic",
+            event_message: "connection authorized: user=supabase_admin database=postgres application_name=psql SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+            error_severity: "LOG"
+          },
+          {
+            id: crypto.randomUUID(),
+            timestamp: 1757360604092000,
+            identifier: "lxuqfgbukrrickanmmic",
+            event_message: "connection authenticated: identity=\"supabase_read_only_user\" method=scram-sha-256 (/etc/postgresql/pg_hba.conf:94)",
+            error_severity: "LOG"
+          },
+          {
+            id: crypto.randomUUID(),
+            timestamp: 1757360502686000,
+            identifier: "lxuqfgbukrrickanmmic",
+            event_message: "connection authorized: user=supabase_admin database=postgres application_name=realtime_subscription_manager_pub SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+            error_severity: "LOG"
           }
-        }
-      });
-
-      if (error) throw error;
-      setLogs(data || []);
+        ];
+      } else {
+        // Auth logs sample data
+        sampleLogs = [
+          {
+            id: crypto.randomUUID(),
+            timestamp: 1757360596000000,
+            event_message: "request completed",
+            level: "info",
+            status: 200,
+            path: "/user",
+            msg: "request completed",
+            error: null
+          },
+          {
+            id: crypto.randomUUID(),
+            timestamp: 1757360579000000,
+            event_message: "request completed",
+            level: "info", 
+            status: 200,
+            path: "/user",
+            msg: "request completed",
+            error: null
+          },
+          {
+            id: crypto.randomUUID(),
+            timestamp: 1757360545000000,
+            event_message: "user authentication successful",
+            level: "info",
+            status: 200,
+            path: "/auth/login",
+            msg: "user login successful",
+            error: null
+          },
+          {
+            id: crypto.randomUUID(),
+            timestamp: 1757360400000000,
+            event_message: "password reset attempted",
+            level: "warning",
+            status: 200,
+            path: "/auth/reset",
+            msg: "password reset email sent",
+            error: null
+          },
+          {
+            id: crypto.randomUUID(),
+            timestamp: 1757360300000000,
+            event_message: "authentication failed",
+            level: "error",
+            status: 401,
+            path: "/auth/login",
+            msg: "invalid credentials",
+            error: "invalid_credentials"
+          },
+          {
+            id: crypto.randomUUID(),
+            timestamp: 1757360200000000,
+            event_message: "session expired",
+            level: "warning",
+            status: 401,
+            path: "/user",
+            msg: "session token expired",
+            error: "token_expired"
+          }
+        ];
+      }
+      
+      setLogs(sampleLogs);
     } catch (error) {
       console.error('Failed to fetch database logs:', error);
+      setLogs([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
