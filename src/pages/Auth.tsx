@@ -298,7 +298,11 @@ const Auth = () => {
         .single();
 
       if (fetchError || !childAccount) {
-        setAuthError('Invalid account code or setup incomplete');
+        toast({
+          title: 'Invalid Code',
+          description: 'Invalid account code or setup incomplete',
+          variant: 'destructive'
+        });
         return;
       }
 
@@ -307,9 +311,17 @@ const Auth = () => {
       
       if (!validation.valid) {
         if (validation.expired) {
-          setAuthError('This account access code has expired. Please ask your parent to create a new one.');
+          toast({
+            title: 'Code Expired',
+            description: 'This account access code has expired. Please ask your parent to create a new one.',
+            variant: 'destructive'
+          });
         } else {
-          setAuthError(validation.error || 'Invalid account code or setup incomplete');
+          toast({
+            title: 'Invalid Code',
+            description: validation.error || 'Invalid account code or setup incomplete',
+            variant: 'destructive'
+          });
         }
         return;
       }
@@ -338,7 +350,11 @@ const Auth = () => {
       const result = await completeChildAccount(accountCode, childAccount.generated_email, authData.user.id);
       
       if (!result.success) {
-        setAuthError(result.error || 'Failed to complete account setup');
+        toast({
+          title: 'Setup Failed',
+          description: result.error || 'Failed to complete account setup',
+          variant: 'destructive'
+        });
         return;
       }
 
@@ -352,52 +368,16 @@ const Auth = () => {
 
     } catch (error) {
       console.error('Error during child account setup:', error);
-      setAuthError('Failed to complete account setup. Please try again.');
-      setLoading(false);
+      toast({
+        title: 'Setup Failed',
+        description: 'Failed to complete account setup. Please try again.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Regular user signup with enhanced error handling
-  const handleSignUp = async (e: React.FormEvent) => {
-
-      // Add to family_members table
-      await supabase
-        .from('family_members')
-        .insert({
-          family_id: childAccount.family_id,
-          user_id: authData.user.id,
-          role: 'child',
-          invited_by: childAccount.created_by
-        });
-
-      toast({
-        title: 'Account Created Successfully!',
-        description: `Welcome ${childAccount.first_name}! Your account has been set up and linked to your family.`,
-      });
-
-      // Sign in the newly created user
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: childAccount.generated_email,
-        password: password,
-      });
-
-      if (signInError) {
-        console.error('Auto sign-in failed:', signInError);
-        // Switch to sign in tab if auto sign-in fails
-        setActiveTab('signin');
-      }
-
-    } catch (err: any) {
-      const errorDetails = getErrorMessage(err);
-      toast({
-        title: errorDetails.title,
-        description: errorDetails.description,
-        variant: 'destructive',
-      });
-    }
-
-    setIsLoading(false);
-  };
 
   const handleResetPasswordConfirm = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
