@@ -26,6 +26,7 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import AdminReports from "./pages/admin/AdminReports";
 import AdminContent from "./pages/admin/AdminContent";
 import AdminSystemMonitoring from "./pages/admin/AdminSystemMonitoring";
+import AdminLLMMonitoring from "./pages/admin/AdminLLMMonitoring";
 import { AdminDebugPanel } from "@/components/admin/AdminDebugPanel";
 import { AdminBootstrap } from "@/components/admin/AdminBootstrap";
 import { AdminBootstrapRoute } from "@/components/admin/AdminBootstrapRoute";
@@ -132,6 +133,11 @@ const App = () => {
                   <Route path="system-monitoring" element={
                     <ErrorBoundary componentName="AdminSystemMonitoring">
                       <AdminSystemMonitoring />
+                    </ErrorBoundary>
+                  } />
+                  <Route path="llm-monitoring" element={
+                    <ErrorBoundary componentName="AdminLLMMonitoring">
+                      <AdminLLMMonitoring />
                     </ErrorBoundary>
                   } />
                 </Route>

@@ -11,6 +11,7 @@ import {
   LogOut,
   Shield,
   Activity,
+  Brain,
   Loader2
 } from 'lucide-react';
 
@@ -116,6 +117,17 @@ export default function AdminLayout() {
                 >
                   <Activity className="h-4 w-4" />
                   <span>System Monitoring</span>
+                </Link>
+                <Link 
+                  to="/admin/llm-monitoring" 
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    location.pathname === '/admin/llm-monitoring' 
+                      ? 'text-white bg-gray-700' 
+                      : 'text-gray-300 hover:text-white hover:bg-gray-700'
+                  }`}
+                >
+                  <Brain className="h-4 w-4" />
+                  <span>LLM Monitor</span>
                 </Link>
               </div>
             </div>

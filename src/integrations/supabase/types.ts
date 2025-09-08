@@ -1617,6 +1617,147 @@ export type Database = {
         }
         Relationships: []
       }
+      llm_api_calls: {
+        Row: {
+          completion_tokens: number | null
+          cost_usd: number | null
+          created_at: string
+          error_message: string | null
+          function_name: string
+          id: string
+          model: string
+          prompt_tokens: number | null
+          provider: string
+          request_metadata: Json | null
+          response_metadata: Json | null
+          response_time_ms: number | null
+          status: string
+          total_tokens: number | null
+          user_id: string | null
+        }
+        Insert: {
+          completion_tokens?: number | null
+          cost_usd?: number | null
+          created_at?: string
+          error_message?: string | null
+          function_name: string
+          id?: string
+          model: string
+          prompt_tokens?: number | null
+          provider: string
+          request_metadata?: Json | null
+          response_metadata?: Json | null
+          response_time_ms?: number | null
+          status?: string
+          total_tokens?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          completion_tokens?: number | null
+          cost_usd?: number | null
+          created_at?: string
+          error_message?: string | null
+          function_name?: string
+          id?: string
+          model?: string
+          prompt_tokens?: number | null
+          provider?: string
+          request_metadata?: Json | null
+          response_metadata?: Json | null
+          response_time_ms?: number | null
+          status?: string
+          total_tokens?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      llm_cost_budgets: {
+        Row: {
+          alert_threshold_percentage: number | null
+          budget_limit_usd: number
+          budget_period: string
+          created_at: string
+          current_spend_usd: number | null
+          id: string
+          is_active: boolean | null
+          period_end: string
+          period_start: string
+          provider: string
+          updated_at: string
+        }
+        Insert: {
+          alert_threshold_percentage?: number | null
+          budget_limit_usd: number
+          budget_period?: string
+          created_at?: string
+          current_spend_usd?: number | null
+          id?: string
+          is_active?: boolean | null
+          period_end: string
+          period_start: string
+          provider: string
+          updated_at?: string
+        }
+        Update: {
+          alert_threshold_percentage?: number | null
+          budget_limit_usd?: number
+          budget_period?: string
+          created_at?: string
+          current_spend_usd?: number | null
+          id?: string
+          is_active?: boolean | null
+          period_end?: string
+          period_start?: string
+          provider?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      llm_usage_summaries: {
+        Row: {
+          avg_response_time_ms: number | null
+          created_at: string
+          date_period: string
+          error_count: number | null
+          hour_period: number | null
+          id: string
+          model: string
+          provider: string
+          success_rate: number | null
+          total_calls: number | null
+          total_cost_usd: number | null
+          total_tokens: number | null
+        }
+        Insert: {
+          avg_response_time_ms?: number | null
+          created_at?: string
+          date_period: string
+          error_count?: number | null
+          hour_period?: number | null
+          id?: string
+          model: string
+          provider: string
+          success_rate?: number | null
+          total_calls?: number | null
+          total_cost_usd?: number | null
+          total_tokens?: number | null
+        }
+        Update: {
+          avg_response_time_ms?: number | null
+          created_at?: string
+          date_period?: string
+          error_count?: number | null
+          hour_period?: number | null
+          id?: string
+          model?: string
+          provider?: string
+          success_rate?: number | null
+          total_calls?: number | null
+          total_cost_usd?: number | null
+          total_tokens?: number | null
+        }
+        Relationships: []
+      }
       milestone_tracking: {
         Row: {
           achieved_at: string
@@ -2872,6 +3013,19 @@ export type Database = {
           id: string
         }[]
       }
+      get_llm_usage_stats: {
+        Args: { p_days_back?: number; p_provider?: string }
+        Returns: {
+          avg_response_time_ms: number
+          daily_usage: Json
+          model_breakdown: Json
+          provider_breakdown: Json
+          success_rate: number
+          total_calls: number
+          total_cost_usd: number
+          total_tokens: number
+        }[]
+      }
       get_popular_content: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -2966,6 +3120,22 @@ export type Database = {
           p_member_role: Database["public"]["Enums"]["app_role"]
           p_parent_user_id?: string
           p_user_id: string
+        }
+        Returns: string
+      }
+      log_llm_api_call: {
+        Args: {
+          p_completion_tokens?: number
+          p_error_message?: string
+          p_function_name: string
+          p_model: string
+          p_prompt_tokens?: number
+          p_provider: string
+          p_request_metadata?: Json
+          p_response_metadata?: Json
+          p_response_time_ms?: number
+          p_status?: string
+          p_user_id?: string
         }
         Returns: string
       }
