@@ -21,6 +21,7 @@ interface Family {
   display_name: string;
   name: string;
   member_count: number;
+  metadata?: any; // Supabase Json type - contains is_test_family boolean
 }
 
 interface FamilyDeleteDialogProps {
@@ -56,18 +57,36 @@ export default function FamilyDeleteDialog({ family, open, onOpenChange, onSucce
 
     setLoading(true);
     try {
-      // Delete family (this will cascade delete family members due to foreign key constraints)
-      const { error } = await supabase
-        .from('families')
-        .delete()
-        .eq('id', family.id);
+      const isTestFamily = family.metadata?.is_test_family === true;
+      
+      if (isTestFamily) {
+        // Use comprehensive deletion for test families
+        const { data, error } = await supabase.functions.invoke('delete-family-comprehensive', {
+          body: { familyId: family.id }
+        });
 
-      if (error) throw error;
+        if (error) throw error;
+        
+        if (data?.error) throw new Error(data.error);
 
-      toast({
-        title: 'Family Deleted',
-        description: `Family ${family.family_code} and all its members have been deleted successfully.`
-      });
+        toast({
+          title: 'Test Family Deleted',
+          description: `Test family ${family.family_code} and all ${data.usersDeleted} user accounts have been completely removed.`
+        });
+      } else {
+        // Regular deletion for real families (preserves user accounts)
+        const { error } = await supabase
+          .from('families')
+          .delete()
+          .eq('id', family.id);
+
+        if (error) throw error;
+
+        toast({
+          title: 'Family Deleted',
+          description: `Family ${family.family_code} has been deleted. User accounts have been preserved.`
+        });
+      }
 
       onOpenChange(false);
       onSuccess?.();
@@ -85,6 +104,7 @@ export default function FamilyDeleteDialog({ family, open, onOpenChange, onSucce
 
   if (!family) return null;
 
+  const isTestFamily = family.metadata?.is_test_family === true;
   const isConfirmationValid = confirmationText === family.family_code;
 
   return (
@@ -102,9 +122,14 @@ export default function FamilyDeleteDialog({ family, open, onOpenChange, onSucce
                 <div>
                   <p className="font-medium text-red-400 mb-1">This action cannot be undone!</p>
                   <p className="text-sm">
-                    You are about to permanently delete the family <strong>{family.display_name}</strong> 
+                    You are about to permanently delete {isTestFamily ? 'the test family' : 'the family'} <strong>{family.display_name}</strong> 
                     ({family.family_code}) and all of its {family.member_count} member(s).
                   </p>
+                  {isTestFamily && (
+                    <p className="text-sm mt-2 font-medium text-orange-400">
+                      ⚠️ This is a test family - all user accounts will be permanently deleted.
+                    </p>
+                  )}
                 </div>
               </div>
               
@@ -115,6 +140,11 @@ export default function FamilyDeleteDialog({ family, open, onOpenChange, onSucce
                   <li>All {family.member_count} family member relationships</li>
                   <li>All family activity logs and history</li>
                   <li>Any family-specific content interactions</li>
+                  {isTestFamily ? (
+                    <li className="text-orange-400 font-medium">All {family.member_count} user accounts and profiles</li>
+                  ) : (
+                    <li className="text-green-400">User accounts will be preserved</li>
+                  )}
                 </ul>
               </div>
 

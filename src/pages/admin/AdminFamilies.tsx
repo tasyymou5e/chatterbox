@@ -55,6 +55,7 @@ interface Family {
   member_count: number;
   members?: FamilyMember[];
   expanded?: boolean;
+  metadata?: any; // Supabase Json type - contains is_test_family boolean
 }
 
 export default function AdminFamilies() {

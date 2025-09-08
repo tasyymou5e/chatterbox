@@ -8,3 +8,6 @@ verify_jwt = true
 
 [functions.admin-update-user]
 verify_jwt = true
+
+[functions.delete-family-comprehensive]
+verify_jwt = true
