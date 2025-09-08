@@ -219,14 +219,16 @@ const DatabaseLogs = () => {
 import { ApplicationLogs } from '@/components/admin/ApplicationLogs';
 import { UserActivityLogs } from '@/components/admin/UserActivityLogs';
 import { SystemHealthLogs } from '@/components/admin/SystemHealthLogs';
+import { EdgeFunctionLogs } from '@/components/admin/EdgeFunctionLogs';
 
 const LogsTabContent = () => {
   return (
     <Tabs defaultValue="application" className="w-full">
-      <TabsList className="grid w-full grid-cols-4">
+      <TabsList className="grid w-full grid-cols-5">
         <TabsTrigger value="application">Application</TabsTrigger>
         <TabsTrigger value="activity">User Activity</TabsTrigger>
         <TabsTrigger value="database">Database</TabsTrigger>
+        <TabsTrigger value="edge-functions">Edge Functions</TabsTrigger>
         <TabsTrigger value="health">System Health</TabsTrigger>
       </TabsList>
 
@@ -277,6 +279,23 @@ const LogsTabContent = () => {
           </CardHeader>
           <CardContent>
             <DatabaseLogs />
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="edge-functions">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5" />
+              Edge Function Logs
+            </CardTitle>
+            <CardDescription>
+              Serverless function execution logs and performance metrics
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <EdgeFunctionLogs />
           </CardContent>
         </Card>
       </TabsContent>
