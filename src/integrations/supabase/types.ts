@@ -2935,6 +2935,16 @@ export type Database = {
         Args: { error_id: string }
         Returns: boolean
       }
+      test_profiles_access: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          access_level: string
+          auth_role: string
+          auth_uid: string
+          can_access: boolean
+          record_count: number
+        }[]
+      }
       update_family_leaderboard: {
         Args: { p_family_id: string }
         Returns: undefined
