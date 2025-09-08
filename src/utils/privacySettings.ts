@@ -54,17 +54,35 @@ export const updatePrivacySettings = async (settings: Partial<PrivacySettings>):
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return false;
 
-    const { error } = await supabase
+    // First, try to update existing record
+    const { data: updateData, error: updateError } = await supabase
       .from('user_privacy_settings')
-      .upsert({
-        user_id: user.id,
+      .update({
         ...settings,
         updated_at: new Date().toISOString()
-      });
+      })
+      .eq('user_id', user.id)
+      .select();
 
-    if (error) {
-      console.error('Error updating privacy settings:', error);
+    if (updateError) {
+      console.error('Error updating existing privacy settings:', updateError);
       return false;
+    }
+
+    // If no rows were updated, insert a new record
+    if (!updateData || updateData.length === 0) {
+      const { error: insertError } = await supabase
+        .from('user_privacy_settings')
+        .insert({
+          user_id: user.id,
+          ...settings,
+          updated_at: new Date().toISOString()
+        });
+
+      if (insertError) {
+        console.error('Error inserting new privacy settings:', insertError);
+        return false;
+      }
     }
 
     return true;
