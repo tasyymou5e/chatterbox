@@ -8,7 +8,8 @@ import { useEffect } from "react";
 import { AdminRoute } from "@/components/admin/AdminRoute";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { useAutoErrorLogging } from "@/hooks/useAutoErrorLogging";
-import { usePerformanceMonitoring } from "@/hooks/usePerformanceMonitoring";
+import { usePerformanceMonitoringSafe } from "@/hooks/usePerformanceMonitoringSafe";
+// import { usePerformanceMonitoring } from "@/hooks/usePerformanceMonitoring"; // Temporarily disabled due to import error
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import About from "./pages/About";
@@ -46,9 +47,9 @@ const queryClient = new QueryClient({
 // Simplified admin routing and enhanced error boundaries
 
 const App = () => {
-  // Enable automatic error logging and performance monitoring
+  // Enable automatic error logging and safe performance monitoring
   useAutoErrorLogging();
-  const { measurePageLoad, measureApiResponse, measureMemoryUsage } = usePerformanceMonitoring();
+  const { measurePageLoad, measureApiResponse, measureMemoryUsage } = usePerformanceMonitoringSafe();
 
   // Measure initial page load performance
   useEffect(() => {
