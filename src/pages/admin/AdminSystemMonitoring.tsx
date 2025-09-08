@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -188,17 +188,37 @@ const DatabaseLogs = () => {
     return () => clearInterval(interval);
   }, [logType, severityFilter]);
 
-  const filteredLogs = logs.filter(log => {
-    const matchesSearch = !searchTerm || 
-      log.event_message?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.identifier?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesSeverity = severityFilter === 'all' || 
-      log.error_severity?.toLowerCase() === severityFilter.toLowerCase() ||
-      log.level?.toLowerCase() === severityFilter.toLowerCase();
-    
-    return matchesSearch && matchesSeverity;
-  });
+  const filteredLogs = useMemo(() => {
+    // Debug logging
+    console.log('DatabaseLogs Filter Debug:', {
+      totalLogs: logs.length,
+      searchTerm: searchTerm.trim(),
+      severityFilter,
+      logType,
+      sampleLog: logs[0]
+    });
+
+    const filtered = logs.filter(log => {
+      const searchValue = searchTerm.trim().toLowerCase();
+      const matchesSearch = !searchValue || 
+        log.event_message?.toLowerCase().includes(searchValue) ||
+        log.identifier?.toLowerCase().includes(searchValue) ||
+        log.msg?.toLowerCase().includes(searchValue);
+      
+      const matchesSeverity = severityFilter === 'all' || 
+        log.error_severity?.toLowerCase() === severityFilter.toLowerCase() ||
+        log.level?.toLowerCase() === severityFilter.toLowerCase();
+      
+      return matchesSearch && matchesSeverity;
+    });
+
+    console.log('DatabaseLogs Filtered Results:', {
+      filteredCount: filtered.length,
+      matchCriteria: { searchTerm: searchTerm.trim(), severityFilter }
+    });
+
+    return filtered;
+  }, [logs, searchTerm, severityFilter]);
 
   const formatTimestamp = (timestamp: number) => {
     return new Date(timestamp / 1000).toLocaleString();
@@ -238,6 +258,16 @@ const DatabaseLogs = () => {
         </select>
 
         <button 
+          onClick={() => {
+            setSearchTerm('');
+            setSeverityFilter('all');
+          }}
+          className="px-3 py-2 bg-secondary text-secondary-foreground rounded-md"
+        >
+          Clear Filters
+        </button>
+
+        <button 
           onClick={fetchLogs}
           disabled={refreshing}
           className="px-3 py-2 bg-primary text-primary-foreground rounded-md disabled:opacity-50"
@@ -246,9 +276,19 @@ const DatabaseLogs = () => {
         </button>
       </div>
 
-      <div className="text-sm text-muted-foreground">
-        Showing {filteredLogs.length} of {logs.length} logs
-        {searchTerm && ` matching "${searchTerm}"`}
+      <div className="text-sm text-muted-foreground space-y-1">
+        <div>
+          Showing {filteredLogs.length} of {logs.length} logs
+          {searchTerm.trim() && ` matching "${searchTerm.trim()}"`}
+          {severityFilter !== 'all' && ` with severity "${severityFilter.toUpperCase()}"`}
+        </div>
+        {(searchTerm.trim() || severityFilter !== 'all') && (
+          <div className="text-xs">
+            Active filters: {searchTerm.trim() && `Search: "${searchTerm.trim()}"`}
+            {searchTerm.trim() && severityFilter !== 'all' && ', '}
+            {severityFilter !== 'all' && `Severity: ${severityFilter.toUpperCase()}`}
+          </div>
+        )}
       </div>
 
       {loading ? (
