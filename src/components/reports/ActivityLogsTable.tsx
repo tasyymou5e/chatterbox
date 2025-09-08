@@ -39,12 +39,45 @@ const ActivityLogsTable = () => {
   const [filter, setFilter] = useState<string>('all');
   const [dateRange, setDateRange] = useState<string>('7');
   const [searchTerm, setSearchTerm] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   const fetchLogs = async () => {
-    if (!user) return;
+    if (!user) {
+      setError('Authentication required');
+      setLoading(false);
+      setIsCheckingAuth(false);
+      return;
+    }
+
+    // Check if user has admin access
+    setIsCheckingAuth(true);
 
     setLoading(true);
+    setError(null);
+    
     try {
+      // First check admin access
+      const { data: hasAdminAccess, error: roleError } = await supabase
+        .rpc('has_role', { _user_id: user.id, _role: 'admin' });
+
+      if (roleError) {
+        console.error('Error checking admin role:', roleError);
+        setError('Failed to verify admin access');
+        setIsCheckingAuth(false);
+        setLoading(false);
+        return;
+      }
+
+      if (!hasAdminAccess) {
+        setError('Admin access required to view activity logs');
+        setIsCheckingAuth(false);
+        setLoading(false);
+        return;
+      }
+
+      setIsCheckingAuth(false);
+
       const endDate = new Date();
       const startDate = new Date();
       startDate.setDate(endDate.getDate() - parseInt(dateRange));
@@ -72,6 +105,11 @@ const ActivityLogsTable = () => {
 
       if (error) {
         console.error('Error fetching activity logs:', error);
+        if (error.message?.includes('permission')) {
+          setError('Access denied. Admin privileges required.');
+        } else {
+          setError(`Failed to fetch activity logs: ${error.message}`);
+        }
       } else {
         let filteredData = data || [];
         
@@ -90,6 +128,7 @@ const ActivityLogsTable = () => {
       }
     } catch (error) {
       console.error('Error fetching logs:', error);
+      setError('An unexpected error occurred while fetching logs');
     } finally {
       setLoading(false);
     }
@@ -167,7 +206,7 @@ const ActivityLogsTable = () => {
     window.URL.revokeObjectURL(url);
   };
 
-  if (loading) {
+  if (loading || isCheckingAuth) {
     return (
       <Card>
         <CardHeader>
@@ -176,6 +215,44 @@ const ActivityLogsTable = () => {
         <CardContent>
           <div className="flex items-center justify-center h-32">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <span className="ml-2 text-muted-foreground">
+              {isCheckingAuth ? 'Verifying admin access...' : 'Loading activity logs...'}
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Eye className="w-5 h-5" />
+            Activity Logs
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8">
+            <AlertTriangle className="w-12 h-12 text-destructive mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-destructive mb-2">Access Error</h3>
+            <p className="text-muted-foreground mb-4">{error}</p>
+            {error.includes('Authentication required') && (
+              <Button onClick={() => window.location.href = '/admin/login'}>
+                Go to Admin Login
+              </Button>
+            )}
+            {error.includes('Admin access required') && (
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">
+                  You need administrator privileges to view activity logs.
+                </p>
+                <Button onClick={() => window.location.href = '/admin/login'}>
+                  Sign in as Admin
+                </Button>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -233,8 +310,17 @@ const ActivityLogsTable = () => {
       </CardHeader>
       <CardContent>
         {logs.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            No activity logs found for the selected criteria.
+          <div className="text-center py-8">
+            <Eye className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No Activity Logs Found</h3>
+            <p className="text-muted-foreground mb-4">
+              No activity logs found for the selected criteria.
+            </p>
+            <div className="text-sm text-muted-foreground space-y-1">
+              <p>• Try adjusting the date range or filters</p>
+              <p>• Activity logs are created when users sign in/out</p>
+              <p>• Showing logs from the last {dateRange} day{parseInt(dateRange) !== 1 ? 's' : ''}</p>
+            </div>
           </div>
         ) : (
           <div className="rounded-md border">

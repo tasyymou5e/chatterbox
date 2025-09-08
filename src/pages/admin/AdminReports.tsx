@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -20,7 +21,8 @@ import {
   Calendar,
   TrendingUp,
   AlertTriangle,
-  CheckCircle
+  CheckCircle,
+  Shield
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import ActivityLogsTable from '@/components/reports/ActivityLogsTable';
@@ -43,6 +45,7 @@ interface ActivitySummary {
 }
 
 export default function AdminReports() {
+  const { user, isAdmin, loading: authLoading } = useAdminAuth();
   const [stats, setStats] = useState<SystemStats>({
     totalUsers: 0,
     totalFamilies: 0,
@@ -55,9 +58,47 @@ export default function AdminReports() {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
+  // Authentication check
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Verifying admin access...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user || !isAdmin) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <Shield className="w-12 h-12 text-destructive mx-auto mb-4" />
+            <CardTitle className="text-destructive">Admin Access Required</CardTitle>
+            <CardDescription>
+              You need administrator privileges to access this page.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="text-center space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Please sign in with an admin account to view reports.
+            </p>
+            <Button onClick={() => window.location.href = '/admin/login'} className="w-full">
+              Go to Admin Login
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   useEffect(() => {
-    fetchReportsData();
-  }, []);
+    if (user && isAdmin) {
+      fetchReportsData();
+    }
+  }, [user, isAdmin]);
 
   const fetchReportsData = async () => {
     try {
