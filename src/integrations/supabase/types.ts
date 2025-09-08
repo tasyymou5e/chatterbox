@@ -3013,6 +3013,16 @@ export type Database = {
           total_sessions: number
         }[]
       }
+      get_family_growth_metrics: {
+        Args: { days_back?: number }
+        Returns: {
+          active_families: number
+          avg_family_size: number
+          cumulative_families: number
+          date: string
+          new_families: number
+        }[]
+      }
       get_family_safe_data: {
         Args: { family_id_param: string }
         Returns: {
@@ -3053,6 +3063,15 @@ export type Database = {
           first_name: string
           last_name: string
           user_id: string
+        }[]
+      }
+      get_system_health_metrics: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          last_updated: string
+          metric_name: string
+          metric_value: number
+          status: string
         }[]
       }
       has_behavioral_tracking_consent: {

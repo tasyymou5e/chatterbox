@@ -27,6 +27,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import ActivityLogsTable from '@/components/reports/ActivityLogsTable';
 import FamilyActivityReport from '@/components/reports/FamilyActivityReport';
+import { AdvancedAnalyticsDashboard } from '@/components/analytics/AdvancedAnalyticsDashboard';
 
 interface SystemStats {
   totalUsers: number;
@@ -368,23 +369,7 @@ export default function AdminReports() {
         </TabsContent>
 
         <TabsContent value="analytics">
-          <Card className="bg-gray-800 border-gray-700">
-            <CardHeader>
-              <CardTitle className="text-white">Advanced Analytics</CardTitle>
-              <CardDescription className="text-gray-400">
-                Detailed system metrics and insights
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
-                <BarChart className="h-12 w-12 text-gray-600 mx-auto mb-4" />
-                <p className="text-gray-400">Advanced analytics dashboard coming soon</p>
-                <p className="text-sm text-gray-500 mt-2">
-                  This will include user engagement metrics, family growth patterns, and system health indicators
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          <AdvancedAnalyticsDashboard />
         </TabsContent>
       </Tabs>
     </div>
