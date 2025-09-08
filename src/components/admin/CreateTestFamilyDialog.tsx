@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Plus, Minus, Loader2, Users, Mail, CheckCircle2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Plus, Minus, Loader2, Users, Mail, CheckCircle2, Trash2, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -47,6 +49,66 @@ export default function CreateTestFamilyDialog({ open, onOpenChange, onSuccess }
   const [parent1, setParent1] = useState<Parent>({ firstName: '', lastName: '', email: '' });
   const [parent2, setParent2] = useState<Parent>({ firstName: '', lastName: '', email: '' });
   const [children, setChildren] = useState<Child[]>([]);
+  
+  // New options state
+  const [cleanupFirst, setCleanupFirst] = useState(false);
+  const [forceUniqueEmails, setForceUniqueEmails] = useState(true);
+  const [testFamilyCount, setTestFamilyCount] = useState<number | null>(null);
+  const [cleanupLoading, setCleanupLoading] = useState(false);
+
+  // Load test family count when dialog opens
+  useEffect(() => {
+    if (open) {
+      loadTestFamilyCount();
+    }
+  }, [open]);
+
+  const loadTestFamilyCount = async () => {
+    try {
+      const { data: families, error } = await supabase
+        .from('families')
+        .select('id')
+        .eq('metadata->>is_test_family', 'true');
+
+      if (error) {
+        console.error('Error loading test family count:', error);
+      } else {
+        setTestFamilyCount(families?.length || 0);
+      }
+    } catch (error) {
+      console.error('Error loading test family count:', error);
+    }
+  };
+
+  const handleCleanup = async () => {
+    setCleanupLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('cleanup-test-families');
+
+      if (error) {
+        throw error;
+      }
+
+      if (data?.success) {
+        toast({ 
+          title: "Cleanup completed", 
+          description: `${data.familiesDeleted} families and ${data.authUsersDeleted} users removed`
+        });
+        await loadTestFamilyCount(); // Refresh count
+      } else {
+        throw new Error(data?.error || 'Cleanup failed');
+      }
+    } catch (error: any) {
+      console.error('Cleanup error:', error);
+      toast({ 
+        variant: "destructive", 
+        title: "Cleanup failed", 
+        description: error.message 
+      });
+    } finally {
+      setCleanupLoading(false);
+    }
+  };
 
   // Helper function to generate child email
   const generateChildEmail = (childFirstName: string, parent1Email: string) => {
@@ -100,6 +162,8 @@ export default function CreateTestFamilyDialog({ open, onOpenChange, onSuccess }
     setParent1({ firstName: '', lastName: '', email: '' });
     setParent2({ firstName: '', lastName: '', email: '' });
     setChildren([]);
+    setCleanupFirst(false);
+    setForceUniqueEmails(true);
   };
 
   const validateForm = () => {
@@ -169,7 +233,9 @@ export default function CreateTestFamilyDialog({ open, onOpenChange, onSuccess }
           lastName: child.lastName.trim(),
           email: child.generatedEmail
         })),
-        createdBy: user.id
+        createdBy: user.id,
+        cleanupFirst,
+        forceUniqueEmails
       };
 
       const { data, error } = await supabase.functions.invoke('create-test-family', {
@@ -178,14 +244,39 @@ export default function CreateTestFamilyDialog({ open, onOpenChange, onSuccess }
 
       if (error) throw error;
 
-      toast({
-        title: "✅ Test Family Created Successfully!",
-        description: `Family "${data.familyCode}" created with ${data.membersCreated} members`,
-      });
-
-      resetForm();
-      onOpenChange(false);
-      onSuccess?.();
+      if (data?.success) {
+        // Handle mixed results (some successes, some failures)
+        const successCount = data.members?.filter((m: any) => m.success)?.length || 0;
+        const failureCount = data.members?.filter((m: any) => !m.success)?.length || 0;
+        
+        if (successCount > 0) {
+          let description = `Family "${data.familyCode}" created with ${successCount} members`;
+          
+          if (data.cleanupResults) {
+            description += `\nCleanup performed: ${data.cleanupResults.familiesDeleted} families, ${data.cleanupResults.usersDeleted} users removed`;
+          }
+          
+          if (failureCount > 0) {
+            description += `\nNote: ${failureCount} members failed to create`;
+            // Show failed members in console for debugging
+            const failedMembers = data.members?.filter((m: any) => !m.success);
+            console.warn('Failed to create members:', failedMembers);
+          }
+          
+          toast({
+            title: "✅ Test Family Created Successfully!",
+            description,
+          });
+          
+          resetForm();
+          onOpenChange(false);
+          onSuccess?.();
+        } else {
+          throw new Error('All family members failed to create');
+        }
+      } else {
+        throw new Error(data?.error || 'Unknown error occurred');
+      }
     } catch (error) {
       console.error('Error creating test family:', error);
       toast({
@@ -214,6 +305,67 @@ export default function CreateTestFamilyDialog({ open, onOpenChange, onSuccess }
         </DialogHeader>
 
         <div className="space-y-6">
+          {/* Test Data Management Section */}
+          {testFamilyCount !== null && testFamilyCount > 0 && (
+            <Alert>
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                There are currently {testFamilyCount} test families in the system.
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="ml-2"
+                  onClick={handleCleanup}
+                  disabled={cleanupLoading}
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  {cleanupLoading ? "Cleaning up..." : "Clean Up Test Data"}
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Options Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Creation Options</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="cleanup-first"
+                  checked={cleanupFirst}
+                  onCheckedChange={(checked) => setCleanupFirst(checked as boolean)}
+                />
+                <Label htmlFor="cleanup-first" className="text-sm">
+                  Clean up existing test data before creating new family
+                </Label>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="force-unique-emails"
+                  checked={forceUniqueEmails}
+                  onCheckedChange={(checked) => setForceUniqueEmails(checked as boolean)}
+                />
+                <Label htmlFor="force-unique-emails" className="text-sm">
+                  Generate unique emails automatically (recommended)
+                </Label>
+              </div>
+              
+              {forceUniqueEmails && (
+                <Alert>
+                  <CheckCircle className="h-4 w-4" />
+                  <AlertDescription className="text-sm">
+                    Unique emails will be generated automatically if conflicts are detected.
+                    Example: john@example.com → john.test.1704123456.abc1@example.com
+                  </AlertDescription>
+                </Alert>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Family Display Name */}
           <Card>
             <CardHeader>

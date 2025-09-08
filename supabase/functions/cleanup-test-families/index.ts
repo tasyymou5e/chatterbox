@@ -1,0 +1,139 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+interface CleanupResponse {
+  success: boolean;
+  familiesDeleted: number;
+  usersDeleted: number;
+  authUsersDeleted: number;
+  details?: any;
+  error?: string;
+}
+
+serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    // Validate required environment variables
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    if (!supabaseUrl || !serviceRoleKey) {
+      console.error('Missing required environment variables:', { supabaseUrl: !!supabaseUrl, serviceRoleKey: !!serviceRoleKey });
+      throw new Error('Missing required Supabase configuration');
+    }
+
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+    console.log('Starting cleanup of test families...');
+
+    // Call the database cleanup function
+    const { data: cleanupData, error: cleanupError } = await supabase.rpc('cleanup_test_families');
+    
+    if (cleanupError) {
+      console.error('Database cleanup error:', cleanupError);
+      throw new Error(`Database cleanup failed: ${cleanupError.message}`);
+    }
+
+    let authUsersDeleted = 0;
+    let cleanupDetails = null;
+
+    if (cleanupData && cleanupData.length > 0) {
+      const result = cleanupData[0];
+      cleanupDetails = result.cleanup_details;
+      
+      console.log('Database cleanup completed:', {
+        familiesDeleted: result.families_deleted,
+        usersDeleted: result.users_deleted
+      });
+
+      // Delete auth users (database function can't do this directly)
+      const userIds = cleanupDetails.test_user_ids || [];
+      
+      for (const userId of userIds) {
+        try {
+          const { error: deleteError } = await supabase.auth.admin.deleteUser(userId);
+          if (deleteError) {
+            console.error(`Failed to delete auth user ${userId}:`, deleteError);
+          } else {
+            authUsersDeleted++;
+            console.log(`Successfully deleted auth user: ${userId}`);
+          }
+        } catch (authError) {
+          console.error(`Error deleting auth user ${userId}:`, authError);
+          // Continue with other deletions
+        }
+      }
+
+      const response: CleanupResponse = {
+        success: true,
+        familiesDeleted: result.families_deleted || 0,
+        usersDeleted: result.users_deleted || 0,
+        authUsersDeleted: authUsersDeleted,
+        details: {
+          timestamp: new Date().toISOString(),
+          cleanupDetails: cleanupDetails
+        }
+      };
+
+      console.log('Cleanup operation completed successfully:', response);
+
+      return new Response(
+        JSON.stringify(response),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        }
+      );
+    } else {
+      // No test families to cleanup
+      const response: CleanupResponse = {
+        success: true,
+        familiesDeleted: 0,
+        usersDeleted: 0,
+        authUsersDeleted: 0,
+        details: {
+          message: 'No test families found to cleanup',
+          timestamp: new Date().toISOString()
+        }
+      };
+
+      console.log('No test families found to cleanup');
+
+      return new Response(
+        JSON.stringify(response),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        }
+      );
+    }
+
+  } catch (error) {
+    console.error('Error in cleanup-test-families function:', error);
+    
+    const response: CleanupResponse = {
+      success: false,
+      familiesDeleted: 0,
+      usersDeleted: 0,
+      authUsersDeleted: 0,
+      error: error instanceof Error ? error.message : 'Unknown error occurred'
+    };
+    
+    return new Response(
+      JSON.stringify(response),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+      }
+    );
+  }
+})

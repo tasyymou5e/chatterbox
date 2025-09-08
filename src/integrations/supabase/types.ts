@@ -1182,6 +1182,7 @@ export type Database = {
           display_name: string
           family_code: string
           id: string
+          metadata: Json | null
           name: string
           updated_at: string
         }
@@ -1191,6 +1192,7 @@ export type Database = {
           display_name: string
           family_code: string
           id?: string
+          metadata?: Json | null
           name: string
           updated_at?: string
         }
@@ -1200,6 +1202,7 @@ export type Database = {
           display_name?: string
           family_code?: string
           id?: string
+          metadata?: Json | null
           name?: string
           updated_at?: string
         }
@@ -2767,6 +2770,14 @@ export type Database = {
       cleanup_expired_sessions: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      cleanup_test_families: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          cleanup_details: Json
+          families_deleted: number
+          users_deleted: number
+        }[]
       }
       compute_daily_analytics: {
         Args: { target_date?: string }
