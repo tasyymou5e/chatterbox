@@ -4,6 +4,7 @@
 import React from 'react';
 import { SecurityDashboard } from '@/components/security/SecurityDashboard';
 import { SecurityAuditTrail } from '@/components/security/SecurityAuditTrail';
+import { SecurityAuditTrailErrorBoundary } from '@/components/security/SecurityAuditTrailErrorBoundary';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Shield, Activity, FileText, AlertTriangle } from 'lucide-react';
 
@@ -40,7 +41,9 @@ export const AdminSecurityCenter: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="audit" className="mt-6">
-          <SecurityAuditTrail />
+          <SecurityAuditTrailErrorBoundary>
+            <SecurityAuditTrail />
+          </SecurityAuditTrailErrorBoundary>
         </TabsContent>
 
         <TabsContent value="alerts" className="mt-6">

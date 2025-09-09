@@ -43,6 +43,11 @@ export const SecurityAuditTrail: React.FC = () => {
     loadAuditEvents();
   }, [filters, currentPage]);
 
+  const isValidUUID = (uuid: string): boolean => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(uuid);
+  };
+
   const loadAuditEvents = async () => {
     setLoading(true);
     try {
@@ -52,17 +57,22 @@ export const SecurityAuditTrail: React.FC = () => {
         .order('created_at', { ascending: false })
         .range((currentPage - 1) * pageSize, currentPage * pageSize - 1);
 
-      // Apply filters
-      if (filters.event_type) {
+      // Apply filters with validation
+      if (filters.event_type && filters.event_type !== 'all') {
         query = query.eq('event_type', filters.event_type);
       }
       
-      if (filters.severity) {
+      if (filters.severity && filters.severity !== 'all') {
         query = query.eq('severity', filters.severity);
       }
       
-      if (filters.user_id) {
-        query = query.eq('user_id', filters.user_id);
+      if (filters.user_id && filters.user_id.trim()) {
+        if (isValidUUID(filters.user_id.trim())) {
+          query = query.eq('user_id', filters.user_id.trim());
+        } else {
+          // Skip invalid UUID to prevent database errors
+          console.warn('Invalid UUID format for user_id filter:', filters.user_id);
+        }
       }
       
       if (filters.date_from) {
@@ -81,6 +91,8 @@ export const SecurityAuditTrail: React.FC = () => {
       setTotalCount(count || 0);
     } catch (error) {
       console.error('Failed to load audit events:', error);
+      setEvents([]);
+      setTotalCount(0);
     } finally {
       setLoading(false);
     }
@@ -192,14 +204,14 @@ export const SecurityAuditTrail: React.FC = () => {
             <div className="space-y-2">
               <label className="text-sm font-medium">Event Type</label>
               <Select 
-                value={filters.event_type || ''} 
-                onValueChange={(value) => setFilters({...filters, event_type: value || undefined})}
+                value={filters.event_type || 'all'} 
+                onValueChange={(value) => setFilters({...filters, event_type: value === 'all' ? undefined : value})}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="All types" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All types</SelectItem>
+                  <SelectItem value="all">All types</SelectItem>
                   <SelectItem value="authentication">Authentication</SelectItem>
                   <SelectItem value="rls_violation">RLS Violation</SelectItem>
                   <SelectItem value="security_alert">Security Alert</SelectItem>
@@ -212,14 +224,14 @@ export const SecurityAuditTrail: React.FC = () => {
             <div className="space-y-2">
               <label className="text-sm font-medium">Severity</label>
               <Select 
-                value={filters.severity || ''} 
-                onValueChange={(value) => setFilters({...filters, severity: value || undefined})}
+                value={filters.severity || 'all'} 
+                onValueChange={(value) => setFilters({...filters, severity: value === 'all' ? undefined : value})}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="All levels" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All levels</SelectItem>
+                  <SelectItem value="all">All levels</SelectItem>
                   <SelectItem value="critical">Critical</SelectItem>
                   <SelectItem value="high">High</SelectItem>
                   <SelectItem value="medium">Medium</SelectItem>
@@ -249,10 +261,17 @@ export const SecurityAuditTrail: React.FC = () => {
             <div className="space-y-2">
               <label className="text-sm font-medium">User ID</label>
               <Input 
-                placeholder="Filter by user"
+                placeholder="Enter valid UUID"
                 value={filters.user_id || ''}
-                onChange={(e) => setFilters({...filters, user_id: e.target.value || undefined})}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setFilters({...filters, user_id: value || undefined});
+                }}
+                className={filters.user_id && filters.user_id.trim() && !isValidUUID(filters.user_id.trim()) ? 'border-red-500' : ''}
               />
+              {filters.user_id && filters.user_id.trim() && !isValidUUID(filters.user_id.trim()) && (
+                <p className="text-xs text-red-500">Please enter a valid UUID format</p>
+              )}
             </div>
 
             <div className="space-y-2">
