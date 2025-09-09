@@ -10,7 +10,7 @@ This document provides a comprehensive overview of the Chatterbox application's 
 - **Entry Point**: `src/main.tsx` - Sets up React root with providers
 - **Router Configuration**: `src/App.tsx` - Defines all application routes
 - **Navigation Provider**: React Router DOM with BrowserRouter
-- **State Management**: Zustand stores (no React Context providers)
+- **State Management**: 12 Zustand stores (no React Context providers)
 
 ### Key Providers & Setup
 ```typescript
@@ -66,14 +66,15 @@ This document provides a comprehensive overview of the Chatterbox application's 
   ├── /users ........... User management
   ├── /reports ......... Administrative reports
   ├── /content ......... Content management
-  └── /system-monitoring System health monitoring
+  ├── /system-monitoring System health monitoring
+  └── /security-center .. Enhanced security dashboard
 ```
 
 ## 3. Authentication & Route Protection
 
 ### Authentication State Management
 - **Hook**: `useAuthNavigation` - Handles automatic navigation after authentication
-- **Store**: `authStore` (Zustand) - Manages user session and role
+- **Store**: `authStore` (Zustand) - Manages user session and role with 12 total stores
 - **Admin Hook**: `useAdminAuth` - Bridge adapter for admin authentication
 
 ### Route Protection Components
@@ -130,6 +131,7 @@ switch (userRole) {
   - Reports (BarChart3 icon)
   - Content (Settings icon)
   - System Monitoring (Activity icon)
+  - Security Center (Shield icon)
 
 ### Admin Route Hierarchy
 ```
@@ -141,15 +143,30 @@ switch (userRole) {
     ├── users
     ├── reports
     ├── content
-    └── system-monitoring
+    ├── system-monitoring
+    └── security-center
 ```
 
-## 5. Error Handling & Recovery
+## 5. Enhanced Security Components
+
+### Security Audit Trail
+- **Component**: `SecurityAuditTrail.tsx`
+- **Error Boundary**: `SecurityAuditTrailErrorBoundary.tsx`
+- **Purpose**: Real-time security event monitoring and investigation
+- **Features**: Advanced filtering, event correlation, threat detection
+
+### Enhanced Security Dashboard
+- **Component**: `EnhancedSecurityDashboard.tsx`
+- **Route**: `/admin/security-center`
+- **Features**: Comprehensive security monitoring, threat assessment, compliance reporting
+
+## 6. Error Handling & Recovery
 
 ### Error Boundary Strategy
 - **Global**: App-level ErrorBoundary wraps entire application
 - **Route-Level**: Each major route wrapped in ErrorBoundary with component name
 - **Admin-Specific**: AdminErrorBoundary for admin-only error handling
+- **Security-Specific**: SecurityAuditTrailErrorBoundary for security component isolation
 
 ### Emergency Recovery Features
 - **Loading Timeouts**: Prevents infinite loading states
@@ -157,7 +174,7 @@ switch (userRole) {
 - **Fallback UIs**: Emergency fallback when authentication fails
 - **Global Navigation**: `window.__navigate` for emergency navigation
 
-## 6. Landing Page & Portal Selection
+## 7. Landing Page & Portal Selection
 
 ### Index Page Behavior
 - **Route**: `/` 
@@ -173,7 +190,7 @@ switch (userRole) {
 - **Post-Authentication**: `useAuthNavigation` handles role-based redirection
 - **Future Enhancement**: Could be expanded for role-specific authentication flows
 
-## 7. Security Considerations
+## 8. Security Considerations
 
 ### Route Protection Levels
 1. **Public Routes**: No protection required
@@ -181,14 +198,15 @@ switch (userRole) {
 3. **Role-Based Routes**: Require specific user role
 4. **Admin Routes**: Additional admin privilege checks
 5. **Bootstrap Routes**: Special protection for initial setup
+6. **Security Routes**: Enhanced protection for security-sensitive areas
 
 ### Authentication State Validation
 - **Session Verification**: Checks both user and session objects
-- **Role Validation**: Verifies user role from database
+- **Role Validation**: Verifies user role from database with 59 total tables
 - **Timeout Handling**: Prevents indefinite loading/authentication states
 - **Error Recovery**: Graceful fallbacks for authentication failures
 
-## 8. Navigation Performance & UX
+## 9. Navigation Performance & UX
 
 ### Loading States
 - **Authentication Loading**: Shows loading indicators during auth checks
@@ -201,28 +219,6 @@ switch (userRole) {
 - **Active State Indicators**: Current route highlighted in navigation
 - **Responsive Design**: Mobile-friendly navigation patterns
 - **Toast Notifications**: User feedback for authentication actions
-
-## 9. Troubleshooting Common Issues
-
-### Navigation Loop Prevention
-- **Symptom**: Users stuck on authentication page
-- **Solution**: Check `useAuthNavigation` debouncing and attempt limits
-- **Debug**: Look for console logs with navigation attempt tracking
-
-### Admin Access Issues
-- **Symptom**: Admin users can't access admin routes
-- **Solution**: Verify user role in database and `AdminRoute` component logic
-- **Debug**: Check `useAdminAuth` hook state and session validation
-
-### Route Not Found Issues
-- **Symptom**: Users see NotFound page unexpectedly
-- **Solution**: Verify route definitions in `App.tsx`
-- **Note**: Catch-all `*` route must be last in route definitions
-
-### Authentication State Persistence
-- **Symptom**: Users logged out on page refresh
-- **Solution**: Check Supabase session persistence and initialization order
-- **Debug**: Verify `onAuthStateChange` and `getSession` implementation
 
 ## 10. Development & Maintenance Guidelines
 
@@ -240,7 +236,7 @@ switch (userRole) {
 4. Update security documentation
 
 ### Navigation State Debugging
-- Use browser dev tools to inspect `authStore` state
+- Use browser dev tools to inspect `authStore` state (1 of 12 Zustand stores)
 - Check console logs from `useAuthNavigation` for navigation tracking
 - Verify network requests for authentication calls
 - Test timeout and error scenarios
@@ -266,4 +262,4 @@ switch (userRole) {
 // Role-based redirection happens automatically
 ```
 
-This routing structure provides a secure, user-friendly navigation experience while maintaining clear separation between different user roles and their respective functionality areas.
+This routing structure provides a secure, user-friendly navigation experience while maintaining clear separation between different user roles and their respective functionality areas, supported by comprehensive error boundaries and security monitoring.

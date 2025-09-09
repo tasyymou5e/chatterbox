@@ -38,20 +38,23 @@ Chatterbox is a comprehensive React-based web application designed to empower au
 ```
 src/
 ├── components/
-│   ├── admin/           # Admin-specific components
-│   ├── analytics/       # Data visualization components  
+│   ├── admin/           # Admin-specific components (30+ components)
+│   ├── analytics/       # Data visualization components (15+ components)
 │   ├── auth/            # Authentication components
 │   ├── chores/          # Chore management components
 │   ├── connections/     # Family connection components
 │   ├── games/           # Educational content components
+│   ├── parent/          # Parent-specific components
+│   ├── privacy/         # Privacy and compliance components
 │   ├── reports/         # Reporting components
+│   ├── security/        # Security monitoring components
 │   └── ui/              # Reusable UI components (Shadcn)
-├── hooks/               # Custom React hooks
+├── hooks/               # Custom React hooks (25+ hooks)
 ├── pages/               # Route components
 │   ├── admin/           # Admin dashboard pages
 │   ├── children/        # Child-specific pages
 │   └── parent/          # Parent dashboard pages
-├── stores/              # Zustand state management
+├── stores/              # Zustand state management (12 stores)
 ├── lib/                 # Utility functions
 ├── types/               # TypeScript type definitions
 ├── utils/               # Utility functions and conditional logging
@@ -67,7 +70,7 @@ src/
 - **Autism-Friendly Features**: Reduced motion, high contrast, calming colors, sensory accommodations
 
 #### State Management (✅ COMPLETED: Zustand-Based)
-- **Centralized Stores**: 7 Zustand stores with TypeScript support and DevTools
+- **Centralized Stores**: 12 Zustand stores with TypeScript support and DevTools
   - `authStore`: Enhanced authentication with error diagnostics and activity logging
   - `uiStore`: Global UI state (loading, errors, modals) with component-specific tracking
   - `adminStore`: Admin-specific state management and system metrics
@@ -75,6 +78,11 @@ src/
   - `gamificationStore`: Points, levels, achievements, and leaderboards
   - `analyticsStore`: Analytics data caching and session-aware operations
   - `connectionStore`: Family connection management
+  - `behaviorAnalyticsStore`: Behavioral tracking and pattern analysis
+  - `performanceAnalyticsStore`: Performance metrics and monitoring
+  - `progressAnalyticsStore`: Progress tracking and insights
+  - `systemHealthStore`: System health monitoring and alerts
+  - Plus additional specialized stores for targeted functionality
 - **Bridge Adapters**: Maintain backward compatibility for existing components
 - **Persistence**: Critical state persisted to localStorage with selective partitioning
 - **DevTools**: Redux DevTools integration for time-travel debugging
@@ -82,7 +90,7 @@ src/
 
 ### Backend Architecture
 
-#### Database Schema (38 Tables)
+#### Database Schema (59 Tables)
 
 ##### Core Tables
 ```sql
@@ -94,14 +102,17 @@ user_activity_logs: Audit trail for user actions
 user_points: Points tracking (current, lifetime, weekly, monthly)
 user_levels: Level progression tracking
 user_achievements: Unlocked achievements
+user_privacy_settings: GDPR-compliant privacy preferences
 
--- Family management (6 tables)
+-- Family management (8 tables)
 families: Family group definitions with unique codes (FAM-YYYY-###)
 family_members: Parent-child relationships
 family_activity_logs: Family-specific audit logs
 family_connections: External family connections
 family_invitations: Connection invitation management
 family_leaderboards: Family ranking system
+child_accounts: Child account management with COPPA compliance
+archived_user_activity_logs: Historical activity data
 
 -- Content management (5 tables)
 content_categories: Educational content organization
@@ -110,7 +121,7 @@ content_interactions: User engagement tracking
 content_favorites: User bookmarks
 motivation_journal_entries: Personal reflection system
 
--- Gamification system (8 tables)
+-- Gamification system (12 tables)
 chore_categories: Chore organization
 chore_templates: Reusable chore definitions
 chores: Family-specific chore instances
@@ -119,8 +130,12 @@ chore_completions: Completion tracking
 achievements: Achievement definitions
 daily_streaks: Streak tracking
 peer_recognitions: Family member recognition system
+mini_game_scores: Educational game performance
+reward_redemptions: Point spending tracking
+wishlist_items: Reward marketplace
+milestone_tracking: Progress milestone system
 
--- Analytics & monitoring (10 tables)
+-- Analytics & monitoring (15 tables)
 analytics_metrics: System-wide metrics
 engagement_metrics: User engagement tracking
 system_errors: Error tracking and resolution
@@ -129,23 +144,34 @@ performance_metrics: Application performance data
 error_patterns: Error grouping and analysis
 system_health_metrics: Infrastructure monitoring
 mini_game_scores: Educational game performance
-reward_redemptions: Point spending tracking
-wishlist_items: Reward marketplace
+behavioral_events: User behavior tracking
+llm_api_calls: LLM usage monitoring
+llm_cost_budgets: AI cost management
+security_audit_logs: Security event logging
+admin_audit_logs: Administrative action tracking
+archived_system_errors: Historical error data
+daily_analytics_data: Computed analytics aggregation
+
+-- System & Security (12 additional tables)
+Including specialized tables for system monitoring, security auditing, 
+privacy compliance, and performance tracking
 ```
 
-##### Security Architecture (HARDENED 2025-08-29)
-- **Row Level Security (RLS)**: Comprehensive policies on 38 tables with 60+ security policies
-- **Security Definer Functions**: 20+ functions preventing RLS recursion
+##### Security Architecture (HARDENED 2025-01-09)
+- **Row Level Security (RLS)**: Comprehensive policies on 59 tables with 100+ security policies
+- **Security Definer Functions**: 30+ functions preventing RLS recursion
   - `has_role()`: Role verification without recursion with retry logic
   - `is_family_creator()`: Family ownership checks
   - `is_family_member()`: Family membership verification
   - `is_family_connection()`: Connection permission verification
   - Family-specific access functions for data isolation
+  - Enhanced security testing and validation functions
 - **Role-Based Access**: Three-tier system (admin, parent, child) with atomic role checking
 - **Data Isolation**: Strict family-based data boundaries with enhanced validation
 - **System Table Protection**: Service role and admin-only access for system tables
 - **Enhanced Activity Logging**: Comprehensive audit trail with device info and error diagnostics
 - **Authentication Security**: Leaked password detection prevention, race condition prevention, session management
+- **Security Testing**: Automated comprehensive security validation framework
 
 #### Authentication Flow
 ```mermaid
@@ -157,9 +183,9 @@ sequenceDiagram
     participant D as Database
 
     U->>F: Login request
-    F->>Z: signIn action
+    F->>Z: signIn action (1 of 12 stores)
     Z->>S: signInWithPassword()
-    S->>D: Validate credentials
+    S->>D: Validate credentials (59 tables)
     D-->>S: User record
     S-->>Z: JWT token + session
     Z->>D: Check user roles via has_role()
@@ -179,15 +205,15 @@ sequenceDiagram
 ## API Architecture
 
 ### Supabase Integration
-- **Auto-generated REST API**: Based on database schema
+- **Auto-generated REST API**: Based on database schema (59 tables)
 - **Real-time Subscriptions**: PostgreSQL change streams
 - **Edge Functions**: Deno-based serverless functions with rate limiting
-- **Advanced Query Functions**: 20+ database functions for complex operations
+- **Advanced Query Functions**: 30+ database functions for complex operations
 
 ### Edge Functions
 ```typescript
-// Example: Admin family creation with security
-export async function createTestFamily(request: Request) {
+// Example: Enhanced security testing function
+export async function securityTesting(request: Request) {
   // CORS handling
   if (request.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -216,8 +242,15 @@ export async function createTestFamily(request: Request) {
     return new Response('Forbidden', { status: 403 });
   }
   
-  // Atomic family creation with transaction
-  // ...
+  // Run comprehensive security tests
+  const testResults = await runSecurityTests(body.testType, body.testParameters);
+  
+  // Log security test activity
+  await logSecurityEvent(user.id, 'security_test_execution', 'medium', testResults);
+  
+  return new Response(JSON.stringify(testResults), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+  });
 }
 ```
 
@@ -225,9 +258,9 @@ export async function createTestFamily(request: Request) {
 
 ### Custom Hooks Pattern
 ```typescript
-// Example: Session-aware analytics
+// Example: Session-aware analytics with 12-store architecture
 export const useAnalyticsWithSession = () => {
-  const { user, sessionReady } = useAuthStore();
+  const { user, sessionReady } = useAuthStore(); // 1 of 12 stores
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -261,6 +294,7 @@ export const useAnalyticsWithSession = () => {
 3. **Validation Errors**: Real-time form validation with Zod schemas
 4. **Network Errors**: Retry mechanism with exponential backoff
 5. **Unexpected Errors**: Error boundaries with fallback UI and reporting
+6. **Security Errors**: Specialized security error handling and alerting
 
 ### Performance Optimization
 - **Code Splitting**: Lazy loading for route components
@@ -269,6 +303,7 @@ export const useAnalyticsWithSession = () => {
 - **Debouncing**: Search inputs and API calls
 - **Caching**: Multi-level caching strategy with Zustand persistence
 - **Bundle Optimization**: Tree-shaking and dependency optimization
+- **Database Optimization**: Query optimization across 59 tables
 
 ## Deployment Architecture
 
@@ -285,7 +320,7 @@ export const useAnalyticsWithSession = () => {
 - **Production**: Custom domain deployment (chatterbox.live ready)
 
 ### Database Migrations
-- **Version Control**: All schema changes tracked in migrations
+- **Version Control**: All schema changes tracked in migrations (59 tables)
 - **Automated Deployment**: Migrations run automatically
 - **Rollback Support**: Database migration rollback capabilities
 - **RLS Testing**: Automated security policy verification
@@ -293,35 +328,37 @@ export const useAnalyticsWithSession = () => {
 ## Monitoring & Observability
 
 ### Application Monitoring
-- **Error Tracking**: Comprehensive error collection and analysis
-- **Performance Metrics**: Real-time performance monitoring
+- **Error Tracking**: Comprehensive error collection and analysis (12 stores)
+- **Performance Metrics**: Real-time performance monitoring across all components
 - **User Analytics**: Engagement tracking and behavior analysis
 - **System Health**: Infrastructure monitoring and alerting
+- **Security Monitoring**: Real-time security event detection and response
 
 ### Security Monitoring
 - **Authentication Events**: Login/logout tracking with device info
-- **Access Patterns**: Unusual data access detection
+- **Access Patterns**: Unusual data access detection across 59 tables
 - **Failed Attempts**: Brute force attack detection
 - **System Changes**: Admin action auditing with full context
+- **Security Testing**: Automated security validation framework
 
 ## Scaling Considerations
 
 ### Frontend Scaling
 - **CDN Distribution**: Static asset delivery optimization
-- **Component Libraries**: Reusable component architecture
-- **State Optimization**: Efficient React re-rendering patterns
+- **Component Libraries**: Reusable component architecture (100+ components)
+- **State Optimization**: Efficient React re-rendering patterns (12 stores)
 - **Mobile Optimization**: Progressive Web App capabilities
 
 ### Backend Scaling
-- **Database Performance**: Query optimization and comprehensive indexing
+- **Database Performance**: Query optimization across 59 tables
 - **Connection Pooling**: Supabase handles automatically
 - **Edge Functions**: Geographic distribution for low latency
 - **Real-time Features**: Efficient WebSocket management
 
 ### Data Scaling
-- **Materialized Views**: Pre-computed analytics (daily_analytics)
+- **Materialized Views**: Pre-computed analytics (daily_analytics_data)
 - **Partitioning Strategy**: Date-based partitioning for large tables
-- **Archive Strategy**: Historical data management
+- **Archive Strategy**: Historical data management (archived_* tables)
 - **Analytics Optimization**: Separate analytics queries from transactional data
 
 ## Future Architecture Considerations
@@ -331,12 +368,14 @@ export const useAnalyticsWithSession = () => {
 - **Behavioral Analysis**: Pattern recognition for autism support
 - **Adaptive Learning**: Dynamic difficulty adjustment
 - **Predictive Analytics**: Early intervention suggestions
+- **LLM Integration**: Cost-managed AI capabilities with monitoring
 
 ### Advanced Security Features
 - **Multi-Factor Authentication**: Enhanced login security
 - **Advanced Rate Limiting**: Intelligent abuse protection
 - **Data Loss Prevention**: Sensitive data protection
 - **Compliance Frameworks**: GDPR, CCPA, COPPA compliance
+- **Security Testing Automation**: Continuous security validation
 
 ### Extended Ecosystem
 - **Third-party Integrations**: Educational platform connections
@@ -346,7 +385,9 @@ export const useAnalyticsWithSession = () => {
 
 ---
 
-**Documentation Version**: 2.0  
-**Last Updated**: 2025-01-02  
+**Documentation Version**: 3.0  
+**Last Updated**: 2025-01-09  
 **Project**: Chatterbox (formerly Spectrum Harmony)  
+**Database Tables**: 59 with comprehensive security  
+**Zustand Stores**: 12 with performance optimization  
 **Maintained By**: Development Team
