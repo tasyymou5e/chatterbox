@@ -3,7 +3,7 @@ import { AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
-import { cError } from '@/utils/conditionalLogger';
+import { secureLog } from '@/utils/secureLogging';
 
 interface Props {
   children: ReactNode;
@@ -36,18 +36,26 @@ class ErrorBoundary extends Component<Props, State> {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
+      // Create sanitized session ID without exposing full session
+      const sessionId = sessionStorage.getItem('error_session_id') || 
+        `err_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      if (!sessionStorage.getItem('error_session_id')) {
+        sessionStorage.setItem('error_session_id', sessionId);
+      }
+      
       await supabase.functions.invoke('error-collector', {
         body: {
           errorType: 'react_error_boundary',
           severity: 'critical',
           message: error.message,
-          stackTrace: error.stack,
+          stackTrace: process.env.NODE_ENV === 'development' ? error.stack : '[REDACTED]',
           componentName: this.props.componentName || 'Unknown',
-          userId: user?.id,
-          sessionId: sessionStorage.getItem('error_session_id') || 'unknown',
+          userId: user?.id ? `user_${user.id.substring(0, 8)}***` : null, // Partially redacted
+          sessionId,
           routePath: window.location.pathname,
           browserInfo: {
-            userAgent: navigator.userAgent,
+            userAgent: navigator.userAgent.split(' ')[0], // Only browser name
             language: navigator.language,
             platform: navigator.platform,
           },
@@ -58,14 +66,22 @@ class ErrorBoundary extends Component<Props, State> {
             windowHeight: window.innerHeight,
           },
           metadata: {
-            componentStack: errorInfo.componentStack,
+            componentStack: process.env.NODE_ENV === 'development' ? errorInfo.componentStack : '[REDACTED]',
             errorBoundaryName: this.props.componentName,
-          },
-          timestamp: new Date().toISOString(),
+            timestamp: new Date().toISOString(),
+          }
         }
       });
+      
+      // Log security event for error boundary activation
+      secureLog.security('error_boundary_activated', {
+        componentName: this.props.componentName,
+        errorType: error.name,
+        hasUser: !!user?.id
+      }, 'medium');
+      
     } catch (err) {
-      cError('Failed to log error boundary error', err);
+      secureLog.error('Failed to log error boundary error', err, 'ErrorBoundary');
     }
   }
 
@@ -131,6 +147,14 @@ class ErrorBoundary extends Component<Props, State> {
                   )}
                 </pre>
               </details>
+            )}
+            
+            {process.env.NODE_ENV === 'production' && (
+              <div className="mt-4 p-3 bg-muted rounded-md text-xs">
+                <p className="text-center text-muted-foreground">
+                  Error ID: {sessionStorage.getItem('error_session_id')?.substring(0, 12)}...
+                </p>
+              </div>
             )}
           </div>
         </div>

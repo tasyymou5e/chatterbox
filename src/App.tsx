@@ -8,6 +8,8 @@ import { useEffect } from "react";
 import { AdminRoute } from "@/components/admin/AdminRoute";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { useAutoErrorLogging } from "@/hooks/useAutoErrorLogging";
+import { SecurityMonitoringProvider } from '@/components/security/SecurityMonitoringService';
+import { ProductionSecurityWrapper } from '@/components/security/ProductionSecurityWrapper';
 // Performance monitoring temporarily disabled to fix cache issues
 // import { usePerformanceMonitoringSafe } from "@/hooks/usePerformanceMonitoringSafe";
 import Index from "./pages/Index";
@@ -66,6 +68,8 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
+        <ProductionSecurityWrapper>
+          <SecurityMonitoringProvider>
             <ErrorBoundary componentName="App">
               <Toaster />
               <Sonner />
@@ -162,7 +166,9 @@ const App = () => {
                 <Route path="*" element={<NotFound />} />
                 </Routes>
             </ErrorBoundary>
-          </TooltipProvider>
+          </SecurityMonitoringProvider>
+        </ProductionSecurityWrapper>
+      </TooltipProvider>
     </QueryClientProvider>
   );
 };

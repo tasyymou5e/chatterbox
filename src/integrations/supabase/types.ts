@@ -2936,6 +2936,10 @@ export type Database = {
         Args: { p_family_id: string; p_first_name: string; p_last_name: string }
         Returns: string
       }
+      create_security_alert: {
+        Args: { alert_type: string; details?: Json; severity: string }
+        Returns: string
+      }
       detect_suspicious_activity: {
         Args: { p_activity_type: string; p_metadata?: Json; p_user_id: string }
         Returns: boolean
@@ -3293,6 +3297,10 @@ export type Database = {
       validate_password_strength: {
         Args: { password_text: string }
         Returns: Json
+      }
+      validate_profile_access: {
+        Args: { profile_user_id: string }
+        Returns: boolean
       }
       validate_user_permissions: {
         Args: {
