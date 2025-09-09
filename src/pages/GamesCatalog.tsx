@@ -14,6 +14,7 @@ import { ContentCard } from '@/components/games/ContentCard';
 import { CategoryFilter } from '@/components/games/CategoryFilter';
 import { VirtualizedContentGrid } from '@/components/games/VirtualizedContentGrid';
 import { SiteHeader } from '@/components/SiteHeader';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 interface ContentItem {
   id: string;
@@ -356,9 +357,10 @@ export default function GamesCatalog() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
-      <SiteHeader />
-      <div className="container mx-auto px-4 py-6 pt-20">
+    <ErrorBoundary componentName="GamesCatalog">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
+        <SiteHeader />
+        <div className="container mx-auto px-4 py-6 pt-20">
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-primary mb-4">
@@ -501,7 +503,8 @@ export default function GamesCatalog() {
             </p>
           </div>
         )}
+        </div>
       </div>
-    </div>
+    </ErrorBoundary>
   );
 }
