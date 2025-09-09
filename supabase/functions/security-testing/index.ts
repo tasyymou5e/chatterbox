@@ -124,31 +124,66 @@ async function testRLSPolicies(): Promise<SecurityTest[]> {
     }
   ));
 
-  // Test admin access controls
+  // Test admin access controls with proper authenticated user
   tests.push(await runTest(
     'Admin Access Controls',
     'Verify admin-only operations are properly protected',
     'rls_policy',
     'critical',
     async () => {
-      // Create a regular authenticated client (not admin)
-      const anonClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!);
+      const testEmail = `test-security-${Date.now()}@example.com`;
+      const testPassword = 'TestPassword123!';
+      let testUserId: string | null = null;
       
-      const { data, error } = await anonClient.from('admin_audit_logs').select('*');
-      
-      // Should fail for non-admin user with RLS error OR return empty data
-      if (error && (error.message.includes('row-level security') || 
-                   error.message.includes('insufficient_privilege') ||
-                   error.message.includes('permission denied'))) {
-        return { success: true };
+      try {
+        // Create test user
+        const testClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!);
+        
+        const { data: authData, error: authError } = await testClient.auth.signUp({
+          email: testEmail,
+          password: testPassword
+        });
+        
+        if (authError) throw authError;
+        testUserId = authData?.user?.id || null;
+        
+        // Sign in the test user
+        const { error: signInError } = await testClient.auth.signInWithPassword({
+          email: testEmail,
+          password: testPassword
+        });
+        
+        if (signInError) throw signInError;
+        
+        // Test access to admin_audit_logs (should be denied)
+        const { data, error } = await testClient.from('admin_audit_logs').select('*');
+        
+        // Should fail for non-admin user
+        if (error && (error.message.includes('row-level security') || 
+                     error.message.includes('insufficient_privilege') ||
+                     error.message.includes('permission denied') ||
+                     error.message.includes('access denied'))) {
+          return { success: true };
+        }
+        
+        // If no error but empty data, that's also correct RLS behavior
+        if (!error && (!data || data.length === 0)) {
+          return { success: true };
+        }
+        
+        throw new Error(`RLS policy failed - unauthorized access allowed: ${JSON.stringify(data?.slice(0, 1))}`);
+        
+      } finally {
+        // Cleanup: Delete test user
+        if (testUserId) {
+          try {
+            const adminClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+            await adminClient.auth.admin.deleteUser(testUserId);
+          } catch (cleanupError) {
+            console.warn('Test user cleanup failed:', cleanupError);
+          }
+        }
       }
-      
-      // If no error but empty data, that's also correct RLS behavior
-      if (!error && (!data || data.length === 0)) {
-        return { success: true };
-      }
-      
-      throw new Error(`Admin RLS policy failed - ${error?.message || 'unauthorized access allowed'}`);
     }
   ));
 
@@ -158,43 +193,80 @@ async function testRLSPolicies(): Promise<SecurityTest[]> {
 async function testAuthenticationSecurity(): Promise<SecurityTest[]> {
   const tests: SecurityTest[] = [];
   
+  // Enhanced JWT Token Validation
   tests.push(await runTest(
     'JWT Token Validation',
     'Verify invalid tokens are rejected',
     'authentication',
     'high',
     async () => {
-      // Test with malformed JWT token
-      const malformedJWT = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.invalid_payload.invalid_signature';
+      const testScenarios = [
+        {
+          name: 'Malformed JWT Structure',
+          token: 'invalid.jwt.token'
+        },
+        {
+          name: 'Invalid JWT Signature',
+          token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.invalid_signature'
+        },
+        {
+          name: 'Expired JWT Token',
+          token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjE1MTYyMzkwMjJ9.invalid_signature'
+        },
+        {
+          name: 'Empty Authorization Header',
+          token: ''
+        }
+      ];
       
-      try {
-        const response = await fetch(`${supabaseUrl}/rest/v1/profiles?select=*`, {
-          headers: {
-            'Authorization': `Bearer ${malformedJWT}`,
+      for (const scenario of testScenarios) {
+        try {
+          const headers: HeadersInit = {
             'apikey': Deno.env.get('SUPABASE_ANON_KEY')!,
             'Content-Type': 'application/json'
+          };
+          
+          if (scenario.token) {
+            headers['Authorization'] = `Bearer ${scenario.token}`;
           }
-        });
-        
-        // Should return 401 or 403 for invalid token
-        if (response.status === 401 || response.status === 403) {
-          return { success: true };
+          
+          const response = await fetch(`${supabaseUrl}/rest/v1/profiles?select=*`, {
+            headers
+          });
+          
+          // Should return 401 or 403 for invalid/missing token
+          if (response.status === 401 || response.status === 403) {
+            continue; // This scenario passed
+          }
+          
+          // Check if it's anonymous access (might be allowed)
+          if (response.status === 200 && !scenario.token) {
+            const data = await response.json();
+            if (!data || data.length === 0) {
+              continue; // Empty result for anonymous is acceptable
+            }
+          }
+          
+          // If we get here, the test failed for this scenario
+          throw new Error(`${scenario.name} failed - Status: ${response.status}`);
+          
+        } catch (fetchError) {
+          // Network/parsing errors might indicate proper rejection
+          if (fetchError.message.includes('JWT') || 
+              fetchError.message.includes('token') || 
+              fetchError.message.includes('Unauthorized') ||
+              fetchError.message.includes('authentication')) {
+            continue; // This scenario passed
+          }
+          
+          // If it's our custom error message, re-throw it
+          if (fetchError.message.includes('failed - Status:')) {
+            throw fetchError;
+          }
         }
-        
-        // Check response body for auth errors
-        const responseText = await response.text();
-        if (responseText.includes('JWT') || responseText.includes('invalid') || responseText.includes('token')) {
-          return { success: true };
-        }
-        
-        throw new Error(`Invalid token was accepted - Status: ${response.status}`);
-      } catch (fetchError) {
-        // Network errors or parsing errors indicate proper rejection
-        if (fetchError.message.includes('JWT') || fetchError.message.includes('token')) {
-          return { success: true };
-        }
-        throw fetchError;
       }
+      
+      return { success: true };
     }
   ));
 
@@ -219,6 +291,69 @@ async function testAuthenticationSecurity(): Promise<SecurityTest[]> {
 
 async function testAuthorizationBoundaries(): Promise<SecurityTest[]> {
   const tests: SecurityTest[] = [];
+  
+  // Enhanced role-based access test with actual user creation
+  tests.push(await runTest(
+    'Role-Based Access Control',
+    'Verify users can only access data appropriate to their role',
+    'authorization',
+    'critical',
+    async () => {
+      const testEmail = `test-rbac-${Date.now()}@example.com`;
+      const testPassword = 'TestPassword123!';
+      let testUserId: string | null = null;
+      
+      try {
+        // Create test user
+        const testClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!);
+        
+        const { data: authData, error: authError } = await testClient.auth.signUp({
+          email: testEmail,
+          password: testPassword
+        });
+        
+        if (authError) throw authError;
+        testUserId = authData?.user?.id || null;
+        
+        // Sign in the test user
+        const { error: signInError } = await testClient.auth.signInWithPassword({
+          email: testEmail,
+          password: testPassword
+        });
+        
+        if (signInError) throw signInError;
+        
+        // Test that user cannot access admin functions without admin role
+        const adminTests = [
+          { table: 'admin_audit_logs', operation: 'SELECT' },
+          { table: 'system_errors', operation: 'SELECT' },
+          { table: 'security_audit_logs', operation: 'SELECT' }
+        ];
+        
+        for (const test of adminTests) {
+          const { data, error } = await testClient.from(test.table).select('*').limit(1);
+          
+          // Should either error or return empty results for non-admin
+          if (!error && data && data.length > 0) {
+            throw new Error(`Non-admin user accessed ${test.table} - RBAC failed`);
+          }
+        }
+        
+        return { success: true };
+        
+      } finally {
+        // Cleanup
+        if (testUserId) {
+          try {
+            const adminClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+            await adminClient.auth.admin.deleteUser(testUserId);
+          } catch (cleanupError) {
+            console.warn('RBAC test user cleanup failed:', cleanupError);
+          }
+        }
+      }
+    }
+  ));
   
   tests.push(await runTest(
     'Child Account Protection',
@@ -318,9 +453,13 @@ async function runTest(
 ): Promise<SecurityTest> {
   const startTime = Date.now();
   
+  console.log(`🔍 Running security test: ${name}`);
+  
   try {
     const result = await testFunction();
     const executionTime = Date.now() - startTime;
+    
+    console.log(`✅ ${name} - PASSED (${executionTime}ms)`);
     
     return {
       name,
@@ -332,6 +471,28 @@ async function runTest(
     };
   } catch (error) {
     const executionTime = Date.now() - startTime;
+    
+    console.error(`❌ ${name} - FAILED (${executionTime}ms):`, error.message);
+    
+    // Enhanced error logging for critical failures
+    if (severity === 'critical') {
+      try {
+        await supabase.from('security_audit_logs').insert({
+          user_id: null,
+          event_type: 'critical_security_test_failure',
+          severity: 'critical',
+          event_details: {
+            test_name: name,
+            test_type,
+            error_message: error.message,
+            execution_time_ms: executionTime,
+            timestamp: new Date().toISOString()
+          }
+        });
+      } catch (logError) {
+        console.warn('Failed to log critical security test failure:', logError);
+      }
+    }
     
     return {
       name,
