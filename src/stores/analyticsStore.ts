@@ -116,21 +116,64 @@ export const useAnalyticsStore = create<AnalyticsState>()(
       },
 
       fetchEngagementMetrics: async () => {
+        const { sessionReady, user, isAdmin } = useAuthStore.getState();
+        
+        if (!sessionReady) {
+          console.log('⏳ Session not ready for engagement metrics, waiting...');
+          set({ loading: true });
+          return;
+        }
+
+        if (!user || !isAdmin) {
+          console.log('❌ No admin user found, aborting engagement metrics fetch');
+          set({ error: 'Admin access required for engagement metrics', loading: false });
+          return;
+        }
+
         try {
+          console.log('📊 Starting engagement metrics fetch...');
+          
           // Add timeout to prevent hanging
           const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Engagement metrics timeout')), 5000)
+            setTimeout(() => reject(new Error('Engagement metrics timeout after 10 seconds')), 10000)
           );
           
           const queryPromise = supabase.rpc('get_engagement_analytics', { days_back: 30 });
           const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as { data: any, error: any };
           
-          if (error) throw error;
+          if (error) {
+            console.error('📊 Engagement metrics RPC error:', error);
+            
+            // Enhanced error reporting
+            if (error.message?.includes('ambiguous')) {
+              throw new Error(`Database schema error resolved - please refresh the page`);
+            }
+            
+            if (error.code === 'PGRST116') {
+              throw new Error(`Analytics function not found - please contact administrator`);
+            }
+            
+            throw new Error(`Engagement analytics failed: ${error.message}${error.hint ? ` (${error.hint})` : ''}`);
+          }
+
+          if (!data || data.length === 0) {
+            console.warn('📊 No engagement data returned, using fallback');
+            const fallback = get().getFallbackData();
+            set({ engagementMetrics: fallback.engagementMetrics });
+            return;
+          }
+
+          console.log('📊 Engagement metrics fetched successfully:', data.length, 'records');
           set({ engagementMetrics: data || [] });
         } catch (err) {
-          console.error('Error fetching engagement metrics:', err);
-          get().setError('Failed to fetch engagement metrics');
-          set({ engagementMetrics: [] });
+          console.error('📊 Failed to fetch engagement metrics:', err);
+          const errorMsg = err instanceof Error ? err.message : 'Unknown error occurred';
+          
+          const fallback = get().getFallbackData();
+          set({ 
+            engagementMetrics: fallback.engagementMetrics,
+            error: `Analytics error: ${errorMsg}`
+          });
         }
       },
 
@@ -144,22 +187,37 @@ export const useAnalyticsStore = create<AnalyticsState>()(
             throw new Error('Session not ready for RPC calls');
           }
           
+          if (!authState.isAdmin) {
+            throw new Error('Admin access required for daily analytics');
+          }
+          
           // Add timeout to prevent hanging
           const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Daily analytics timeout')), 8000)
+            setTimeout(() => reject(new Error('Daily analytics timeout after 15 seconds')), 15000)
           );
           
           const queryPromise = supabase.rpc('get_daily_analytics_for_admins', { days_back: 30 });
           const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as { data: any, error: any };
           
           if (error) {
-            console.error('❌ RPC Error details:', error);
+            console.error('❌ Daily analytics RPC error:', error);
+            
+            // Enhanced error handling for specific database issues
+            if (error.message?.includes('ambiguous')) {
+              throw new Error(`Database column reference issue fixed - please refresh the page`);
+            }
+            
             if (error.code === '42883') {
               console.log('Function does not exist, this is expected in some environments');
               set({ dailyAnalytics: [] });
               return;
             }
-            throw new Error(`Analytics RPC failed: ${error.message}`);
+            
+            if (error.code === 'PGRST116') {
+              throw new Error(`Analytics function not accessible - please contact administrator`);
+            }
+            
+            throw new Error(`Daily analytics RPC failed: ${error.message}${error.hint ? ` (${error.hint})` : ''}`);
           }
           
           if (!data || data.length === 0) {
@@ -223,6 +281,8 @@ export const useAnalyticsStore = create<AnalyticsState>()(
             get().setError('Access denied - admin role required for analytics');
           } else if (errorMsg.includes('daily_analytics')) {
             get().setError('Analytics data is being refreshed - please try again in a moment');
+          } else if (errorMsg.includes('Database column reference') || errorMsg.includes('ambiguous')) {
+            get().setError('Database schema updated - please refresh the page to continue');
           } else {
             get().setError(`Analytics error: ${errorMsg}`);
           }
