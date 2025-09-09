@@ -13,6 +13,7 @@ import { realtimeManager } from '@/services/RealtimeManager';
 import { ContentCard } from '@/components/games/ContentCard';
 import { CategoryFilter } from '@/components/games/CategoryFilter';
 import { VirtualizedContentGrid } from '@/components/games/VirtualizedContentGrid';
+import { SiteHeader } from '@/components/SiteHeader';
 
 interface ContentItem {
   id: string;
@@ -356,7 +357,8 @@ export default function GamesCatalog() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
-      <div className="container mx-auto px-4 py-6">
+      <SiteHeader />
+      <div className="container mx-auto px-4 py-6 pt-20">
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-primary mb-4">
