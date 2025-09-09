@@ -64,7 +64,18 @@ export default function AdminLayout() {
                   <span>Dashboard</span>
                 </Link>
                 <Link 
-                  to="/admin/families" 
+                  to="/admin/security-center" 
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    location.pathname === '/admin/security-center' 
+                      ? 'text-white bg-gray-700' 
+                      : 'text-gray-300 hover:text-white hover:bg-gray-700'
+                  }`}
+                >
+                  <Shield className="h-4 w-4" />
+                  <span>Security Center</span>
+                </Link>
+                <Link 
+                  to="/admin/families"
                   className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                     location.pathname === '/admin/families' 
                       ? 'text-white bg-gray-700' 
