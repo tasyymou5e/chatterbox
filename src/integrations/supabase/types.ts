@@ -2191,6 +2191,60 @@ export type Database = {
           },
         ]
       }
+      security_alerts: {
+        Row: {
+          affected_user_id: string | null
+          alert_type: Database["public"]["Enums"]["security_event_type"]
+          created_at: string | null
+          description: string
+          id: string
+          metadata: Json | null
+          request_details: Json | null
+          resolved: boolean | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          source_ip: unknown | null
+          title: string
+          updated_at: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          affected_user_id?: string | null
+          alert_type: Database["public"]["Enums"]["security_event_type"]
+          created_at?: string | null
+          description: string
+          id?: string
+          metadata?: Json | null
+          request_details?: Json | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity: string
+          source_ip?: unknown | null
+          title: string
+          updated_at?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          affected_user_id?: string | null
+          alert_type?: Database["public"]["Enums"]["security_event_type"]
+          created_at?: string | null
+          description?: string
+          id?: string
+          metadata?: Json | null
+          request_details?: Json | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          source_ip?: unknown | null
+          title?: string
+          updated_at?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       security_audit_logs: {
         Row: {
           created_at: string
@@ -2233,6 +2287,84 @@ export type Database = {
           severity?: string
           user_agent?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      security_monitoring_config: {
+        Row: {
+          alert_threshold: number | null
+          conditions: Json
+          created_at: string | null
+          enabled: boolean | null
+          id: string
+          rule_name: string
+          rule_type: string
+          severity: string
+          time_window_minutes: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          alert_threshold?: number | null
+          conditions: Json
+          created_at?: string | null
+          enabled?: boolean | null
+          id?: string
+          rule_name: string
+          rule_type: string
+          severity: string
+          time_window_minutes?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          alert_threshold?: number | null
+          conditions?: Json
+          created_at?: string | null
+          enabled?: boolean | null
+          id?: string
+          rule_name?: string
+          rule_type?: string
+          severity?: string
+          time_window_minutes?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      security_test_results: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          execution_time_ms: number | null
+          id: string
+          passed: boolean
+          severity: string
+          test_details: Json | null
+          test_name: string
+          test_run_id: string
+          test_type: string
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          execution_time_ms?: number | null
+          id?: string
+          passed: boolean
+          severity: string
+          test_details?: Json | null
+          test_name: string
+          test_run_id: string
+          test_type: string
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          execution_time_ms?: number | null
+          id?: string
+          passed?: boolean
+          severity?: string
+          test_details?: Json | null
+          test_name?: string
+          test_run_id?: string
+          test_type?: string
         }
         Relationships: []
       }
@@ -2937,7 +3069,14 @@ export type Database = {
         Returns: string
       }
       create_security_alert: {
-        Args: { alert_type: string; details?: Json; severity: string }
+        Args:
+          | { alert_type: string; details?: Json; severity: string }
+          | {
+              p_alert_type: Database["public"]["Enums"]["security_event_type"]
+              p_details?: Json
+              p_severity: string
+              p_user_id: string
+            }
         Returns: string
       }
       detect_suspicious_activity: {
@@ -2947,6 +3086,15 @@ export type Database = {
       detect_suspicious_family_access: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      detect_suspicious_patterns: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          details: Json
+          pattern_type: string
+          risk_score: number
+          user_id: string
+        }[]
       }
       end_user_session: {
         Args: { session_id: string }
@@ -3171,13 +3319,20 @@ export type Database = {
         Returns: string
       }
       log_security_event: {
-        Args: {
-          p_event_details?: Json
-          p_event_type: string
-          p_session_id?: string
-          p_severity: string
-          p_user_id: string
-        }
+        Args:
+          | {
+              p_details?: Json
+              p_event_type: string
+              p_severity: string
+              p_user_id: string
+            }
+          | {
+              p_event_details?: Json
+              p_event_type: string
+              p_session_id?: string
+              p_severity: string
+              p_user_id: string
+            }
         Returns: string
       }
       log_sensitive_data_access: {
@@ -3238,6 +3393,10 @@ export type Database = {
       mask_email: {
         Args: { email_text: string }
         Returns: string
+      }
+      monitor_real_time_patterns: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       refresh_analytics_automated: {
         Args: Record<PropertyKey, never>
@@ -3345,6 +3504,17 @@ export type Database = {
       content_type: "game" | "video" | "website" | "app"
       interaction_type: "view" | "click" | "launch" | "complete" | "favorite"
       reward_type: "points" | "custom" | "privilege" | "activity"
+      security_event_type:
+        | "authentication_failure"
+        | "rls_violation"
+        | "suspicious_access_pattern"
+        | "bulk_data_access"
+        | "privilege_escalation"
+        | "data_exfiltration_attempt"
+        | "brute_force_attack"
+        | "session_hijacking"
+        | "unauthorized_api_access"
+        | "security_test_failure"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3508,6 +3678,18 @@ export const Constants = {
       content_type: ["game", "video", "website", "app"],
       interaction_type: ["view", "click", "launch", "complete", "favorite"],
       reward_type: ["points", "custom", "privilege", "activity"],
+      security_event_type: [
+        "authentication_failure",
+        "rls_violation",
+        "suspicious_access_pattern",
+        "bulk_data_access",
+        "privilege_escalation",
+        "data_exfiltration_attempt",
+        "brute_force_attack",
+        "session_hijacking",
+        "unauthorized_api_access",
+        "security_test_failure",
+      ],
     },
   },
 } as const

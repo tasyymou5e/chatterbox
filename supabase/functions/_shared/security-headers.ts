@@ -29,6 +29,12 @@ export const securityHeaders = {
   'X-RateLimit-Limit': '100',
   'X-RateLimit-Window': '60',
   
+  // Additional Security Headers
+  'X-Permitted-Cross-Domain-Policies': 'none',
+  'Cross-Origin-Embedder-Policy': 'require-corp',
+  'Cross-Origin-Opener-Policy': 'same-origin',
+  'Cross-Origin-Resource-Policy': 'same-origin',
+  
   // Security Logging Headers
   'X-Security-Level': 'high',
   'X-Request-ID': () => crypto.randomUUID()

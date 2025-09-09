@@ -18,7 +18,7 @@ interface AuditEvent {
   severity: string;
   event_details: any;
   created_at: string;
-  ip_address?: string;
+  ip_address?: unknown;
   user_agent?: string;
 }
 
@@ -104,7 +104,7 @@ export const SecurityAuditTrail: React.FC = () => {
           event.event_type,
           event.severity,
           JSON.stringify(event.event_details).replace(/"/g, '""'),
-          event.event_details?.ip_address || ''
+          (event.event_details as any)?.ip_address || ''
         ].join(','))
       ].join('\n');
 
@@ -334,9 +334,9 @@ export const SecurityAuditTrail: React.FC = () => {
                             </pre>
                           </div>
                           
-                          {event.event_details?.ip_address && (
+                          {(event.event_details as any)?.ip_address && (
                             <div>
-                              <span className="font-medium">IP Address:</span> {event.event_details.ip_address}
+                              <span className="font-medium">IP Address:</span> {String((event.event_details as any).ip_address)}
                             </div>
                           )}
                         </div>
