@@ -55,7 +55,7 @@ export function SiteHeader({ className }: SiteHeaderProps) {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-gradient-to-r from-primary to-primary/90 rounded-lg flex items-center justify-center">
               <span className="text-primary-foreground font-bold text-sm">CB</span>
             </div>
             <span className="font-bold text-xl text-foreground">Chatterbox</span>
@@ -133,7 +133,7 @@ export function SiteHeader({ className }: SiteHeaderProps) {
                 </Button>
                 <Button
                   size="sm"
-                  className="bg-gradient-primary text-primary-foreground hover:opacity-90"
+                  className="bg-gradient-to-r from-primary to-primary/90 text-primary-foreground hover:opacity-90"
                   onClick={() => navigate('/auth')}
                 >
                   Get Started
@@ -208,7 +208,7 @@ export function SiteHeader({ className }: SiteHeaderProps) {
                     </Button>
                     <Button
                       size="sm"
-                      className="w-full bg-gradient-primary text-primary-foreground hover:opacity-90"
+                      className="w-full bg-gradient-to-r from-primary to-primary/90 text-primary-foreground hover:opacity-90"
                       onClick={() => {
                         navigate('/auth');
                         setIsMobileMenuOpen(false);
