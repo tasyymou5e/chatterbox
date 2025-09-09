@@ -15,6 +15,9 @@ import { CategoryFilter } from '@/components/games/CategoryFilter';
 import { VirtualizedContentGrid } from '@/components/games/VirtualizedContentGrid';
 import { SiteHeader } from '@/components/SiteHeader';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import { GamesCatalogDebugPanel } from '@/components/games/GamesCatalogDebugPanel';
+import { GamesCatalogEmergencyNav } from '@/components/games/GamesCatalogEmergencyNav';
+import { GamesCatalogSafeMode } from '@/components/games/GamesCatalogSafeMode';
 
 interface ContentItem {
   id: string;
@@ -55,10 +58,13 @@ export default function GamesCatalog() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [ageFilter, setAgeFilter] = useState('all');
+  const [safeMode, setSafeMode] = useState(false);
+  const [showDebugPanel, setShowDebugPanel] = useState(process.env.NODE_ENV === 'development');
+  const [hasError, setHasError] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
 
-  // Phase 3: Use advanced caching strategy
+  // Phase 3: Use advanced caching strategy with error handling
   const {
     categories,
     contentItems,
@@ -67,8 +73,19 @@ export default function GamesCatalog() {
     invalidateContentCache,
     invalidateFavoritesCache,
     preloadPopularContent,
+    resetAllCache,
     cacheStats
   } = useCatalogCache(userFamily || undefined);
+
+  // Enhanced error handling for data loading
+  useEffect(() => {
+    if (!isLoading && contentItems.length === 0 && categories.length === 0) {
+      console.warn('GamesCatalog: No data loaded after loading completed');
+      setHasError(true);
+    } else if (contentItems.length > 0 || categories.length > 0) {
+      setHasError(false);
+    }
+  }, [isLoading, contentItems.length, categories.length]);
   // Phase 3: Optimized realtime state updates
   const updateCatalogState = useCallback((payload: any) => {
     console.log('GamesCatalog: Received realtime update:', payload.eventType);
@@ -337,20 +354,92 @@ export default function GamesCatalog() {
     setUseVirtualScrolling(filteredItems.length > 100);
   }, [filteredItems.length]);
 
+  // Emergency navigation handlers
+  const handleRetry = useCallback(() => {
+    setHasError(false);
+    setSafeMode(false);
+    invalidateContentCache();
+    invalidateFavoritesCache();
+    toast({
+      title: "Retrying...",
+      description: "Attempting to reload the catalog"
+    });
+  }, [invalidateContentCache, invalidateFavoritesCache, toast]);
+
+  const handleSafeMode = useCallback(() => {
+    setSafeMode(true);
+    setHasError(false);
+    toast({
+      title: "Safe Mode Activated",
+      description: "Loading simplified version of the catalog"
+    });
+  }, [toast]);
+
+  const handleClearCache = useCallback(() => {
+    resetAllCache();
+    toast({
+      title: "Cache Cleared",
+      description: "All cached data has been cleared"
+    });
+  }, [resetAllCache, toast]);
+
+  // If safe mode is enabled, render the safe mode component
+  if (safeMode) {
+    return <GamesCatalogSafeMode />;
+  }
+
+  // Enhanced loading state with emergency navigation
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-6">
-        <div className="flex flex-col items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
-          <p className="text-muted-foreground">Loading content catalog...</p>
-          <div className="mt-2 text-xs text-muted-foreground space-y-1">
-            {realtimeConnected && (
-              <p className="text-green-600">✓ {userFamily ? 'Family channel' : 'Global channel'} active</p>
-            )}
-            {process.env.NODE_ENV === 'development' && (
-              <p>Cache stats: {JSON.stringify(cacheStats)}</p>
-            )}
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
+        <SiteHeader />
+        <div className="container mx-auto px-4 py-20">
+          <div className="flex flex-col items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
+            <p className="text-muted-foreground">Loading content catalog...</p>
+            <div className="mt-2 text-xs text-muted-foreground space-y-1">
+              {realtimeConnected && (
+                <p className="text-green-600">✓ {userFamily ? 'Family channel' : 'Global channel'} active</p>
+              )}
+              {process.env.NODE_ENV === 'development' && (
+                <p>Cache stats: {JSON.stringify(cacheStats)}</p>
+              )}
+            </div>
           </div>
+          
+          {/* Emergency navigation during loading */}
+          <div className="mt-8">
+            <GamesCatalogEmergencyNav 
+              onSafeMode={handleSafeMode}
+              onClearCache={handleClearCache}
+              showDebugOptions={process.env.NODE_ENV === 'development'}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Enhanced error state with multiple recovery options
+  if (hasError) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
+        <SiteHeader />
+        <div className="container mx-auto px-4 py-20">
+          <div className="text-center mb-8">
+            <div className="text-6xl mb-4">⚠️</div>
+            <h2 className="text-2xl font-bold mb-2">Unable to Load Games Catalog</h2>
+            <p className="text-muted-foreground">
+              There seems to be an issue loading the full catalog. Try the options below.
+            </p>
+          </div>
+          
+          <GamesCatalogEmergencyNav 
+            onRetry={handleRetry}
+            onSafeMode={handleSafeMode}
+            onClearCache={handleClearCache}
+            showDebugOptions={process.env.NODE_ENV === 'development'}
+          />
         </div>
       </div>
     );
@@ -361,6 +450,32 @@ export default function GamesCatalog() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
         <SiteHeader />
         <div className="container mx-auto px-4 py-6 pt-20">
+
+        {/* Debug Panel */}
+        {showDebugPanel && (
+          <GamesCatalogDebugPanel
+            isLoading={isLoading}
+            contentItems={contentItems}
+            categories={categories}
+            favorites={favorites}
+            userFamily={userFamily}
+            isParent={isParent}
+            realtimeConnected={realtimeConnected}
+            cacheStats={cacheStats}
+            onCacheReset={resetAllCache}
+            onForceRefresh={handleRetry}
+          />
+        )}
+
+        {/* Emergency Navigation (always available) */}
+        <div className="mb-4">
+          <GamesCatalogEmergencyNav 
+            onRetry={handleRetry}
+            onSafeMode={handleSafeMode}
+            onClearCache={handleClearCache}
+            showDebugOptions={process.env.NODE_ENV === 'development'}
+          />
+        </div>
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-primary mb-4">
