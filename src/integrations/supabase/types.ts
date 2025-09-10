@@ -3319,21 +3319,14 @@ export type Database = {
         Returns: string
       }
       log_security_event: {
-        Args:
-          | {
-              p_details?: Json
-              p_event_type: string
-              p_severity: string
-              p_user_id: string
-            }
-          | {
-              p_event_details?: Json
-              p_event_type: string
-              p_session_id?: string
-              p_severity: string
-              p_user_id: string
-            }
-        Returns: string
+        Args: {
+          p_event_details: Json
+          p_event_type: string
+          p_session_id?: string
+          p_severity: string
+          p_user_id: string
+        }
+        Returns: undefined
       }
       log_sensitive_data_access: {
         Args: {
