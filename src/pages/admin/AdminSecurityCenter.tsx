@@ -5,8 +5,9 @@ import React from 'react';
 import { SecurityDashboard } from '@/components/security/SecurityDashboard';
 import { SecurityAuditTrail } from '@/components/security/SecurityAuditTrail';
 import { SecurityAuditTrailErrorBoundary } from '@/components/security/SecurityAuditTrailErrorBoundary';
+import SecurityEnvironmentValidator from '@/components/admin/SecurityEnvironmentValidator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, Activity, FileText, AlertTriangle } from 'lucide-react';
+import { Shield, Activity, FileText, AlertTriangle, Settings } from 'lucide-react';
 
 export const AdminSecurityCenter: React.FC = () => {
   return (
@@ -31,7 +32,7 @@ export const AdminSecurityCenter: React.FC = () => {
             <span>Alerts</span>
           </TabsTrigger>
           <TabsTrigger value="config" className="flex items-center space-x-2">
-            <Shield className="h-4 w-4" />
+            <Settings className="h-4 w-4" />
             <span>Configuration</span>
           </TabsTrigger>
         </TabsList>
@@ -54,9 +55,13 @@ export const AdminSecurityCenter: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="config" className="mt-6">
-          <div className="text-center py-8 text-muted-foreground">
-            Security configuration panel coming soon.
-            Current settings can be managed through the database.
+          <div className="space-y-6">
+            <SecurityEnvironmentValidator />
+            
+            <div className="text-center py-8 text-muted-foreground border-t">
+              <p>Additional security configuration options will be available here.</p>
+              <p className="text-sm">Current settings can be managed through the database.</p>
+            </div>
           </div>
         </TabsContent>
       </Tabs>
