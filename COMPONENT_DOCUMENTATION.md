@@ -18,10 +18,10 @@ Chatterbox features a comprehensive component architecture built with React, Typ
 
 **Component Categories:**
 - **38 Page Components**: Route-based components for different user flows
-- **45 Feature Components**: Business logic components for core functionality
-- **35 UI Components**: Reusable interface elements (Shadcn/ui based)
+- **47 Feature Components**: Business logic components for core functionality (includes FamilyNameSuggestions)
+- **36 UI Components**: Reusable interface elements (Shadcn/ui based, includes PerformanceBadge)
 - **25 Custom Hooks**: State and logic abstraction
-- **7 Zustand Stores**: Centralized state management
+- **12 Zustand Stores**: Centralized state management
 
 ---
 
@@ -304,14 +304,19 @@ Chatterbox features a comprehensive component architecture built with React, Typ
   - Automatic member assignment and role configuration
 - **Integration**: Edge functions, activity logging, performance monitoring
 
-**FamilyNameSuggestions.tsx**
-- **Purpose**: AI-powered family name generation and validation
+**FamilyNameSuggestions.tsx** 🆕
+- **Purpose**: Enhanced family name suggestion system with searchable dropdown and local storage
+- **Props**: `value`, `onChange`, `placeholder?`
 - **Features**: 
-  - Intelligent name suggestions based on preferences
-  - Cultural sensitivity and appropriateness checking
-  - Duplicate name detection across platform
-  - Custom naming pattern configuration
-- **AI Integration**: Natural language processing for name generation
+  - **10 Suggestion Categories**: Classic, fun, nature, tech, creative, adventure, cozy, unique, international, and seasonal names
+  - **Weighted Random Selection**: Intelligent suggestion algorithm with category weighting
+  - **Searchable Interface**: Real-time search with highlighted matches using Popover component
+  - **Local Storage Integration**: Recent suggestions and popularity tracking
+  - **Smart Suggestions**: Recently used and popular choices prominently displayed
+  - **Clear History**: Option to clear recent suggestion history
+- **State Management**: Popover open/close state, search query, recent/popular suggestions
+- **Performance**: Uses useMemo for optimized filtering and weighted selection
+- **Integration**: Used in CreateTestFamilyDialog for enhanced family creation experience
 
 #### **Content Management Suite**
 
