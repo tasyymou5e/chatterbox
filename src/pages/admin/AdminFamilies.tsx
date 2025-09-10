@@ -32,6 +32,7 @@ import CreateTestFamilyButton from '@/components/admin/CreateTestFamilyButton';
 import FamilyViewDialog from '@/components/admin/FamilyViewDialog';
 import FamilyEditDialog from '@/components/admin/FamilyEditDialog';
 import FamilyDeleteDialog from '@/components/admin/FamilyDeleteDialog';
+import AdminMemberManagementDialog from '@/components/admin/AdminMemberManagementDialog';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { useAuthStore } from '@/stores/authStore';
 
@@ -68,6 +69,7 @@ export default function AdminFamilies() {
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [memberManagementDialogOpen, setMemberManagementDialogOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -187,6 +189,12 @@ export default function AdminFamilies() {
     e.stopPropagation();
     setSelectedFamily(family);
     setDeleteDialogOpen(true);
+  };
+
+  const handleManageMembers = (family: Family, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedFamily(family);
+    setMemberManagementDialogOpen(true);
   };
 
   const toggleFamilyExpansion = (familyId: string, expanded: boolean) => {
@@ -380,6 +388,15 @@ export default function AdminFamilies() {
                           <Button
                             variant="ghost"
                             size="sm"
+                            className="text-blue-400 hover:text-blue-300 hover:bg-gray-700"
+                            onClick={(e) => handleManageMembers(family, e)}
+                            title="Manage Family Members"
+                          >
+                            <Users className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             className="text-red-400 hover:text-red-300 hover:bg-gray-700"
                             onClick={(e) => handleDeleteFamily(family, e)}
                           >
@@ -471,12 +488,19 @@ export default function AdminFamilies() {
         onOpenChange={setEditDialogOpen}
         onSuccess={fetchFamilies}
       />
-      <FamilyDeleteDialog 
-        family={selectedFamily}
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
-        onSuccess={fetchFamilies}
-      />
+        <FamilyDeleteDialog
+          family={selectedFamily}
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          onSuccess={fetchFamilies}
+        />
+
+        <AdminMemberManagementDialog
+          family={selectedFamily}
+          open={memberManagementDialogOpen}
+          onOpenChange={setMemberManagementDialogOpen}
+          onSuccess={fetchFamilies}
+        />
       </div>
     </ErrorBoundary>
   );

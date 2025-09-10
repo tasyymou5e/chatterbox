@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
 import { useAuthStore } from '@/stores/authStore';
+import { useParentPortalGuard } from '@/hooks/useParentPortalGuard';
 import { supabase } from '@/integrations/supabase/client';
 import { getCurrentUserFamilies } from '@/utils/secureFamilyAccess';
 import { toast } from '@/hooks/use-toast';
@@ -18,33 +19,18 @@ interface Profile {
 }
 
 const ParentDashboard = () => {
-  const { user, signOut, loading } = useAuth();
-  const { isHydrated } = useAuthStore();
+  const { signOut } = useAuth();
+  const { isAuthorized, checking, user, isAdmin } = useParentPortalGuard();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
   const [showCreateChildDialog, setShowCreateChildDialog] = useState(false);
 
   useEffect(() => {
-    console.log('🏠 ParentDashboard: Auth state check', {
-      loading,
-      isHydrated,
-      user: user?.email,
-      timestamp: Date.now()
-    });
-
-    // Wait for both loading to complete AND store to be hydrated before making navigation decisions
-    if (!loading && isHydrated && !user) {
-      console.log('🏠 ParentDashboard: No user detected after hydration, redirecting to auth');
-      navigate('/auth');
-      return;
-    }
-
-    if (user && isHydrated) {
-      console.log('🏠 ParentDashboard: User found and hydrated, fetching profile');
+    if (isAuthorized && user) {
       fetchProfile();
     }
-  }, [user, loading, isHydrated, navigate]);
+  }, [isAuthorized, user]);
 
   const fetchProfile = async () => {
     if (!user) return;
@@ -86,14 +72,15 @@ const ParentDashboard = () => {
     }
   };
 
-  // Show loading if still loading auth or if store hasn't hydrated yet or profile loading
-  if (loading || !isHydrated || profileLoading) {
+  // Show loading while checking authorization or loading profile
+  if (checking || !isAuthorized || profileLoading) {
     return (
       <div className="min-h-screen bg-gradient-hero flex items-center justify-center">
         <div className="text-white text-center">
           <Heart className="h-12 w-12 mx-auto mb-4 animate-pulse" />
           <p>Loading your parent dashboard...</p>
-          {!isHydrated && <p className="text-sm opacity-75 mt-2">Initializing session...</p>}
+          {checking && <p className="text-sm opacity-75 mt-2">Verifying access...</p>}
+          {isAdmin && <p className="text-sm opacity-75 mt-2">Admin access verification...</p>}
         </div>
       </div>
     );
