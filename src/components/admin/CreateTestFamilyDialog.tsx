@@ -120,10 +120,19 @@ export default function CreateTestFamilyDialog({ open, onOpenChange, onSuccess }
     }
   };
 
-  // Helper function to generate child email
+  // Helper function to generate proper child email
   const generateChildEmail = (childFirstName: string, parent1Email: string) => {
     if (!childFirstName || !parent1Email) return '';
-    return `${parent1Email}.${childFirstName.toLowerCase()}`;
+    
+    // Extract domain from parent email properly
+    const emailParts = parent1Email.split('@');
+    if (emailParts.length !== 2) return '';
+    
+    const [parentLocalPart, domain] = emailParts;
+    const childName = childFirstName.toLowerCase().replace(/[^a-z0-9]/g, ''); // Sanitize child name
+    
+    // Create proper email: child.parent@domain.com
+    return `${childName}.${parentLocalPart}@${domain}`;
   };
 
   // Update child email when parent1 email or child name changes

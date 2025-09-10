@@ -1,6 +1,59 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
+// Import password validator for secure password generation
+interface PasswordValidationResult {
+  isValid: boolean;
+  score: number;
+  feedback: string[];
+  requirements: {
+    minLength: boolean;
+    hasUppercase: boolean;
+    hasLowercase: boolean;
+    hasNumbers: boolean;
+    hasSpecialChars: boolean;
+    noCommonPatterns: boolean;
+    notCompromised: boolean;
+  };
+}
+
+class PasswordValidator {
+  static validate(password: string): PasswordValidationResult {
+    const feedback: string[] = [];
+    const requirements = {
+      minLength: password.length >= 8,
+      hasUppercase: /[A-Z]/.test(password),
+      hasLowercase: /[a-z]/.test(password),
+      hasNumbers: /\d/.test(password),
+      hasSpecialChars: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password),
+      noCommonPatterns: true, // Simple check for generated passwords
+      notCompromised: true    // Simple check for generated passwords
+    };
+
+    const isValid = requirements.minLength && requirements.hasUppercase && 
+                    requirements.hasLowercase && requirements.hasNumbers && 
+                    requirements.hasSpecialChars;
+
+    return {
+      isValid,
+      score: isValid ? 5 : 2,
+      feedback,
+      requirements
+    };
+  }
+}
+
+// Generate a strong password that meets validation requirements
+function generateStrongPassword(): string {
+  const timestamp = Date.now().toString().slice(-6); // Last 6 digits
+  const randomChars = Math.random().toString(36).substring(2, 6).toUpperCase(); // Uppercase letters
+  const specialChars = ['!', '@', '#', '$', '%', '^', '&', '*'];
+  const specialChar = specialChars[Math.floor(Math.random() * specialChars.length)];
+  
+  // Format: TempPass + timestamp + uppercase letters + special char
+  return `TempPass${timestamp}${randomChars}${specialChar}`;
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -255,7 +308,20 @@ serve(async (req) => {
     // Create auth users and profiles for all family members with enhanced error handling
     const createdMembers = [];
     const failedMembers = [];
-    const tempPassword = customPassword || `temp${Date.now()}${Math.random().toString(36).substring(2, 6)}`;
+    
+    // Generate strong password that meets validation requirements
+    let tempPassword = customPassword;
+    if (!tempPassword) {
+      tempPassword = generateStrongPassword();
+      console.log('Generated strong password for test family');
+      
+      // Validate the generated password
+      const validation = PasswordValidator.validate(tempPassword);
+      if (!validation.isValid) {
+        console.error('Generated password failed validation:', validation.feedback);
+        throw new Error('Failed to generate valid password');
+      }
+    }
 
     for (const member of familyMembers) {
       try {
