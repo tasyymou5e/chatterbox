@@ -3016,6 +3016,10 @@ export type Database = {
           users_count: number
         }[]
       }
+      check_admin_role_secure: {
+        Args: { p_user_id: string }
+        Returns: boolean
+      }
       check_and_award_achievements: {
         Args: {
           p_completion_data?: Json
