@@ -127,6 +127,37 @@ serve(async (req) => {
       });
     }
 
+    // Check for role conflicts
+    const adminRoles = roles.filter(role => ['admin', 'read_only'].includes(role));
+    const familyRoles = roles.filter(role => ['parent', 'child'].includes(role));
+    
+    if (adminRoles.length > 0 && familyRoles.length > 0) {
+      return new Response(JSON.stringify({ 
+        error: 'Role conflict: Users cannot have both admin roles and family roles. Admin roles cannot join families.' 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (adminRoles.length > 1) {
+      return new Response(JSON.stringify({ 
+        error: 'Role conflict: Users can only have one admin role.' 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (familyRoles.length > 1) {
+      return new Response(JSON.stringify({ 
+        error: 'Role conflict: Users can only have one family role.' 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // Generate secure password
     const password = generateSecurePassword();
 

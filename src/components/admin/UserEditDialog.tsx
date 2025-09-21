@@ -3,7 +3,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,7 +18,10 @@ import {
   Shield,
   UserCheck,
   Activity,
-  Key
+  Key,
+  Eye,
+  Baby,
+  AlertTriangle
 } from 'lucide-react';
 import { UserPasswordResetDialog } from './UserPasswordResetDialog';
 
@@ -38,10 +42,14 @@ interface UserEditDialogProps {
   onSuccess: () => void;
 }
 
-const AVAILABLE_ROLES = [
-  { value: 'admin', label: 'Admin', icon: Shield, description: 'Full system access' },
-  { value: 'parent', label: 'Parent', icon: UserCheck, description: 'Family management' },
-  { value: 'child', label: 'Child', icon: Activity, description: 'Basic user access' }
+const ADMIN_ROLES = [
+  { value: 'admin', label: 'Administrator', icon: Shield, description: 'Full system access. Cannot join families.' },
+  { value: 'read_only', label: 'Read Only Admin', icon: Eye, description: 'Admin staff with view-only access. Cannot join families.' }
+];
+
+const FAMILY_ROLES = [
+  { value: 'parent', label: 'Parent', icon: UserCheck, description: 'Can create and manage families, assign chores, and oversee children.' },
+  { value: 'child', label: 'Child', icon: Baby, description: 'Family member with limited access. Must be invited to families.' }
 ];
 
 export function UserEditDialog({ open, onOpenChange, user, onSuccess }: UserEditDialogProps) {
@@ -50,7 +58,8 @@ export function UserEditDialog({ open, onOpenChange, user, onSuccess }: UserEdit
     last_name: '',
     email: ''
   });
-  const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
+  const [adminRole, setAdminRole] = useState<string | null>(null);
+  const [familyRole, setFamilyRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [passwordResetOpen, setPasswordResetOpen] = useState(false);
   const { toast } = useToast();
@@ -62,18 +71,32 @@ export function UserEditDialog({ open, onOpenChange, user, onSuccess }: UserEdit
         last_name: user.last_name || '',
         email: user.email || ''
       });
-      setSelectedRoles([...user.roles]);
+      
+      // Separate admin and family roles
+      const adminRoles = user.roles.filter(role => ['admin', 'read_only'].includes(role));
+      const familyRoles = user.roles.filter(role => ['parent', 'child'].includes(role));
+      
+      setAdminRole(adminRoles[0] || null);
+      setFamilyRole(familyRoles[0] || null);
     }
   }, [user]);
 
   if (!user) return null;
 
-  const handleRoleToggle = (roleValue: string) => {
-    setSelectedRoles(prev => 
-      prev.includes(roleValue)
-        ? prev.filter(r => r !== roleValue)
-        : [...prev, roleValue]
-    );
+  const handleAdminRoleChange = (roleValue: string) => {
+    setAdminRole(roleValue === adminRole ? null : roleValue);
+    // Clear family role if selecting admin role
+    if (roleValue && roleValue !== adminRole) {
+      setFamilyRole(null);
+    }
+  };
+
+  const handleFamilyRoleChange = (roleValue: string) => {
+    setFamilyRole(roleValue === familyRole ? null : roleValue);
+    // Clear admin role if selecting family role
+    if (roleValue && roleValue !== familyRole) {
+      setAdminRole(null);
+    }
   };
 
   const handleSave = async () => {
@@ -109,11 +132,12 @@ export function UserEditDialog({ open, onOpenChange, user, onSuccess }: UserEdit
       if (deleteError) throw deleteError;
 
       // Add new roles
-      if (selectedRoles.length > 0) {
+      const newRoles = [adminRole, familyRole].filter(Boolean);
+      if (newRoles.length > 0) {
         const { error: insertError } = await supabase
           .from('user_roles')
           .insert(
-            selectedRoles.map(role => ({
+            newRoles.map(role => ({
               user_id: user.id,
               role: role as any
             }))
@@ -207,40 +231,83 @@ export function UserEditDialog({ open, onOpenChange, user, onSuccess }: UserEdit
               User Roles
             </h3>
             
+            <Alert className="border-amber-800 bg-amber-900/20">
+              <AlertTriangle className="h-4 w-4 text-amber-400" />
+              <AlertDescription className="text-amber-400">
+                <strong>Important:</strong> Admin roles cannot join families, while Family roles can be invited to families.
+                Select only one role category.
+              </AlertDescription>
+            </Alert>
+            
+            {/* Admin Roles Section */}
             <div className="space-y-3">
-              {AVAILABLE_ROLES.map((role) => {
-                const RoleIcon = role.icon;
-                const isSelected = selectedRoles.includes(role.value);
-                
-                return (
-                  <div key={role.value} className="flex items-center space-x-3 p-3 rounded-lg border border-gray-700 hover:border-gray-600">
-                    <Checkbox
-                      id={role.value}
-                      checked={isSelected}
-                      onCheckedChange={() => handleRoleToggle(role.value)}
-                      className="border-gray-600"
-                    />
-                    <div className="flex-1">
-                      <label 
-                        htmlFor={role.value} 
-                        className="flex items-center gap-2 cursor-pointer"
-                      >
-                        <RoleIcon className="h-4 w-4 text-gray-400" />
-                        <span className="font-medium text-white">{role.label}</span>
-                        <span className="text-sm text-gray-400">- {role.description}</span>
-                      </label>
+              <h4 className="text-sm font-medium text-gray-300">Admin Roles</h4>
+              <RadioGroup 
+                value={adminRole || ""} 
+                onValueChange={handleAdminRoleChange}
+                disabled={loading || familyRole !== null}
+              >
+                {ADMIN_ROLES.map((role) => {
+                  const RoleIcon = role.icon;
+                  return (
+                    <div key={role.value} className={`flex items-start space-x-3 p-3 rounded-lg border border-gray-700 hover:border-gray-600 ${familyRole ? 'opacity-50' : ''}`}>
+                      <RadioGroupItem value={role.value} id={`admin-${role.value}`} className="text-white" />
+                      <div className="flex-1">
+                        <label 
+                          htmlFor={`admin-${role.value}`} 
+                          className="flex items-center gap-2 cursor-pointer"
+                        >
+                          <RoleIcon className="h-4 w-4 text-gray-400" />
+                          <span className="font-medium text-white">{role.label}</span>
+                        </label>
+                        <p className="text-sm text-gray-400 mt-1">{role.description}</p>
+                      </div>
+                      {adminRole === role.value && (
+                        <Badge className="bg-blue-600 text-white">
+                          Selected
+                        </Badge>
+                      )}
                     </div>
-                    {isSelected && (
-                      <Badge className="bg-blue-600 text-white">
-                        Selected
-                      </Badge>
-                    )}
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </RadioGroup>
             </div>
 
-            {selectedRoles.length === 0 && (
+            {/* Family Roles Section */}
+            <div className="space-y-3">
+              <h4 className="text-sm font-medium text-gray-300">Family Roles</h4>
+              <RadioGroup 
+                value={familyRole || ""} 
+                onValueChange={handleFamilyRoleChange}
+                disabled={loading || adminRole !== null}
+              >
+                {FAMILY_ROLES.map((role) => {
+                  const RoleIcon = role.icon;
+                  return (
+                    <div key={role.value} className={`flex items-start space-x-3 p-3 rounded-lg border border-gray-700 hover:border-gray-600 ${adminRole ? 'opacity-50' : ''}`}>
+                      <RadioGroupItem value={role.value} id={`family-${role.value}`} className="text-white" />
+                      <div className="flex-1">
+                        <label 
+                          htmlFor={`family-${role.value}`} 
+                          className="flex items-center gap-2 cursor-pointer"
+                        >
+                          <RoleIcon className="h-4 w-4 text-gray-400" />
+                          <span className="font-medium text-white">{role.label}</span>
+                        </label>
+                        <p className="text-sm text-gray-400 mt-1">{role.description}</p>
+                      </div>
+                      {familyRole === role.value && (
+                        <Badge className="bg-blue-600 text-white">
+                          Selected
+                        </Badge>
+                      )}
+                    </div>
+                  );
+                })}
+              </RadioGroup>
+            </div>
+
+            {!adminRole && !familyRole && (
               <div className="text-amber-400 text-sm bg-amber-900/20 border border-amber-800 rounded p-3">
                 ⚠️ Warning: User will have no roles assigned. This may limit their access to the system.
               </div>

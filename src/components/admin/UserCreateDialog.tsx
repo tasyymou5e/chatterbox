@@ -3,10 +3,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { UserPlus, Shield, Eye, Users, Baby, Loader2, Copy, Check } from 'lucide-react';
+import { UserPlus, Shield, Eye, Users, Baby, Loader2, Copy, Check, AlertTriangle } from 'lucide-react';
 
 interface UserCreateDialogProps {
   open: boolean;
@@ -18,33 +19,37 @@ interface CreateUserData {
   email: string;
   firstName: string;
   lastName: string;
-  roles: string[];
+  adminRole: string | null;
+  familyRole: string | null;
 }
 
-const AVAILABLE_ROLES = [
+const ADMIN_ROLES = [
   { 
     value: 'admin', 
     label: 'Administrator', 
     icon: Shield, 
-    description: 'Full system access and management' 
+    description: 'Full system access and management. Cannot join families.' 
   },
   { 
     value: 'read_only', 
     label: 'Read Only Admin', 
     icon: Eye, 
-    description: 'Admin staff with view-only access (cannot perform edits or manage families)' 
+    description: 'Admin staff with view-only access. Cannot perform edits or join families.' 
   },
+];
+
+const FAMILY_ROLES = [
   { 
     value: 'parent', 
     label: 'Parent', 
     icon: Users, 
-    description: 'Manage family and children accounts' 
+    description: 'Can create and manage families, assign chores, and oversee children.' 
   },
   { 
     value: 'child', 
     label: 'Child', 
     icon: Baby, 
-    description: 'Limited access child account' 
+    description: 'Family member with limited access. Must be invited to families.' 
   },
 ];
 
@@ -57,29 +62,33 @@ export const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
     email: '',
     firstName: '',
     lastName: '',
-    roles: []
+    adminRole: null,
+    familyRole: null
   });
-  const [selectedRoles, setSelectedRoles] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [generatedPassword, setGeneratedPassword] = useState<string>('');
   const [passwordCopied, setPasswordCopied] = useState(false);
   const { toast } = useToast();
 
-  const handleRoleToggle = (roleValue: string) => {
-    const newSelectedRoles = new Set(selectedRoles);
-    if (newSelectedRoles.has(roleValue)) {
-      newSelectedRoles.delete(roleValue);
-    } else {
-      newSelectedRoles.add(roleValue);
-    }
-    setSelectedRoles(newSelectedRoles);
+  const handleAdminRoleChange = (roleValue: string) => {
     setFormData(prev => ({
       ...prev,
-      roles: Array.from(newSelectedRoles)
+      adminRole: roleValue === prev.adminRole ? null : roleValue,
+      // Clear family role if selecting admin role
+      familyRole: roleValue ? null : prev.familyRole
     }));
   };
 
-  const handleInputChange = (field: keyof Omit<CreateUserData, 'roles'>, value: string) => {
+  const handleFamilyRoleChange = (roleValue: string) => {
+    setFormData(prev => ({
+      ...prev,
+      familyRole: roleValue === prev.familyRole ? null : roleValue,
+      // Clear admin role if selecting family role
+      adminRole: roleValue ? null : prev.adminRole
+    }));
+  };
+
+  const handleInputChange = (field: keyof Omit<CreateUserData, 'adminRole' | 'familyRole'>, value: string) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -117,10 +126,10 @@ export const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
       return;
     }
 
-    if (formData.roles.length === 0) {
+    if (!formData.adminRole && !formData.familyRole) {
       toast({
         title: "Validation Error",
-        description: "Please select at least one role for the user.",
+        description: "Please select either an Admin role or a Family role for the user.",
         variant: "destructive",
       });
       return;
@@ -140,12 +149,13 @@ export const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
     setLoading(true);
 
     try {
+      const selectedRoles = [formData.adminRole, formData.familyRole].filter(Boolean);
       const { data, error } = await supabase.functions.invoke('admin-create-user', {
         body: {
           email: formData.email,
           firstName: formData.firstName,
           lastName: formData.lastName,
-          roles: formData.roles
+          roles: selectedRoles
         }
       });
 
@@ -159,9 +169,10 @@ export const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
 
       setGeneratedPassword(data.password);
       
+      const selectedRoles = [formData.adminRole, formData.familyRole].filter(Boolean);
       toast({
         title: "User Created Successfully",
-        description: `User ${formData.firstName} ${formData.lastName} has been created with roles: ${formData.roles.join(', ')}`,
+        description: `User ${formData.firstName} ${formData.lastName} has been created with roles: ${selectedRoles.join(', ')}`,
       });
 
       onSuccess();
@@ -183,9 +194,9 @@ export const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
       email: '',
       firstName: '',
       lastName: '',
-      roles: []
+      adminRole: null,
+      familyRole: null
     });
-    setSelectedRoles(new Set());
     setGeneratedPassword('');
     setPasswordCopied(false);
     onOpenChange(false);
@@ -238,33 +249,76 @@ export const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
           </div>
 
           {/* Role Selection */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-medium">User Roles *</h3>
-            <div className="grid grid-cols-1 gap-3">
-              {AVAILABLE_ROLES.map((role) => {
-                const IconComponent = role.icon;
-                return (
-                  <div key={role.value} className="flex items-start space-x-3 p-3 border rounded-lg">
-                    <Checkbox
-                      id={role.value}
-                      checked={selectedRoles.has(role.value)}
-                      onCheckedChange={() => handleRoleToggle(role.value)}
-                      disabled={loading}
-                    />
-                    <div className="flex-1 space-y-1">
-                      <div className="flex items-center gap-2">
-                        <IconComponent className="h-4 w-4" />
-                        <Label htmlFor={role.value} className="font-medium">
-                          {role.label}
-                        </Label>
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-sm font-medium mb-2">User Role *</h3>
+              <Alert>
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  <strong>Important:</strong> Admin roles cannot join families, while Family roles can be invited to families.
+                  Select only one role category.
+                </AlertDescription>
+              </Alert>
+            </div>
+            
+            {/* Admin Roles Section */}
+            <div className="space-y-3">
+              <h4 className="text-sm font-medium text-muted-foreground">Admin Roles</h4>
+              <RadioGroup 
+                value={formData.adminRole || ""} 
+                onValueChange={handleAdminRoleChange}
+                disabled={loading || formData.familyRole !== null}
+              >
+                {ADMIN_ROLES.map((role) => {
+                  const IconComponent = role.icon;
+                  return (
+                    <div key={role.value} className={`flex items-start space-x-3 p-3 border rounded-lg ${formData.familyRole ? 'opacity-50' : ''}`}>
+                      <RadioGroupItem value={role.value} id={`admin-${role.value}`} />
+                      <div className="flex-1 space-y-1">
+                        <div className="flex items-center gap-2">
+                          <IconComponent className="h-4 w-4" />
+                          <Label htmlFor={`admin-${role.value}`} className="font-medium">
+                            {role.label}
+                          </Label>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {role.description}
+                        </p>
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        {role.description}
-                      </p>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </RadioGroup>
+            </div>
+
+            {/* Family Roles Section */}
+            <div className="space-y-3">
+              <h4 className="text-sm font-medium text-muted-foreground">Family Roles</h4>
+              <RadioGroup 
+                value={formData.familyRole || ""} 
+                onValueChange={handleFamilyRoleChange}
+                disabled={loading || formData.adminRole !== null}
+              >
+                {FAMILY_ROLES.map((role) => {
+                  const IconComponent = role.icon;
+                  return (
+                    <div key={role.value} className={`flex items-start space-x-3 p-3 border rounded-lg ${formData.adminRole ? 'opacity-50' : ''}`}>
+                      <RadioGroupItem value={role.value} id={`family-${role.value}`} />
+                      <div className="flex-1 space-y-1">
+                        <div className="flex items-center gap-2">
+                          <IconComponent className="h-4 w-4" />
+                          <Label htmlFor={`family-${role.value}`} className="font-medium">
+                            {role.label}
+                          </Label>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {role.description}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </RadioGroup>
             </div>
           </div>
 
