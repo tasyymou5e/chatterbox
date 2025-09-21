@@ -22,13 +22,15 @@ import {
   Eye,
   Edit,
   Trash2,
-  Key
+  Key,
+  UserPlus
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { UserViewDialog } from '@/components/admin/UserViewDialog';
 import { UserEditDialog } from '@/components/admin/UserEditDialog';
 import { UserDeleteDialog } from '@/components/admin/UserDeleteDialog';
 import { UserPasswordResetDialog } from '@/components/admin/UserPasswordResetDialog';
+import { UserCreateDialog } from '@/components/admin/UserCreateDialog';
 
 interface User {
   id: string;
@@ -50,6 +52,7 @@ export default function AdminUsers() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [passwordResetDialogOpen, setPasswordResetDialogOpen] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -165,6 +168,7 @@ export default function AdminUsers() {
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
       case 'admin': return 'bg-red-600';
+      case 'read_only': return 'bg-purple-600';
       case 'parent': return 'bg-blue-600';
       case 'child': return 'bg-green-600';
       default: return 'bg-gray-600';
@@ -174,6 +178,7 @@ export default function AdminUsers() {
   const getRoleIcon = (role: string) => {
     switch (role) {
       case 'admin': return Shield;
+      case 'read_only': return Eye;
       case 'parent': return UserCheck;
       case 'child': return Activity;
       default: return Users;
@@ -183,6 +188,7 @@ export default function AdminUsers() {
   const roleStats = {
     total: users.length,
     admins: users.filter(u => u.roles.includes('admin')).length,
+    readOnly: users.filter(u => u.roles.includes('read_only')).length,
     parents: users.filter(u => u.roles.includes('parent')).length,
     children: users.filter(u => u.roles.includes('child')).length,
   };
@@ -234,6 +240,13 @@ export default function AdminUsers() {
             Manage user accounts, roles, and permissions
           </p>
         </div>
+        <Button 
+          onClick={() => setCreateDialogOpen(true)}
+          className="bg-blue-600 hover:bg-blue-700 text-white"
+        >
+          <UserPlus className="h-4 w-4 mr-2" />
+          Add User
+        </Button>
       </div>
 
       {/* Stats Cards */}
@@ -262,6 +275,20 @@ export default function AdminUsers() {
           <CardContent>
             <div className="text-2xl font-bold text-white">
               {roleStats.admins}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gray-800 border-gray-700">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-gray-300">
+              Read Only
+            </CardTitle>
+            <Eye className="h-4 w-4 text-purple-400" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-white">
+              {roleStats.readOnly}
             </div>
           </CardContent>
         </Card>
@@ -318,6 +345,7 @@ export default function AdminUsers() {
               <SelectContent className="bg-gray-700 border-gray-600">
                 <SelectItem value="all" className="text-white">All Roles</SelectItem>
                 <SelectItem value="admin" className="text-white">Admins</SelectItem>
+                <SelectItem value="read_only" className="text-white">Read Only</SelectItem>
                 <SelectItem value="parent" className="text-white">Parents</SelectItem>
                 <SelectItem value="child" className="text-white">Children</SelectItem>
               </SelectContent>
@@ -441,6 +469,12 @@ export default function AdminUsers() {
           )}
         </CardContent>
       </Card>
+
+      <UserCreateDialog
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        onSuccess={handleDialogSuccess}
+      />
 
       {/* Dialog Components */}
       <UserViewDialog

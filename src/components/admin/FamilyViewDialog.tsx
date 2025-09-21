@@ -6,7 +6,7 @@ import { Home, Users, Calendar, User, Mail, Clock } from 'lucide-react';
 interface FamilyMember {
   id: string;
   user_id: string;
-  role: 'parent' | 'child' | 'admin' | 'therapist' | 'teacher' | 'grandparent' | 'family_friend';
+  role: 'parent' | 'child' | 'admin' | 'therapist' | 'teacher' | 'grandparent' | 'family_friend' | 'read_only';
   joined_at: string;
   first_name?: string;
   last_name?: string;

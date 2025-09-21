@@ -3483,6 +3483,7 @@ export type Database = {
         | "teacher"
         | "grandparent"
         | "family_friend"
+        | "read_only"
       approval_status: "pending" | "approved" | "rejected"
       chore_difficulty: "easy" | "medium" | "hard"
       chore_status:
@@ -3654,6 +3655,7 @@ export const Constants = {
         "teacher",
         "grandparent",
         "family_friend",
+        "read_only",
       ],
       approval_status: ["pending", "approved", "rejected"],
       chore_difficulty: ["easy", "medium", "hard"],
