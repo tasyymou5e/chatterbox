@@ -13,7 +13,7 @@ import { Users, UserPlus, UserMinus, Mail, Search, Trash2, AlertTriangle } from 
 interface FamilyMember {
   id: string;
   user_id: string;
-  role: 'parent' | 'child' | 'admin' | 'therapist' | 'teacher' | 'grandparent' | 'family_friend' | 'read_only';
+  role: 'parent' | 'child' | 'admin' | 'therapist' | 'teacher' | 'grandparent' | 'family_friend';
   joined_at: string;
   first_name?: string;
   last_name?: string;

@@ -39,7 +39,7 @@ import { useAuthStore } from '@/stores/authStore';
 interface FamilyMember {
   id: string;
   user_id: string;
-  role: 'parent' | 'child' | 'admin' | 'therapist' | 'teacher' | 'grandparent' | 'family_friend' | 'read_only';
+  role: 'parent' | 'child' | 'admin' | 'therapist' | 'teacher' | 'grandparent' | 'family_friend';
   joined_at: string;
   first_name?: string;
   last_name?: string;
@@ -60,6 +60,7 @@ interface Family {
 }
 
 export default function AdminFamilies() {
+  const { userRole } = useAuthStore();
   const { sessionReady } = useAuthStore();
   const [families, setFamilies] = useState<Family[]>([]);
   const [loading, setLoading] = useState(true);
@@ -133,23 +134,25 @@ export default function AdminFamilies() {
 
       // Transform the data to include member details and count
       const familiesWithMembers = (familiesData || []).map(family => {
-        const members = (family.family_members || []).map(member => {
-          const profile = profilesMap.get(member.user_id);
-          console.log(`Member ${member.user_id}:`, { member, profile });
-          return {
-            id: member.id,
-            user_id: member.user_id,
-            role: member.role,
-            joined_at: member.joined_at,
-            first_name: profile?.first_name,
-            last_name: profile?.last_name,
-            email: profile?.email
-          };
-        });
+        const members = (family.family_members || [])
+          .filter((member: any) => member.role !== 'read_only') // Filter out read_only roles
+          .map((member: any) => {
+            const profile = profilesMap.get(member.user_id);
+            console.log(`Member ${member.user_id}:`, { member, profile });
+            return {
+              id: member.id,
+              user_id: member.user_id,
+              role: member.role as 'parent' | 'child' | 'admin' | 'therapist' | 'teacher' | 'grandparent' | 'family_friend',
+              joined_at: member.joined_at,
+              first_name: profile?.first_name,
+              last_name: profile?.last_name,
+              email: profile?.email
+            };
+          });
 
         return {
           ...family,
-          member_count: family.family_members?.length || 0,
+          member_count: (family.family_members?.filter((m: any) => m.role !== 'read_only')?.length || 0),
           members,
           expanded: false
         };
@@ -262,7 +265,7 @@ export default function AdminFamilies() {
             Manage and monitor all registered families
           </p>
         </div>
-        <CreateTestFamilyButton onSuccess={fetchFamilies} />
+        {userRole === 'admin' && <CreateTestFamilyButton onSuccess={fetchFamilies} />}
       </div>
 
       {/* Stats Cards */}
@@ -377,31 +380,35 @@ export default function AdminFamilies() {
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-green-400 hover:text-green-300 hover:bg-gray-700"
-                            onClick={(e) => handleEditFamily(family, e)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-blue-400 hover:text-blue-300 hover:bg-gray-700"
-                            onClick={(e) => handleManageMembers(family, e)}
-                            title="Manage Family Members"
-                          >
-                            <Users className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-red-400 hover:text-red-300 hover:bg-gray-700"
-                            onClick={(e) => handleDeleteFamily(family, e)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          {userRole === 'admin' && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-green-400 hover:text-green-300 hover:bg-gray-700"
+                                onClick={(e) => handleEditFamily(family, e)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-blue-400 hover:text-blue-300 hover:bg-gray-700"
+                                onClick={(e) => handleManageMembers(family, e)}
+                                title="Manage Family Members"
+                              >
+                                <Users className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-red-400 hover:text-red-300 hover:bg-gray-700"
+                                onClick={(e) => handleDeleteFamily(family, e)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>

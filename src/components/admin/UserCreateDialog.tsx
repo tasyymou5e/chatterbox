@@ -30,9 +30,9 @@ const AVAILABLE_ROLES = [
   },
   { 
     value: 'read_only', 
-    label: 'Read Only', 
+    label: 'Read Only Admin', 
     icon: Eye, 
-    description: 'View-only access to system data' 
+    description: 'Admin staff with view-only access (cannot perform edits or manage families)' 
   },
   { 
     value: 'parent', 

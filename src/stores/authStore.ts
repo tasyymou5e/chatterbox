@@ -138,7 +138,7 @@ export const useAuthStore = create<AuthState>()(
                   
                   // Check role synchronously to prevent race conditions
                   get().fetchUserRole(session.user.id).then(role => {
-                    const isAdmin = role === 'admin';
+                    const isAdmin = role === 'admin' || role === 'read_only';
                     set({ 
                       userRole: role, 
                       isAdmin,
@@ -294,7 +294,7 @@ export const useAuthStore = create<AuthState>()(
             if (data?.user && data?.session) {
               // Synchronously check role to prevent race conditions
               const userRole = await get().fetchUserRole(data.user.id);
-              const isAdmin = userRole === 'admin';
+              const isAdmin = userRole === 'admin' || userRole === 'read_only';
               
               // Set ALL auth state atomically in single operation to prevent race conditions
               set({
