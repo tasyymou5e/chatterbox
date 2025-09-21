@@ -6,6 +6,7 @@ import { SecurityDashboard } from '@/components/security/SecurityDashboard';
 import { SecurityAuditTrail } from '@/components/security/SecurityAuditTrail';
 import { SecurityAuditTrailErrorBoundary } from '@/components/security/SecurityAuditTrailErrorBoundary';
 import SecurityEnvironmentValidator from '@/components/admin/SecurityEnvironmentValidator';
+import { RoleConflictPanel } from '@/components/admin/RoleConflictPanel';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Shield, Activity, FileText, AlertTriangle, Settings } from 'lucide-react';
 
@@ -56,6 +57,7 @@ export const AdminSecurityCenter: React.FC = () => {
 
         <TabsContent value="config" className="mt-6">
           <div className="space-y-6">
+            <RoleConflictPanel />
             <SecurityEnvironmentValidator />
             
             <div className="text-center py-8 text-muted-foreground border-t">

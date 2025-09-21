@@ -169,7 +169,6 @@ export const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
 
       setGeneratedPassword(data.password);
       
-      const selectedRoles = [formData.adminRole, formData.familyRole].filter(Boolean);
       toast({
         title: "User Created Successfully",
         description: `User ${formData.firstName} ${formData.lastName} has been created with roles: ${selectedRoles.join(', ')}`,

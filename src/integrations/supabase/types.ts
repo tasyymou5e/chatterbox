@@ -3083,6 +3083,17 @@ export type Database = {
             }
         Returns: string
       }
+      detect_role_conflicts: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          conflict_type: string
+          conflicting_roles: string[]
+          email: string
+          first_name: string
+          last_name: string
+          user_id: string
+        }[]
+      }
       detect_suspicious_activity: {
         Args: { p_activity_type: string; p_metadata?: Json; p_user_id: string }
         Returns: boolean
@@ -3456,6 +3467,10 @@ export type Database = {
       }
       validate_profile_access: {
         Args: { profile_user_id: string }
+        Returns: boolean
+      }
+      validate_role_conflicts: {
+        Args: { p_roles: string[] }
         Returns: boolean
       }
       validate_user_permissions: {
