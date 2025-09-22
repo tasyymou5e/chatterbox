@@ -36,6 +36,18 @@ import { AdminSecurityCenter } from "./pages/admin/AdminSecurityCenter";
 import { AdminDebugPanel } from "@/components/admin/AdminDebugPanel";
 import { AdminBootstrap } from "@/components/admin/AdminBootstrap";
 import { AdminBootstrapRoute } from "@/components/admin/AdminBootstrapRoute";
+import EducationalGames from "./pages/features/EducationalGames";
+import CommunicationSupport from "./pages/features/CommunicationSupport";
+import ProgressTracking from "./pages/features/ProgressTracking";
+import FamilyManagement from "./pages/features/FamilyManagement";
+import HelpCenter from "./pages/support/HelpCenter";
+import ContactUs from "./pages/support/ContactUs";
+import PrivacyPolicy from "./pages/support/PrivacyPolicy";
+import TermsOfService from "./pages/support/TermsOfService";
+import CommunityForum from "./pages/connect/CommunityForum";
+import ParentResources from "./pages/connect/ParentResources";
+import TherapistTools from "./pages/connect/TherapistTools";
+import ResearchStudies from "./pages/connect/ResearchStudies";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -85,6 +97,24 @@ const App = () => {
                 <Route path="/children/tasks" element={<ChildrenTasksDashboard />} />
                 <Route path="/reports" element={<Reports />} />
                 <Route path="/games" element={<GamesCatalogLazy />} />
+                
+                {/* Features Routes */}
+                <Route path="/features/educational-games" element={<EducationalGames />} />
+                <Route path="/features/communication-support" element={<CommunicationSupport />} />
+                <Route path="/features/progress-tracking" element={<ProgressTracking />} />
+                <Route path="/features/family-management" element={<FamilyManagement />} />
+                
+                {/* Support Routes */}
+                <Route path="/support/help-center" element={<HelpCenter />} />
+                <Route path="/support/contact" element={<ContactUs />} />
+                <Route path="/support/privacy-policy" element={<PrivacyPolicy />} />
+                <Route path="/support/terms" element={<TermsOfService />} />
+                
+                {/* Connect Routes */}
+                <Route path="/connect/community-forum" element={<CommunityForum />} />
+                <Route path="/connect/parent-resources" element={<ParentResources />} />
+                <Route path="/connect/therapist-tools" element={<TherapistTools />} />
+                <Route path="/connect/research-studies" element={<ResearchStudies />} />
                 
                 {/* Simplified Admin Routes - No nesting temporarily */}
                 <Route path="/admin/login" element={

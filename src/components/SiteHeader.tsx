@@ -37,9 +37,25 @@ export function SiteHeader({ className }: SiteHeaderProps) {
     navigate('/');
   };
 
-  const navigationItems = [
-    { title: "Home", href: "/", icon: Home },
-    { title: "Games & Activities", href: "/games", icon: Gamepad2 },
+  const featuresItems = [
+    { title: "Educational Games", href: "/features/educational-games" },
+    { title: "Communication Support", href: "/features/communication-support" },
+    { title: "Progress Tracking", href: "/features/progress-tracking" },
+    { title: "Family Management", href: "/features/family-management" },
+  ];
+
+  const supportItems = [
+    { title: "Help Center", href: "/support/help-center" },
+    { title: "Contact Us", href: "/support/contact" },
+    { title: "Privacy Policy", href: "/support/privacy-policy" },
+    { title: "Terms of Service", href: "/support/terms" },
+  ];
+
+  const connectItems = [
+    { title: "Community Forum", href: "/connect/community-forum" },
+    { title: "Parent Resources", href: "/connect/parent-resources" },
+    { title: "Therapist Tools", href: "/connect/therapist-tools" },
+    { title: "Research & Studies", href: "/connect/research-studies" },
   ];
 
   const authenticatedItems = user ? [
@@ -65,33 +81,70 @@ export function SiteHeader({ className }: SiteHeaderProps) {
           <div className="hidden md:flex items-center gap-6">
             <NavigationMenu>
               <NavigationMenuList>
-                {navigationItems.map((item) => (
-                  <NavigationMenuItem key={item.title}>
-                    <NavigationMenuLink 
-                      asChild
-                      className={navigationMenuTriggerStyle()}
-                    >
-                      <Link 
-                        to={item.href} 
-                        className="flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary"
-                      >
-                        <item.icon className="h-4 w-4" />
-                        {item.title}
-                      </Link>
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
-                ))}
+                <NavigationMenuItem>
+                  <NavigationMenuTrigger>Features</NavigationMenuTrigger>
+                  <NavigationMenuContent>
+                    <div className="grid w-[400px] gap-3 p-4">
+                      {featuresItems.map((item) => (
+                        <Link
+                          key={item.title}
+                          to={item.href}
+                          className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                        >
+                          <div className="text-sm font-medium leading-none">{item.title}</div>
+                        </Link>
+                      ))}
+                    </div>
+                  </NavigationMenuContent>
+                </NavigationMenuItem>
+                
+                <NavigationMenuItem>
+                  <NavigationMenuTrigger>Support</NavigationMenuTrigger>
+                  <NavigationMenuContent>
+                    <div className="grid w-[400px] gap-3 p-4">
+                      {supportItems.map((item) => (
+                        <Link
+                          key={item.title}
+                          to={item.href}
+                          className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                        >
+                          <div className="text-sm font-medium leading-none">{item.title}</div>
+                        </Link>
+                      ))}
+                    </div>
+                  </NavigationMenuContent>
+                </NavigationMenuItem>
+                
+                <NavigationMenuItem>
+                  <NavigationMenuTrigger>Connect</NavigationMenuTrigger>
+                  <NavigationMenuContent>
+                    <div className="grid w-[400px] gap-3 p-4">
+                      {connectItems.map((item) => (
+                        <Link
+                          key={item.title}
+                          to={item.href}
+                          className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                        >
+                          <div className="text-sm font-medium leading-none">{item.title}</div>
+                        </Link>
+                      ))}
+                    </div>
+                  </NavigationMenuContent>
+                </NavigationMenuItem>
+                
+                <NavigationMenuItem>
+                  <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+                    <Link to="/games" className="flex items-center gap-2">
+                      <Gamepad2 className="h-4 w-4" />
+                      Games
+                    </Link>
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
                 
                 {authenticatedItems.map((item) => (
                   <NavigationMenuItem key={item.title}>
-                    <NavigationMenuLink 
-                      asChild
-                      className={navigationMenuTriggerStyle()}
-                    >
-                      <Link 
-                        to={item.href} 
-                        className="flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary"
-                      >
+                    <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+                      <Link to={item.href} className="flex items-center gap-2">
                         <item.icon className="h-4 w-4" />
                         {item.title}
                       </Link>
