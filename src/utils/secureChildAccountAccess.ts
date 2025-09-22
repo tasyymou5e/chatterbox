@@ -138,7 +138,7 @@ export const createChildAccount = async (
   familyId: string,
   firstName: string,
   lastName: string,
-  password?: string
+  password: string
 ): Promise<{ success: boolean; childAccount?: ChildAccountInfo; error?: string }> => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -151,7 +151,7 @@ export const createChildAccount = async (
         firstName,
         lastName,
         parentUserId: user.id,
-        password: password || undefined
+        password: password
       }
     });
 

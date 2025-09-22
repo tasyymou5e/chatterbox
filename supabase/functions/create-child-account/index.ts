@@ -10,7 +10,7 @@ interface CreateChildAccountRequest {
   firstName: string;
   lastName: string;
   parentUserId: string;
-  password?: string;
+  password: string;
 }
 
 serve(async (req) => {
@@ -34,9 +34,14 @@ serve(async (req) => {
     const { firstName, lastName, parentUserId, password }: CreateChildAccountRequest = await req.json();
     
     // Validate required fields
-    if (!firstName || !lastName || !parentUserId) {
-      console.error('Missing required fields:', { firstName: !!firstName, lastName: !!lastName, parentUserId: !!parentUserId });
-      throw new Error('Missing required fields: firstName, lastName, or parentUserId');
+    if (!firstName || !lastName || !parentUserId || !password) {
+      console.error('Missing required fields:', { firstName: !!firstName, lastName: !!lastName, parentUserId: !!parentUserId, password: !!password });
+      throw new Error('Missing required fields: firstName, lastName, parentUserId, or password');
+    }
+
+    // Validate password strength
+    if (password.length < 8) {
+      throw new Error('Password must be at least 8 characters long');
     }
 
     console.log('Creating child account for parent:', parentUserId);
@@ -78,48 +83,31 @@ serve(async (req) => {
       throw new Error('No family found for this parent. Please create a family first.');
     }
 
-    // Generate child email and account code
+    // Generate child email and create auth user immediately
     const childEmail = `${parentProfile.email}.${firstName.toLowerCase()}`;
-    let childAccountCode = null;
-    let createdAuthUser = null;
-
-    // If password provided, create full auth user immediately
-    if (password && password.trim()) {
-      console.log('Creating full auth user with parent-provided password');
-      
-      const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
-        email: childEmail,
-        password: password.trim(),
-        email_confirm: true,
-        user_metadata: {
-          first_name: firstName,
-          last_name: lastName,
-          created_by_parent: true,
-          parent_user_id: parentUserId,
-          family_id: family.id
-        }
-      });
-
-      if (authError) {
-        console.error('Error creating auth user:', authError);
-        throw new Error(`Failed to create auth user: ${authError.message}`);
+    
+    console.log('Creating auth user with parent-provided password');
+    
+    const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
+      email: childEmail,
+      password: password.trim(),
+      email_confirm: true,
+      user_metadata: {
+        first_name: firstName,
+        last_name: lastName,
+        created_by_parent: true,
+        parent_user_id: parentUserId,
+        family_id: family.id
       }
+    });
 
-      createdAuthUser = authUser.user;
-      console.log('Created auth user:', createdAuthUser.id);
-    } else {
-      // Generate account code for child signup flow
-      const { data: generatedCode, error: codeError } = await supabase
-        .rpc('generate_child_account_code');
-
-      if (codeError || !generatedCode) {
-        console.error('Error generating child account code:', codeError);
-        throw new Error('Failed to generate child account code');
-      }
-
-      childAccountCode = generatedCode;
-      console.log('Generated child account code:', childAccountCode);
+    if (authError) {
+      console.error('Error creating auth user:', authError);
+      throw new Error(`Failed to create auth user: ${authError.message}`);
     }
+
+    const createdAuthUser = authUser.user;
+    console.log('Created auth user:', createdAuthUser.id);
 
     // Create child account record
     const { data: childAccount, error: childAccountError } = await supabase
@@ -127,19 +115,19 @@ serve(async (req) => {
       .insert({
         family_id: family.id,
         created_by: parentUserId,
-        user_id: createdAuthUser ? createdAuthUser.id : null,
+        user_id: createdAuthUser.id,
         first_name: firstName,
         last_name: lastName,
         generated_email: childEmail,
-        family_code: childAccountCode,
-        status: createdAuthUser ? 'completed' : 'pending',
-        completed_at: createdAuthUser ? new Date().toISOString() : null,
+        family_code: null, // No longer needed since account is immediately active
+        status: 'completed',
+        completed_at: new Date().toISOString(),
         metadata: {
           parent_email: parentProfile.email,
           parent_name: `${parentProfile.first_name} ${parentProfile.last_name}`,
           family_name: family.name,
           created_via: 'parent_dashboard',
-          password_set_by_parent: !!createdAuthUser
+          password_set_by_parent: true
         }
       })
       .select()
@@ -158,37 +146,34 @@ serve(async (req) => {
 
     console.log('Created child account record:', childAccount.id);
 
-    // If auth user was created, add them to family and set up profile
-    if (createdAuthUser) {
-      // Create profile for the child
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          user_id: createdAuthUser.id,
-          email: childEmail,
-          first_name: firstName,
-          last_name: lastName
-        });
+    // Create profile for the child
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .insert({
+        user_id: createdAuthUser.id,
+        email: childEmail,
+        first_name: firstName,
+        last_name: lastName
+      });
 
-      if (profileError) {
-        console.error('Error creating child profile:', profileError);
-        // Don't fail the whole operation for profile creation
-      }
+    if (profileError) {
+      console.error('Error creating child profile:', profileError);
+      // Don't fail the whole operation for profile creation
+    }
 
-      // Add child to family members
-      const { error: memberError } = await supabase
-        .from('family_members')
-        .insert({
-          family_id: family.id,
-          user_id: createdAuthUser.id,
-          role: 'child',
-          invited_by: parentUserId
-        });
+    // Add child to family members
+    const { error: memberError } = await supabase
+      .from('family_members')
+      .insert({
+        family_id: family.id,
+        user_id: createdAuthUser.id,
+        role: 'child',
+        invited_by: parentUserId
+      });
 
-      if (memberError) {
-        console.error('Error adding child to family members:', memberError);
-        // Don't fail the whole operation for family member creation
-      }
+    if (memberError) {
+      console.error('Error adding child to family members:', memberError);
+      // Don't fail the whole operation for family member creation
     }
 
     // Log the activity
@@ -202,9 +187,8 @@ serve(async (req) => {
           child_name: `${firstName} ${lastName}`,
           child_email: childEmail,
           child_account_id: childAccount.id,
-          account_code: childAccountCode,
-          auth_user_created: !!createdAuthUser,
-          password_set_by_parent: !!createdAuthUser
+          auth_user_created: true,
+          password_set_by_parent: true
         }
       });
 
@@ -220,28 +204,21 @@ serve(async (req) => {
           firstName: firstName,
           lastName: lastName,
           email: childEmail,
-          accountCode: childAccountCode,
-          status: 'pending'
+          accountCode: null,
+          status: 'completed'
         },
         family: {
           id: family.id,
           name: family.name,
           code: family.family_code
         },
-        instructions: createdAuthUser ? {
+        instructions: {
           nextSteps: [
             `${firstName} can now login with their email and password`,
             `Email: ${childEmail}`,
             'Password: The password you set'
           ],
           loginUrl: `${Deno.env.get('SUPABASE_URL') || 'https://your-app.com'}/auth`
-        } : {
-          nextSteps: [
-            `Share the account code "${childAccountCode}" with ${firstName}`,
-            `${firstName} should visit the signup page and use this code to complete their account`,
-            'The child will need to create their own password during signup'
-          ],
-          signupUrl: `${Deno.env.get('SUPABASE_URL') || 'https://your-app.com'}/auth?tab=child-signup&code=${childAccountCode}`
         }
       }),
       {
