@@ -97,7 +97,7 @@ const Index = () => {
           </div>
           
           <div className="border-t border-white/20 mt-8 pt-8 text-center text-sm text-white/60">
-            <p>&copy; 2024 Chatterbox. Built with ❤️ for autistic children and their families.</p>
+            <p>&copy; 2024 Chatterbox. Built with ❤️ for children with autism and their families.</p>
           </div>
         </div>
       </footer>
