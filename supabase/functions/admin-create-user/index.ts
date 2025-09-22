@@ -180,6 +180,7 @@ serve(async (req) => {
       user_metadata: {
         first_name: firstName,
         last_name: lastName,
+        created_by_admin: true, // Prevent trigger from assigning default parent role
       }
     });
 
@@ -216,22 +217,46 @@ serve(async (req) => {
       });
     }
 
-    // Create profile
+    // Upsert profile (handle conflicts from trigger)
     const { error: profileError } = await supabase
       .from('profiles')
-      .insert({
+      .upsert({
         user_id: newUser.user.id,
         first_name: firstName,
         last_name: lastName,
         email: email
+      }, {
+        onConflict: 'user_id'
       });
 
     if (profileError) {
-      console.error('Profile creation error:', profileError);
-      // Don't fail the entire operation if profile creation fails
+      console.error('Profile upsert error:', profileError);
+      // Don't fail the entire operation if profile upsert fails
     }
 
-    // Assign roles
+    // Delete any conflicting roles first to prevent role conflicts
+    const adminRoles = roles.filter(role => ['admin', 'read_only'].includes(role));
+    const familyRoles = roles.filter(role => ['parent', 'child'].includes(role));
+    
+    if (adminRoles.length > 0) {
+      // Remove any family roles if assigning admin roles
+      await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', newUser.user.id)
+        .in('role', ['parent', 'child']);
+    }
+    
+    if (familyRoles.length > 0) {
+      // Remove any admin roles if assigning family roles
+      await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', newUser.user.id)
+        .in('role', ['admin', 'read_only']);
+    }
+
+    // Assign roles with conflict handling
     const roleInserts = roles.map(role => ({
       user_id: newUser.user.id,
       role: role
@@ -239,7 +264,9 @@ serve(async (req) => {
 
     const { error: rolesError } = await supabase
       .from('user_roles')
-      .insert(roleInserts);
+      .upsert(roleInserts, {
+        onConflict: 'user_id, role'
+      });
 
     if (rolesError) {
       console.error('Role assignment error:', rolesError);
