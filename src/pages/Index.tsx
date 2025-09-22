@@ -5,13 +5,20 @@ import { PortalSelection } from "@/components/PortalSelection";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
 import { ArrowDown } from "lucide-react";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 const Index = () => {
   const [showPortals, setShowPortals] = useState(false);
   const navigate = useNavigate();
+  const { settings } = useSiteSettings();
 
   const scrollToPortals = () => {
-    navigate('/auth');
+    if (settings.parent_signup_enabled) {
+      navigate('/auth');
+    } else {
+      // Still allow navigation but Auth page will handle the disabled state
+      navigate('/auth');
+    }
   };
 
   return (

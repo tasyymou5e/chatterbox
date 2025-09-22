@@ -11,9 +11,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { useAuthNavigation } from '@/hooks/useAuthNavigation';
 import { useAuthLogging } from '@/hooks/useAuthLogging';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, Heart, Mail, ArrowLeft, Shield, CheckCircle, UserPlus } from 'lucide-react';
+import { Loader2, Heart, Mail, ArrowLeft, Shield, CheckCircle, UserPlus, AlertCircle } from 'lucide-react';
 import { PasswordStrengthIndicator } from '@/components/auth/PasswordStrengthIndicator';
 import { SecurityBanner } from '@/components/auth/SecurityBanner';
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 type AuthTab = 'signup' | 'signin' | 'forgot-password' | 'reset-confirm' | 'child-signup';
 
@@ -24,6 +25,7 @@ const Auth = () => {
   const [signupPassword, setSignupPassword] = useState('');
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
   const [isPasswordResetSent, setIsPasswordResetSent] = useState(false);
+  const { settings } = useSiteSettings();
   
   // Reset password confirmation states
   const [isValidToken, setIsValidToken] = useState(false);
@@ -480,10 +482,25 @@ const Auth = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {/* Parent Signup Disabled Notice */}
+            {!settings.parent_signup_enabled && activeTab === 'signup' && (
+              <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <div className="flex items-center space-x-2 text-amber-800">
+                  <AlertCircle className="h-5 w-5" />
+                  <span className="text-sm font-medium">Parent Signup Temporarily Disabled</span>
+                </div>
+                <p className="mt-1 text-xs text-amber-700">
+                  New parent signups are currently disabled. If you already have an account, you can still sign in. 
+                  Please contact support if you need assistance.
+                </p>
+              </div>
+            )}
             <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as AuthTab)} className="w-full">
               {activeTab !== 'forgot-password' && activeTab !== 'reset-confirm' && activeTab !== 'child-signup' && (
                 <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                  <TabsTrigger value="signup" disabled={!settings.parent_signup_enabled}>
+                    Sign Up {!settings.parent_signup_enabled && '(Disabled)'}
+                  </TabsTrigger>
                   <TabsTrigger value="signin">Sign In</TabsTrigger>
                 </TabsList>
               )}
