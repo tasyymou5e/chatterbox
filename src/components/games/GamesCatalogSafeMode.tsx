@@ -12,10 +12,10 @@ import { Link } from 'react-router-dom';
 interface ContentItem {
   id: string;
   title: string;
-  description: string;
-  url: string;
+  description?: string; // Optional for anonymous users
+  url?: string; // Optional for anonymous users
   content_type: string;
-  tags: string[];
+  tags?: string[]; // Optional for anonymous users
   is_free: boolean;
 }
 
@@ -35,7 +35,9 @@ export const GamesCatalogSafeMode: React.FC = () => {
     setError(null);
     
     try {
-      // Simple query without complex joins or filters
+      // Check if user is authenticated for full content access
+      const { data: { user } } = await supabase.auth.getUser();
+      
       const { data, error } = await supabase
         .from('content_items')
         .select('id, title, description, url, content_type, tags, is_free')
@@ -48,8 +50,19 @@ export const GamesCatalogSafeMode: React.FC = () => {
         throw error;
       }
 
-      setContentItems(data || []);
-      console.log('Safe Mode: Loaded', data?.length || 0, 'content items');
+      // For anonymous users, filter out sensitive fields
+      const processedData = (data || []).map(item => ({
+        id: item.id,
+        title: item.title,
+        description: user ? item.description : undefined,
+        url: user ? item.url : undefined,
+        content_type: item.content_type,
+        tags: user ? item.tags : undefined,
+        is_free: item.is_free
+      }));
+
+      setContentItems(processedData);
+      console.log('Safe Mode: Loaded', processedData.length, 'content items for', user ? 'authenticated' : 'anonymous', 'user');
     } catch (error) {
       console.error('Safe Mode: Error loading content:', error);
       setError(error instanceof Error ? error.message : 'Failed to load content');
@@ -65,10 +78,18 @@ export const GamesCatalogSafeMode: React.FC = () => {
 
   const filteredItems = contentItems.filter(item => 
     item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.description?.toLowerCase().includes(searchTerm.toLowerCase())
+    (item.description && item.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const handleContentClick = (item: ContentItem) => {
+    if (!item.url) {
+      toast({
+        title: "Sign in Required",
+        description: "Please sign in to access full content details.",
+        variant: "default"
+      });
+      return;
+    }
     window.open(item.url, '_blank', 'noopener,noreferrer');
   };
 
@@ -163,7 +184,7 @@ export const GamesCatalogSafeMode: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                  {item.description}
+                  {item.description || 'Sign in to view full details'}
                 </p>
                 <div className="flex items-center justify-between">
                   <Badge variant="outline">{item.content_type}</Badge>
@@ -171,9 +192,10 @@ export const GamesCatalogSafeMode: React.FC = () => {
                     size="sm"
                     onClick={() => handleContentClick(item)}
                     className="gap-1"
+                    disabled={!item.url}
                   >
                     <ExternalLink className="h-3 w-3" />
-                    Open
+                    {item.url ? 'Open' : 'Sign In'}
                   </Button>
                 </div>
               </CardContent>

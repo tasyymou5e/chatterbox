@@ -45,6 +45,9 @@ export const useCatalogCache = (userFamily?: string) => {
       }
 
       // Fetch from database
+      // Check authentication status for appropriate field selection
+      const { data: { user } } = await supabase.auth.getUser();
+      
       const { data, error } = await supabase
         .from('content_items')
         .select(`
@@ -57,6 +60,10 @@ export const useCatalogCache = (userFamily?: string) => {
 
       if (error) {
         console.warn('Error fetching content items:', error);
+        // If authentication error, provide helpful context
+        if (error.code === 'PGRST116' || error.message.includes('auth')) {
+          console.warn('Authentication may be required for full content access');
+        }
         return []; // Return empty array instead of throwing
       }
 

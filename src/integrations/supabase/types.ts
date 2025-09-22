@@ -3046,6 +3046,10 @@ export type Database = {
           users_count: number
         }[]
       }
+      can_access_full_content_details: {
+        Args: { content_item_id: string }
+        Returns: boolean
+      }
       check_admin_role_secure: {
         Args: { p_user_id: string }
         Returns: boolean

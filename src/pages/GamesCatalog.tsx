@@ -484,6 +484,16 @@ export default function GamesCatalog() {
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Discover educational games, videos, and interactive content designed for children with autism and special needs
           </p>
+          
+          {/* Authentication Status */}
+          {!user && (
+            <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg mt-4 max-w-md mx-auto">
+              <p className="text-sm">
+                <strong>Sign in</strong> to access full content details, save favorites, and unlock family-specific activities.
+              </p>
+            </div>
+          )}
+          
           <div className="flex flex-wrap justify-center gap-2 mt-4">
             {realtimeConnected && (
               <div className="text-xs text-green-600 bg-green-50 px-3 py-1 rounded-full">

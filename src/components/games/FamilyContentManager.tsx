@@ -48,7 +48,9 @@ export function FamilyContentManager({ familyId, onClose }: FamilyContentManager
             title,
             description,
             content_type,
-            thumbnail_url
+            thumbnail_url,
+            url,
+            is_free
           )
         `)
         .eq('family_id', familyId)
