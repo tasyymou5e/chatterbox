@@ -11,6 +11,7 @@ interface CreateUserRequest {
   firstName: string;
   lastName: string;
   roles: string[];
+  customPassword?: string;
 }
 
 // Rate limiter for admin actions
@@ -98,7 +99,7 @@ serve(async (req) => {
     }
 
     // Parse request body
-    const { email, firstName, lastName, roles }: CreateUserRequest = await req.json();
+    const { email, firstName, lastName, roles, customPassword }: CreateUserRequest = await req.json();
 
     // Validate input
     if (!email || !firstName || !lastName || !roles || roles.length === 0) {
@@ -158,8 +159,18 @@ serve(async (req) => {
       });
     }
 
-    // Generate secure password
-    const password = generateSecurePassword();
+    // Use custom password or generate secure password
+    const password = customPassword || generateSecurePassword();
+    
+    // Validate custom password if provided
+    if (customPassword && customPassword.length < 8) {
+      return new Response(JSON.stringify({ 
+        error: 'Custom password must be at least 8 characters long.' 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     // Create user via Supabase Auth Admin API
     const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
@@ -174,10 +185,24 @@ serve(async (req) => {
 
     if (createError) {
       console.error('User creation error:', createError);
+      let errorMessage = 'Failed to create user';
+      let errorCode = 'CREATION_FAILED';
+      
+      if (createError.message.includes('already registered')) {
+        errorMessage = `A user with email "${email}" already exists. Please use a different email address.`;
+        errorCode = 'EMAIL_EXISTS';
+      } else if (createError.message.includes('password')) {
+        errorMessage = 'Password does not meet security requirements. Please use a stronger password.';
+        errorCode = 'WEAK_PASSWORD';
+      } else if (createError.message.includes('email')) {
+        errorMessage = 'Invalid email format provided.';
+        errorCode = 'INVALID_EMAIL';
+      }
+      
       return new Response(JSON.stringify({ 
-        error: createError.message.includes('already registered') 
-          ? 'User with this email already exists' 
-          : 'Failed to create user'
+        error: errorMessage,
+        code: errorCode,
+        details: createError.message
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -240,7 +265,8 @@ serve(async (req) => {
         },
         metadata: {
           created_via: 'admin_portal',
-          password_generated: true
+          password_generated: !customPassword,
+          custom_password_used: !!customPassword
         }
       });
 

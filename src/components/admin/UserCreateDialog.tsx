@@ -5,9 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { UserPlus, Shield, Eye, Users, Baby, Loader2, Copy, Check, AlertTriangle } from 'lucide-react';
+import { UserPlus, Shield, Eye, Users, Baby, Loader2, Copy, Check, AlertTriangle, Key, Mail } from 'lucide-react';
 
 interface UserCreateDialogProps {
   open: boolean;
@@ -21,6 +22,8 @@ interface CreateUserData {
   lastName: string;
   adminRole: string | null;
   familyRole: string | null;
+  customPassword: string;
+  useCustomPassword: boolean;
 }
 
 const ADMIN_ROLES = [
@@ -63,11 +66,15 @@ export const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
     firstName: '',
     lastName: '',
     adminRole: null,
-    familyRole: null
+    familyRole: null,
+    customPassword: '',
+    useCustomPassword: false
   });
   const [loading, setLoading] = useState(false);
   const [generatedPassword, setGeneratedPassword] = useState<string>('');
   const [passwordCopied, setPasswordCopied] = useState(false);
+  const [emailAvailable, setEmailAvailable] = useState<boolean | null>(null);
+  const [checkingEmail, setCheckingEmail] = useState(false);
   const { toast } = useToast();
 
   const handleAdminRoleChange = (roleValue: string) => {
@@ -88,11 +95,35 @@ export const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
     }));
   };
 
-  const handleInputChange = (field: keyof Omit<CreateUserData, 'adminRole' | 'familyRole'>, value: string) => {
+  const handleInputChange = (field: keyof Omit<CreateUserData, 'adminRole' | 'familyRole'>, value: string | boolean) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
+    
+    // Check email availability when email changes
+    if (field === 'email' && typeof value === 'string' && value.length > 0) {
+      checkEmailAvailability(value);
+    }
+  };
+
+  const checkEmailAvailability = async (email: string) => {
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setEmailAvailable(null);
+      return;
+    }
+
+    setCheckingEmail(true);
+    try {
+      const { data, error } = await supabase.rpc('check_email_availability', { p_email: email });
+      if (error) throw error;
+      setEmailAvailable(data);
+    } catch (error) {
+      console.error('Email availability check failed:', error);
+      setEmailAvailable(null);
+    } finally {
+      setCheckingEmail(false);
+    }
   };
 
   const copyPassword = async () => {
@@ -126,6 +157,24 @@ export const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
       return;
     }
 
+    if (formData.useCustomPassword && (!formData.customPassword || formData.customPassword.length < 8)) {
+      toast({
+        title: "Validation Error",
+        description: "Custom password must be at least 8 characters long.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (emailAvailable === false) {
+      toast({
+        title: "Email Unavailable",
+        description: "This email address is already registered. Please use a different email.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!formData.adminRole && !formData.familyRole) {
       toast({
         title: "Validation Error",
@@ -150,13 +199,19 @@ export const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
 
     try {
       const userRoles = [formData.adminRole, formData.familyRole].filter(Boolean);
+      const requestBody: any = {
+        email: formData.email,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        roles: userRoles
+      };
+
+      if (formData.useCustomPassword && formData.customPassword) {
+        requestBody.customPassword = formData.customPassword;
+      }
+
       const { data, error } = await supabase.functions.invoke('admin-create-user', {
-        body: {
-          email: formData.email,
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          roles: userRoles
-        }
+        body: requestBody
       });
 
       if (error) {
@@ -167,7 +222,10 @@ export const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
         throw new Error(data.error);
       }
 
-      setGeneratedPassword(data.password);
+      // Only show password if it was generated (not custom)
+      if (!formData.useCustomPassword) {
+        setGeneratedPassword(data.password);
+      }
       
       toast({
         title: "User Created Successfully",
@@ -178,9 +236,20 @@ export const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
 
     } catch (error: any) {
       console.error('Create user error:', error);
+      let errorMessage = error.message || "Failed to create user. Please try again.";
+      
+      // Handle specific error codes from the edge function
+      if (error.message?.includes('EMAIL_EXISTS')) {
+        errorMessage = "This email address is already registered. Please use a different email.";
+      } else if (error.message?.includes('WEAK_PASSWORD')) {
+        errorMessage = "Password does not meet security requirements. Please use a stronger password.";
+      } else if (error.message?.includes('Role conflict')) {
+        errorMessage = "Role assignment error: " + error.message;
+      }
+      
       toast({
         title: "Creation Failed",
-        description: error.message || "Failed to create user. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -194,10 +263,14 @@ export const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
       firstName: '',
       lastName: '',
       adminRole: null,
-      familyRole: null
+      familyRole: null,
+      customPassword: '',
+      useCustomPassword: false
     });
     setGeneratedPassword('');
     setPasswordCopied(false);
+    setEmailAvailable(null);
+    setCheckingEmail(false);
     onOpenChange(false);
   };
 
@@ -237,14 +310,80 @@ export const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email Address *</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => handleInputChange('email', e.target.value)}
+              <div className="relative">
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                  disabled={loading}
+                  className={`pr-10 ${
+                    emailAvailable === false ? 'border-destructive' : 
+                    emailAvailable === true ? 'border-green-500' : ''
+                  }`}
+                />
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                  {checkingEmail ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  ) : emailAvailable === false ? (
+                    <AlertTriangle className="h-4 w-4 text-destructive" />
+                  ) : emailAvailable === true && formData.email ? (
+                    <Check className="h-4 w-4 text-green-500" />
+                  ) : formData.email ? (
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                  ) : null}
+                </div>
+              </div>
+              {emailAvailable === false && (
+                <p className="text-sm text-destructive">This email address is already registered</p>
+              )}
+              {emailAvailable === true && formData.email && (
+                <p className="text-sm text-green-600">Email is available</p>
+              )}
+            </div>
+          </div>
+
+          {/* Password Configuration */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium">Password Configuration</h3>
+            <div className="flex items-center justify-between space-x-3 p-3 border rounded-lg">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Key className="h-4 w-4" />
+                  <Label htmlFor="useCustomPassword" className="font-medium">
+                    Set Custom Password
+                  </Label>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {formData.useCustomPassword 
+                    ? "User will receive the custom password you set" 
+                    : "A secure password will be automatically generated"}
+                </p>
+              </div>
+              <Switch
+                id="useCustomPassword"
+                checked={formData.useCustomPassword}
+                onCheckedChange={(checked) => handleInputChange('useCustomPassword', checked)}
                 disabled={loading}
               />
             </div>
+            
+            {formData.useCustomPassword && (
+              <div className="space-y-2">
+                <Label htmlFor="customPassword">Custom Password *</Label>
+                <Input
+                  id="customPassword"
+                  type="password"
+                  value={formData.customPassword}
+                  onChange={(e) => handleInputChange('customPassword', e.target.value)}
+                  disabled={loading}
+                  placeholder="Enter custom password (min 8 characters)"
+                />
+                {formData.customPassword && formData.customPassword.length < 8 && (
+                  <p className="text-sm text-destructive">Password must be at least 8 characters long</p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Role Selection */}
@@ -354,14 +493,30 @@ export const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
               </p>
             </div>
           )}
+          
+          {/* Success Message for Custom Password */}
+          {formData.useCustomPassword && !generatedPassword && !loading && (
+            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center gap-2">
+                <Check className="h-4 w-4 text-green-600" />
+                <h3 className="text-sm font-medium text-green-800">Ready to Create User</h3>
+              </div>
+              <p className="text-sm text-green-700 mt-1">
+                User will be created with your custom password. Make sure to share the password securely.
+              </p>
+            </div>
+          )}
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={handleClose} disabled={loading}>
-            {generatedPassword ? 'Close' : 'Cancel'}
+            {generatedPassword || (formData.useCustomPassword && !loading) ? 'Close' : 'Cancel'}
           </Button>
           {!generatedPassword && (
-            <Button onClick={handleCreate} disabled={loading}>
+            <Button 
+              onClick={handleCreate} 
+              disabled={loading || emailAvailable === false || (formData.useCustomPassword && formData.customPassword.length < 8)}
+            >
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Create User
             </Button>

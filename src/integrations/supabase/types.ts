@@ -3065,6 +3065,10 @@ export type Database = {
         Args: { p_family_id: string; p_parent_id: string }
         Returns: boolean
       }
+      check_email_availability: {
+        Args: { p_email: string }
+        Returns: boolean
+      }
       check_rate_limit: {
         Args: {
           p_max_attempts?: number
