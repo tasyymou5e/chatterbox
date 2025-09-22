@@ -10,7 +10,7 @@ import { useSiteSettings } from "@/hooks/useSiteSettings";
 const Index = () => {
   const [showPortals, setShowPortals] = useState(false);
   const navigate = useNavigate();
-  const { settings } = useSiteSettings();
+  const { settings, loading } = useSiteSettings();
 
   const scrollToPortals = () => {
     if (settings.parent_signup_enabled) {
@@ -27,7 +27,7 @@ const Index = () => {
 
       {/* Hero Section */}
       <section className="pt-16">
-        <Hero onChoosePortal={scrollToPortals} settings={settings} />
+        <Hero onChoosePortal={scrollToPortals} settings={settings} loading={loading} />
         
         {/* Scroll indicator */}
         <div className="text-center pb-8">

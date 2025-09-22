@@ -10,9 +10,10 @@ interface HeroProps {
     site_maintenance_mode: boolean;
     max_families_per_parent: number;
   };
+  loading?: boolean;
 }
 
-export const Hero = ({ onChoosePortal, settings }: HeroProps) => {
+export const Hero = ({ onChoosePortal, settings, loading = false }: HeroProps) => {
   const navigate = useNavigate();
   const features = [
     {
@@ -63,14 +64,21 @@ export const Hero = ({ onChoosePortal, settings }: HeroProps) => {
             <Button 
               size="lg" 
               className={`font-semibold px-8 py-4 text-lg shadow-medium ${
-                settings.parent_signup_enabled 
-                  ? "bg-white text-primary hover:bg-white/95" 
-                  : "bg-white/50 text-primary/50 cursor-not-allowed"
+                loading
+                  ? "bg-white/70 text-primary/70"
+                  : settings.parent_signup_enabled 
+                    ? "bg-white text-primary hover:bg-white/95" 
+                    : "bg-white/50 text-primary/50 cursor-not-allowed"
               }`}
-              onClick={settings.parent_signup_enabled ? onChoosePortal : undefined}
-              disabled={!settings.parent_signup_enabled}
+              onClick={!loading && settings.parent_signup_enabled ? onChoosePortal : undefined}
+              disabled={loading || !settings.parent_signup_enabled}
             >
-              {settings.parent_signup_enabled ? "Parent Sign Up" : "Parent Signup Disabled"}
+              {loading 
+                ? "Loading..." 
+                : settings.parent_signup_enabled 
+                  ? "Parent Sign Up" 
+                  : "Parent Signup Disabled"
+              }
             </Button>
             <Button 
               size="lg" 

@@ -25,7 +25,8 @@ export const useSiteSettings = () => {
       setLoading(true);
       const { data, error } = await supabase
         .from('site_settings')
-        .select('setting_key, setting_value');
+        .select('setting_key, setting_value')
+        .in('setting_key', ['parent_signup_enabled', 'site_maintenance_mode', 'max_families_per_parent']);
 
       if (error) {
         throw error;
