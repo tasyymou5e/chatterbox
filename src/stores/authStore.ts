@@ -92,20 +92,33 @@ export const useAuthStore = create<AuthState>()(
           }
         },
 
-        // Helper to check if user has admin role with retry logic
+        // Helper to check if user has admin role (full admin or read-only admin)
         checkAdminRole: async (userId: string): Promise<boolean> => {
           try {
-            const { data, error } = await supabase.rpc('has_role', {
+            // Check for full admin role
+            const { data: isAdmin, error: adminError } = await supabase.rpc('has_role', {
               _user_id: userId,
               _role: 'admin'
             });
 
-            if (error) {
-              return false;
+            if (adminError) {
+              console.warn('Error checking admin role:', adminError);
             }
 
-            return data || false;
+            // Check for read-only admin role
+            const { data: isReadOnly, error: readOnlyError } = await supabase.rpc('has_role', {
+              _user_id: userId,
+              _role: 'read_only'
+            });
+
+            if (readOnlyError) {
+              console.warn('Error checking read_only role:', readOnlyError);
+            }
+
+            // Return true if user has either admin or read_only role
+            return (isAdmin || false) || (isReadOnly || false);
           } catch (error) {
+            console.error('Error in checkAdminRole:', error);
             return false;
           }
         },
