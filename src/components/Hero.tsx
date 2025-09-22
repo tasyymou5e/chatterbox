@@ -5,9 +5,14 @@ import { Heart, Star, Users, Brain, Gamepad2, Award } from "lucide-react";
 
 interface HeroProps {
   onChoosePortal?: () => void;
+  settings: {
+    parent_signup_enabled: boolean;
+    site_maintenance_mode: boolean;
+    max_families_per_parent: number;
+  };
 }
 
-export const Hero = ({ onChoosePortal }: HeroProps) => {
+export const Hero = ({ onChoosePortal, settings }: HeroProps) => {
   const navigate = useNavigate();
   const features = [
     {
@@ -57,10 +62,15 @@ export const Hero = ({ onChoosePortal }: HeroProps) => {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
               size="lg" 
-              className="bg-white text-primary hover:bg-white/95 font-semibold px-8 py-4 text-lg shadow-medium"
-              onClick={onChoosePortal}
+              className={`font-semibold px-8 py-4 text-lg shadow-medium ${
+                settings.parent_signup_enabled 
+                  ? "bg-white text-primary hover:bg-white/95" 
+                  : "bg-white/50 text-primary/50 cursor-not-allowed"
+              }`}
+              onClick={settings.parent_signup_enabled ? onChoosePortal : undefined}
+              disabled={!settings.parent_signup_enabled}
             >
-              Parent Sign Up
+              {settings.parent_signup_enabled ? "Parent Sign Up" : "Parent Signup Disabled"}
             </Button>
             <Button 
               size="lg" 

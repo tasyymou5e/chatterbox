@@ -27,7 +27,7 @@ const Index = () => {
 
       {/* Hero Section */}
       <section className="pt-16">
-        <Hero onChoosePortal={scrollToPortals} />
+        <Hero onChoosePortal={scrollToPortals} settings={settings} />
         
         {/* Scroll indicator */}
         <div className="text-center pb-8">
