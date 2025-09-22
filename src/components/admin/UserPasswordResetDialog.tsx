@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -198,101 +199,103 @@ export const UserPasswordResetDialog: React.FC<UserPasswordResetDialogProps> = (
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
-          {/* Password Generation */}
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={generateSecurePassword}
-              className="flex-1"
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Generate Secure Password
-            </Button>
-            {password && (
+        <ScrollArea className="max-h-[70vh] pr-4">
+          <div className="space-y-4">
+            {/* Password Generation */}
+            <div className="flex gap-2">
               <Button
                 type="button"
                 variant="outline"
-                size="icon"
-                onClick={copyToClipboard}
-                title="Copy password to clipboard"
+                onClick={generateSecurePassword}
+                className="flex-1"
               >
-                <Copy className="h-4 w-4" />
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Generate Secure Password
               </Button>
-            )}
-          </div>
-
-          {/* New Password */}
-          <div className="space-y-2">
-            <Label htmlFor="new-password">New Password</Label>
-            <div className="relative">
-              <Input
-                id="new-password"
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter new password"
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
-              </Button>
+              {password && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={copyToClipboard}
+                  title="Copy password to clipboard"
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              )}
             </div>
-            
-            {/* Password Strength Indicator */}
-            {password && (
-              <div className="space-y-1">
-                <div className="flex justify-between text-sm">
-                  <span>Password Strength:</span>
-                  <span className="font-medium">{passwordStrength.label}</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className={`h-2 rounded-full transition-all ${passwordStrength.color}`}
-                    style={{ width: `${(passwordStrength.strength / 5) * 100}%` }}
-                  />
-                </div>
+
+            {/* New Password */}
+            <div className="space-y-2">
+              <Label htmlFor="new-password">New Password</Label>
+              <div className="relative">
+                <Input
+                  id="new-password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter new password"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </Button>
               </div>
-            )}
-          </div>
+              
+              {/* Password Strength Indicator */}
+              {password && (
+                <div className="space-y-1">
+                  <div className="flex justify-between text-sm">
+                    <span>Password Strength:</span>
+                    <span className="font-medium">{passwordStrength.label}</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div
+                      className={`h-2 rounded-full transition-all ${passwordStrength.color}`}
+                      style={{ width: `${(passwordStrength.strength / 5) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
 
-          {/* Confirm Password */}
-          <div className="space-y-2">
-            <Label htmlFor="confirm-password">Confirm Password</Label>
-            <Input
-              id="confirm-password"
-              type={showPassword ? 'text' : 'password'}
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Confirm new password"
-            />
-            {confirmPassword && password !== confirmPassword && (
-              <p className="text-sm text-red-500">Passwords do not match</p>
-            )}
-          </div>
+            {/* Confirm Password */}
+            <div className="space-y-2">
+              <Label htmlFor="confirm-password">Confirm Password</Label>
+              <Input
+                id="confirm-password"
+                type={showPassword ? 'text' : 'password'}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Confirm new password"
+              />
+              {confirmPassword && password !== confirmPassword && (
+                <p className="text-sm text-red-500">Passwords do not match</p>
+              )}
+            </div>
 
-          {/* Force Password Change Option */}
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="force-change"
-              checked={forcePasswordChange}
-              onCheckedChange={(checked) => setForcePasswordChange(checked === true)}
-            />
-            <Label htmlFor="force-change" className="text-sm">
-              Force user to change password on next login
-            </Label>
+            {/* Force Password Change Option */}
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="force-change"
+                checked={forcePasswordChange}
+                onCheckedChange={(checked) => setForcePasswordChange(checked === true)}
+              />
+              <Label htmlFor="force-change" className="text-sm">
+                Force user to change password on next login
+              </Label>
+            </div>
           </div>
-        </div>
+        </ScrollArea>
 
         <DialogFooter>
           <Button

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -178,168 +179,170 @@ export function UserEditDialog({ open, onOpenChange, user, onSuccess }: UserEdit
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Basic Information */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Basic Information
-            </h3>
-            
-            <div className="grid grid-cols-2 gap-4">
+        <ScrollArea className="max-h-[80vh] pr-4">
+          <div className="space-y-6">
+            {/* Basic Information */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Basic Information
+              </h3>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="first_name" className="text-gray-300">First Name *</Label>
+                  <Input
+                    id="first_name"
+                    value={formData.first_name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, first_name: e.target.value }))}
+                    className="bg-gray-700 border-gray-600 text-white"
+                    placeholder="Enter first name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="last_name" className="text-gray-300">Last Name</Label>
+                  <Input
+                    id="last_name"
+                    value={formData.last_name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
+                    className="bg-gray-700 border-gray-600 text-white"
+                    placeholder="Enter last name"
+                  />
+                </div>
+              </div>
+
               <div className="space-y-2">
-                <Label htmlFor="first_name" className="text-gray-300">First Name *</Label>
+                <Label htmlFor="email" className="text-gray-300">Email Address *</Label>
                 <Input
-                  id="first_name"
-                  value={formData.first_name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, first_name: e.target.value }))}
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                   className="bg-gray-700 border-gray-600 text-white"
-                  placeholder="Enter first name"
+                  placeholder="Enter email address"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="last_name" className="text-gray-300">Last Name</Label>
-                <Input
-                  id="last_name"
-                  value={formData.last_name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
-                  className="bg-gray-700 border-gray-600 text-white"
-                  placeholder="Enter last name"
-                />
-              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-gray-300">Email Address *</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                className="bg-gray-700 border-gray-600 text-white"
-                placeholder="Enter email address"
-              />
-            </div>
-          </div>
+            <Separator className="bg-gray-700" />
 
-          <Separator className="bg-gray-700" />
-
-          {/* Role Management */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-              <Shield className="h-4 w-4" />
-              User Roles
-            </h3>
-            
-            <Alert className="border-amber-800 bg-amber-900/20">
-              <AlertTriangle className="h-4 w-4 text-amber-400" />
-              <AlertDescription className="text-amber-400">
-                <strong>Important:</strong> Admin roles cannot join families, while Family roles can be invited to families.
-                Select only one role category.
-              </AlertDescription>
-            </Alert>
-            
-            {/* Admin Roles Section */}
-            <div className="space-y-3">
-              <h4 className="text-sm font-medium text-gray-300">Admin Roles</h4>
-              <RadioGroup 
-                value={adminRole || ""} 
-                onValueChange={handleAdminRoleChange}
-                disabled={loading || familyRole !== null}
-              >
-                {ADMIN_ROLES.map((role) => {
-                  const RoleIcon = role.icon;
-                  return (
-                    <div key={role.value} className={`flex items-start space-x-3 p-3 rounded-lg border border-gray-700 hover:border-gray-600 ${familyRole ? 'opacity-50' : ''}`}>
-                      <RadioGroupItem value={role.value} id={`admin-${role.value}`} className="text-white" />
-                      <div className="flex-1">
-                        <label 
-                          htmlFor={`admin-${role.value}`} 
-                          className="flex items-center gap-2 cursor-pointer"
-                        >
-                          <RoleIcon className="h-4 w-4 text-gray-400" />
-                          <span className="font-medium text-white">{role.label}</span>
-                        </label>
-                        <p className="text-sm text-gray-400 mt-1">{role.description}</p>
+            {/* Role Management */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                User Roles
+              </h3>
+              
+              <Alert className="border-amber-800 bg-amber-900/20">
+                <AlertTriangle className="h-4 w-4 text-amber-400" />
+                <AlertDescription className="text-amber-400">
+                  <strong>Important:</strong> Admin roles cannot join families, while Family roles can be invited to families.
+                  Select only one role category.
+                </AlertDescription>
+              </Alert>
+              
+              {/* Admin Roles Section */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium text-gray-300">Admin Roles</h4>
+                <RadioGroup 
+                  value={adminRole || ""} 
+                  onValueChange={handleAdminRoleChange}
+                  disabled={loading || familyRole !== null}
+                >
+                  {ADMIN_ROLES.map((role) => {
+                    const RoleIcon = role.icon;
+                    return (
+                      <div key={role.value} className={`flex items-start space-x-3 p-3 rounded-lg border border-gray-700 hover:border-gray-600 ${familyRole ? 'opacity-50' : ''}`}>
+                        <RadioGroupItem value={role.value} id={`admin-${role.value}`} className="text-white" />
+                        <div className="flex-1">
+                          <label 
+                            htmlFor={`admin-${role.value}`} 
+                            className="flex items-center gap-2 cursor-pointer"
+                          >
+                            <RoleIcon className="h-4 w-4 text-gray-400" />
+                            <span className="font-medium text-white">{role.label}</span>
+                          </label>
+                          <p className="text-sm text-gray-400 mt-1">{role.description}</p>
+                        </div>
+                        {adminRole === role.value && (
+                          <Badge className="bg-blue-600 text-white">
+                            Selected
+                          </Badge>
+                        )}
                       </div>
-                      {adminRole === role.value && (
-                        <Badge className="bg-blue-600 text-white">
-                          Selected
-                        </Badge>
-                      )}
-                    </div>
-                  );
-                })}
-              </RadioGroup>
-            </div>
+                    );
+                  })}
+                </RadioGroup>
+              </div>
 
-            {/* Family Roles Section */}
-            <div className="space-y-3">
-              <h4 className="text-sm font-medium text-gray-300">Family Roles</h4>
-              <RadioGroup 
-                value={familyRole || ""} 
-                onValueChange={handleFamilyRoleChange}
-                disabled={loading || adminRole !== null}
-              >
-                {FAMILY_ROLES.map((role) => {
-                  const RoleIcon = role.icon;
-                  return (
-                    <div key={role.value} className={`flex items-start space-x-3 p-3 rounded-lg border border-gray-700 hover:border-gray-600 ${adminRole ? 'opacity-50' : ''}`}>
-                      <RadioGroupItem value={role.value} id={`family-${role.value}`} className="text-white" />
-                      <div className="flex-1">
-                        <label 
-                          htmlFor={`family-${role.value}`} 
-                          className="flex items-center gap-2 cursor-pointer"
-                        >
-                          <RoleIcon className="h-4 w-4 text-gray-400" />
-                          <span className="font-medium text-white">{role.label}</span>
-                        </label>
-                        <p className="text-sm text-gray-400 mt-1">{role.description}</p>
+              {/* Family Roles Section */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium text-gray-300">Family Roles</h4>
+                <RadioGroup 
+                  value={familyRole || ""} 
+                  onValueChange={handleFamilyRoleChange}
+                  disabled={loading || adminRole !== null}
+                >
+                  {FAMILY_ROLES.map((role) => {
+                    const RoleIcon = role.icon;
+                    return (
+                      <div key={role.value} className={`flex items-start space-x-3 p-3 rounded-lg border border-gray-700 hover:border-gray-600 ${adminRole ? 'opacity-50' : ''}`}>
+                        <RadioGroupItem value={role.value} id={`family-${role.value}`} className="text-white" />
+                        <div className="flex-1">
+                          <label 
+                            htmlFor={`family-${role.value}`} 
+                            className="flex items-center gap-2 cursor-pointer"
+                          >
+                            <RoleIcon className="h-4 w-4 text-gray-400" />
+                            <span className="font-medium text-white">{role.label}</span>
+                          </label>
+                          <p className="text-sm text-gray-400 mt-1">{role.description}</p>
+                        </div>
+                        {familyRole === role.value && (
+                          <Badge className="bg-blue-600 text-white">
+                            Selected
+                          </Badge>
+                        )}
                       </div>
-                      {familyRole === role.value && (
-                        <Badge className="bg-blue-600 text-white">
-                          Selected
-                        </Badge>
-                      )}
-                    </div>
-                  );
-                })}
-              </RadioGroup>
+                    );
+                  })}
+                </RadioGroup>
+              </div>
+
+              {!adminRole && !familyRole && (
+                <div className="text-amber-400 text-sm bg-amber-900/20 border border-amber-800 rounded p-3">
+                  ⚠️ Warning: User will have no roles assigned. This may limit their access to the system.
+                </div>
+              )}
             </div>
 
-            {!adminRole && !familyRole && (
-              <div className="text-amber-400 text-sm bg-amber-900/20 border border-amber-800 rounded p-3">
-                ⚠️ Warning: User will have no roles assigned. This may limit their access to the system.
-              </div>
-            )}
-          </div>
+            <Separator className="bg-gray-700" />
 
-          <Separator className="bg-gray-700" />
-
-          {/* Password Reset Section */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                  <Key className="h-4 w-4" />
-                  Password Management
-                </h3>
-                <p className="text-sm text-gray-400 mt-1">
-                  Reset the user's password or require them to change it on next login
-                </p>
+            {/* Password Reset Section */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                    <Key className="h-4 w-4" />
+                    Password Management
+                  </h3>
+                  <p className="text-sm text-gray-400 mt-1">
+                    Reset the user's password or require them to change it on next login
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setPasswordResetOpen(true)}
+                  className="border-yellow-600 text-yellow-400 hover:bg-yellow-600 hover:text-white"
+                >
+                  <Key className="h-4 w-4 mr-2" />
+                  Reset Password
+                </Button>
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setPasswordResetOpen(true)}
-                className="border-yellow-600 text-yellow-400 hover:bg-yellow-600 hover:text-white"
-              >
-                <Key className="h-4 w-4 mr-2" />
-                Reset Password
-              </Button>
             </div>
           </div>
-        </div>
+        </ScrollArea>
 
         <DialogFooter className="flex gap-2">
           <Button

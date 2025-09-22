@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -115,64 +116,66 @@ export function UserDeleteDialog({ open, onOpenChange, user, onSuccess }: UserDe
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Warning Alert */}
-          <Alert className="border-red-800 bg-red-900/20">
-            <AlertTriangle className="h-4 w-4 text-red-400" />
-            <AlertDescription className="text-red-300">
-              <strong>Warning:</strong> This will permanently delete:
-              <ul className="mt-2 list-disc list-inside text-sm space-y-1">
-                <li>User profile and personal information</li>
-                <li>All assigned roles ({user.roles.join(', ') || 'none'})</li>
-                <li>Family memberships ({user.families.length} families)</li>
-                <li>All activity logs and related data</li>
-              </ul>
-            </AlertDescription>
-          </Alert>
+        <ScrollArea className="max-h-[70vh] pr-4">
+          <div className="space-y-6">
+            {/* Warning Alert */}
+            <Alert className="border-red-800 bg-red-900/20">
+              <AlertTriangle className="h-4 w-4 text-red-400" />
+              <AlertDescription className="text-red-300">
+                <strong>Warning:</strong> This will permanently delete:
+                <ul className="mt-2 list-disc list-inside text-sm space-y-1">
+                  <li>User profile and personal information</li>
+                  <li>All assigned roles ({user.roles.join(', ') || 'none'})</li>
+                  <li>Family memberships ({user.families.length} families)</li>
+                  <li>All activity logs and related data</li>
+                </ul>
+              </AlertDescription>
+            </Alert>
 
-          {/* User Information */}
-          <div className="bg-gray-700 rounded-lg p-4">
-            <h4 className="font-semibold text-white mb-2">User to be deleted:</h4>
-            <div className="text-sm text-gray-300 space-y-1">
-              <p><span className="font-medium">Name:</span> {user.first_name} {user.last_name}</p>
-              <p><span className="font-medium">Email:</span> {user.email}</p>
-              <p><span className="font-medium">Roles:</span> {user.roles.join(', ') || 'None'}</p>
-              <p><span className="font-medium">Families:</span> {user.families.length}</p>
+            {/* User Information */}
+            <div className="bg-gray-700 rounded-lg p-4">
+              <h4 className="font-semibold text-white mb-2">User to be deleted:</h4>
+              <div className="text-sm text-gray-300 space-y-1">
+                <p><span className="font-medium">Name:</span> {user.first_name} {user.last_name}</p>
+                <p><span className="font-medium">Email:</span> {user.email}</p>
+                <p><span className="font-medium">Roles:</span> {user.roles.join(', ') || 'None'}</p>
+                <p><span className="font-medium">Families:</span> {user.families.length}</p>
+              </div>
+            </div>
+
+            {/* Confirmation Input */}
+            <div className="space-y-2">
+              <Label htmlFor="confirmation" className="text-gray-300">
+                Type <code className="bg-gray-700 px-1 rounded">{expectedConfirmation}</code> to confirm:
+              </Label>
+              <Input
+                id="confirmation"
+                value={confirmationText}
+                onChange={(e) => setConfirmationText(e.target.value)}
+                className="bg-gray-700 border-gray-600 text-white font-mono"
+                placeholder={expectedConfirmation}
+                disabled={loading}
+              />
+            </div>
+
+            {/* Final Confirmation Checkbox */}
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="confirm-deletion"
+                checked={confirmDeletion}
+                onCheckedChange={(checked) => setConfirmDeletion(checked === true)}
+                disabled={loading}
+                className="border-red-600"
+              />
+              <Label 
+                htmlFor="confirm-deletion" 
+                className="text-sm text-gray-300 cursor-pointer"
+              >
+                I understand that this action is permanent and cannot be undone
+              </Label>
             </div>
           </div>
-
-          {/* Confirmation Input */}
-          <div className="space-y-2">
-            <Label htmlFor="confirmation" className="text-gray-300">
-              Type <code className="bg-gray-700 px-1 rounded">{expectedConfirmation}</code> to confirm:
-            </Label>
-            <Input
-              id="confirmation"
-              value={confirmationText}
-              onChange={(e) => setConfirmationText(e.target.value)}
-              className="bg-gray-700 border-gray-600 text-white font-mono"
-              placeholder={expectedConfirmation}
-              disabled={loading}
-            />
-          </div>
-
-          {/* Final Confirmation Checkbox */}
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="confirm-deletion"
-              checked={confirmDeletion}
-              onCheckedChange={(checked) => setConfirmDeletion(checked === true)}
-              disabled={loading}
-              className="border-red-600"
-            />
-            <Label 
-              htmlFor="confirm-deletion" 
-              className="text-sm text-gray-300 cursor-pointer"
-            >
-              I understand that this action is permanent and cannot be undone
-            </Label>
-          </div>
-        </div>
+        </ScrollArea>
 
         <DialogFooter className="flex gap-2">
           <Button
