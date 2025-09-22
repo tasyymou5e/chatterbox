@@ -61,7 +61,7 @@ const Index = () => {
               <span className="font-bold text-xl">Chatterbox</span>
             </div>
               <p className="text-white/80 text-sm leading-relaxed">
-                Empowering autistic children through technology, education, and family connection.
+                Empowering children with autism through technology, education, and family connection.
               </p>
             </div>
             
