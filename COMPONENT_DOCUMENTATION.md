@@ -2,24 +2,24 @@
 *Complete component reference for Chatterbox Family Support Platform*
 
 ## 📚 Table of Contents
-- [Overview](#-overview)
-- [Page Components](#-page-components)
-- [Feature Components](#-feature-components)
-- [UI Components](#-ui-components)
-- [Custom Hooks](#-custom-hooks)
-- [State Management](#-state-management)
-- [Component Architecture](#-component-architecture)
+- [Overview](#📚-overview)
+- [Page Components](#📄-page-components)
+- [Feature Components](#🧩-feature-components)
+- [UI Components](#🎨-ui-components)
+- [Custom Hooks](#🪝-custom-hooks)
+- [State Management](#🏪-state-management)
+- [Component Architecture](#🏗️-component-architecture)
 
 ---
 
 ## 🌟 Overview
 
-Chatterbox features a comprehensive component architecture built with React, TypeScript, and accessibility-first design principles. The platform contains 100+ components organized into clear categories for maximum reusability and maintainability.
+Chatterbox features a comprehensive component architecture built with React, TypeScript, and accessibility-first design principles. The platform contains 110+ components organized into clear categories for maximum reusability and maintainability.
 
 **Component Categories:**
-- **38 Page Components**: Route-based components for different user flows
-- **47 Feature Components**: Business logic components for core functionality (includes FamilyNameSuggestions)
-- **36 UI Components**: Reusable interface elements (Shadcn/ui based, includes PerformanceBadge)
+- **40 Page Components**: Route-based components for different user flows with enhanced navigation
+- **50 Feature Components**: Business logic components for core functionality
+- **38 UI Components**: Reusable interface elements (Shadcn/ui based)
 - **25 Custom Hooks**: State and logic abstraction
 - **12 Zustand Stores**: Centralized state management
 
@@ -377,7 +377,8 @@ Chatterbox features a comprehensive component architecture built with React, Typ
   - Recurring chore automation with flexible scheduling
   - Integration with gamification system for point calculations
 - **Components**: Chore forms, assignment calendars, progress analytics
-- **Accessibility**: Clear instructions, visual supports, sensory accommodations
+#### **Accessibility Enhancements for People on the Autism Spectrum**
+- Clear instructions, visual supports, sensory accommodations
 
 #### **ChildrenChoresDashboard.tsx**
 - **Purpose**: Child-friendly task completion interface with engagement features
@@ -387,7 +388,7 @@ Chatterbox features a comprehensive component architecture built with React, Typ
   - Achievement tracking with instant feedback and rewards
   - Peer recognition system for family member appreciation
 - **Gamification**: Points display, streak tracking, level progression, achievement unlocks
-- **Accessibility**: High contrast, reduced motion options, clear navigation
+- **Accessibility Features for People on the Autism Spectrum**: High contrast, reduced motion options, clear navigation
 
 ### Games & Content (`src/components/games/`)
 

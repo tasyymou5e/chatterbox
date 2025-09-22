@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Spectrum Harmony application implements a sophisticated parent and child authentication system designed with autism-friendly features, comprehensive security measures, and role-based access control.
+The Chatterbox application implements a sophisticated parent and child authentication system designed with features accessible for people on the autism spectrum, comprehensive security measures, and role-based access control.
 
 ## Authentication Architecture
 
@@ -80,7 +80,7 @@ The system includes built-in protection against brute force attacks with user-fr
 
 ## User Experience Features
 
-### 1. Autism-Friendly Design
+### 1. Accessible Design for People on the Autism Spectrum
 
 #### Password Creation Assistance
 - **Visual strength indicators** with color-coded progress bars
@@ -296,10 +296,10 @@ signIn: async (email: string, password: string) => {
 8. **Session Management** with remote logout capability
 
 ### Child-Specific Enhancements
-- Visual authentication aids for children with autism
+- Visual authentication aids for children who have autism
 - Color-coded success/error states
 - Simplified language in all messages
-- Autism-friendly design patterns
+- Accessible design patterns for people on the autism spectrum
 - Sensory consideration options
 
 ## Troubleshooting

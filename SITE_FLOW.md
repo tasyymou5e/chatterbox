@@ -11,7 +11,7 @@
 ```typescript
 // User arrives at chatterbox.live
 Landing Page Elements:
-├── Hero Banner: "Empowering Children with Autism Through Technology"
+├── Hero Banner: "Empowering Children Who Have Autism Through Technology"
 ├── Mission Statement: Personalized learning & family connection
 ├── Platform Benefits: Safety, education, progress tracking
 ├── Trust Indicators: Security badges, testimonials
@@ -33,7 +33,7 @@ Portal Cards Display:
 │   └── Route: /auth
 └── 🎮 Child Portal
     ├── Purpose: "Educational Games & Activities"
-    ├── Features: Autism-friendly content, achievement tracking
+    ├── Features: Accessible content for people on the autism spectrum, achievement tracking
     ├── Security: Supervised access with content filtering
     └── Route: /games
 ```

@@ -2,7 +2,7 @@
 
 ## System Overview
 
-Chatterbox is a comprehensive React-based web application designed to empower children with autism through technology, education, and family connection. Built with Vite, TypeScript, and Tailwind CSS, using Supabase as the backend-as-a-service platform for authentication, database, and serverless functions.
+Chatterbox is a comprehensive React-based web application designed to empower children who have autism through technology, education, and family connection. Built with Vite, TypeScript, and Tailwind CSS, using Supabase as the backend-as-a-service platform for authentication, database, and serverless functions.
 
 ## Technology Stack
 
@@ -67,12 +67,12 @@ src/
 - **Component Variants**: Using `class-variance-authority` for type-safe styling
 - **Responsive Design**: Mobile-first approach with Tailwind breakpoints
 - **Dark Mode**: Theme-aware components using CSS variables
-- **Autism-Friendly Features**: Reduced motion, high contrast, calming colors, sensory accommodations
+- **Accessible for People on the Autism Spectrum**: Reduced motion, high contrast, calming colors, sensory accommodations
 
 #### State Management (✅ COMPLETED: Zustand-Based)
 - **Centralized Stores**: 12 Zustand stores with TypeScript support and DevTools
   - `authStore`: Enhanced authentication with error diagnostics and activity logging
-  - `uiStore`: Global UI state (loading, errors, modals) with component-specific tracking
+  - `uiStore`: Global UI state (loading, errors, modals) with component-specific tracking  
   - `adminStore`: Admin-specific state management and system metrics
   - `choreStore`: Chore management state and operations
   - `gamificationStore`: Points, levels, achievements, and leaderboards
@@ -82,7 +82,7 @@ src/
   - `performanceAnalyticsStore`: Performance metrics and monitoring
   - `progressAnalyticsStore`: Progress tracking and insights
   - `systemHealthStore`: System health monitoring and alerts
-  - Plus additional specialized stores for targeted functionality
+  - Additional specialized stores for targeted functionality
 - **Bridge Adapters**: Maintain backward compatibility for existing components
 - **Persistence**: Critical state persisted to localStorage with selective partitioning
 - **DevTools**: Redux DevTools integration for time-travel debugging
@@ -385,9 +385,10 @@ export const useAnalyticsWithSession = () => {
 
 ---
 
-**Documentation Version**: 3.1  
-**Last Updated**: 2025-01-10  
+**Documentation Version**: 3.2  
+**Last Updated**: 2025-09-22  
 **Project**: Chatterbox (formerly Spectrum Harmony)  
 **Database Tables**: 59 with comprehensive security  
 **Zustand Stores**: 12 with optimal performance  
+**Security Grade**: A- (Excellent)  
 **Maintained By**: Development Team
