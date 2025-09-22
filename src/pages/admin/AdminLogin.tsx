@@ -5,20 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Shield, AlertTriangle, Settings, ChevronDown, ChevronUp } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { Loader2, Shield, AlertTriangle } from 'lucide-react';
 
 export default function AdminLogin() {
   const { signIn, loading, user, isAdmin } = useAdminAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isSigningIn, setIsSigningIn] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
-  const [parentSignupEnabled, setParentSignupEnabled] = useState(true);
-  const [loadingSettings, setLoadingSettings] = useState(false);
-  const [updatingSettings, setUpdatingSettings] = useState(false);
 
   // Enhanced redirect check - only if fully authenticated and admin status confirmed
   if (!loading && user && isAdmin && user.id && user.email) {
@@ -26,67 +20,6 @@ export default function AdminLogin() {
     return <Navigate to="/admin/dashboard" replace />;
   }
 
-  // Load site settings when admin is authenticated
-  useEffect(() => {
-    if (user && isAdmin && !loading) {
-      loadSiteSettings();
-    }
-  }, [user, isAdmin, loading]);
-
-  const loadSiteSettings = async () => {
-    setLoadingSettings(true);
-    try {
-      const { data, error } = await supabase
-        .from('site_settings')
-        .select('setting_key, setting_value')
-        .eq('setting_key', 'parent_signup_enabled')
-        .single();
-
-      if (error) {
-        console.error('Error loading site settings:', error);
-      } else {
-        setParentSignupEnabled(data.setting_value === 'true' || data.setting_value === true);
-      }
-    } catch (error) {
-      console.error('Error loading site settings:', error);
-    } finally {
-      setLoadingSettings(false);
-    }
-  };
-
-  const updateSiteSetting = async (settingKey: string, settingValue: boolean) => {
-    setUpdatingSettings(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('update-site-settings', {
-        body: {
-          setting_key: settingKey,
-          setting_value: settingValue
-        }
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      if (settingKey === 'parent_signup_enabled') {
-        setParentSignupEnabled(settingValue);
-      }
-
-      toast({
-        title: "Setting Updated",
-        description: `${settingKey.replace('_', ' ')} has been ${settingValue ? 'enabled' : 'disabled'}`,
-      });
-    } catch (error) {
-      console.error('Error updating site setting:', error);
-      toast({
-        title: "Update Failed",
-        description: "Failed to update site setting. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setUpdatingSettings(false);
-    }
-  };
 
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -242,58 +175,6 @@ export default function AdminLogin() {
               </Button>
             </form>
 
-            {/* Site Settings Section - Only show when authenticated as admin */}
-            {user && isAdmin && (
-              <div className="mt-6 pt-4 border-t border-gray-700">
-                <Button
-                  onClick={() => setShowSettings(!showSettings)}
-                  variant="ghost"
-                  size="sm"
-                  className="w-full justify-between text-gray-300 hover:text-white hover:bg-gray-700"
-                  disabled={loadingSettings}
-                >
-                  <div className="flex items-center space-x-2">
-                    <Settings className="h-4 w-4" />
-                    <span>Site Settings</span>
-                  </div>
-                  {loadingSettings ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : showSettings ? (
-                    <ChevronUp className="h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4" />
-                  )}
-                </Button>
-
-                {showSettings && (
-                  <div className="mt-4 space-y-4 p-4 bg-gray-750 rounded-lg border border-gray-600">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-1">
-                        <Label className="text-sm font-medium text-gray-300">
-                          Parent Signup
-                        </Label>
-                        <p className="text-xs text-gray-400">
-                          Allow new parents to sign up from the main site
-                        </p>
-                      </div>
-                      <Switch
-                        checked={parentSignupEnabled}
-                        onCheckedChange={(checked) => updateSiteSetting('parent_signup_enabled', checked)}
-                        disabled={updatingSettings}
-                        className="data-[state=checked]:bg-blue-600"
-                      />
-                    </div>
-                    
-                    <div className="text-xs text-gray-500 border-t border-gray-600 pt-3">
-                      Status: Parent signup is currently{' '}
-                      <span className={parentSignupEnabled ? 'text-green-400' : 'text-red-400'}>
-                        {parentSignupEnabled ? 'enabled' : 'disabled'}
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
 
           <div className="mt-6 pt-4 border-t border-gray-700">
             <div className="flex flex-col items-center space-y-2">

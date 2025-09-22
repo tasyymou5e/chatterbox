@@ -27,6 +27,7 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 import { useAuthStore } from '@/stores/authStore';
 import SecurityDashboardCard from '@/components/admin/SecurityDashboardCard';
 import EnhancedSecurityDashboard from '@/components/admin/EnhancedSecurityDashboard';
+import AdminSiteSettings from '@/components/admin/AdminSiteSettings';
 
 interface DashboardStats {
   totalFamilies: number;
@@ -257,40 +258,11 @@ export default function AdminDashboard() {
         <RetentionChart data={retentionData} loading={analyticsLoading} />
       </div>
 
-      {/* System Health and Quick Actions */}
+      {/* System Health, Settings, and Quick Actions */}
       <div className="grid gap-6 lg:grid-cols-3">
         <SystemHealthWidget data={systemMetrics || []} loading={!sessionReady} />
         
-        <Card className="bg-gradient-card border-border shadow-soft">
-          <CardHeader>
-            <CardTitle className="text-foreground flex items-center">
-              <BarChart3 className="h-5 w-5 mr-2 text-primary" />
-              Performance Metrics
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Daily Active Users</span>
-                <span className="text-lg font-semibold text-foreground">
-                  {activeUsersMetric.value.toLocaleString()}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Login Success Rate</span>
-                <span className="text-lg font-semibold text-secondary">98.5%</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Avg Session Duration</span>
-                <span className="text-lg font-semibold text-foreground">24min</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Error Rate</span>
-                <span className="text-lg font-semibold text-destructive">0.1%</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <AdminSiteSettings />
 
         <Card className="bg-gradient-card border-border shadow-soft">
           <CardHeader>
