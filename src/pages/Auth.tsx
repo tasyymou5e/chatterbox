@@ -138,6 +138,17 @@ const Auth = () => {
     e.preventDefault();
     setIsLoading(true);
 
+    // Check if parent signup is enabled
+    if (!settings.parent_signup_enabled) {
+      toast({
+        title: 'Signup Disabled',
+        description: 'Parent signup is currently disabled. Please contact support if you need assistance.',
+        variant: 'destructive',
+      });
+      setIsLoading(false);
+      return;
+    }
+
     const formData = new FormData(e.currentTarget);
     const email = formData.get('signup-email') as string;
     const password = formData.get('signup-password') as string;
@@ -530,6 +541,7 @@ const Auth = () => {
                         name="first-name"
                         placeholder="John"
                         required
+                        disabled={!settings.parent_signup_enabled}
                         aria-describedby="first-name-help"
                       />
                     </div>
@@ -540,6 +552,7 @@ const Auth = () => {
                         name="last-name"
                         placeholder="Doe"
                         required
+                        disabled={!settings.parent_signup_enabled}
                         aria-describedby="last-name-help"
                       />
                     </div>
@@ -552,6 +565,7 @@ const Auth = () => {
                       type="email"
                       placeholder="your@example.com"
                       required
+                      disabled={!settings.parent_signup_enabled}
                       aria-describedby="signup-email-help"
                     />
                   </div>
@@ -564,6 +578,7 @@ const Auth = () => {
                       placeholder="Create a secure password"
                       required
                       minLength={8}
+                      disabled={!settings.parent_signup_enabled}
                       value={signupPassword}
                       onChange={(e) => setSignupPassword(e.target.value)}
                       aria-describedby="password-requirements"
@@ -579,7 +594,7 @@ const Auth = () => {
                   <Button
                     type="submit"
                     className="w-full bg-primary hover:bg-primary-hover"
-                    disabled={isLoading}
+                    disabled={isLoading || !settings.parent_signup_enabled}
                   >
                     {isLoading ? (
                       <>
