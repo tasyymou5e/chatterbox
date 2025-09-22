@@ -6,16 +6,32 @@ import { useAuth } from '@/hooks/useAuth';
 import { useAuthStore } from '@/stores/authStore';
 import { useParentPortalGuard } from '@/hooks/useParentPortalGuard';
 import { supabase } from '@/integrations/supabase/client';
-import { getCurrentUserFamilies } from '@/utils/secureFamilyAccess';
+import { getCurrentUserFamilies, getSecureFamilyMembers } from '@/utils/secureFamilyAccess';
 import { toast } from '@/hooks/use-toast';
 import { Heart, Users, Plus, Settings, LogOut, Target } from 'lucide-react';
 import CreateChildAccountDialog from '@/components/parent/CreateChildAccountDialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
 
 interface Profile {
   id: string;
   first_name: string | null;
   last_name: string | null;
   email: string | null;
+}
+
+interface FamilyData {
+  id: string;
+  display_name: string;
+  created_at: string;
+}
+
+interface FamilyMember {
+  user_id: string;
+  family_id: string;
+  role: string;
+  joined_at: string;
 }
 
 const ParentDashboard = () => {
@@ -25,6 +41,10 @@ const ParentDashboard = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
   const [showCreateChildDialog, setShowCreateChildDialog] = useState(false);
+  const [showFamilyDialog, setShowFamilyDialog] = useState(false);
+  const [familyData, setFamilyData] = useState<FamilyData[]>([]);
+  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
+  const [familyLoading, setFamilyLoading] = useState(false);
 
   useEffect(() => {
     if (isAuthorized && user) {
@@ -36,9 +56,15 @@ const ParentDashboard = () => {
     if (!user) return;
 
     try {
-      // Use secure family access for better security
+      // Fetch user families
       const userFamilies = await getCurrentUserFamilies();
-      console.log('User families:', userFamilies);
+      setFamilyData(userFamilies);
+      
+      // Fetch family members for the first family (assuming single family for now)
+      if (userFamilies.length > 0) {
+        const familyMembers = await getSecureFamilyMembers(userFamilies[0].id);
+        setFamilyMembers(familyMembers);
+      }
       
       // Keep existing profile fetch for other data
       const { data, error } = await supabase
@@ -56,6 +82,27 @@ const ParentDashboard = () => {
       console.error('Error:', error);
     } finally {
       setProfileLoading(false);
+    }
+  };
+
+  const handleViewFamily = async () => {
+    if (familyData.length === 0) return;
+    
+    setFamilyLoading(true);
+    try {
+      // Refresh family members data when opening dialog
+      const familyMembers = await getSecureFamilyMembers(familyData[0].id);
+      setFamilyMembers(familyMembers);
+      setShowFamilyDialog(true);
+    } catch (error) {
+      console.error('Error fetching family members:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load family members',
+        variant: 'destructive',
+      });
+    } finally {
+      setFamilyLoading(false);
     }
   };
 
@@ -140,10 +187,19 @@ const ParentDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">Family Members: 1</p>
-                <p className="text-sm text-muted-foreground">Active Accounts: 1</p>
-                <Button className="w-full mt-4" variant="outline">
-                  View Family
+                <p className="text-sm text-muted-foreground">
+                  Family Members: {familyMembers.length}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Active Families: {familyData.length}
+                </p>
+                <Button 
+                  className="w-full mt-4" 
+                  variant="outline"
+                  onClick={handleViewFamily}
+                  disabled={familyData.length === 0 || familyLoading}
+                >
+                  {familyLoading ? 'Loading...' : 'View Family'}
                 </Button>
               </div>
             </CardContent>
@@ -246,13 +302,59 @@ const ParentDashboard = () => {
         open={showCreateChildDialog}
         onOpenChange={setShowCreateChildDialog}
         onSuccess={() => {
-          // Could refresh family data here if needed
+          // Refresh family data when child account is created
+          fetchProfile();
           toast({
             title: "Child account created",
             description: "The child can now complete their account setup with the provided code.",
           });
         }}
       />
+
+      {/* Family Members Dialog */}
+      <Dialog open={showFamilyDialog} onOpenChange={setShowFamilyDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Family Members
+              {familyData.length > 0 && (
+                <Badge variant="secondary">{familyData[0].display_name}</Badge>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="max-h-[60vh] pr-4">
+            <div className="space-y-4">
+              {familyMembers.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No family members found</p>
+                  <p className="text-sm">Create a child account to get started</p>
+                </div>
+              ) : (
+                familyMembers.map((member) => (
+                  <Card key={member.user_id} className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-medium">Family Member</h4>
+                        <p className="text-sm text-muted-foreground">User ID: {member.user_id}</p>
+                      </div>
+                      <div className="text-right">
+                        <Badge variant={member.role === 'parent' ? 'default' : 'secondary'}>
+                          {member.role}
+                        </Badge>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Joined {new Date(member.joined_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                  </Card>
+                ))
+              )}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
