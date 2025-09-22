@@ -234,12 +234,20 @@ serve(async (req) => {
       // Don't fail the entire operation if profile upsert fails
     }
 
+    // Verify the created_by_admin metadata was set
+    console.log('User metadata after creation:', newUser.user.user_metadata);
+    const createdByAdmin = newUser.user.user_metadata?.created_by_admin;
+    if (!createdByAdmin) {
+      console.warn('WARNING: created_by_admin metadata not found, manually cleaning up auto-assigned roles');
+    }
+
     // Delete any conflicting roles first to prevent role conflicts
     const adminRoles = roles.filter(role => ['admin', 'read_only'].includes(role));
     const familyRoles = roles.filter(role => ['parent', 'child'].includes(role));
     
     if (adminRoles.length > 0) {
       // Remove any family roles if assigning admin roles
+      console.log('Removing family roles before assigning admin roles');
       await supabase
         .from('user_roles')
         .delete()
@@ -249,11 +257,22 @@ serve(async (req) => {
     
     if (familyRoles.length > 0) {
       // Remove any admin roles if assigning family roles
+      console.log('Removing admin roles before assigning family roles');
       await supabase
         .from('user_roles')
         .delete()
         .eq('user_id', newUser.user.id)
         .in('role', ['admin', 'read_only']);
+    }
+
+    // Also remove auto-assigned parent role if created_by_admin metadata wasn't set properly
+    if (!createdByAdmin) {
+      console.log('Fallback: Removing any auto-assigned parent role due to missing metadata');
+      await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', newUser.user.id)
+        .eq('role', 'parent');
     }
 
     // Assign roles with conflict handling
@@ -262,6 +281,7 @@ serve(async (req) => {
       role: role
     }));
 
+    console.log('Assigning roles:', roles);
     const { error: rolesError } = await supabase
       .from('user_roles')
       .upsert(roleInserts, {
@@ -274,6 +294,30 @@ serve(async (req) => {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    }
+
+    // Verify roles were assigned correctly
+    const { data: assignedRoles, error: verifyError } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', newUser.user.id);
+
+    if (verifyError) {
+      console.error('Role verification error:', verifyError);
+    } else {
+      console.log('Successfully assigned roles:', assignedRoles?.map(r => r.role));
+      
+      // Double-check that requested roles match assigned roles
+      const assignedRoleList = assignedRoles?.map(r => r.role) || [];
+      const missingRoles = roles.filter(role => !assignedRoleList.includes(role));
+      const extraRoles = assignedRoleList.filter(role => !roles.includes(role));
+      
+      if (missingRoles.length > 0) {
+        console.error('Missing expected roles:', missingRoles);
+      }
+      if (extraRoles.length > 0) {
+        console.warn('Unexpected extra roles found:', extraRoles);
+      }
     }
 
     // Log admin activity
