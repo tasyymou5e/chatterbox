@@ -9,7 +9,7 @@ interface SiteSettings {
 
 export const useSiteSettings = () => {
   const [settings, setSettings] = useState<SiteSettings>({
-    parent_signup_enabled: true,
+    parent_signup_enabled: false,
     site_maintenance_mode: false,
     max_families_per_parent: 5,
   });
