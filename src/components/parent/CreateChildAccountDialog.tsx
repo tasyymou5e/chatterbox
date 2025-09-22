@@ -1,15 +1,16 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, UserPlus, Copy, CheckCircle2, ExternalLink } from 'lucide-react';
+import { Loader2, UserPlus, Copy, CheckCircle2, ExternalLink, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { createChildAccount, ChildAccountInfo } from '@/utils/secureChildAccountAccess';
 import { supabase } from '@/integrations/supabase/client';
+import { PasswordStrengthIndicator } from '@/components/auth/PasswordStrengthIndicator';
 
 interface CreateChildAccountDialogProps {
   open: boolean;
@@ -24,6 +25,7 @@ interface ChildAccountResult {
   email: string;
   accountCode: string;
   status: string;
+  passwordSetByParent?: boolean;
 }
 
 export default function CreateChildAccountDialog({ open, onOpenChange, onSuccess }: CreateChildAccountDialogProps) {
@@ -33,12 +35,22 @@ export default function CreateChildAccountDialog({ open, onOpenChange, onSuccess
   const [loading, setLoading] = useState(false);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [createdAccount, setCreatedAccount] = useState<ChildAccountResult | null>(null);
   const [codeCopied, setCodeCopied] = useState(false);
+
+  // Generate preview email
+  const previewEmail = useMemo(() => {
+    if (!user?.email || !firstName.trim()) return '';
+    return `${user.email}.${firstName.trim().toLowerCase()}`;
+  }, [user?.email, firstName]);
 
   const resetForm = () => {
     setFirstName('');
     setLastName('');
+    setPassword('');
+    setShowPassword(false);
     setCreatedAccount(null);
     setCodeCopied(false);
   };
@@ -86,7 +98,8 @@ export default function CreateChildAccountDialog({ open, onOpenChange, onSuccess
       const result = await createChildAccount(
         userFamily.id,
         firstName.trim(),
-        lastName.trim()
+        lastName.trim(),
+        password.trim() || undefined
       );
 
       if (!result.success) {
@@ -100,7 +113,8 @@ export default function CreateChildAccountDialog({ open, onOpenChange, onSuccess
           lastName: result.childAccount.last_name,
           email: result.childAccount.generated_email,
           accountCode: result.childAccount.family_code,
-          status: result.childAccount.status
+          status: result.childAccount.status,
+          passwordSetByParent: !!password.trim()
         });
       }
       
@@ -161,7 +175,9 @@ export default function CreateChildAccountDialog({ open, onOpenChange, onSuccess
           </DialogTitle>
           <DialogDescription>
             {createdAccount 
-              ? 'Share the account code with your child to complete setup'
+              ? (createdAccount.passwordSetByParent 
+                  ? 'Account is ready! Your child can now login with their credentials'
+                  : 'Share the account code with your child to complete setup')
               : 'Create a new account for your child with parental oversight'
             }
           </DialogDescription>
@@ -195,6 +211,41 @@ export default function CreateChildAccountDialog({ open, onOpenChange, onSuccess
                   disabled={loading}
                 />
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="child-password" className="flex items-center gap-2">
+                  Set Password (Optional)
+                  <span className="text-xs text-muted-foreground">Leave blank for child to set</span>
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="child-password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Create a secure password..."
+                    disabled={loading}
+                    className="pr-10"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowPassword(!showPassword)}
+                    disabled={loading}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </Button>
+                </div>
+                {password && (
+                  <PasswordStrengthIndicator password={password} />
+                )}
+              </div>
             </div>
 
             {firstName && lastName && (
@@ -208,10 +259,14 @@ export default function CreateChildAccountDialog({ open, onOpenChange, onSuccess
                 <CardContent>
                   <div className="space-y-2 text-sm">
                     <p><strong>Name:</strong> {firstName} {lastName}</p>
-                    <p><strong>Email:</strong> Will be auto-generated</p>
+                    <p><strong>Email:</strong> {previewEmail}</p>
                     <p><strong>Role:</strong> Child</p>
+                    <p><strong>Password:</strong> {password ? 'Set by parent' : 'Child will create'}</p>
                     <p className="text-muted-foreground text-xs mt-2">
-                      💡 Your child will receive a unique code to complete their account setup with their own password.
+                      💡 {password 
+                        ? 'Account will be ready for immediate login after creation.'
+                        : 'Your child will receive a unique code to complete their account setup with their own password.'
+                      }
                     </p>
                   </div>
                 </CardContent>
@@ -257,42 +312,58 @@ export default function CreateChildAccountDialog({ open, onOpenChange, onSuccess
                 <div className="space-y-2">
                   <p><strong>Child:</strong> {createdAccount.firstName} {createdAccount.lastName}</p>
                   <p><strong>Email:</strong> {createdAccount.email}</p>
-                  <p><strong>Status:</strong> Pending completion</p>
+                  <p><strong>Status:</strong> {createdAccount.passwordSetByParent ? 'Ready to login' : 'Pending completion'}</p>
                 </div>
                 
                 <Separator />
                 
-                <div className="space-y-3">
-                  <Label className="text-sm font-semibold">Account Code (Share with your child)</Label>
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 p-3 bg-muted rounded-md font-mono text-lg font-bold text-center tracking-wider">
-                      {createdAccount.accountCode}
+                {createdAccount.passwordSetByParent ? (
+                  <div className="bg-success/10 p-4 rounded-lg space-y-2">
+                    <h4 className="font-semibold text-sm text-success">✅ Account Ready!</h4>
+                    <p className="text-sm">Your child can now login using:</p>
+                    <div className="space-y-1 text-sm font-mono bg-muted p-2 rounded">
+                      <p><strong>Email:</strong> {createdAccount.email}</p>
+                      <p><strong>Password:</strong> The password you set</p>
                     </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={copyAccountCode}
-                      className="px-3"
-                    >
-                      {codeCopied ? (
-                        <CheckCircle2 className="h-4 w-4 text-primary" />
-                      ) : (
-                        <Copy className="h-4 w-4" />
-                      )}
-                    </Button>
+                    <p className="text-xs text-muted-foreground">
+                      💡 Make sure to share these login credentials securely with your child.
+                    </p>
                   </div>
-                </div>
+                ) : (
+                  <>
+                    <div className="space-y-3">
+                      <Label className="text-sm font-semibold">Account Code (Share with your child)</Label>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 p-3 bg-muted rounded-md font-mono text-lg font-bold text-center tracking-wider">
+                          {createdAccount.accountCode}
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={copyAccountCode}
+                          className="px-3"
+                        >
+                          {codeCopied ? (
+                            <CheckCircle2 className="h-4 w-4 text-primary" />
+                          ) : (
+                            <Copy className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
 
-                <div className="bg-muted/50 p-4 rounded-lg space-y-2">
-                  <h4 className="font-semibold text-sm">Next Steps:</h4>
-                  <ol className="text-sm space-y-1 ml-4">
-                    <li>1. Share the account code above with {createdAccount.firstName}</li>
-                    <li>2. Have them visit the signup page</li>
-                    <li>3. They'll enter this code and create their password</li>
-                    <li>4. Their account will be linked to your family automatically</li>
-                  </ol>
-                </div>
+                    <div className="bg-muted/50 p-4 rounded-lg space-y-2">
+                      <h4 className="font-semibold text-sm">Next Steps:</h4>
+                      <ol className="text-sm space-y-1 ml-4">
+                        <li>1. Share the account code above with {createdAccount.firstName}</li>
+                        <li>2. Have them visit the signup page</li>
+                        <li>3. They'll enter this code and create their password</li>
+                        <li>4. Their account will be linked to your family automatically</li>
+                      </ol>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
 

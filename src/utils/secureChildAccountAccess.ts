@@ -137,7 +137,8 @@ export const getChildAccountDetails = async (childId: string): Promise<ChildAcco
 export const createChildAccount = async (
   familyId: string,
   firstName: string,
-  lastName: string
+  lastName: string,
+  password?: string
 ): Promise<{ success: boolean; childAccount?: ChildAccountInfo; error?: string }> => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -145,11 +146,13 @@ export const createChildAccount = async (
       return { success: false, error: 'User not authenticated' };
     }
 
-    // Use the secure RPC function instead of direct insert
-    const { data, error } = await supabase.rpc('create_child_account_secure', {
-      p_family_id: familyId,
-      p_first_name: firstName,
-      p_last_name: lastName
+    const { data, error } = await supabase.functions.invoke('create-child-account', {
+      body: {
+        firstName,
+        lastName,
+        parentUserId: user.id,
+        password: password || undefined
+      }
     });
 
     if (error) {
@@ -157,13 +160,14 @@ export const createChildAccount = async (
       return { success: false, error: error.message };
     }
 
-    // Fetch the created account details
-    const childAccount = await getChildAccountDetails(data);
-    if (!childAccount) {
-      return { success: false, error: 'Failed to retrieve created account' };
+    if (!data.success) {
+      return { success: false, error: data.error };
     }
 
-    return { success: true, childAccount };
+    return { 
+      success: true, 
+      childAccount: data.childAccount
+    };
   } catch (error) {
     console.error('Error in createChildAccount:', error);
     return { success: false, error: 'An unexpected error occurred' };
