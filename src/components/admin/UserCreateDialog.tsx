@@ -149,13 +149,13 @@ export const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
     setLoading(true);
 
     try {
-      const selectedRoles = [formData.adminRole, formData.familyRole].filter(Boolean);
+      const userRoles = [formData.adminRole, formData.familyRole].filter(Boolean);
       const { data, error } = await supabase.functions.invoke('admin-create-user', {
         body: {
           email: formData.email,
           firstName: formData.firstName,
           lastName: formData.lastName,
-          roles: selectedRoles
+          roles: userRoles
         }
       });
 
@@ -171,7 +171,7 @@ export const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
       
       toast({
         title: "User Created Successfully",
-        description: `User ${formData.firstName} ${formData.lastName} has been created with roles: ${selectedRoles.join(', ')}`,
+        description: `User ${formData.firstName} ${formData.lastName} has been created with roles: ${userRoles.join(', ')}`,
       });
 
       onSuccess();
