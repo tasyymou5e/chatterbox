@@ -233,7 +233,7 @@ const ParentDashboard = () => {
           <CardContent className="p-6">
             <h3 className="text-lg font-semibold mb-2">Welcome to Chatterbox!</h3>
             <p className="opacity-90">
-              You're now part of a supportive community dedicated to helping autistic children thrive. 
+              You're now part of a supportive community dedicated to helping children with autism thrive. 
               Start by exploring the family management tools above or create your first child account 
               to begin their personalized learning journey.
             </p>

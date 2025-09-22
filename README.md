@@ -1,15 +1,15 @@
 # Chatterbox
-**Empowering autistic children through technology, education, and family connection**
+**Empowering children with autism through technology, education, and family connection**
 
 ## 🌟 Project Overview
 
-Chatterbox is a comprehensive web platform designed to empower autistic children through personalized learning experiences, communication support, and family engagement tools. Built with modern web technologies and a focus on accessibility, security, and user experience.
+Chatterbox is a comprehensive web platform designed to empower children with autism through personalized learning experiences, communication support, and family engagement tools. Built with modern web technologies and a focus on accessibility, security, and user experience.
 
 **Live Platform**: [chatterbox.live](https://chatterbox.live) (deployment ready)
 
 ## 🎯 Core Mission
 
-Creating a safe, engaging, and educational environment where autistic children can:
+Creating a safe, engaging, and educational environment where children with autism can:
 - Access personalized educational content
 - Complete structured tasks and activities  
 - Track their progress and achievements
@@ -226,7 +226,7 @@ This project follows modern web development best practices:
 
 ## 🏆 Recognition
 
-Chatterbox represents a comprehensive approach to supporting autistic children through technology:
+Chatterbox represents a comprehensive approach to supporting children with autism through technology:
 
 - **Security First**: Enterprise-grade security with comprehensive RLS
 - **Accessibility Focused**: Designed specifically for autism support
@@ -259,7 +259,7 @@ Chatterbox represents a comprehensive approach to supporting autistic children t
 
 ---
 
-**Chatterbox** - Empowering autistic children through technology, education, and family connection.
+**Chatterbox** - Empowering children with autism through technology, education, and family connection.
 
 **Last Updated**: 2025-01-10  
 **Database Tables**: 59 with comprehensive security coverage  

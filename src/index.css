@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Design system for autistic children web app
+/* Design system for children with autism web app
 All colors MUST be HSL for accessibility and theming.
 Focus on calm, friendly, and accessible design tokens.
 */
@@ -158,7 +158,7 @@ Focus on calm, friendly, and accessible design tokens.
     font-family: 'Nunito', system-ui, -apple-system, sans-serif;
   }
 
-  /* Accessibility improvements for autistic children */
+  /* Accessibility improvements for children with autism */
   button, [role="button"] {
     @apply focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2;
     transition: all 0.2s ease-in-out;

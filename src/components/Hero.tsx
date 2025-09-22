@@ -19,7 +19,7 @@ export const Hero = ({ onChoosePortal, settings, loading = false }: HeroProps) =
     {
       icon: Brain,
       title: "Cognitive Development",
-      description: "Memory games, puzzles, and skill-building activities designed for autistic children"
+      description: "Memory games, puzzles, and skill-building activities designed for children with autism"
     },
     {
       icon: Heart,
@@ -54,10 +54,10 @@ export const Hero = ({ onChoosePortal, settings, loading = false }: HeroProps) =
       <div className="container mx-auto px-4 py-16">
         <div className="text-center mb-16">
           <h1 className="text-5xl md:text-6xl font-bold text-white mb-6 drop-shadow-lg">
-            Empowering Autistic Children
+            Empowering Children with Autism
           </h1>
           <p className="text-xl md:text-2xl text-white/90 mb-8 max-w-3xl mx-auto leading-relaxed">
-            A comprehensive platform designed specifically for autistic children, featuring educational games, 
+            A comprehensive platform designed specifically for children with autism, featuring educational games, 
             communication support, and family engagement tools.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

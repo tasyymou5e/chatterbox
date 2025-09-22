@@ -7,13 +7,13 @@
 
 **Project Name:** Chatterbox  
 **Former Name:** Spectrum Harmony (rebranded 2025-01-02)  
-**Purpose:** A comprehensive web platform designed to empower autistic children through personalized learning experiences, communication support, and family engagement tools  
+**Purpose:** A comprehensive web platform designed to empower children with autism through personalized learning experiences, communication support, and family engagement tools  
 **Technology Stack:** React + TypeScript + Vite + Supabase + Tailwind CSS + Zustand  
-**Target Users:** Autistic children, their parents/caregivers, and administrators  
+**Target Users:** Children with autism, their parents/caregivers, and administrators  
 **Domain:** chatterbox.live (production ready)
 
 ### 🎯 Core Mission
-Empowering autistic children through technology, education, and family connection with personalized learning experiences, communication support, and progress tracking in a secure, autism-friendly environment.
+Empowering children with autism through technology, education, and family connection with personalized learning experiences, communication support, and progress tracking in a secure, autism-friendly environment.
 
 ---
 

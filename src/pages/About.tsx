@@ -56,7 +56,7 @@ const About = () => {
     {
       icon: Brain,
       title: "Cognitive Development Tools",
-      description: "Memory games, puzzles, and skill-building activities specifically designed for autistic children's learning patterns.",
+      description: "Memory games, puzzles, and skill-building activities specifically designed for children with autism's learning patterns.",
       impact: "Improves focus, problem-solving skills, and cognitive flexibility in a supportive environment."
     },
     {
@@ -120,7 +120,7 @@ const About = () => {
               Supporting Families, Empowering Children
             </h1>
             <p className="text-xl md:text-2xl text-white/90 mb-8 max-w-4xl mx-auto leading-relaxed">
-              Chatterbox transforms how families with autistic children navigate daily life through 
+              Chatterbox transforms how families with children with autism navigate daily life through 
               technology, structure, and compassionate support systems designed for real-world success.
             </p>
           </div>
@@ -130,7 +130,7 @@ const About = () => {
             <CardContent className="p-8 text-center">
               <h2 className="text-2xl font-bold text-white mb-4">Our Mission</h2>
               <p className="text-white/90 text-lg leading-relaxed max-w-3xl mx-auto">
-                We believe every autistic child deserves tools that celebrate their unique strengths while 
+                We believe every child with autism deserves tools that celebrate their unique strengths while 
                 supporting their growth. Chatterbox provides families with comprehensive resources to 
                 create structure, reduce stress, and build lasting positive outcomes together.
               </p>

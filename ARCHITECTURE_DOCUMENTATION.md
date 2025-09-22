@@ -2,7 +2,7 @@
 
 ## System Overview
 
-Chatterbox is a comprehensive React-based web application designed to empower autistic children through technology, education, and family connection. Built with Vite, TypeScript, and Tailwind CSS, using Supabase as the backend-as-a-service platform for authentication, database, and serverless functions.
+Chatterbox is a comprehensive React-based web application designed to empower children with autism through technology, education, and family connection. Built with Vite, TypeScript, and Tailwind CSS, using Supabase as the backend-as-a-service platform for authentication, database, and serverless functions.
 
 ## Technology Stack
 
