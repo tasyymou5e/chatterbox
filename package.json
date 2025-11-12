@@ -12,7 +12,7 @@
     "test": "vitest",
     "test:rls": "vitest run tests/rls",
     "test:rls:watch": "vitest watch tests/rls",
-    "test:critical": "vitest run tests/rls/user tests/rls/family tests/rls/child tests/rls/cross-cutting"
+    "test:critical": "vitest run tests/rls/user tests/rls/family tests/rls/child tests/rls/cross-cutting",
     "typecheck": "tsc --noEmit",
     "test:coverage": "vitest run --coverage"
   },
