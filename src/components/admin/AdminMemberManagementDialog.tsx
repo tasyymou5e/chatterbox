@@ -17,7 +17,6 @@ interface FamilyMember {
   joined_at: string;
   first_name?: string;
   last_name?: string;
-  email?: string;
 }
 
 interface Family {
@@ -58,8 +57,7 @@ export default function AdminMemberManagementDialog({
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('user_id, first_name, last_name, email')
-        .ilike('email', `%${searchEmail}%`)
+        .select('user_id, first_name, last_name')
         .limit(5);
 
       if (error) throw error;
@@ -97,16 +95,17 @@ export default function AdminMemberManagementDialog({
           familyId: family.id,
           userId: userToAdd.user_id,
           role: selectedRole,
-          userEmail: userToAdd.email,
+          userEmail: '', // Email removed from profiles for security
           userName: `${userToAdd.first_name || ''} ${userToAdd.last_name || ''}`.trim()
         }
       });
 
       if (error) throw error;
 
+      const userName = `${userToAdd.first_name || ''} ${userToAdd.last_name || ''}`.trim() || 'User';
       toast({
         title: 'Member added successfully',
-        description: `${userToAdd.email} has been added to ${family.display_name} as ${selectedRole}.`,
+        description: `${userName} has been added to ${family.display_name} as ${selectedRole}.`,
       });
 
       // Clear form
@@ -132,12 +131,13 @@ export default function AdminMemberManagementDialog({
     
     setLoading(true);
     try {
+      const userName = `${selectedMemberToRemove.first_name || ''} ${selectedMemberToRemove.last_name || ''}`.trim() || 'User';
       const { data, error } = await supabase.functions.invoke('admin-remove-family-member', {
         body: {
           familyId: family.id,
           userId: selectedMemberToRemove.user_id,
-          userEmail: selectedMemberToRemove.email,
-          userName: `${selectedMemberToRemove.first_name || ''} ${selectedMemberToRemove.last_name || ''}`.trim()
+          userEmail: '', // Email removed from profiles for security
+          userName
         }
       });
 
@@ -145,7 +145,7 @@ export default function AdminMemberManagementDialog({
 
       toast({
         title: 'Member removed successfully',
-        description: `${selectedMemberToRemove.email} has been removed from ${family.display_name}.`,
+        description: `${userName} has been removed from ${family.display_name}.`,
       });
 
       setSelectedMemberToRemove(null);
@@ -240,12 +240,14 @@ export default function AdminMemberManagementDialog({
                 <p className="text-sm text-gray-400">Found {searchResults.length} user(s):</p>
                 {searchResults.map((user) => (
                   <div key={user.user_id} className="flex items-center justify-between p-3 bg-gray-700/50 rounded border border-gray-600">
-                    <div className="flex items-center space-x-3">
+                     <div className="flex items-center space-x-3">
                       <Mail className="h-4 w-4 text-gray-400" />
                       <div>
-                        <div className="font-medium">{user.email}</div>
+                        <div className="font-medium">
+                          {user.first_name && user.last_name ? `${user.first_name} ${user.last_name}` : 'User'}
+                        </div>
                         <div className="text-sm text-gray-400">
-                          {user.first_name && user.last_name ? `${user.first_name} ${user.last_name}` : 'No name set'}
+                          User ID: {user.user_id.substring(0, 8)}...
                         </div>
                       </div>
                     </div>
@@ -287,7 +289,7 @@ export default function AdminMemberManagementDialog({
                             : 'Unknown Name'
                           }
                         </div>
-                        <div className="text-sm text-gray-400">{member.email || 'No email'}</div>
+                        <div className="text-sm text-gray-400">User ID: {member.user_id.substring(0, 8)}...</div>
                         <div className="text-xs text-gray-500">
                           Joined: {new Date(member.joined_at).toLocaleDateString()}
                         </div>
@@ -334,7 +336,9 @@ export default function AdminMemberManagementDialog({
               <p className="text-gray-300 mb-4">
                 Are you sure you want to remove{' '}
                 <span className="font-medium text-white">
-                  {selectedMemberToRemove.email}
+                  {selectedMemberToRemove.first_name && selectedMemberToRemove.last_name
+                    ? `${selectedMemberToRemove.first_name} ${selectedMemberToRemove.last_name}`
+                    : 'this member'}
                 </span>{' '}
                 from {family.display_name}?
               </p>

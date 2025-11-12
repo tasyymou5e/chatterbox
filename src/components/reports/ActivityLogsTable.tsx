@@ -344,7 +344,7 @@ const ActivityLogsTable = () => {
                     </TableCell>
                     <TableCell>
                       <div className="font-medium">{getUserName(log)}</div>
-                      <div className="text-sm text-muted-foreground">{(log.profiles as any)?.email}</div>
+                      <div className="text-sm text-muted-foreground">User ID: {log.user_id}</div>
                     </TableCell>
                     <TableCell>
                       {getActivityBadge(log.activity_type, log.success)}

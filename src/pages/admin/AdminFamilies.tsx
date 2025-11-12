@@ -43,7 +43,6 @@ interface FamilyMember {
   joined_at: string;
   first_name?: string;
   last_name?: string;
-  email?: string;
 }
 
 interface Family {
@@ -117,7 +116,7 @@ export default function AdminFamilies() {
       console.log('Fetching profiles for user IDs:', allUserIds);
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
-        .select('user_id, first_name, last_name, email')
+        .select('user_id, first_name, last_name')
         .in('user_id', allUserIds);
 
       if (profilesError) {
@@ -145,8 +144,7 @@ export default function AdminFamilies() {
               role: member.role as 'parent' | 'child' | 'admin' | 'therapist' | 'teacher' | 'grandparent' | 'family_friend',
               joined_at: member.joined_at,
               first_name: profile?.first_name,
-              last_name: profile?.last_name,
-              email: profile?.email
+              last_name: profile?.last_name
             };
           });
 
@@ -440,7 +438,7 @@ export default function AdminFamilies() {
                                     </div>
                                     <div className="flex items-center space-x-2 text-sm text-gray-400">
                                       <Mail className="h-3 w-3" />
-                                      <span>{member.email || 'No email'}</span>
+                                      <span>User ID: {member.user_id.substring(0, 8)}...</span>
                                     </div>
                                   </div>
                                 </div>

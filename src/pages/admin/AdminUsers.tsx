@@ -133,7 +133,7 @@ export default function AdminUsers() {
 
         return {
           id: profile.user_id,
-          email: profile.email || '',
+          email: '', // Email removed from profiles for security
           first_name: profile.first_name || '',
           last_name: profile.last_name || '',
           created_at: profile.created_at,

@@ -13,7 +13,6 @@ export interface SafeProfile {
 }
 
 export interface AdminProfile extends SafeProfile {
-  email: string | null;
   updated_at: string;
 }
 
@@ -27,7 +26,7 @@ export const getCurrentUserProfile = async (): Promise<AdminProfile | null> => {
 
     const { data, error } = await supabase
       .from('profiles')
-      .select('user_id, first_name, last_name, email, created_at, updated_at')
+      .select('user_id, first_name, last_name, created_at, updated_at')
       .eq('user_id', user.id)
       .single();
 
@@ -78,7 +77,7 @@ export const getFamilyMemberProfiles = async (familyId: string): Promise<SafePro
 };
 
 /**
- * Admin-only function to get all profiles with email access
+ * Admin-only function to get all profiles (without email for security)
  */
 export const getAdminProfiles = async (): Promise<AdminProfile[]> => {
   try {
@@ -87,7 +86,7 @@ export const getAdminProfiles = async (): Promise<AdminProfile[]> => {
 
     const { data, error } = await supabase
       .from('profiles')
-      .select('user_id, first_name, last_name, email, created_at, updated_at')
+      .select('user_id, first_name, last_name, created_at, updated_at')
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -95,7 +94,6 @@ export const getAdminProfiles = async (): Promise<AdminProfile[]> => {
       return [];
     }
 
-    // Profiles are now secured by RLS policies - no additional masking needed for admins
     return data || [];
   } catch (error) {
     console.error('Error in getAdminProfiles:', error);
@@ -151,7 +149,6 @@ export const getProfileCounts = async (): Promise<{
 export const updateUserProfile = async (updates: {
   first_name?: string;
   last_name?: string;
-  email?: string;
 }): Promise<boolean> => {
   try {
     const { data: { user } } = await supabase.auth.getUser();

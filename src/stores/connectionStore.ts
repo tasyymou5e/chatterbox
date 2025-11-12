@@ -87,7 +87,7 @@ export const useConnectionStore = create<ConnectionState>()(
               .from('family_connections')
               .select(`
                 *,
-                connected_user_profile:profiles!connected_user_id(first_name, last_name, email)
+                connected_user_profile:profiles!connected_user_id(first_name, last_name)
               `)
               .eq('family_id', familyId)
               .order('created_at', { ascending: false });
