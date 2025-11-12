@@ -67,7 +67,7 @@ export type Database = {
           admin_user_id: string
           created_at: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           metadata: Json | null
           new_values: Json | null
           old_values: Json | null
@@ -81,7 +81,7 @@ export type Database = {
           admin_user_id: string
           created_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           metadata?: Json | null
           new_values?: Json | null
           old_values?: Json | null
@@ -95,7 +95,7 @@ export type Database = {
           admin_user_id?: string
           created_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           metadata?: Json | null
           new_values?: Json | null
           old_values?: Json | null
@@ -270,7 +270,7 @@ export type Database = {
           device_info: Json | null
           failure_reason: string | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           metadata: Json | null
           original_created_at: string
           original_id: string
@@ -285,7 +285,7 @@ export type Database = {
           device_info?: Json | null
           failure_reason?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           metadata?: Json | null
           original_created_at: string
           original_id: string
@@ -300,7 +300,7 @@ export type Database = {
           device_info?: Json | null
           failure_reason?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           metadata?: Json | null
           original_created_at?: string
           original_id?: string
@@ -2204,7 +2204,7 @@ export type Database = {
           resolved_at: string | null
           resolved_by: string | null
           severity: string
-          source_ip: unknown | null
+          source_ip: unknown
           title: string
           updated_at: string | null
           user_agent: string | null
@@ -2221,7 +2221,7 @@ export type Database = {
           resolved_at?: string | null
           resolved_by?: string | null
           severity: string
-          source_ip?: unknown | null
+          source_ip?: unknown
           title: string
           updated_at?: string | null
           user_agent?: string | null
@@ -2238,7 +2238,7 @@ export type Database = {
           resolved_at?: string | null
           resolved_by?: string | null
           severity?: string
-          source_ip?: unknown | null
+          source_ip?: unknown
           title?: string
           updated_at?: string | null
           user_agent?: string | null
@@ -2251,7 +2251,7 @@ export type Database = {
           event_details: Json
           event_type: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           resolved: boolean | null
           resolved_at: string | null
           resolved_by: string | null
@@ -2265,7 +2265,7 @@ export type Database = {
           event_details?: Json
           event_type: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           resolved?: boolean | null
           resolved_at?: string | null
           resolved_by?: string | null
@@ -2279,7 +2279,7 @@ export type Database = {
           event_details?: Json
           event_type?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           resolved?: boolean | null
           resolved_at?: string | null
           resolved_by?: string | null
@@ -2669,7 +2669,7 @@ export type Database = {
           device_info: Json | null
           failure_reason: string | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           metadata: Json | null
           session_id: string | null
           success: boolean
@@ -2683,7 +2683,7 @@ export type Database = {
           device_info?: Json | null
           failure_reason?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           metadata?: Json | null
           session_id?: string | null
           success?: boolean
@@ -2697,7 +2697,7 @@ export type Database = {
           device_info?: Json | null
           failure_reason?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           metadata?: Json | null
           session_id?: string | null
           success?: boolean
@@ -2873,7 +2873,7 @@ export type Database = {
           ended_at: string | null
           family_id: string | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           is_active: boolean
           last_activity: string
           session_id: string
@@ -2888,7 +2888,7 @@ export type Database = {
           ended_at?: string | null
           family_id?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           is_active?: boolean
           last_activity?: string
           session_id: string
@@ -2903,7 +2903,7 @@ export type Database = {
           ended_at?: string | null
           family_id?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           is_active?: boolean
           last_activity?: string
           session_id?: string
@@ -3050,10 +3050,7 @@ export type Database = {
         Args: { content_item_id: string }
         Returns: boolean
       }
-      check_admin_role_secure: {
-        Args: { p_user_id: string }
-        Returns: boolean
-      }
+      check_admin_role_secure: { Args: { p_user_id: string }; Returns: boolean }
       check_and_award_achievements: {
         Args: {
           p_completion_data?: Json
@@ -3069,10 +3066,7 @@ export type Database = {
         Args: { p_family_id: string; p_parent_id: string }
         Returns: boolean
       }
-      check_email_availability: {
-        Args: { p_email: string }
-        Returns: boolean
-      }
+      check_email_availability: { Args: { p_email: string }; Returns: boolean }
       check_rate_limit: {
         Args: {
           p_max_attempts?: number
@@ -3082,20 +3076,11 @@ export type Database = {
         }
         Returns: boolean
       }
-      cleanup_expired_child_accounts: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      cleanup_expired_data: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      cleanup_expired_sessions: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      cleanup_expired_child_accounts: { Args: never; Returns: number }
+      cleanup_expired_data: { Args: never; Returns: string }
+      cleanup_expired_sessions: { Args: never; Returns: undefined }
       cleanup_test_families: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           cleanup_details: Json
           families_deleted: number
@@ -3110,19 +3095,22 @@ export type Database = {
         Args: { p_family_id: string; p_first_name: string; p_last_name: string }
         Returns: string
       }
-      create_security_alert: {
-        Args:
-          | { alert_type: string; details?: Json; severity: string }
-          | {
+      create_security_alert:
+        | {
+            Args: {
               p_alert_type: Database["public"]["Enums"]["security_event_type"]
               p_details?: Json
               p_severity: string
               p_user_id: string
             }
-        Returns: string
-      }
+            Returns: string
+          }
+        | {
+            Args: { alert_type: string; details?: Json; severity: string }
+            Returns: string
+          }
       detect_role_conflicts: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           conflict_type: string
           conflicting_roles: string[]
@@ -3136,12 +3124,9 @@ export type Database = {
         Args: { p_activity_type: string; p_metadata?: Json; p_user_id: string }
         Returns: boolean
       }
-      detect_suspicious_family_access: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      detect_suspicious_family_access: { Args: never; Returns: undefined }
       detect_suspicious_patterns: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           details: Json
           pattern_type: string
@@ -3149,10 +3134,7 @@ export type Database = {
           user_id: string
         }[]
       }
-      end_user_session: {
-        Args: { session_id: string }
-        Returns: undefined
-      }
+      end_user_session: { Args: { session_id: string }; Returns: undefined }
       generate_behavioral_insights: {
         Args: { p_days_back?: number; p_user_id: string }
         Returns: {
@@ -3162,14 +3144,8 @@ export type Database = {
           peak_activity_time: string
         }[]
       }
-      generate_child_account_code: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      generate_family_code: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      generate_child_account_code: { Args: never; Returns: string }
+      generate_family_code: { Args: never; Returns: string }
       generate_progress_snapshot: {
         Args: { p_family_id: string; p_user_id: string }
         Returns: string
@@ -3250,7 +3226,7 @@ export type Database = {
         }[]
       }
       get_popular_content: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           age_max: number
           age_min: number
@@ -3271,7 +3247,7 @@ export type Database = {
         }[]
       }
       get_system_health_metrics: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           last_updated: string
           metric_name: string
@@ -3436,36 +3412,15 @@ export type Database = {
         }
         Returns: string
       }
-      mask_email: {
-        Args: { email_text: string }
-        Returns: string
-      }
-      monitor_real_time_patterns: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      refresh_analytics_automated: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      refresh_daily_analytics: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      refresh_daily_analytics_secure: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      refresh_popular_content_cache: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      resolve_system_error: {
-        Args: { error_id: string }
-        Returns: boolean
-      }
+      mask_email: { Args: { email_text: string }; Returns: string }
+      monitor_real_time_patterns: { Args: never; Returns: undefined }
+      refresh_analytics_automated: { Args: never; Returns: string }
+      refresh_daily_analytics: { Args: never; Returns: undefined }
+      refresh_daily_analytics_secure: { Args: never; Returns: string }
+      refresh_popular_content_cache: { Args: never; Returns: undefined }
+      resolve_system_error: { Args: { error_id: string }; Returns: boolean }
       test_profiles_access: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           access_level: string
           auth_role: string
@@ -3507,10 +3462,7 @@ export type Database = {
         Args: { profile_user_id: string }
         Returns: boolean
       }
-      validate_role_conflicts: {
-        Args: { p_roles: string[] }
-        Returns: boolean
-      }
+      validate_role_conflicts: { Args: { p_roles: string[] }; Returns: boolean }
       validate_user_permissions: {
         Args: {
           p_action: string
