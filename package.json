@@ -88,3 +88,9 @@
     "vite": "^5.4.19"
   }
 }
+"scripts": {
+  "test": "vitest",
+  "test:rls": "vitest run tests/rls",
+  "test:rls:watch": "vitest watch tests/rls",
+  "test:critical": "vitest run tests/rls/user tests/rls/family tests/rls/child tests/rls/cross-cutting"
+}
