@@ -92,11 +92,8 @@
   "test:rls": "vitest run tests/rls",
   "test:rls:watch": "vitest watch tests/rls",
   "test:critical": "vitest run tests/rls/user tests/rls/family tests/rls/child tests/rls/cross-cutting"
-}
-}
-{
+},
   "scripts": {
     "build:dev": "vite build --mode development"
   }
 }
-
