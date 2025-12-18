@@ -1,24 +1,17 @@
-import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Hero } from "@/components/Hero";
-import { PortalSelection } from "@/components/PortalSelection";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
 import { ArrowDown } from "lucide-react";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 const Index = () => {
-  const [showPortals, setShowPortals] = useState(false);
   const navigate = useNavigate();
   const { settings, loading } = useSiteSettings();
 
   const scrollToPortals = () => {
-    if (settings.parent_signup_enabled) {
-      navigate('/auth');
-    } else {
-      // Still allow navigation but Auth page will handle the disabled state
-      navigate('/auth');
-    }
+    // Navigate to auth page - Auth page handles disabled state display
+    navigate('/auth');
   };
 
   return (
@@ -41,13 +34,6 @@ const Index = () => {
           </Button>
         </div>
       </section>
-
-      {/* Portal Selection Section */}
-      {showPortals && (
-        <section id="portals" className="bg-background">
-          <PortalSelection />
-        </section>
-      )}
 
       {/* Footer */}
       <footer className="bg-foreground text-white py-12">
