@@ -3094,16 +3094,16 @@ export type Database = {
       }
       create_security_alert:
         | {
+            Args: { alert_type: string; details?: Json; severity: string }
+            Returns: string
+          }
+        | {
             Args: {
               p_alert_type: Database["public"]["Enums"]["security_event_type"]
               p_details?: Json
               p_severity: string
               p_user_id: string
             }
-            Returns: string
-          }
-        | {
-            Args: { alert_type: string; details?: Json; severity: string }
             Returns: string
           }
       detect_role_conflicts: {
