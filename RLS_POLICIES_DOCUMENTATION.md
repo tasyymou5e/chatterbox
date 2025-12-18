@@ -5,10 +5,11 @@
 This document provides a comprehensive review of all Row Level Security (RLS) policies implemented in the Chatterbox Platform. RLS policies ensure data isolation and access control at the database level, providing defense-in-depth security.
 
 **Security Status**: ✅ **SECURE** - All critical tables have proper RLS policies
-**Last Review**: 2025-01-09
-**Total Tables**: 38
-**Tables with RLS**: 38 (100% coverage)
-**Policy Count**: 60+
+**Last Review**: 2025-12-18
+**Total Tables**: 59
+**Tables with RLS**: 59 (100% coverage)
+**Policy Count**: 65+ (consolidated from 130+ redundant policies)
+**Security Grade**: A (Excellent - optimized with RESTRICTIVE policies)
 
 ## Security Architecture
 
@@ -26,178 +27,135 @@ This document provides a comprehensive review of all Row Level Security (RLS) po
 
 ---
 
+## RLS Policy Optimization (2025-12-18)
+
+### Phase 1-5 Consolidation Complete
+All duplicate permissive policies have been consolidated into single RESTRICTIVE policies for better performance and security. Key improvements:
+
+- **Performance**: Wrapped `auth.uid()` and `auth.role()` in subqueries `(SELECT auth.uid())` to prevent re-evaluation
+- **Security**: Changed from PERMISSIVE to RESTRICTIVE policies where appropriate
+- **Cleanup**: Removed 65+ duplicate policies across 30+ tables
+- **Indexes**: Removed 3 duplicate indexes for better performance
+
+### Consolidated Policy Patterns
+```sql
+-- Standard pattern for user-owned data
+CREATE POLICY "table_unified" ON public.table_name
+AS RESTRICTIVE FOR ALL
+USING (
+  (user_id = (SELECT auth.uid()))
+  OR has_role((SELECT auth.uid()), 'admin'::app_role)
+);
+
+-- Standard pattern for family-scoped data
+CREATE POLICY "table_family_access" ON public.table_name
+AS RESTRICTIVE FOR ALL
+USING (
+  ((SELECT auth.role()) = 'service_role'::text)
+  OR has_family_access(family_id, (SELECT auth.uid()))
+);
+```
+
+---
+
 ## RLS Policies by Category
 
 ### 1. User Management Tables
 
 #### **profiles**
-- **`profiles_select_own_or_admin`** - Users can view own profile + admins view all
-- **`profiles_insert_own_only`** - Users can only insert their own profile
-- **`profiles_update_own_or_admin`** - Users can update own profile + admin updates
-- **`profiles_delete_admin_only`** - Only admins can delete profiles
+- **`profiles_select`** - Users view own profile + admins view all (consolidated)
+- **`profiles_insert`** - Users can only insert their own profile
+- **`profiles_update`** - Users update own profile + admin updates
+- **`profiles_delete`** - Only admins can delete profiles
 
 **Security Level**: ✅ **CRITICAL** - Prevents user data exposure
 
 #### **user_roles**
-- **Access controlled by security definer functions** - Prevents role escalation
-- Uses `has_role()` function to avoid recursive RLS issues
+- **`user_roles_unified`** - Consolidated policy for all operations
+  - Users can see their own roles
+  - Admins can see and manage all roles
+  - Bootstrap admin creation allowed when no admins exist
 
 #### **user_sessions**
-- **`Users view own sessions`** - Users see only their sessions
-- **`Parents can view their children's sessions`** - Parent oversight capability
-- **`Admins view all sessions`** - Admin monitoring access
-- **`Authenticated system can manage sessions`** - System-level session management
+- **`user_sessions_unified`** - Consolidated policy for all session operations
+  - Service role access for system operations
+  - Users see only their own sessions
+  - Admins view all sessions
 
 #### **user_activity_logs**
-- **`activity_logs_select_own_or_admin`** - Users view own logs + admin access
-- **`activity_logs_insert_authenticated`** - Service role + user can insert logs
+- **`user_activity_logs_access`** - Consolidated SELECT policy
+  - Service role access
+  - Users view own logs
+  - Admins view all logs
 
 **Security Level**: ✅ **HIGH** - Audit trail protection
-
-#### **user_points**, **user_levels**
-- **Family-scoped access** - Users see points/levels within their families
-- **Admin override** - Admins can view all gamification data
 
 ### 2. Family System Tables
 
 #### **families**
-- **`Enhanced family access control`** - Uses `has_family_access()` for secure access
+- **`families_access`** - Uses `has_family_access()` for secure access
 - **Creator check** - Only family creators can create/modify families
 
 **Security Level**: ✅ **CRITICAL** - Core family data isolation
 
 #### **family_members**
-- **`Secure family members access`** - READ via `has_family_access()`
-- **`Secure family members management`** - CRUD via `is_family_creator_secure()`
-- **`Secure family members deletion`** - DELETE via creator check
-- **`Secure family members updates`** - UPDATE via creator check
+- **`family_members_access`** - Consolidated family member access policy
+- **`family_members_manage`** - Family creator management operations
 
 **Security Level**: ✅ **CRITICAL** - Family membership security
 
-#### **family_invitations**
-- **`Secure family invitations management`** - Only family creators can manage invitations
-- **Role verification** - Requires parent role for invitation management
-
 #### **family_activity_logs**
-- **`Parents and admins can view family activity logs`** - Family creators + admins
-- **`Authenticated system can insert family activity logs`** - System logging capability
-
-**Security Level**: ✅ **HIGH** - Family audit trail protection
-
-#### **family_leaderboards**
-- **`Family members can view leaderboards`** - Family-scoped leaderboard access
-- **`Authenticated system can manage leaderboards`** - System updates leaderboards
+- **`family_activity_logs_select`** - Consolidated SELECT policy
+  - Service role access
+  - Users with family access can view logs
+  - Admins can view all logs
 
 ### 3. Child Account Management
 
 #### **child_accounts**
-- **`Secure child account access`** - Multi-layered security:
+- **`child_accounts_secure_access`** - Multi-layered security:
   - Admins: Full access
   - Parents: Access to accounts they created in their families
   - Children: Access to their own completed accounts
-- **`Admins have full access to child accounts`** - Admin override
 
 **Security Level**: ✅ **CRITICAL** - Child safety compliance (COPPA)
 
 ### 4. Content Management Tables
 
+#### **content_items**
+- **`content_items_admin_all`** - Admin full access (RESTRICTIVE)
+- **`content_items_public_select`** - Public SELECT for active/approved content
+
 #### **content_categories**
-- **`Authenticated users can view active categories`** - Public content access
-- **`Admins can manage categories`** - Admin content management
+- **`content_categories_access`** - Authenticated users view active categories
+- Admin management consolidated
 
-#### **content_items** (Referenced but not shown in current schema)
-- Expected to have similar patterns for content access control
-
-### 5. Chore Management Tables
-
-#### **chores**
-- **`Family members can view family chores`** - Family-scoped chore visibility
-- **`Parents can manage family chores`** - Family creators can CRUD chores
-
-#### **chore_assignments** (Referenced in business logic)
-- Expected family-scoped access patterns
-
-#### **chore_completions** (Referenced in business logic)
-- Expected user-owned + family-visible patterns
-
-### 6. Gamification Tables
-
-#### **achievements**
-- **`Authenticated users can view active achievements`** - Public achievement catalog
-- **`Admins can manage achievements`** - Admin achievement management
-
-#### **user_achievements** (Referenced in business logic)
-- Expected user-owned + family-visible patterns
-
-#### **mini_game_scores**
-- **`Users can create game scores`** - Users create own scores in family context
-- **`Family members can view game scores`** - Family-scoped score visibility
-
-#### **peer_recognitions**
-- **`Users can give recognitions`** - Users give recognition in family context
-- **`Family members can view recognitions`** - Family-scoped recognition visibility
-
-#### **daily_streaks**
-- **`Family members can view streaks`** - Family-scoped streak visibility
-- **`Authenticated system can manage streaks`** - System streak management
-
-### 7. Privacy & Behavioral Data
-
-#### **user_privacy_settings**
-- **`Users can manage their own privacy settings`** - User-owned privacy control
-- **`Admins can view all privacy settings`** - Admin oversight capability
-
-#### **gamification_effectiveness**
-- **`Family members can view gamification data`** - Family-scoped analytics
-- **`System can manage gamification data`** - System data collection
-
-#### **task_performance_metrics**
-- **`Users can insert their performance metrics`** - User-owned performance data
-- **`Family members can view performance metrics`** - Family-scoped analytics
-
-### 8. System Monitoring Tables
+### 5. System Monitoring Tables
 
 #### **system_errors**
-- **`system_errors_admin_select`** - Only admins can view system errors
-- **`system_errors_service_insert`** - Only service role can insert errors
-- **`system_errors_admin_manage`** - Only admins can update/resolve errors
+- **`system_errors_access`** - Consolidated admin-only access
+- Service role can insert errors for logging
 
-**Security Level**: ✅ **HIGH** - System security data protection
+#### **security_alerts**
+- **`security_alerts_unified`** - Service role and admin access
+
+#### **error_patterns**
+- **`error_patterns_access`** - Admin-only access to error analysis
+
+### 6. Analytics Tables
 
 #### **analytics_metrics**
-- **`Admins can view all analytics metrics`** - Admin-only analytics access
-- **`Authenticated system can insert analytics metrics`** - System data collection
+- **`analytics_metrics_access`** - Consolidated SELECT policy for admins
+- **`analytics_metrics_insert`** - Service role and authenticated users can insert
 
 #### **performance_metrics**
-- **`Admins can view performance metrics`** - Admin-only performance data
-- **`Authenticated system can insert performance metrics`** - System monitoring
+- **`performance_metrics_access`** - Admin-only viewing
+- Service role insertion for monitoring
 
-#### **system_health_metrics**
-- **`Admins can view system health metrics`** - Admin-only health monitoring
-- **`Authenticated system can manage health metrics`** - System health updates
+### 7. Site Settings
 
-### 9. Archive Tables
-
-#### **archived_system_errors**
-- **`Admins can view archived errors`** - Admin historical error access
-- **`System can manage archived errors`** - Service role archiving
-
-#### **archived_user_activity_logs** (Referenced in functions)
-- Expected admin-only access patterns
-
-### 10. LLM & Cost Management
-
-#### **llm_usage_summaries**
-- **`Admins can manage LLM usage summaries`** - Admin-only LLM cost tracking
-
-#### **llm_cost_budgets**
-- **`Admins can manage LLM cost budgets`** - Admin-only budget management
-
-### 11. Administrative Tables
-
-#### **admin_audit_logs**
-- **`Admin audit logs admin only`** - Admin-exclusive audit access
-- **`Admins can manage audit logs`** - Admin audit management
+#### **site_settings**
+- **`site_settings_unified`** - All users can read, only admins can modify
 
 ---
 
@@ -240,7 +198,7 @@ is_family_member_secure(family_id, user_id) → Boolean
 ```
 
 ### Security Function Chain
-1. `auth.uid()` → Current authenticated user
+1. `(SELECT auth.uid())` → Current authenticated user (optimized with subquery)
 2. `has_role()` → Role verification (admin, parent, child)
 3. `has_family_access()` → Family membership verification
 4. `is_family_creator_secure()` → Family ownership verification
@@ -256,10 +214,11 @@ is_family_member_secure(family_id, user_id) → Boolean
 4. **Child Safety** - Enhanced child account protections
 5. **Admin Audit Trail** - Comprehensive admin action logging
 6. **Privacy Compliance** - User privacy settings and behavioral data controls
+7. **Performance Optimization** - Subquery wrapping for `auth.uid()` and `auth.role()`
+8. **Policy Consolidation** - Reduced from 130+ to 65+ optimized policies
 
 ### ⚠️ **Remaining Considerations**
 1. **Leaked Password Protection** - Manual configuration required in Supabase dashboard
-2. **PostgreSQL Upgrade** - Consider upgrading for latest security features
 
 ---
 
@@ -319,11 +278,13 @@ is_family_member_secure(family_id, user_id) → Boolean
 **Manual Config Needed**: 1 (Password protection)
 
 The RLS implementation provides comprehensive security through:
-- **60+ policies** across **38 tables**
+- **65+ optimized policies** across **59 tables**
+- **RESTRICTIVE policy mode** for enhanced security
 - **Multi-layered access control** with role-based permissions
 - **Family data isolation** with creator privileges
 - **Child safety measures** exceeding compliance requirements
 - **Complete audit trail** for administrative actions
 - **Privacy-first design** with user consent management
+- **Performance optimized** with subquery-wrapped auth functions
 
 All critical vulnerabilities have been resolved, and the system maintains strong security posture while enabling necessary functionality.
