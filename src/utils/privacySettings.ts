@@ -52,35 +52,52 @@ export const getUserPrivacySettings = async (): Promise<PrivacySettings | null> 
 export const updatePrivacySettings = async (settings: Partial<PrivacySettings>): Promise<boolean> => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return false;
-
-    // First, try to update existing record
-    const { data: updateData, error: updateError } = await supabase
-      .from('user_privacy_settings')
-      .update({
-        ...settings,
-        updated_at: new Date().toISOString()
-      })
-      .eq('user_id', user.id)
-      .select();
-
-    if (updateError) {
-      console.error('Error updating existing privacy settings:', updateError);
+    if (!user) {
+      console.error('No authenticated user found');
       return false;
     }
 
-    // If no rows were updated, insert a new record
-    if (!updateData || updateData.length === 0) {
+    // Check if settings already exist for this user
+    const { data: existingData, error: fetchError } = await supabase
+      .from('user_privacy_settings')
+      .select('id')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (fetchError) {
+      console.error('Error checking existing privacy settings:', fetchError);
+      return false;
+    }
+
+    if (existingData) {
+      // Update existing record
+      const { error: updateError } = await supabase
+        .from('user_privacy_settings')
+        .update({
+          behavioral_tracking_consent: settings.behavioral_tracking_consent,
+          data_retention_days: settings.data_retention_days,
+          analytics_sharing_consent: settings.analytics_sharing_consent,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', user.id);
+
+      if (updateError) {
+        console.error('Error updating privacy settings:', updateError);
+        return false;
+      }
+    } else {
+      // Insert new record
       const { error: insertError } = await supabase
         .from('user_privacy_settings')
         .insert({
           user_id: user.id,
-          ...settings,
-          updated_at: new Date().toISOString()
+          behavioral_tracking_consent: settings.behavioral_tracking_consent ?? false,
+          data_retention_days: settings.data_retention_days ?? 90,
+          analytics_sharing_consent: settings.analytics_sharing_consent ?? false
         });
 
       if (insertError) {
-        console.error('Error inserting new privacy settings:', insertError);
+        console.error('Error inserting privacy settings:', insertError);
         return false;
       }
     }
