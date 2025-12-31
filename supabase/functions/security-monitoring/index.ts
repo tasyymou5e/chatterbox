@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { corsHeaders } from "../_shared/cors.ts";
+import { getCorsHeaders } from "../_shared/cors.ts";
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -25,25 +25,29 @@ interface AccessPattern {
 }
 
 serve(async (req) => {
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
+
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     const { action, data } = await req.json();
+    console.log(`[security-monitoring] action=${action}`);
 
     switch (action) {
       case 'analyze_access_patterns':
-        return await analyzeAccessPatterns();
+        return await analyzeAccessPatterns(corsHeaders);
       
       case 'detect_rls_violations':
-        return await detectRLSViolations();
+        return await detectRLSViolations(corsHeaders);
       
       case 'check_suspicious_activity':
-        return await checkSuspiciousActivity(data);
+        return await checkSuspiciousActivity(data, corsHeaders);
       
       case 'generate_security_report':
-        return await generateSecurityReport();
+        return await generateSecurityReport(corsHeaders);
       
       default:
         return new Response(JSON.stringify({ error: 'Invalid action' }), {
@@ -60,7 +64,7 @@ serve(async (req) => {
   }
 });
 
-async function analyzeAccessPatterns(): Promise<Response> {
+async function analyzeAccessPatterns(corsHeaders: Record<string, string>): Promise<Response> {
   // Analyze user activity patterns for the last hour
   const { data: activities, error } = await supabase
     .from('user_activity_logs')
@@ -132,7 +136,7 @@ async function analyzeAccessPatterns(): Promise<Response> {
   });
 }
 
-async function detectRLSViolations(): Promise<Response> {
+async function detectRLSViolations(corsHeaders: Record<string, string>): Promise<Response> {
   // Check for potential RLS policy violations in security audit logs
   const { data: violations, error } = await supabase
     .from('security_audit_logs')
@@ -172,7 +176,7 @@ async function detectRLSViolations(): Promise<Response> {
   });
 }
 
-async function checkSuspiciousActivity(data: any): Promise<Response> {
+async function checkSuspiciousActivity(data: any, corsHeaders: Record<string, string>): Promise<Response> {
   const { userId, activityType, metadata } = data;
   
   // Check for rapid repeated actions
@@ -213,7 +217,7 @@ async function checkSuspiciousActivity(data: any): Promise<Response> {
   });
 }
 
-async function generateSecurityReport(): Promise<Response> {
+async function generateSecurityReport(corsHeaders: Record<string, string>): Promise<Response> {
   const now = new Date();
   const last24Hours = new Date(now.getTime() - 24 * 3600000);
   
@@ -247,6 +251,8 @@ async function generateSecurityReport(): Promise<Response> {
     },
     top_threat_indicators: alerts?.slice(0, 10) || []
   };
+
+  console.log(`[security-monitoring] Report generated: alerts=${report.summary.total_alerts}`);
 
   return new Response(JSON.stringify(report), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' }
