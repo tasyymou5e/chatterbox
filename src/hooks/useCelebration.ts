@@ -1,0 +1,84 @@
+import { useState, useCallback, useRef } from 'react';
+
+type CelebrationType = 'confetti' | 'stars' | 'hearts';
+
+interface UseCelebrationReturn {
+  isActive: boolean;
+  celebrationType: CelebrationType;
+  trigger: (type?: CelebrationType) => void;
+  stop: () => void;
+  playPraiseSound: () => void;
+}
+
+// Preloaded celebration sounds (short base64 chime)
+const PRAISE_SOUNDS = {
+  chime: '/audio/chime.mp3', // We'll use a simple audio element
+};
+
+export function useCelebration(): UseCelebrationReturn {
+  const [isActive, setIsActive] = useState(false);
+  const [celebrationType, setCelebrationType] = useState<CelebrationType>('confetti');
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const playPraiseSound = useCallback(() => {
+    // Create a simple oscillator-based celebration sound
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      
+      // Create a pleasant chime sequence
+      const playNote = (frequency: number, startTime: number, duration: number) => {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = frequency;
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(0.3, startTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+        
+        oscillator.start(startTime);
+        oscillator.stop(startTime + duration);
+      };
+      
+      const now = audioContext.currentTime;
+      // Play a happy ascending chime
+      playNote(523.25, now, 0.15);        // C5
+      playNote(659.25, now + 0.1, 0.15);  // E5
+      playNote(783.99, now + 0.2, 0.2);   // G5
+      playNote(1046.50, now + 0.3, 0.3);  // C6
+    } catch (e) {
+      console.log('Audio not supported');
+    }
+  }, []);
+
+  const trigger = useCallback((type: CelebrationType = 'confetti') => {
+    setCelebrationType(type);
+    setIsActive(true);
+    
+    // Trigger celebration haptic pattern
+    if (navigator.vibrate) {
+      navigator.vibrate([100, 50, 100, 50, 150]);
+    }
+    
+    // Play praise sound
+    playPraiseSound();
+    
+    // Auto-stop after animation
+    setTimeout(() => setIsActive(false), 2000);
+  }, [playPraiseSound]);
+
+  const stop = useCallback(() => {
+    setIsActive(false);
+  }, []);
+
+  return {
+    isActive,
+    celebrationType,
+    trigger,
+    stop,
+    playPraiseSound,
+  };
+}
