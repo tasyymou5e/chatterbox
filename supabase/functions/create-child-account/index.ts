@@ -46,17 +46,27 @@ serve(async (req) => {
 
     console.log('Creating child account for parent:', parentUserId);
 
-    // Verify the requesting user is a parent and get their family
+    // Verify the requesting user is a parent and get their profile
     const { data: parentProfile, error: parentError } = await supabase
       .from('profiles')
-      .select('user_id, first_name, last_name, email')
+      .select('user_id, first_name, last_name')
       .eq('user_id', parentUserId)
       .single();
 
     if (parentError || !parentProfile) {
-      console.error('Parent not found:', parentError);
+      console.error('Parent profile not found:', parentError);
+      throw new Error('Parent profile not found');
+    }
+
+    // Get parent's email from auth.users
+    const { data: parentAuthData, error: parentAuthError } = await supabase.auth.admin.getUserById(parentUserId);
+    
+    if (parentAuthError || !parentAuthData?.user?.email) {
+      console.error('Parent auth data not found:', parentAuthError);
       throw new Error('Parent account not found');
     }
+    
+    const parentEmail = parentAuthData.user.email;
 
     // Check if parent has parent role
     const { data: parentRole, error: roleError } = await supabase
@@ -84,7 +94,7 @@ serve(async (req) => {
     }
 
     // Generate child email and create auth user immediately
-    const childEmail = `${parentProfile.email}.${firstName.toLowerCase()}`;
+    const childEmail = `${parentEmail}.${firstName.toLowerCase()}`;
     
     console.log('Creating auth user with parent-provided password');
     
@@ -123,7 +133,7 @@ serve(async (req) => {
         status: 'completed',
         completed_at: new Date().toISOString(),
         metadata: {
-          parent_email: parentProfile.email,
+          parent_email: parentEmail,
           parent_name: `${parentProfile.first_name} ${parentProfile.last_name}`,
           family_name: family.name,
           created_via: 'parent_dashboard',
