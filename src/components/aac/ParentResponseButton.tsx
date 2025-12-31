@@ -2,7 +2,10 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { useTextToSpeech, AVAILABLE_VOICES, type Voice } from '@/hooks/useTextToSpeech';
+import { useGrokTextToSpeech, GROK_VOICES, type GrokVoice } from '@/hooks/useGrokTextToSpeech';
 import { useCelebration } from '@/hooks/useCelebration';
 import { 
   Volume2, 
@@ -14,7 +17,8 @@ import {
   Tv, 
   Hand,
   Settings2,
-  Mic
+  Mic,
+  Cloud
 } from 'lucide-react';
 import {
   Collapsible,
@@ -52,15 +56,31 @@ export function ParentResponseButton({
   familyId,
   className 
 }: ParentResponseButtonProps) {
-  const { speak, stop, isLoading, isSpeaking } = useTextToSpeech();
+  // Web Speech API TTS
+  const browserTTS = useTextToSpeech();
+  // Grok Cloud TTS
+  const grokTTS = useGrokTextToSpeech();
+  
   const celebration = useCelebration();
-  const [selectedVoice, setSelectedVoice] = useState<Voice>('default');
+  
+  // Toggle between browser TTS and Grok Cloud TTS
+  const [useGrokVoice, setUseGrokVoice] = useState(false);
+  
+  // Voice selections for each mode
+  const [browserVoice, setBrowserVoice] = useState<Voice>('default');
+  const [grokVoice, setGrokVoice] = useState<GrokVoice>('Aria');
+  
   const [speed, setSpeed] = useState(1.0);
   const [showSettings, setShowSettings] = useState(false);
   const [activeButton, setActiveButton] = useState<string | null>(null);
   const [customRecordings, setCustomRecordings] = useState<CustomRecording[]>([]);
   const [recordingDialogOpen, setRecordingDialogOpen] = useState(false);
   const [selectedPhraseForRecording, setSelectedPhraseForRecording] = useState<ResponseButton | null>(null);
+
+  // Derived state based on which TTS is active
+  const isLoading = useGrokVoice ? grokTTS.isLoading : browserTTS.isLoading;
+  const isSpeaking = useGrokVoice ? grokTTS.isSpeaking : browserTTS.isSpeaking;
+  const stop = useGrokVoice ? grokTTS.stop : browserTTS.stop;
 
   // Fetch custom recordings on mount
   useEffect(() => {
@@ -155,8 +175,12 @@ export function ParentResponseButton({
         }
       };
     } else {
-      // Use TTS fallback
-      await speak(button.phrase, { voice: selectedVoice, speed });
+      // Use TTS based on mode
+      if (useGrokVoice) {
+        await grokTTS.speak(button.phrase, { voice: grokVoice, speed });
+      } else {
+        await browserTTS.speak(button.phrase, { voice: browserVoice, speed });
+      }
       
       // Trigger celebration for positive responses
       if (button.celebrationType) {
@@ -228,21 +252,51 @@ export function ParentResponseButton({
           {/* Settings Panel */}
           <Collapsible open={showSettings} onOpenChange={setShowSettings}>
             <CollapsibleContent className="space-y-4 pb-4 border-b">
-              {/* Voice Selection */}
+              {/* Grok Cloud Toggle */}
+              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                <div className="flex items-center gap-2">
+                  <Cloud className="h-4 w-4 text-primary" />
+                  <Label htmlFor="grok-toggle" className="text-sm font-medium cursor-pointer">
+                    Use Grok AI Voice (Cloud)
+                  </Label>
+                </div>
+                <Switch
+                  id="grok-toggle"
+                  checked={useGrokVoice}
+                  onCheckedChange={setUseGrokVoice}
+                />
+              </div>
+
+              {/* Voice Selection - conditional based on mode */}
               <div className="space-y-2">
-                <label className="text-sm font-medium">TTS Voice</label>
+                <label className="text-sm font-medium">
+                  {useGrokVoice ? 'Grok Voice' : 'Browser Voice'}
+                </label>
                 <div className="flex flex-wrap gap-2">
-                  {AVAILABLE_VOICES.map((voice) => (
-                    <Button
-                      key={voice}
-                      variant={selectedVoice === voice ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setSelectedVoice(voice)}
-                      className="capitalize"
-                    >
-                      {voice}
-                    </Button>
-                  ))}
+                  {useGrokVoice ? (
+                    GROK_VOICES.map((voice) => (
+                      <Button
+                        key={voice}
+                        variant={grokVoice === voice ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setGrokVoice(voice)}
+                      >
+                        {voice}
+                      </Button>
+                    ))
+                  ) : (
+                    AVAILABLE_VOICES.map((voice) => (
+                      <Button
+                        key={voice}
+                        variant={browserVoice === voice ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setBrowserVoice(voice)}
+                        className="capitalize"
+                      >
+                        {voice}
+                      </Button>
+                    ))
+                  )}
                 </div>
               </div>
 
@@ -255,8 +309,8 @@ export function ParentResponseButton({
                 <Slider
                   value={[speed]}
                   onValueChange={([value]) => setSpeed(value)}
-                  min={0.5}
-                  max={1.5}
+                  min={useGrokVoice ? 0.25 : 0.5}
+                  max={useGrokVoice ? 4.0 : 1.5}
                   step={0.1}
                   className="w-full"
                 />
