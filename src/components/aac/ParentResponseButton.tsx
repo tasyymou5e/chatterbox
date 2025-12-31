@@ -125,6 +125,7 @@ export function ParentResponseButton({
       phrase: `${childName}, it's time to eat! Let's go to the table.`,
       icon: <Utensils className="h-8 w-8" />,
       color: 'bg-orange-500 hover:bg-orange-600',
+      celebrationType: 'hearts',
     },
     {
       id: 'time-for-bed',
@@ -132,6 +133,15 @@ export function ParentResponseButton({
       phrase: `${childName}, it's time for bed. Let's get ready to sleep.`,
       icon: <Moon className="h-8 w-8" />,
       color: 'bg-purple-500 hover:bg-purple-600',
+      celebrationType: 'stars',
+    },
+    {
+      id: 'all-done',
+      label: 'All Done!',
+      phrase: `All done, ${childName}! Great work finishing that!`,
+      icon: <ThumbsUp className="h-8 w-8" />,
+      color: 'bg-emerald-500 hover:bg-emerald-600',
+      celebrationType: 'confetti',
     },
     {
       id: 'no-tv',
