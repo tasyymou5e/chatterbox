@@ -22,10 +22,16 @@ serve(async (req) => {
   }
 
   try {
-    // Verify admin access
+    const json = (payload: unknown, status = 200) =>
+      new Response(JSON.stringify(payload), {
+        status,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+
+    // Verify authenticated user
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      throw new Error('Authorization required');
+      return json({ error: 'Authorization required' }, 401);
     }
 
     const supabaseClient = createClient(
@@ -34,18 +40,35 @@ serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabaseClient.auth.getUser();
+
     if (authError || !user) {
-      throw new Error('Unauthorized');
+      return json({ error: 'Unauthorized' }, 401);
     }
 
-    // Check if user is admin using security definer function (bypasses RLS)
-    const { data: isAdmin, error: roleError } = await supabaseClient
-      .rpc('has_role', { _user_id: user.id, _role: 'admin' });
+    // Verify admin role using service role (avoids any RLS/RPC edge-cases)
+    const adminClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
 
-    if (roleError || !isAdmin) {
-      console.log('Admin check failed:', { roleError, isAdmin, userId: user.id });
-      throw new Error('Admin access required');
+    const { data: roles, error: rolesError } = await adminClient
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .in('role', ['admin', 'read_only'])
+      .limit(1);
+
+    if (rolesError) {
+      console.error('Role lookup failed:', rolesError);
+      return json({ error: 'Role lookup failed' }, 500);
+    }
+
+    if (!roles || roles.length === 0) {
+      return json({ error: 'Admin access required' }, 403);
     }
 
     const { action, provider } = await req.json();
