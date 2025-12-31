@@ -295,14 +295,14 @@ export function ParentResponseButton({
                   <button
                     onClick={(e) => handleRecordingClick(button, e)}
                     className={cn(
-                      'absolute -top-1 -right-1 p-1 rounded-full transition-colors',
+                      'absolute -top-2 -right-2 p-1.5 rounded-full transition-all shadow-md border-2 border-background',
                       hasCustomRecording 
-                        ? 'bg-green-500 text-white' 
-                        : 'bg-muted text-muted-foreground hover:bg-accent'
+                        ? 'bg-green-500 text-white hover:bg-green-600' 
+                        : 'bg-primary text-primary-foreground hover:bg-primary/90'
                     )}
                     title={hasCustomRecording ? 'Custom recording active' : 'Add custom recording'}
                   >
-                    <Mic className="h-3 w-3" />
+                    <Mic className="h-4 w-4" />
                   </button>
                 </div>
               );
