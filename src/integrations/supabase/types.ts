@@ -356,6 +356,60 @@ export type Database = {
         }
         Relationships: []
       }
+      certificates: {
+        Row: {
+          category_id: string
+          category_name: string
+          certificate_data: Json | null
+          child_name: string
+          completed_at: string
+          created_at: string
+          family_id: string
+          id: string
+          skill_level_completed: Database["public"]["Enums"]["skill_level"]
+          user_id: string
+        }
+        Insert: {
+          category_id: string
+          category_name: string
+          certificate_data?: Json | null
+          child_name: string
+          completed_at?: string
+          created_at?: string
+          family_id: string
+          id?: string
+          skill_level_completed: Database["public"]["Enums"]["skill_level"]
+          user_id: string
+        }
+        Update: {
+          category_id?: string
+          category_name?: string
+          certificate_data?: Json | null
+          child_name?: string
+          completed_at?: string
+          created_at?: string
+          family_id?: string
+          id?: string
+          skill_level_completed?: Database["public"]["Enums"]["skill_level"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificates_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "content_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificates_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       child_accounts: {
         Row: {
           completed_at: string | null
@@ -929,6 +983,7 @@ export type Database = {
           is_active: boolean | null
           is_free: boolean | null
           platform: string | null
+          skill_levels: string[] | null
           sort_order: number | null
           tags: string[] | null
           thumbnail_url: string | null
@@ -954,6 +1009,7 @@ export type Database = {
           is_active?: boolean | null
           is_free?: boolean | null
           platform?: string | null
+          skill_levels?: string[] | null
           sort_order?: number | null
           tags?: string[] | null
           thumbnail_url?: string | null
@@ -979,6 +1035,7 @@ export type Database = {
           is_active?: boolean | null
           is_free?: boolean | null
           platform?: string | null
+          skill_levels?: string[] | null
           sort_order?: number | null
           tags?: string[] | null
           thumbnail_url?: string | null
@@ -1616,6 +1673,136 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      lesson_history: {
+        Row: {
+          answered_at: string
+          category_id: string
+          content_item_id: string | null
+          family_id: string
+          id: string
+          response_time_ms: number | null
+          skill_level_at_time: Database["public"]["Enums"]["skill_level"]
+          stars_earned: number
+          user_id: string
+          was_correct: boolean
+        }
+        Insert: {
+          answered_at?: string
+          category_id: string
+          content_item_id?: string | null
+          family_id: string
+          id?: string
+          response_time_ms?: number | null
+          skill_level_at_time?: Database["public"]["Enums"]["skill_level"]
+          stars_earned?: number
+          user_id: string
+          was_correct: boolean
+        }
+        Update: {
+          answered_at?: string
+          category_id?: string
+          content_item_id?: string | null
+          family_id?: string
+          id?: string
+          response_time_ms?: number | null
+          skill_level_at_time?: Database["public"]["Enums"]["skill_level"]
+          stars_earned?: number
+          user_id?: string
+          was_correct?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_history_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "content_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_history_content_item_id_fkey"
+            columns: ["content_item_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_history_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lesson_progress: {
+        Row: {
+          accuracy_percentage: number | null
+          category_id: string
+          correct_answers: number
+          created_at: string
+          current_level: Database["public"]["Enums"]["skill_level"]
+          current_stars: number
+          family_id: string
+          id: string
+          last_activity_at: string | null
+          moons_earned: number
+          stars_to_moon: number
+          total_attempts: number
+          unlocked_levels: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accuracy_percentage?: number | null
+          category_id: string
+          correct_answers?: number
+          created_at?: string
+          current_level?: Database["public"]["Enums"]["skill_level"]
+          current_stars?: number
+          family_id: string
+          id?: string
+          last_activity_at?: string | null
+          moons_earned?: number
+          stars_to_moon?: number
+          total_attempts?: number
+          unlocked_levels?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accuracy_percentage?: number | null
+          category_id?: string
+          correct_answers?: number
+          created_at?: string
+          current_level?: Database["public"]["Enums"]["skill_level"]
+          current_stars?: number
+          family_id?: string
+          id?: string
+          last_activity_at?: string | null
+          moons_earned?: number
+          stars_to_moon?: number
+          total_attempts?: number
+          unlocked_levels?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_progress_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "content_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_progress_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       llm_api_calls: {
         Row: {
@@ -3556,6 +3743,7 @@ export type Database = {
         | "session_hijacking"
         | "unauthorized_api_access"
         | "security_test_failure"
+      skill_level: "beginner" | "intermediate" | "advanced"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3732,6 +3920,7 @@ export const Constants = {
         "unauthorized_api_access",
         "security_test_failure",
       ],
+      skill_level: ["beginner", "intermediate", "advanced"],
     },
   },
 } as const
