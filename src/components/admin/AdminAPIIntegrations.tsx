@@ -33,44 +33,49 @@ export default function AdminAPIIntegrations() {
   }, []);
 
   const fetchIntegrationStatus = async () => {
+    const defaultIntegrations: IntegrationStatus[] = [
+      {
+        provider: 'grok',
+        displayName: 'Grok (xAI)',
+        configured: false,
+        lastChecked: null,
+        healthy: null,
+        models: ['grok-3', 'grok-3-mini', 'grok-2-audio'],
+      },
+      {
+        provider: 'openai',
+        displayName: 'OpenAI',
+        configured: false,
+        lastChecked: null,
+        healthy: null,
+        models: ['gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo'],
+      },
+      {
+        provider: 'lovable',
+        displayName: 'Lovable AI Gateway',
+        configured: false,
+        lastChecked: null,
+        healthy: null,
+        models: ['google/gemini-2.5-flash', 'openai/gpt-5'],
+      },
+    ];
+
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('api-integration-status', {
-        body: { action: 'status' }
+        body: { action: 'status' },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.warn('Integration status unavailable:', error);
+        setIntegrations(defaultIntegrations);
+        return;
+      }
 
-      setIntegrations(data.integrations || []);
+      setIntegrations(data?.integrations || defaultIntegrations);
     } catch (error) {
       console.error('Failed to fetch integration status:', error);
-      // Set default unconfigured state
-      setIntegrations([
-        {
-          provider: 'grok',
-          displayName: 'Grok (xAI)',
-          configured: false,
-          lastChecked: null,
-          healthy: null,
-          models: ['grok-3', 'grok-3-mini', 'grok-2-audio']
-        },
-        {
-          provider: 'openai',
-          displayName: 'OpenAI',
-          configured: false,
-          lastChecked: null,
-          healthy: null,
-          models: ['gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo']
-        },
-        {
-          provider: 'lovable',
-          displayName: 'Lovable AI Gateway',
-          configured: false,
-          lastChecked: null,
-          healthy: null,
-          models: ['google/gemini-2.5-flash', 'openai/gpt-5']
-        }
-      ]);
+      setIntegrations(defaultIntegrations);
     } finally {
       setLoading(false);
     }
