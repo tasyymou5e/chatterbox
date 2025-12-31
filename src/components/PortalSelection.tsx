@@ -1,8 +1,10 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Shield, Users, Baby, ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export const PortalSelection = () => {
+  const navigate = useNavigate();
   const portals = [
     {
       id: "admin",
@@ -55,11 +57,16 @@ export const PortalSelection = () => {
   ];
 
   const handlePortalSelect = (portalId: string) => {
-    // Since we don't have authentication set up yet, we'll show a message
-    if (portalId === "admin") {
-      alert("Administrator access requires special credentials. Please contact support.");
-    } else {
-      alert(`${portalId.charAt(0).toUpperCase() + portalId.slice(1)} portal coming soon! Please connect Supabase authentication first.`);
+    switch (portalId) {
+      case "admin":
+        navigate("/admin/login");
+        break;
+      case "parent":
+      case "child":
+        navigate("/auth");
+        break;
+      default:
+        navigate("/auth");
     }
   };
 

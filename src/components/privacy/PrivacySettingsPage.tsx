@@ -75,11 +75,6 @@ export default function PrivacySettingsPage() {
     }
   };
 
-  const handleDeleteAllData = async () => {
-    // This functionality is now handled by the PrivacyCompliancePanel
-    console.log('Data deletion moved to Privacy Compliance Panel');
-  };
-
   const updateSetting = <K extends keyof PrivacySettings>(key: K, value: PrivacySettings[K]) => {
     if (!settings) return;
     setSettings(prev => prev ? { ...prev, [key]: value } : null);

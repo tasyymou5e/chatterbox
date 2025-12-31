@@ -3,9 +3,19 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BookOpen, Video, Download, ExternalLink, ArrowRight, Star } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { toast } from "@/hooks/use-toast";
 
 export default function ParentResources() {
+  const navigate = useNavigate();
+
+  const handleComingSoon = (feature: string) => {
+    toast({
+      title: "Coming Soon!",
+      description: `${feature} will be available soon. Sign up to get notified!`
+    });
+  };
+
   const resourceCategories = [
     {
       icon: BookOpen,
@@ -110,7 +120,11 @@ export default function ParentResources() {
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Link>
                 </Button>
-                <Button variant="outline" size="lg">
+                <Button 
+                  variant="outline" 
+                  size="lg"
+                  onClick={() => handleComingSoon("Free resources")}
+                >
                   Browse Free Resources
                 </Button>
               </div>
@@ -186,7 +200,11 @@ export default function ParentResources() {
                           <span className="font-medium">{resource.rating}</span>
                         </div>
                       </div>
-                      <Button variant="outline" className="w-full">
+                      <Button 
+                        variant="outline" 
+                        className="w-full"
+                        onClick={() => navigate('/auth')}
+                      >
                         Access Resource
                       </Button>
                     </CardContent>

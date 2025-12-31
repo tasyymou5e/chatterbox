@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Mail, Phone, MessageCircle, Clock } from "lucide-react";
 import { useState } from "react";
+import { toast } from "@/hooks/use-toast";
 
 export default function ContactUs() {
   const [formData, setFormData] = useState({
@@ -16,11 +17,48 @@ export default function ContactUs() {
     category: "",
     message: ""
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission
-    console.log("Form submitted:", formData);
+    
+    if (!formData.name || !formData.email || !formData.subject || !formData.message) {
+      toast({
+        variant: "destructive",
+        title: "Missing fields",
+        description: "Please fill in all required fields."
+      });
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    // Simulate form submission - in production, this would call an edge function
+    setTimeout(() => {
+      toast({
+        title: "Message sent!",
+        description: "Thank you for contacting us. We'll respond within 24 hours."
+      });
+      setFormData({ name: "", email: "", subject: "", category: "", message: "" });
+      setIsSubmitting(false);
+    }, 1000);
+  };
+
+  const handleContactAction = (method: string, contact: string) => {
+    switch (method) {
+      case "Send Email":
+        window.location.href = `mailto:${contact}`;
+        break;
+      case "Call Now":
+        window.location.href = `tel:${contact.replace(/[^0-9]/g, '')}`;
+        break;
+      case "Start Chat":
+        toast({
+          title: "Live Chat",
+          description: "Live chat is available Monday-Friday, 9 AM - 6 PM EST. Please check back during business hours."
+        });
+        break;
+    }
   };
 
   const contactMethods = [
@@ -89,7 +127,11 @@ export default function ContactUs() {
                   </CardHeader>
                   <CardContent className="text-center">
                     <p className="font-medium mb-4">{method.contact}</p>
-                    <Button variant="outline" className="w-full">
+                    <Button 
+                      variant="outline" 
+                      className="w-full"
+                      onClick={() => handleContactAction(method.action, method.contact)}
+                    >
                       {method.action}
                     </Button>
                   </CardContent>
@@ -173,8 +215,8 @@ export default function ContactUs() {
                       />
                     </div>
                     
-                    <Button type="submit" size="lg" className="w-full">
-                      Send Message
+                    <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
+                      {isSubmitting ? "Sending..." : "Send Message"}
                     </Button>
                   </form>
                 </CardContent>

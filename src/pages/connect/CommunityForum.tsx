@@ -4,11 +4,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Users, MessageSquare, Search, Heart, TrendingUp, Clock, ArrowRight } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { toast } from "@/hooks/use-toast";
 
 export default function CommunityForum() {
   const [searchQuery, setSearchQuery] = useState("");
+  const navigate = useNavigate();
+
+  const handleComingSoon = (feature: string) => {
+    toast({
+      title: "Coming Soon!",
+      description: `${feature} will be available soon. Sign up to be notified!`
+    });
+  };
 
   const forumCategories = [
     {
@@ -91,7 +100,11 @@ export default function CommunityForum() {
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Link>
                 </Button>
-                <Button variant="outline" size="lg">
+                <Button 
+                  variant="outline" 
+                  size="lg"
+                  onClick={() => handleComingSoon("Guest browsing")}
+                >
                   Browse as Guest
                 </Button>
               </div>
@@ -121,7 +134,11 @@ export default function CommunityForum() {
             
             <div className="grid md:grid-cols-3 gap-8">
               {forumCategories.map((category, index) => (
-                <Card key={index} className="hover:shadow-lg transition-shadow cursor-pointer">
+                <Card 
+                  key={index} 
+                  className="hover:shadow-lg transition-shadow cursor-pointer"
+                  onClick={() => handleComingSoon(category.title)}
+                >
                   <CardHeader>
                     <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
                       <category.icon className="h-6 w-6 text-primary" />
@@ -190,7 +207,11 @@ export default function CommunityForum() {
               </div>
               
               <div className="text-center mt-8">
-                <Button variant="outline" size="lg">
+                <Button 
+                  variant="outline" 
+                  size="lg"
+                  onClick={() => navigate('/auth')}
+                >
                   View All Discussions
                 </Button>
               </div>
