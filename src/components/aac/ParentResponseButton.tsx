@@ -54,7 +54,7 @@ export function ParentResponseButton({
 }: ParentResponseButtonProps) {
   const { speak, stop, isLoading, isSpeaking } = useTextToSpeech();
   const celebration = useCelebration();
-  const [selectedVoice, setSelectedVoice] = useState<Voice>('nova');
+  const [selectedVoice, setSelectedVoice] = useState<Voice>('default');
   const [speed, setSpeed] = useState(1.0);
   const [showSettings, setShowSettings] = useState(false);
   const [activeButton, setActiveButton] = useState<string | null>(null);
