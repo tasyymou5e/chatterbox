@@ -28,6 +28,7 @@ import { useAuthStore } from '@/stores/authStore';
 import SecurityDashboardCard from '@/components/admin/SecurityDashboardCard';
 import EnhancedSecurityDashboard from '@/components/admin/EnhancedSecurityDashboard';
 import AdminSiteSettings from '@/components/admin/AdminSiteSettings';
+import AdminAPIIntegrations from '@/components/admin/AdminAPIIntegrations';
 
 interface DashboardStats {
   totalFamilies: number;
@@ -258,12 +259,16 @@ export default function AdminDashboard() {
         <RetentionChart data={retentionData} loading={analyticsLoading} />
       </div>
 
-      {/* System Health, Settings, and Quick Actions */}
-      <div className="grid gap-6 lg:grid-cols-3">
+      {/* System Health, Settings, API Integrations, and Quick Actions */}
+      <div className="grid gap-6 lg:grid-cols-2">
         <SystemHealthWidget data={systemMetrics || []} loading={!sessionReady} />
-        
         <AdminSiteSettings />
+      </div>
 
+      {/* API Integrations and Quick Actions */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <AdminAPIIntegrations />
+        
         <Card className="bg-gradient-card border-border shadow-soft">
           <CardHeader>
             <CardTitle className="text-foreground">Quick Actions</CardTitle>
@@ -297,6 +302,14 @@ export default function AdminDashboard() {
               >
                 <BarChart3 className="h-4 w-4 mr-2" />
                 Generate Reports
+              </Button>
+              <Button 
+                variant="outline"
+                className="w-full justify-start border-border"
+                onClick={() => navigate('/admin/llm-monitoring')}
+              >
+                <Activity className="h-4 w-4 mr-2" />
+                LLM Monitoring
               </Button>
             </div>
           </CardContent>
