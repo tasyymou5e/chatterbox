@@ -15,6 +15,9 @@ verify_jwt = true
 [functions.security-testing]
 verify_jwt = true
 
+[functions.security-monitoring]
+verify_jwt = true
+
 [functions.text-to-speech]
 verify_jwt = false
 

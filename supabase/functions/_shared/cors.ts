@@ -2,6 +2,7 @@
 const ALLOWED_ORIGINS = [
   'https://lovable.dev',
   'https://*.lovable.dev',
+  'https://*.lovableproject.com',
   'https://lxuqfgbukrrickanmmic.supabase.co',
 ];
 
