@@ -17,7 +17,8 @@ import {
   LogOut, 
   Menu,
   X,
-  User
+  User,
+  Volume2
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,6 +43,7 @@ export function SiteHeader({ className }: SiteHeaderProps) {
     { title: "Communication Support", href: "/features/communication-support" },
     { title: "Progress Tracking", href: "/features/progress-tracking" },
     { title: "Family Management", href: "/features/family-management" },
+    { title: "AAC Demo", href: "/aac-demo", highlight: true },
   ];
 
   const supportItems = [
@@ -89,9 +91,18 @@ export function SiteHeader({ className }: SiteHeaderProps) {
                         <Link
                           key={item.title}
                           to={item.href}
-                          className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                          className={cn(
+                            "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
+                            (item as any).highlight && "bg-primary/10 border border-primary/20"
+                          )}
                         >
-                          <div className="text-sm font-medium leading-none">{item.title}</div>
+                          <div className="text-sm font-medium leading-none flex items-center gap-2">
+                            {(item as any).highlight && <Volume2 className="h-4 w-4 text-primary" />}
+                            {item.title}
+                            {(item as any).highlight && (
+                              <span className="text-xs bg-primary text-primary-foreground px-1.5 py-0.5 rounded">New</span>
+                            )}
+                          </div>
                         </Link>
                       ))}
                     </div>
