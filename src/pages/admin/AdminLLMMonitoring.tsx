@@ -4,11 +4,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthStore } from "@/stores/authStore";
-import { AlertCircle, Brain, DollarSign, Clock, TrendingUp, Zap, RefreshCw } from "lucide-react";
+import { AlertCircle, AlertTriangle, Brain, DollarSign, Clock, TrendingUp, Zap, RefreshCw, Bell } from "lucide-react";
 import { AdminRoute } from "@/components/admin/AdminRoute";
+import { LLMUsageTrendsChart } from "@/components/admin/LLMUsageTrendsChart";
+import { LLMCostAlerts } from "@/components/admin/LLMCostAlerts";
+import { LLMCostThresholdSettings } from "@/components/admin/LLMCostThresholdSettings";
 
 interface LLMStats {
   total_calls: number;
@@ -41,6 +45,7 @@ const AdminLLMMonitoring = () => {
   const [timeframe, setTimeframe] = useState("7");
   const [selectedProvider, setSelectedProvider] = useState<string>("all");
   const [error, setError] = useState<string | null>(null);
+  const [unacknowledgedAlerts, setUnacknowledgedAlerts] = useState(0);
   const { toast } = useToast();
   
   // Wait for session readiness before fetching
@@ -216,6 +221,22 @@ const AdminLLMMonitoring = () => {
   return (
     <AdminRoute>
       <div className="space-y-6">
+        {/* Alert Banner */}
+        {unacknowledgedAlerts > 0 && (
+          <Alert className="border-orange-500 bg-orange-500/10">
+            <AlertTriangle className="h-4 w-4 text-orange-500" />
+            <AlertDescription className="flex items-center justify-between">
+              <span>
+                <strong>{unacknowledgedAlerts}</strong> unacknowledged cost alert{unacknowledgedAlerts > 1 ? 's' : ''} require attention
+              </span>
+              <Button variant="outline" size="sm" onClick={() => document.getElementById('cost-alerts-tab')?.click()}>
+                <Bell className="h-4 w-4 mr-1" />
+                View Alerts
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Brain className="h-6 w-6" />
@@ -306,6 +327,19 @@ const AdminLLMMonitoring = () => {
         <Tabs defaultValue="recent" className="w-full">
           <TabsList>
             <TabsTrigger value="recent">Recent Calls</TabsTrigger>
+            <TabsTrigger value="trends">
+              <TrendingUp className="h-4 w-4 mr-1" />
+              Usage Trends
+            </TabsTrigger>
+            <TabsTrigger value="alerts" id="cost-alerts-tab">
+              <Bell className="h-4 w-4 mr-1" />
+              Cost Alerts
+              {unacknowledgedAlerts > 0 && (
+                <Badge variant="destructive" className="ml-1 h-5 px-1.5">
+                  {unacknowledgedAlerts}
+                </Badge>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="providers">Providers</TabsTrigger>
             <TabsTrigger value="models">Models</TabsTrigger>
           </TabsList>
@@ -363,6 +397,20 @@ const AdminLLMMonitoring = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="trends" className="space-y-4">
+            <LLMUsageTrendsChart 
+              dailyUsage={stats?.daily_usage || {}} 
+              isLoading={loading} 
+            />
+          </TabsContent>
+
+          <TabsContent value="alerts" className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <LLMCostAlerts onAlertCountChange={setUnacknowledgedAlerts} />
+              <LLMCostThresholdSettings />
+            </div>
           </TabsContent>
 
           <TabsContent value="providers" className="space-y-4">
