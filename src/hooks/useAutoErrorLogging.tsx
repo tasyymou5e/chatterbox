@@ -19,11 +19,13 @@ export const useAutoErrorLogging = () => {
     };
 
     // Intercept fetch requests to log network errors
+    // Skip logging expected auth failures (401/403) to reduce noise
     const originalFetch = window.fetch;
     window.fetch = async (...args) => {
       try {
         const response = await originalFetch(...args);
-        if (!response.ok) {
+        // Only log 5xx server errors, not expected auth failures (401/403)
+        if (!response.ok && response.status >= 500) {
           logNetworkError(args[0]?.toString() || 'Unknown URL', response.status, response.statusText);
         }
         return response;

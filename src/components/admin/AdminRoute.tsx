@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAdminAuth } from '@/hooks/useAdminAuth';
-import { Loader2, RefreshCw, AlertCircle } from 'lucide-react';
+import { useAuthStore } from '@/stores/authStore';
+import { RefreshCw, AlertCircle } from 'lucide-react';
 import { cLog, cWarn, cInfo, cError } from '@/utils/conditionalLogger';
 import type { ErrorContext } from '@/types/interfaces';
 
@@ -10,7 +10,8 @@ interface AdminRouteProps {
 }
 
 export const AdminRoute = ({ children }: AdminRouteProps) => {
-  const { loading, user, isAdmin, signingOut } = useAdminAuth();
+  // Use store directly to also get isCheckingRole
+  const { loading, user, isAdmin, signingOut, isCheckingRole } = useAuthStore();
   
   // Emergency timeouts to prevent infinite loading states - increased timeouts to allow for slower auth
   const [emergencyLoadingTimeout, setEmergencyLoadingTimeout] = React.useState(false);
@@ -23,10 +24,10 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
 
   // Debug auth state changes
   React.useEffect(() => {
-    const debugInfo = `Loading: ${loading}, User: ${user ? 'present' : 'null'}, IsAdmin: ${isAdmin}, SigningOut: ${signingOut}`;
+    const debugInfo = `Loading: ${loading}, CheckingRole: ${isCheckingRole}, User: ${user ? 'present' : 'null'}, IsAdmin: ${isAdmin}, SigningOut: ${signingOut}`;
     setAuthDebugInfo(debugInfo);
     cLog('AdminRoute auth state', debugInfo);
-  }, [loading, user, isAdmin, signingOut]);
+  }, [loading, isCheckingRole, user, isAdmin, signingOut]);
 
   React.useEffect(() => {
     if (loading) {
@@ -57,13 +58,16 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
   }, [signingOut]);
 
   // Show enhanced loading state with progress indicators
-  if (loading && !emergencyLoadingTimeout) {
+  // CRITICAL: Also block while role is being checked to prevent stale isAdmin access
+  if ((loading || isCheckingRole) && !emergencyLoadingTimeout) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center max-w-md">
           <div className="animate-spin rounded-full h-20 w-20 border-b-2 border-blue-500 mx-auto"></div>
           <p className="mt-6 text-gray-300 text-lg font-medium">Loading Admin Panel</p>
-          <p className="mt-2 text-sm text-gray-400">Authenticating and loading dashboard...</p>
+          <p className="mt-2 text-sm text-gray-400">
+            {isCheckingRole ? 'Verifying admin permissions...' : 'Authenticating and loading dashboard...'}
+          </p>
           <div className="mt-4 px-4 py-2 bg-gray-800 rounded-lg">
             <p className="text-xs text-gray-500">{authDebugInfo}</p>
           </div>
