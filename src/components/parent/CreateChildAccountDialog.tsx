@@ -178,8 +178,8 @@ export default function CreateChildAccountDialog({ open, onOpenChange, onSuccess
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md max-h-[90vh] flex flex-col">
-        <DialogHeader className="flex-shrink-0">
+      <DialogContent className="max-w-md max-h-[85vh] !grid !grid-rows-[auto_1fr_auto] overflow-hidden">
+        <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserPlus className="h-5 w-5 text-primary" />
             Create Child Account
@@ -193,7 +193,7 @@ export default function CreateChildAccountDialog({ open, onOpenChange, onSuccess
         </DialogHeader>
 
         {!createdAccount ? (
-          <ScrollArea className="flex-1 overflow-auto pr-4">
+          <ScrollArea className="min-h-0 pr-4">
             <div className="space-y-6 pb-2">
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -281,7 +281,7 @@ export default function CreateChildAccountDialog({ open, onOpenChange, onSuccess
             </div>
           </ScrollArea>
         ) : (
-          <ScrollArea className="flex-1 overflow-auto pr-4">
+          <ScrollArea className="min-h-0 pr-4">
             <div className="space-y-6 pb-2">
               {/* Success State */}
               <Card className="bg-primary/5 border-primary/20">
@@ -318,7 +318,7 @@ export default function CreateChildAccountDialog({ open, onOpenChange, onSuccess
         )}
 
         {/* Sticky footer with action buttons */}
-        <div className="flex justify-end gap-2 flex-shrink-0 pt-4 border-t border-border">
+        <div className="flex justify-end gap-2 pt-4 border-t border-border">
           {!createdAccount ? (
             <>
               <Button
