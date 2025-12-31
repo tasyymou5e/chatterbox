@@ -1858,6 +1858,54 @@ export type Database = {
         }
         Relationships: []
       }
+      llm_cost_alerts: {
+        Row: {
+          acknowledged: boolean | null
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          alert_type: string
+          created_at: string | null
+          current_value: number
+          id: string
+          message: string
+          metadata: Json | null
+          provider: string | null
+          severity: string
+          threshold_type: string | null
+          threshold_value: number | null
+        }
+        Insert: {
+          acknowledged?: boolean | null
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          alert_type: string
+          created_at?: string | null
+          current_value: number
+          id?: string
+          message: string
+          metadata?: Json | null
+          provider?: string | null
+          severity?: string
+          threshold_type?: string | null
+          threshold_value?: number | null
+        }
+        Update: {
+          acknowledged?: boolean | null
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          alert_type?: string
+          created_at?: string | null
+          current_value?: number
+          id?: string
+          message?: string
+          metadata?: Json | null
+          provider?: string | null
+          severity?: string
+          threshold_type?: string | null
+          threshold_value?: number | null
+        }
+        Relationships: []
+      }
       llm_cost_budgets: {
         Row: {
           alert_threshold_percentage: number | null
@@ -1897,6 +1945,39 @@ export type Database = {
           period_start?: string
           provider?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      llm_cost_thresholds: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          enabled: boolean | null
+          id: string
+          threshold_type: string
+          threshold_value: number
+          updated_at: string | null
+          warning_percentage: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          enabled?: boolean | null
+          id?: string
+          threshold_type: string
+          threshold_value: number
+          updated_at?: string | null
+          warning_percentage?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          enabled?: boolean | null
+          id?: string
+          threshold_type?: string
+          threshold_value?: number
+          updated_at?: string | null
+          warning_percentage?: number | null
         }
         Relationships: []
       }
@@ -3292,6 +3373,15 @@ export type Database = {
         Returns: boolean
       }
       check_email_availability: { Args: { p_email: string }; Returns: boolean }
+      check_llm_cost_thresholds: {
+        Args: never
+        Returns: {
+          alert_id: string
+          alert_type: string
+          message: string
+          severity: string
+        }[]
+      }
       check_profile_access_rate_limit: {
         Args: { p_user_id: string }
         Returns: boolean
