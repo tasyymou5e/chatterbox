@@ -8,9 +8,12 @@ const corsHeaders = {
 
 interface TTSRequest {
   text: string;
-  voice?: string;
+  voice?: string;  // Grok voices: "Charon", "Celeste", "Clio", "Zephyr", "Sage", "Aria", "Atlas", "Olympus"
   speed?: number;
 }
+
+// Valid Grok TTS voices
+const VALID_VOICES = ['Charon', 'Celeste', 'Clio', 'Zephyr', 'Sage', 'Aria', 'Atlas', 'Olympus'];
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -22,7 +25,7 @@ serve(async (req) => {
   let userId: string | null = null;
 
   try {
-    const { text, voice = 'alloy', speed = 1.0 }: TTSRequest = await req.json();
+    const { text, voice = 'Aria', speed = 1.0 }: TTSRequest = await req.json();
 
     if (!text || text.trim() === '') {
       throw new Error('Text is required');
@@ -49,9 +52,12 @@ serve(async (req) => {
       }
     }
 
-    console.log(`TTS request: text="${text.substring(0, 50)}...", voice=${voice}, speed=${speed}`);
+    // Validate voice parameter
+    const selectedVoice = VALID_VOICES.includes(voice) ? voice : 'Aria';
 
-    // Grok API TTS endpoint
+    console.log(`Grok TTS request: text="${text.substring(0, 50)}...", voice=${selectedVoice}, speed=${speed}`);
+
+    // Grok API TTS endpoint per https://docs.x.ai/docs/guides/voice
     const response = await fetch('https://api.x.ai/v1/audio/speech', {
       method: 'POST',
       headers: {
@@ -59,9 +65,9 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'grok-2-audio',
+        model: 'grok-3-fast-audio',
         input: text,
-        voice: voice,
+        voice: selectedVoice,
         speed: Math.max(0.25, Math.min(4.0, speed)),
         response_format: 'mp3',
       }),
@@ -145,7 +151,7 @@ async function logTTSCall(params: {
 
     await supabase.from('llm_api_calls').insert({
       provider: 'grok',
-      model: 'grok-2-audio',
+      model: 'grok-3-fast-audio',
       function_name: 'text-to-speech',
       status: params.status,
       response_time_ms: params.responseTimeMs,
