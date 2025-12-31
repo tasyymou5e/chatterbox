@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { corsHeaders } from "../_shared/cors.ts";
+import { getCorsHeaders } from "../_shared/cors.ts";
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -58,6 +58,9 @@ interface SecurityTest {
 }
 
 serve(async (req) => {
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
+
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -66,11 +69,11 @@ serve(async (req) => {
     const { action } = await req.json();
 
     if (action === 'run_security_tests') {
-      return await runSecurityTests();
+      return await runSecurityTests(corsHeaders);
     }
     
     if (action === 'validate_environment') {
-      return await validateEnvironmentOnly();
+      return await validateEnvironmentOnly(corsHeaders);
     }
 
     return new Response(JSON.stringify({ error: 'Invalid action' }), {
@@ -87,7 +90,7 @@ serve(async (req) => {
 });
 
 // Standalone environment validation endpoint
-async function validateEnvironmentOnly(): Promise<Response> {
+async function validateEnvironmentOnly(corsHeaders: Record<string, string>): Promise<Response> {
   console.log('🔍 Running environment validation check...');
   
   try {
@@ -199,7 +202,7 @@ async function validateTestEnvironment(): Promise<{ success: boolean; issues: st
   };
 }
 
-async function runSecurityTests(): Promise<Response> {
+async function runSecurityTests(corsHeaders: Record<string, string>): Promise<Response> {
   const tests: SecurityTest[] = [];
   
   console.log('🚀 Starting comprehensive security test suite...');
