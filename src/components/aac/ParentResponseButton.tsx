@@ -67,7 +67,7 @@ export function ParentResponseButton({
   const [useGrokVoice, setUseGrokVoice] = useState(false);
   
   // Voice selections for each mode
-  const [browserVoice, setBrowserVoice] = useState<Voice>('default');
+  const [browserVoice, setBrowserVoice] = useState<Voice>('female');
   const [grokVoice, setGrokVoice] = useState<GrokVoice>('Ara');
   
   const [speed, setSpeed] = useState(1.0);
