@@ -1,7 +1,8 @@
 import { useState, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-export const GROK_VOICES = ['Aria', 'Charon', 'Celeste', 'Clio', 'Zephyr', 'Sage', 'Atlas', 'Olympus'] as const;
+// Grok's 5 default voice personalities
+export const GROK_VOICES = ['Ara', 'Rex', 'Sal', 'Eve', 'Leo'] as const;
 export type GrokVoice = typeof GROK_VOICES[number];
 
 export interface GrokTTSOptions {
@@ -37,7 +38,7 @@ export function useGrokTextToSpeech(): UseGrokTextToSpeechReturn {
   }, []);
 
   const speak = useCallback(async (text: string, options: GrokTTSOptions = {}) => {
-    const { voice = 'Aria', speed = 1.0 } = options;
+    const { voice = 'Ara', speed = 1.0 } = options;
 
     // Stop any current playback
     stop();

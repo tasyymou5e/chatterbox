@@ -8,12 +8,14 @@ const corsHeaders = {
 
 interface TTSRequest {
   text: string;
-  voice?: string;  // Grok voices: "Charon", "Celeste", "Clio", "Zephyr", "Sage", "Aria", "Atlas", "Olympus"
+  voice?: string;  // Grok default voices: Ara, Rex, Sal, Eve, Leo
   speed?: number;
 }
 
-// Valid Grok TTS voices
-const VALID_VOICES = ['Charon', 'Celeste', 'Clio', 'Zephyr', 'Sage', 'Aria', 'Atlas', 'Olympus'];
+// Grok's 5 default voice personalities
+// Ara (Female, Warm/Friendly), Rex (Male, Confident/Clear), Sal (Neutral, Smooth/Balanced)
+// Eve (Female, Energetic/Upbeat), Leo (Male, Authoritative/Strong)
+const VALID_VOICES = ['Ara', 'Rex', 'Sal', 'Eve', 'Leo'];
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -25,7 +27,7 @@ serve(async (req) => {
   let userId: string | null = null;
 
   try {
-    const { text, voice = 'Aria', speed = 1.0 }: TTSRequest = await req.json();
+    const { text, voice = 'Ara', speed = 1.0 }: TTSRequest = await req.json();
 
     if (!text || text.trim() === '') {
       throw new Error('Text is required');
@@ -53,7 +55,7 @@ serve(async (req) => {
     }
 
     // Validate voice parameter
-    const selectedVoice = VALID_VOICES.includes(voice) ? voice : 'Aria';
+    const selectedVoice = VALID_VOICES.includes(voice) ? voice : 'Ara';
 
     console.log(`Grok TTS request: text="${text.substring(0, 50)}...", voice=${selectedVoice}, speed=${speed}`);
 
