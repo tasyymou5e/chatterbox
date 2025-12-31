@@ -3441,6 +3441,14 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_family_members_display: {
+        Args: { p_family_id: string }
+        Returns: {
+          display_name: string
+          role: string
+          user_id: string
+        }[]
+      }
       get_family_safe_data: {
         Args: { family_id_param: string }
         Returns: {
