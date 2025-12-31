@@ -3,9 +3,19 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Microscope, Users, FileText, Calendar, CheckCircle, ExternalLink, ArrowRight } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { toast } from "@/hooks/use-toast";
 
 export default function ResearchStudies() {
+  const navigate = useNavigate();
+
+  const handleLearnMore = () => {
+    toast({
+      title: "Research Information",
+      description: "For more details about our research program, please contact research@chatterbox.app"
+    });
+  };
+
   const currentStudies = [
     {
       title: "Effectiveness of Visual Communication Apps in Early Intervention",
@@ -114,7 +124,11 @@ export default function ResearchStudies() {
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Link>
                 </Button>
-                <Button variant="outline" size="lg">
+                <Button 
+                  variant="outline" 
+                  size="lg"
+                  onClick={handleLearnMore}
+                >
                   Learn More About Research
                 </Button>
               </div>
@@ -173,7 +187,11 @@ export default function ResearchStudies() {
                       <div>
                         <h4 className="font-semibold mb-3">Participation Benefits</h4>
                         <p className="text-sm text-muted-foreground mb-4">{study.compensation}</p>
-                        <Button variant="outline" className="w-full">
+                        <Button 
+                          variant="outline" 
+                          className="w-full"
+                          onClick={() => navigate('/auth')}
+                        >
                           {study.status === 'Recruiting' ? 'Apply to Participate' : 'Learn More'}
                         </Button>
                       </div>

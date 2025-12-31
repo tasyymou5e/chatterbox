@@ -269,13 +269,28 @@ const ParentDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                <Button variant="ghost" className="w-full justify-start" size="sm">
+                <Button 
+                  variant="ghost" 
+                  className="w-full justify-start" 
+                  size="sm"
+                  onClick={() => navigate('/reports')}
+                >
                   View Learning Progress
                 </Button>
-                <Button variant="ghost" className="w-full justify-start" size="sm">
-                  Schedule Activities
+                <Button 
+                  variant="ghost" 
+                  className="w-full justify-start" 
+                  size="sm"
+                  onClick={() => navigate('/games')}
+                >
+                  Browse Activities
                 </Button>
-                <Button variant="ghost" className="w-full justify-start" size="sm">
+                <Button 
+                  variant="ghost" 
+                  className="w-full justify-start" 
+                  size="sm"
+                  onClick={() => navigate('/support/contact')}
+                >
                   Contact Support
                 </Button>
               </div>

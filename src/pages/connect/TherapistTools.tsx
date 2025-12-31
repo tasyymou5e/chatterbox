@@ -4,8 +4,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Stethoscope, BarChart3, Users, FileText, Calendar, Shield, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
+import { toast } from "@/hooks/use-toast";
 
 export default function TherapistTools() {
+  const handleScheduleDemo = () => {
+    toast({
+      title: "Demo Request",
+      description: "Please contact us at support@chatterbox.app to schedule a demo."
+    });
+  };
+
   const professionalFeatures = [
     {
       icon: BarChart3,
@@ -98,7 +106,11 @@ export default function TherapistTools() {
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Link>
                 </Button>
-                <Button variant="outline" size="lg">
+                <Button 
+                  variant="outline" 
+                  size="lg"
+                  onClick={handleScheduleDemo}
+                >
                   Schedule Demo
                 </Button>
               </div>
