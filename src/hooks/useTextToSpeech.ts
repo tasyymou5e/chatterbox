@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 
-export const AVAILABLE_VOICES = ['default', 'male', 'female'] as const;
+export const AVAILABLE_VOICES = ['male', 'female'] as const;
 export type Voice = typeof AVAILABLE_VOICES[number];
 
 export interface TTSOptions {
@@ -79,7 +79,7 @@ export function useTextToSpeech(): UseTextToSpeechReturn {
   }, [voices]);
 
   const speak = useCallback(async (text: string, options: TTSOptions = {}) => {
-    const { voice = 'default', speed = 1.0 } = options;
+    const { voice = 'female', speed = 1.0 } = options;
 
     if (!isSupported) {
       setError('Text-to-speech is not supported in this browser');
