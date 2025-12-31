@@ -157,9 +157,9 @@ export const useAuthStore = create<AuthState>()(
                       isAdmin,
                       isCheckingRole: false 
                     });
-                  }).catch(error => {
+                  }).catch(() => {
                     set({ 
-                      userRole: 'parent',
+                      userRole: null,
                       isAdmin: false,
                       isCheckingRole: false 
                     });
@@ -167,13 +167,10 @@ export const useAuthStore = create<AuthState>()(
                 }
               } else if (event === 'SIGNED_OUT') {
                 set({ 
-                  session, 
-                  user: session?.user ?? null,
+                  session: null, 
+                  user: null,
                   loading: false,
-                  sessionReady: true
-                });
-                // Clear role data when no user
-                set({ 
+                  sessionReady: true,
                   userRole: null, 
                   isAdmin: false,
                   isCheckingRole: false 
@@ -185,15 +182,54 @@ export const useAuthStore = create<AuthState>()(
           );
 
           // Check for existing session AFTER setting up listener
-          supabase.auth.getSession().then(({ data: { session } }) => {
+          // CRITICAL: Always re-validate role on session restore to prevent stale isAdmin
+          supabase.auth.getSession().then(async ({ data: { session } }) => {
+            if (session?.user) {
+              set({ 
+                session, 
+                user: session.user,
+                loading: false,
+                sessionReady: true,
+                isCheckingRole: true
+              });
+              
+              // Re-validate role every time we restore a session
+              try {
+                const role = await get().fetchUserRole(session.user.id);
+                const isAdmin = role === 'admin' || role === 'read_only';
+                set({ 
+                  userRole: role, 
+                  isAdmin,
+                  isCheckingRole: false 
+                });
+              } catch {
+                // Clear admin state on role check failure
+                set({ 
+                  userRole: null, 
+                  isAdmin: false,
+                  isCheckingRole: false 
+                });
+              }
+            } else {
+              // No session - force clear any stale admin state
+              set({ 
+                session: null, 
+                user: null,
+                userRole: null,
+                isAdmin: false,
+                loading: false,
+                sessionReady: true,
+                isCheckingRole: false
+              });
+            }
+          }).catch(() => {
             set({ 
-              session, 
-              user: session?.user ?? null,
-              loading: false,
-              sessionReady: true
+              loading: false, 
+              sessionReady: true, 
+              userRole: null, 
+              isAdmin: false,
+              isCheckingRole: false
             });
-          }).catch(error => {
-            set({ loading: false, sessionReady: true });
           });
 
           // Store cleanup function (secure - no window exposure)
@@ -469,14 +505,14 @@ export const useAuthStore = create<AuthState>()(
       }),
       {
         name: 'auth-store',
-        partialize: (state) => ({
-          // Only persist non-sensitive state
-          userRole: state.userRole,
-          isAdmin: state.isAdmin,
-        }),
+        // SECURITY: Do NOT persist isAdmin or userRole - always re-validate from server
+        partialize: () => ({}),
         onRehydrateStorage: () => (state) => {
           if (state) {
             state.isHydrated = true;
+            // Force-clear any stale admin state on hydration
+            state.isAdmin = false;
+            state.userRole = null;
           }
         },
       }

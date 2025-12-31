@@ -67,7 +67,10 @@ serve(async (req) => {
       return json({ error: 'Role lookup failed' }, 500);
     }
 
-    if (!roles || roles.length === 0) {
+    const hasAdminRole = roles && roles.length > 0;
+    console.log(`[api-integration-status] user=${user.id.slice(0, 8)}… role_found=${hasAdminRole}`);
+
+    if (!hasAdminRole) {
       return json({ error: 'Admin access required' }, 403);
     }
 
