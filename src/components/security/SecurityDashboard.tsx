@@ -70,9 +70,34 @@ export const SecurityDashboard: React.FC = () => {
       });
 
       if (error) throw error;
-      setMetrics(data);
+      
+      // Handle the nested response structure from the edge function
+      const metrics: SecurityMetrics = {
+        total_alerts: data?.summary?.total_alerts ?? 0,
+        rls_violations: data?.summary?.rls_violations ?? 0,
+        failed_activities: data?.summary?.failed_activities ?? 0,
+        system_errors: data?.summary?.system_errors ?? 0,
+        severity_breakdown: data?.severity_breakdown ?? {
+          critical: 0,
+          high: 0,
+          medium: 0,
+          low: 0
+        },
+        top_threat_indicators: data?.top_threat_indicators ?? []
+      };
+      
+      setMetrics(metrics);
     } catch (error) {
       console.error('Failed to load security metrics:', error);
+      // Set default metrics on error to still render the UI
+      setMetrics({
+        total_alerts: 0,
+        rls_violations: 0,
+        failed_activities: 0,
+        system_errors: 0,
+        severity_breakdown: { critical: 0, high: 0, medium: 0, low: 0 },
+        top_threat_indicators: []
+      });
       toast({
         title: "Error",
         description: "Failed to load security metrics",
