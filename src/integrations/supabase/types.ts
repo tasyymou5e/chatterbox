@@ -1916,6 +1916,47 @@ export type Database = {
           },
         ]
       }
+      parent_voice_recordings: {
+        Row: {
+          audio_url: string
+          created_at: string
+          duration_seconds: number | null
+          family_id: string
+          id: string
+          phrase_key: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          audio_url: string
+          created_at?: string
+          duration_seconds?: number | null
+          family_id: string
+          id?: string
+          phrase_key: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          audio_url?: string
+          created_at?: string
+          duration_seconds?: number | null
+          family_id?: string
+          id?: string
+          phrase_key?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parent_voice_recordings_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       peer_recognitions: {
         Row: {
           chore_context: string | null
