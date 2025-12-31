@@ -39,14 +39,12 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    // Check if user is admin
-    const { data: roles } = await supabaseClient
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .eq('role', 'admin');
+    // Check if user is admin using security definer function (bypasses RLS)
+    const { data: isAdmin, error: roleError } = await supabaseClient
+      .rpc('has_role', { _user_id: user.id, _role: 'admin' });
 
-    if (!roles || roles.length === 0) {
+    if (roleError || !isAdmin) {
+      console.log('Admin check failed:', { roleError, isAdmin, userId: user.id });
       throw new Error('Admin access required');
     }
 
