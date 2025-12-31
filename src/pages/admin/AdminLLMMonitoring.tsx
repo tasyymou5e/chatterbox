@@ -147,11 +147,13 @@ const AdminLLMMonitoring = () => {
               <SelectTrigger className="w-32">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Providers</SelectItem>
-                <SelectItem value="openai">OpenAI</SelectItem>
-                <SelectItem value="anthropic">Anthropic</SelectItem>
-              </SelectContent>
+                <SelectContent>
+                  <SelectItem value="all">All Providers</SelectItem>
+                  <SelectItem value="openai">OpenAI</SelectItem>
+                  <SelectItem value="anthropic">Anthropic</SelectItem>
+                  <SelectItem value="grok">Grok (xAI)</SelectItem>
+                  <SelectItem value="google">Google (Gemini)</SelectItem>
+                </SelectContent>
             </Select>
             <Select value={timeframe} onValueChange={setTimeframe}>
               <SelectTrigger className="w-32">

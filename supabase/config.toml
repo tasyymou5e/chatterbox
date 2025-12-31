@@ -17,3 +17,9 @@ verify_jwt = true
 
 [functions.text-to-speech]
 verify_jwt = false
+
+[functions.api-integration-status]
+verify_jwt = true
+
+[functions.grok-chat]
+verify_jwt = false
