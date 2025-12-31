@@ -111,21 +111,53 @@ export default {
 						height: '0'
 					}
 				},
-				'celebration-fall': {
-					'0%': {
-						transform: 'translateY(-100%) rotate(0deg)',
-						opacity: '1'
-					},
-					'100%': {
-						transform: 'translateY(100vh) rotate(720deg)',
-						opacity: '0'
-					}
+			'celebration-fall': {
+				'0%': {
+					transform: 'translateY(-100%) rotate(0deg)',
+					opacity: '1'
+				},
+				'100%': {
+					transform: 'translateY(100vh) rotate(720deg)',
+					opacity: '0'
 				}
 			},
-			animation: {
-				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out',
-				'celebration-fall': 'celebration-fall 2s ease-in forwards'
+			'star-twinkle': {
+				'0%, 100%': { opacity: '1', transform: 'scale(1)' },
+				'50%': { opacity: '0.7', transform: 'scale(1.1)' }
+			},
+			'moon-pulse': {
+				'0%, 100%': { boxShadow: '0 0 20px rgba(255, 248, 220, 0.5)' },
+				'50%': { boxShadow: '0 0 40px rgba(255, 248, 220, 0.9)' }
+			},
+			'star-burst-explode': {
+				'0%': { transform: 'translate(-50%, -50%) scale(0)', opacity: '1' },
+				'50%': { transform: 'translate(calc(-50% + cos(var(--angle)) * var(--distance)), calc(-50% + sin(var(--angle)) * var(--distance))) scale(1)', opacity: '1' },
+				'100%': { transform: 'translate(calc(-50% + cos(var(--angle)) * var(--distance) * 1.5), calc(-50% + sin(var(--angle)) * var(--distance) * 1.5)) scale(0)', opacity: '0' }
+			},
+			'firework-launch': {
+				'0%': { transform: 'translateY(100%)', opacity: '1' },
+				'80%': { transform: 'translateY(0)', opacity: '1' },
+				'100%': { transform: 'translateY(0)', opacity: '0' }
+			},
+			'firework-explode': {
+				'0%': { transform: 'translate(-50%, -50%) scale(0)', opacity: '1' },
+				'100%': { transform: 'translate(calc(-50% + cos(var(--angle)) * var(--distance)), calc(-50% + sin(var(--angle)) * var(--distance))) scale(0)', opacity: '0' }
+			},
+			'shimmer': {
+				'0%': { transform: 'translateX(-100%)' },
+				'100%': { transform: 'translateX(100%)' }
+			}
+		},
+		animation: {
+			'accordion-down': 'accordion-down 0.2s ease-out',
+			'accordion-up': 'accordion-up 0.2s ease-out',
+			'celebration-fall': 'celebration-fall 2s ease-in forwards',
+			'star-twinkle': 'star-twinkle 2s ease-in-out infinite',
+			'moon-pulse': 'moon-pulse 2s ease-in-out infinite',
+			'star-burst-explode': 'star-burst-explode 0.8s ease-out forwards',
+			'firework-launch': 'firework-launch 0.6s ease-out forwards',
+			'firework-explode': 'firework-explode 1.2s ease-out forwards',
+			'shimmer': 'shimmer 2s infinite'
 			}
 		}
 	},
