@@ -3292,6 +3292,10 @@ export type Database = {
         Returns: boolean
       }
       check_email_availability: { Args: { p_email: string }; Returns: boolean }
+      check_profile_access_rate_limit: {
+        Args: { p_user_id: string }
+        Returns: boolean
+      }
       check_rate_limit: {
         Args: {
           p_max_attempts?: number
@@ -3427,6 +3431,14 @@ export type Database = {
           cumulative_families: number
           date: string
           new_families: number
+        }[]
+      }
+      get_family_member_display_info: {
+        Args: { p_family_id: string }
+        Returns: {
+          display_name: string
+          role: string
+          user_id: string
         }[]
       }
       get_family_safe_data: {
@@ -3571,6 +3583,14 @@ export type Database = {
           p_user_id?: string
         }
         Returns: string
+      }
+      log_profile_access: {
+        Args: {
+          p_access_type: string
+          p_accessor_user_id: string
+          p_target_user_id: string
+        }
+        Returns: undefined
       }
       log_security_event: {
         Args: {
