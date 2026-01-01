@@ -101,24 +101,23 @@ export function UserEditDialog({ open, onOpenChange, user, onSuccess }: UserEdit
   };
 
   const handleSave = async () => {
-    if (!formData.first_name.trim() || !formData.email.trim()) {
+    if (!formData.first_name.trim()) {
       toast({
         variant: 'destructive',
         title: 'Validation Error',
-        description: 'First name and email are required'
+        description: 'First name is required'
       });
       return;
     }
 
     setLoading(true);
     try {
-      // Update profile
+      // Update profile (email is stored in auth.users, not profiles)
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
           first_name: formData.first_name.trim(),
-          last_name: formData.last_name.trim(),
-          email: formData.email.trim()
+          last_name: formData.last_name.trim()
         })
         .eq('user_id', user.id);
 
