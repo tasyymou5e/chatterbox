@@ -20,6 +20,7 @@ import ParentChoreManagement from "./pages/parent/ParentChoreManagement";
 import ParentConnectionManagement from "./pages/parent/ParentConnectionManagement";
 import ChildrenTasksDashboard from "./pages/children/ChildrenTasksDashboard";
 import Reports from "./pages/Reports";
+import ParentReports from "./pages/parent/ParentReports";
 import GamesCatalogLazy from "./pages/GamesCatalogLazy";
 import AdminLogin from "./pages/admin/AdminLogin";
 import PasswordReset from "./components/admin/PasswordReset";
@@ -96,6 +97,7 @@ const App = () => {
                 <Route path="/parent" element={<ParentDashboard />} />
                 <Route path="/parent/chores" element={<ParentChoreManagement />} />
                 <Route path="/parent/connections" element={<ParentConnectionManagement />} />
+                <Route path="/parent/reports" element={<ParentReports />} />
                 <Route path="/children/tasks" element={<ChildrenTasksDashboard />} />
                 <Route path="/reports" element={<Reports />} />
                 <Route path="/games" element={<GamesCatalogLazy />} />
