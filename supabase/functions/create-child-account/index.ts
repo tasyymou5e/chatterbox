@@ -170,7 +170,7 @@ serve(async (req) => {
         first_name: firstName,
         last_name: lastName,
         generated_email: childEmail,
-        family_code: null, // No longer needed since account is immediately active
+        family_code: family.family_code,
         status: 'completed',
         completed_at: new Date().toISOString(),
         metadata: {
