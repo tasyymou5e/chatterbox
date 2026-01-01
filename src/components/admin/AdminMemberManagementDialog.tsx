@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Users, UserPlus, UserMinus, Mail, Search, Trash2, AlertTriangle } from 'lucide-react';
+import { Users, UserPlus, UserMinus, Mail, Search, Trash2, AlertTriangle, Key } from 'lucide-react';
+import { UserPasswordResetDialog } from '@/components/admin/UserPasswordResetDialog';
 
 interface FamilyMember {
   id: string;
@@ -17,6 +18,7 @@ interface FamilyMember {
   joined_at: string;
   first_name?: string;
   last_name?: string;
+  email?: string;
 }
 
 interface Family {
@@ -47,8 +49,43 @@ export default function AdminMemberManagementDialog({
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [selectedMemberToRemove, setSelectedMemberToRemove] = useState<FamilyMember | null>(null);
+  const [passwordResetDialogOpen, setPasswordResetDialogOpen] = useState(false);
+  const [selectedMemberForPasswordReset, setSelectedMemberForPasswordReset] = useState<{
+    id: string;
+    email: string;
+    first_name?: string;
+    last_name?: string;
+  } | null>(null);
 
   if (!family) return null;
+
+  const handlePasswordReset = async (member: FamilyMember) => {
+    // Fetch email for the member
+    try {
+      const { data, error } = await supabase.rpc('get_users_with_emails');
+      if (error) throw error;
+      
+      const userData = data?.find((u: { user_id: string }) => u.user_id === member.user_id);
+      
+      setSelectedMemberForPasswordReset({
+        id: member.user_id,
+        email: userData?.email || '',
+        first_name: member.first_name,
+        last_name: member.last_name
+      });
+      setPasswordResetDialogOpen(true);
+    } catch (error) {
+      console.error('Error fetching user email:', error);
+      // Still open dialog with available info
+      setSelectedMemberForPasswordReset({
+        id: member.user_id,
+        email: '',
+        first_name: member.first_name,
+        last_name: member.last_name
+      });
+      setPasswordResetDialogOpen(true);
+    }
+  };
 
   const handleSearchUser = async () => {
     if (!searchEmail.trim()) return;
@@ -302,12 +339,22 @@ export default function AdminMemberManagementDialog({
                       >
                         {member.role}
                       </Badge>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handlePasswordReset(member)}
+                        className="text-yellow-400 hover:text-yellow-300 hover:bg-yellow-900/20"
+                        title="Reset Password"
+                      >
+                        <Key className="h-4 w-4" />
+                      </Button>
                       {member.user_id !== family.created_by && (
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => setSelectedMemberToRemove(member)}
                           className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
+                          title="Remove Member"
                         >
                           <UserMinus className="h-4 w-4" />
                         </Button>
@@ -365,6 +412,17 @@ export default function AdminMemberManagementDialog({
             </div>
           </div>
         )}
+
+        {/* Password Reset Dialog */}
+        <UserPasswordResetDialog
+          open={passwordResetDialogOpen}
+          onOpenChange={setPasswordResetDialogOpen}
+          user={selectedMemberForPasswordReset}
+          onSuccess={() => {
+            setSelectedMemberForPasswordReset(null);
+            onSuccess();
+          }}
+        />
       </DialogContent>
     </Dialog>
   );

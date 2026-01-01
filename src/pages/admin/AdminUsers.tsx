@@ -220,16 +220,42 @@ export default function AdminUsers() {
   };
 
   const handleEditUser = (user: User) => {
+    console.log('Opening edit dialog for user:', user);
+    if (!user.id) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'User ID is missing. Cannot edit user.'
+      });
+      return;
+    }
     setSelectedUser(user);
     setEditDialogOpen(true);
   };
 
   const handleDeleteUser = (user: User) => {
+    if (!user.id) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'User ID is missing. Cannot delete user.'
+      });
+      return;
+    }
     setSelectedUser(user);
     setDeleteDialogOpen(true);
   };
 
   const handlePasswordReset = (user: User) => {
+    console.log('Opening password reset dialog for user:', user);
+    if (!user.id) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'User ID is missing. Cannot reset password.'
+      });
+      return;
+    }
     setSelectedUser(user);
     setPasswordResetDialogOpen(true);
   };
