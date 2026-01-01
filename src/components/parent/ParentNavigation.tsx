@@ -40,7 +40,7 @@ export function ParentNavigation() {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo and Brand */}
-          <Link to="/parent" className="flex items-center gap-2">
+          <Link to="/parent" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
             <Heart className="h-6 w-6 text-primary" />
             <span className="font-semibold text-lg text-foreground hidden sm:inline">
               Chatterbox Parent Portal
@@ -79,6 +79,15 @@ export function ParentNavigation() {
               </span>
             )}
             <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/parent')}
+              className="gap-2"
+            >
+              <Home className="h-4 w-4" />
+              Home
+            </Button>
+            <Button
               variant="outline"
               size="sm"
               onClick={handleSignOut}
@@ -108,6 +117,15 @@ export function ParentNavigation() {
         {mobileMenuOpen && (
           <nav className="md:hidden py-4 border-t border-border">
             <div className="flex flex-col gap-2">
+              <Link
+                to="/parent"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+              >
+                <Home className="h-4 w-4" />
+                Home
+              </Link>
+              <hr className="my-1 border-border" />
               {navItems.map((item) => {
                 const Icon = item.icon;
                 return (
