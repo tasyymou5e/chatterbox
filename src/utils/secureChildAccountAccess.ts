@@ -151,7 +151,8 @@ export const createChildAccount = async (
         firstName,
         lastName,
         parentUserId: user.id,
-        password: password
+        password: password,
+        familyId: familyId // Pass familyId for admin users
       }
     });
 
