@@ -62,11 +62,16 @@ const ParentChoreManagement = () => {
 
   if (loading || familiesLoading) {
     return (
-      <div className="min-h-screen bg-gradient-hero flex items-center justify-center">
-        <div className="text-white text-center">
-          <Heart className="h-12 w-12 mx-auto mb-4 animate-pulse" />
-          <p>Loading chore management...</p>
-        </div>
+      <div className="min-h-screen bg-background">
+        <ParentNavigation />
+        <main className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center min-h-[50vh]">
+            <div className="text-center">
+              <Heart className="h-12 w-12 mx-auto mb-4 animate-pulse text-primary" />
+              <p className="text-muted-foreground">Loading chore management...</p>
+            </div>
+          </div>
+        </main>
       </div>
     );
   }
