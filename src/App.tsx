@@ -49,6 +49,7 @@ import ParentResources from "./pages/connect/ParentResources";
 import TherapistTools from "./pages/connect/TherapistTools";
 import ResearchStudies from "./pages/connect/ResearchStudies";
 import AACDemo from "./pages/AACDemo";
+import SubtractionGameDemo from "./pages/SubtractionGameDemo";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -119,6 +120,11 @@ const App = () => {
                 
                 {/* AAC Demo Route */}
                 <Route path="/aac-demo" element={<AACDemo />} />
+                
+                {/* Game Demo Routes */}
+                <Route path="/games/subtraction-demo" element={<SubtractionGameDemo />} />
+                
+                {/* Simplified Admin Routes - No nesting temporarily */}
                 {/* Simplified Admin Routes - No nesting temporarily */}
                 <Route path="/admin/login" element={
                   <ErrorBoundary componentName="AdminLogin">
