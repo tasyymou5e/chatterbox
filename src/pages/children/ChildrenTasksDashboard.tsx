@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ChildrenChoresDashboard } from '@/components/chores/ChildrenChoresDashboard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Heart, Home, Users } from 'lucide-react';
+import { Heart, Home, Users, Gamepad2 } from 'lucide-react';
 
 interface Family {
   id: string;
@@ -195,6 +195,14 @@ const ChildrenTasksDashboard = () => {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => navigate('/games')}
+              >
+                <Gamepad2 className="h-4 w-4 mr-2" />
+                Games
+              </Button>
               {families.length > 1 && (
                 <Button 
                   variant="ghost" 

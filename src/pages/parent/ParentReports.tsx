@@ -37,29 +37,30 @@ export default function ParentReports() {
     const timer = createQueryTimer();
     
     try {
-      // Get families created by this parent
-      const { data: families, error: familiesError } = await supabase
-        .from('families')
-        .select('id')
-        .eq('created_by', user.id);
+      // Get families where this user is a parent member (not just creator)
+      const { data: familyMemberships, error: familiesError } = await supabase
+        .from('family_members')
+        .select('family_id')
+        .eq('user_id', user.id)
+        .eq('role', 'parent');
 
       logSupabaseQuery(
-        { component: 'Reports', operation: 'fetchFamilies', userId: user.id, table: 'families' },
-        { success: !familiesError, error: familiesError || undefined, rowCount: families?.length || 0 }
+        { component: 'Reports', operation: 'fetchFamilyMemberships', userId: user.id, table: 'family_members' },
+        { success: !familiesError, error: familiesError || undefined, rowCount: familyMemberships?.length || 0 }
       );
       
-      if (!families || families.length === 0) {
-        logDataAccessIssue('Reports', 'No families found', {
+      if (!familyMemberships || familyMemberships.length === 0) {
+        logDataAccessIssue('Reports', 'No family memberships found', {
           userId: user.id,
-          expectedData: 'at least 1 family',
-          actualResult: '0 families',
-          possibleCause: 'User has not created a family yet'
+          expectedData: 'at least 1 family membership',
+          actualResult: '0 memberships',
+          possibleCause: 'User is not a parent in any family'
         });
         setLoading(false);
         return;
       }
 
-      const familyIds = families.map(f => f.id);
+      const familyIds = familyMemberships.map(fm => fm.family_id);
 
       // Get child count
       const { count: childCount, error: countError } = await supabase
@@ -137,7 +138,7 @@ export default function ParentReports() {
       );
 
       logDataFetchSuccess('Reports', {
-        familyCount: families.length,
+        familyCount: familyMemberships.length,
         memberCount: childMembers?.length || 0,
         recordCount: totalActivities || 0,
         userId: user.id,
