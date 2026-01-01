@@ -1,7 +1,12 @@
+import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Home, Users, Calendar, User, Mail, Clock } from 'lucide-react';
+import { Home, Users, Calendar, User, Mail, Clock, Key } from 'lucide-react';
+import { useAuthStore } from '@/stores/authStore';
+import { supabase } from '@/integrations/supabase/client';
+import { UserPasswordResetDialog } from '@/components/admin/UserPasswordResetDialog';
 
 interface FamilyMember {
   id: string;
@@ -31,10 +36,45 @@ interface FamilyViewDialogProps {
 }
 
 export default function FamilyViewDialog({ family, open, onOpenChange }: FamilyViewDialogProps) {
+  const { userRole } = useAuthStore();
+  const [passwordResetDialogOpen, setPasswordResetDialogOpen] = useState(false);
+  const [selectedMemberForPasswordReset, setSelectedMemberForPasswordReset] = useState<{
+    id: string;
+    email: string;
+    first_name?: string;
+    last_name?: string;
+  } | null>(null);
+
   if (!family) return null;
 
   const getRoleColor = (role: string) => {
     return role === 'parent' ? 'bg-purple-600' : 'bg-green-600';
+  };
+
+  const handlePasswordReset = async (member: FamilyMember) => {
+    try {
+      const { data, error } = await supabase.rpc('get_users_with_emails');
+      if (error) throw error;
+      
+      const userData = data?.find((u: { user_id: string }) => u.user_id === member.user_id);
+      
+      setSelectedMemberForPasswordReset({
+        id: member.user_id,
+        email: userData?.email || member.email || '',
+        first_name: member.first_name,
+        last_name: member.last_name
+      });
+      setPasswordResetDialogOpen(true);
+    } catch (error) {
+      console.error('Error fetching user email:', error);
+      setSelectedMemberForPasswordReset({
+        id: member.user_id,
+        email: member.email || '',
+        first_name: member.first_name,
+        last_name: member.last_name
+      });
+      setPasswordResetDialogOpen(true);
+    }
   };
 
   return (
@@ -134,12 +174,25 @@ export default function FamilyViewDialog({ family, open, onOpenChange }: FamilyV
                         </div>
                       </div>
                       <div className="flex flex-col items-end space-y-2">
-                        <Badge 
-                          variant="secondary" 
-                          className={`text-white ${getRoleColor(member.role)}`}
-                        >
-                          {member.role.charAt(0).toUpperCase() + member.role.slice(1)}
-                        </Badge>
+                        <div className="flex items-center space-x-2">
+                          <Badge 
+                            variant="secondary" 
+                            className={`text-white ${getRoleColor(member.role)}`}
+                          >
+                            {member.role.charAt(0).toUpperCase() + member.role.slice(1)}
+                          </Badge>
+                          {userRole === 'admin' && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handlePasswordReset(member)}
+                              className="text-yellow-400 hover:text-yellow-300 hover:bg-yellow-900/20 h-7 w-7 p-0"
+                              title="Reset Password"
+                            >
+                              <Key className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
                         <div className="text-xs text-gray-400">
                           Joined: {new Date(member.joined_at).toLocaleDateString()}
                         </div>
@@ -156,6 +209,16 @@ export default function FamilyViewDialog({ family, open, onOpenChange }: FamilyV
             )}
           </div>
         </div>
+
+        {/* Password Reset Dialog */}
+        <UserPasswordResetDialog
+          open={passwordResetDialogOpen}
+          onOpenChange={setPasswordResetDialogOpen}
+          user={selectedMemberForPasswordReset}
+          onSuccess={() => {
+            setSelectedMemberForPasswordReset(null);
+          }}
+        />
       </DialogContent>
     </Dialog>
   );
