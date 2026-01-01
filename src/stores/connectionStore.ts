@@ -83,19 +83,36 @@ export const useConnectionStore = create<ConnectionState>()(
           set({ loading: true, error: null });
           
           try {
-            const { data, error } = await supabase
+            // Fetch connections first
+            const { data: connectionsData, error: connError } = await supabase
               .from('family_connections')
-              .select(`
-                *,
-                connected_user_profile:profiles!connected_user_id(first_name, last_name)
-              `)
+              .select('*')
               .eq('family_id', familyId)
               .order('created_at', { ascending: false });
 
-            if (error) throw error;
+            if (connError) throw connError;
 
-            // Type assertion with proper error handling for profile data
-            const connections = (data || [])
+            // Get unique user IDs to fetch profiles separately
+            const userIds = (connectionsData || [])
+              .map(c => c.connected_user_id)
+              .filter(Boolean);
+
+            // Fetch profiles for connected users separately
+            let profilesMap: Record<string, { first_name: string; last_name: string }> = {};
+            if (userIds.length > 0) {
+              const { data: profiles } = await supabase
+                .from('profiles')
+                .select('user_id, first_name, last_name')
+                .in('user_id', userIds);
+              
+              profilesMap = (profiles || []).reduce((acc, p) => {
+                acc[p.user_id] = { first_name: p.first_name || '', last_name: p.last_name || '' };
+                return acc;
+              }, {} as Record<string, { first_name: string; last_name: string }>);
+            }
+
+            // Map connections with profile data
+            const connections = (connectionsData || [])
               .filter(conn => 
                 ['therapist', 'teacher', 'grandparent', 'family_friend'].includes(conn.connection_role)
               )
@@ -114,11 +131,11 @@ export const useConnectionStore = create<ConnectionState>()(
                 connected_at: conn.connected_at || undefined,
                 created_at: conn.created_at,
                 updated_at: conn.updated_at,
-                connected_user_profile: Array.isArray(conn.connected_user_profile) && conn.connected_user_profile.length > 0
+                connected_user_profile: profilesMap[conn.connected_user_id]
                   ? {
-                      first_name: conn.connected_user_profile[0]?.first_name || '',
-                      last_name: conn.connected_user_profile[0]?.last_name || '',
-                      email: conn.connected_user_profile[0]?.email || ''
+                      first_name: profilesMap[conn.connected_user_id].first_name,
+                      last_name: profilesMap[conn.connected_user_id].last_name,
+                      email: ''
                     }
                   : undefined
               })) as FamilyConnection[];
