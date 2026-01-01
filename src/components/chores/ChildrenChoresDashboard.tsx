@@ -55,8 +55,8 @@ export const ChildrenChoresDashboard = ({ familyId }: ChildrenChoresDashboardPro
     return new Date(a.due_date).toDateString() === new Date().toDateString();
   });
 
-  // Filter by status
-  const needsRedoAssignments = myAssignments.filter(a => a.status === 'needs_redo');
+  // Filter by status (cast to handle needs_redo which was just added to DB enum)
+  const needsRedoAssignments = myAssignments.filter(a => (a.status as string) === 'needs_redo');
   const pendingVerification = myAssignments.filter(a => a.status === 'completed');
   const completedToday = todaysAssignments.filter(a => 
     a.status === 'completed' || a.status === 'verified'
