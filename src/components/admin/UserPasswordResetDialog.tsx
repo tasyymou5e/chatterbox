@@ -146,6 +146,11 @@ export const UserPasswordResetDialog: React.FC<UserPasswordResetDialogProps> = (
       // Check for invocation error (network/CORS/etc)
       if (error) {
         console.error('Edge function invocation error:', error);
+        // Detect CORS/network issues and provide clearer message
+        const errorMsg = error.message || '';
+        if (errorMsg.includes('Failed to send') || errorMsg.includes('fetch') || errorMsg.includes('network')) {
+          throw new Error('Network error: Unable to reach password reset service. Please check your connection and try again.');
+        }
         throw new Error(error.message || 'Failed to call password reset service');
       }
 
