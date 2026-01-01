@@ -3590,6 +3590,16 @@ export type Database = {
           status: string
         }[]
       }
+      get_users_with_emails: {
+        Args: never
+        Returns: {
+          created_at: string
+          email: string
+          first_name: string
+          last_name: string
+          user_id: string
+        }[]
+      }
       has_behavioral_tracking_consent: {
         Args: { p_user_id: string }
         Returns: boolean

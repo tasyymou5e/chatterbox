@@ -1,5 +1,5 @@
 # Current Issues & Resolutions
-**Active Issue Tracking and Resolution Status - Chatterbox - 2025-12-18**
+**Active Issue Tracking and Resolution Status - Chatterbox - 2026-01-01**
 
 ---
 
@@ -7,7 +7,7 @@
 
 This document tracks active issues, recent resolutions, and ongoing investigations in the Chatterbox platform (formerly Spectrum Harmony Family Portal).
 
-**Last Updated**: 2025-12-18  
+**Last Updated**: 2026-01-01  
 **Status**: 0 Active Issues, 1 Current Warning  
 **Priority Focus**: Performance Optimization & Security Monitoring  
 **System Health**: Excellent (99.9% uptime, <0.1% error rate)  
@@ -26,7 +26,33 @@ This document tracks active issues, recent resolutions, and ongoing investigatio
 
 ---
 
-## ✅ RECENT RESOLUTIONS (2025-12-18)
+## ✅ RECENT RESOLUTIONS (2026-01-01)
+
+### **RESOLVED: Admin User Email Display Issue**
+- **Issue**: Admin users page showing empty email fields due to email being stored in auth.users, not profiles table
+- **Resolution Period**: 2026-01-01
+- **Root Cause**: Profiles table does not contain email column (by design for security), but admin UI needs email for user identification
+- **Resolution Applied**:
+  - Created `get_users_with_emails()` SECURITY DEFINER function that joins profiles with auth.users
+  - Function only accessible by admin role users
+  - Updated AdminUsers.tsx to call RPC function for user data
+  - Made email field read-only in UserEditDialog with explanation note
+  - Added fallback display in UserViewDialog for missing emails
+- **Security Improvements**:
+  ```typescript
+  const emailAccessSecurity = {
+    functionType: 'SECURITY DEFINER',
+    roleCheck: 'has_role(auth.uid(), admin::app_role)',
+    dataExposure: 'Only admins can access emails',
+    profilesTable: 'Emails remain outside profiles table'
+  };
+  ```
+- **Status**: ✅ RESOLVED
+- **Impact**: Admins can now see user emails while maintaining security
+
+---
+
+## ✅ PREVIOUS RESOLUTIONS (2025-12-18)
 
 ### **RESOLVED: RLS Policy Consolidation (Phase 1-5)**
 - **Issue**: Multiple permissive policies causing performance overhead and linting warnings
