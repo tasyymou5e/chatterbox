@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useChoreManagement } from '@/hooks/useChoreManagement';
+import { useAuthStore } from '@/stores/authStore';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { logSupabaseQuery, logDataAccessIssue, createQueryTimer } from '@/utils/parentPortalLogger';
@@ -23,7 +24,8 @@ import {
   Calendar as CalendarIcon,
   Target,
   TrendingUp,
-  UserPlus
+  UserPlus,
+  Loader2
 } from 'lucide-react';
 
 interface Family {
@@ -57,6 +59,10 @@ export const ChoreManagementDashboard = ({ familyId }: ChoreManagementDashboardP
     updateAssignmentStatus,
   } = useChoreManagement(familyId);
 
+  // Auth state for button validation
+  const { user, sessionReady } = useAuthStore();
+  const isAuthenticated = sessionReady && user?.id;
+
   const [family, setFamily] = useState<Family | null>(null);
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
@@ -67,6 +73,9 @@ export const ChoreManagementDashboard = ({ familyId }: ChoreManagementDashboardP
   const [selectedMemberId, setSelectedMemberId] = useState<string>('');
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
   const [isAssigning, setIsAssigning] = useState(false);
+  
+  // Loading state for creating chores
+  const [creatingTemplateId, setCreatingTemplateId] = useState<string | null>(null);
 
   // Filter to get only child members for assignment
   const childMembers = familyMembers.filter(m => m.role === 'child');
@@ -147,15 +156,29 @@ export const ChoreManagementDashboard = ({ familyId }: ChoreManagementDashboardP
   };
 
   const handleCreateFromTemplate = async (templateId: string) => {
-    const result = await createChoreFromTemplate(templateId);
-    if (result && result.success && result.result?.data?.id) {
-      // Open assign dialog with the newly created chore pre-selected
-      setSelectedChoreId(result.result.data.id);
-      setAssignDialogOpen(true);
+    if (!isAuthenticated) {
       toast({
-        title: 'Chore Created',
-        description: 'Now assign it to a family member.',
+        title: 'Authentication Required',
+        description: 'Please log in to create chores.',
+        variant: 'destructive',
       });
+      return;
+    }
+    
+    setCreatingTemplateId(templateId);
+    try {
+      const result = await createChoreFromTemplate(templateId);
+      if (result && result.success && result.result?.data?.id) {
+        // Open assign dialog with the newly created chore pre-selected
+        setSelectedChoreId(result.result.data.id);
+        setAssignDialogOpen(true);
+        toast({
+          title: 'Chore Created',
+          description: 'Now assign it to a family member.',
+        });
+      }
+    } finally {
+      setCreatingTemplateId(null);
     }
   };
 
@@ -356,8 +379,18 @@ export const ChoreManagementDashboard = ({ familyId }: ChoreManagementDashboardP
                           size="sm" 
                           className="w-full"
                           onClick={() => handleCreateFromTemplate(template.id)}
+                          disabled={!isAuthenticated || creatingTemplateId === template.id}
                         >
-                          Create Chore
+                          {creatingTemplateId === template.id ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Creating...
+                            </>
+                          ) : !isAuthenticated ? (
+                            'Please log in'
+                          ) : (
+                            'Create Chore'
+                          )}
                         </Button>
                       </div>
                     </CardContent>

@@ -308,11 +308,17 @@ export const useChoreStore = create<ChoreState>()(
         }
 
         try {
-          const userId = requireAuth();
+          // Get userId with better error message
+          const userId = getCurrentUserId();
+          if (!userId) {
+            const error = createStoreError('auth', 'Please log in to create chores. Your session may have expired.');
+            set({ error });
+            return { success: false, error };
+          }
           
           const template = templates.find(t => t.id === templateId);
           if (!template) {
-            const error = createStoreError('validation', 'Template not found');
+            const error = createStoreError('validation', 'Template not found. Please refresh the page.');
             set({ error });
             return { success: false, error };
           }
