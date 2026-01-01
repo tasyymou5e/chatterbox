@@ -66,84 +66,35 @@ export default function AdminUsers() {
       setLoading(true);
       console.log('Starting to fetch users...');
 
-      // Get all profiles
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // Get users with emails using secure admin function
+      const { data: usersWithEmails, error: usersError } = await supabase
+        .rpc('get_users_with_emails');
 
-      if (profilesError) {
-        console.error('Profiles error:', profilesError);
-        throw profilesError;
-      }
-      console.log('Fetched profiles:', profiles?.length || 0, 'users');
-
-      // Get user roles
-      const { data: userRoles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('user_id, role');
-
-      if (rolesError) {
-        console.error('Roles error:', rolesError);
-        throw rolesError;
-      }
-      console.log('Fetched roles for', userRoles?.length || 0, 'users');
-
-      // Get family memberships with explicit join
-      const { data: familyMembers, error: familiesError } = await supabase
-        .from('family_members')
-        .select(`
-          user_id,
-          family_id,
-          families:family_id (
-            family_code,
-            display_name
-          )
-        `);
-
-      if (familiesError) {
-        console.error('Families error:', familiesError);
-        throw familiesError;
-      }
-      console.log('Fetched family memberships:', familyMembers?.length || 0, 'memberships');
-
-      // Combine the data
-      const usersWithRolesAndFamilies: User[] = (profiles || []).map(profile => {
-        if (!profile.user_id) {
-          console.warn('Profile missing user_id:', profile);
-          return null;
-        }
-
-        const userRoleEntries = userRoles?.filter(ur => ur.user_id === profile.user_id) || [];
-        const userFamilyEntries = familyMembers?.filter(fm => fm.user_id === profile.user_id) || [];
+      if (usersError) {
+        console.error('Users with emails error:', usersError);
+        // Fall back to profiles if RPC fails (e.g., non-admin user)
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('*')
+          .order('created_at', { ascending: false });
         
-        const families = userFamilyEntries
-          .map(fm => {
-            // Handle both possible data structures
-            const familyData = fm.families;
-            if (familyData && typeof familyData === 'object') {
-              return {
-                family_code: familyData.family_code || '',
-                display_name: familyData.display_name || ''
-              };
-            }
-            return null;
-          })
-          .filter(Boolean);
-
-        return {
-          id: profile.user_id,
-          email: '', // Email removed from profiles for security
+        if (profilesError) throw profilesError;
+        
+        // Process without emails for non-admin fallback
+        const usersWithoutEmails = (profiles || []).map(profile => ({
+          user_id: profile.user_id,
+          email: '',
           first_name: profile.first_name || '',
           last_name: profile.last_name || '',
-          created_at: profile.created_at,
-          roles: userRoleEntries.map(ur => ur.role),
-          families: families
-        };
-      }).filter(Boolean) as User[];
-
-      console.log('Processed users:', usersWithRolesAndFamilies.length);
-      setUsers(usersWithRolesAndFamilies);
+          created_at: profile.created_at
+        }));
+        
+        await processUsers(usersWithoutEmails);
+        return;
+      }
+      
+      console.log('Fetched users with emails:', usersWithEmails?.length || 0);
+      await processUsers(usersWithEmails || []);
     } catch (error: any) {
       console.error('Error fetching users:', error);
       toast({
@@ -154,6 +105,74 @@ export default function AdminUsers() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const processUsers = async (usersData: { user_id: string; email: string; first_name: string; last_name: string; created_at: string }[]) => {
+    // Get user roles
+    const { data: userRoles, error: rolesError } = await supabase
+      .from('user_roles')
+      .select('user_id, role');
+
+    if (rolesError) {
+      console.error('Roles error:', rolesError);
+      throw rolesError;
+    }
+    console.log('Fetched roles for', userRoles?.length || 0, 'users');
+
+    // Get family memberships with explicit join
+    const { data: familyMembers, error: familiesError } = await supabase
+      .from('family_members')
+      .select(`
+        user_id,
+        family_id,
+        families:family_id (
+          family_code,
+          display_name
+        )
+      `);
+
+    if (familiesError) {
+      console.error('Families error:', familiesError);
+      throw familiesError;
+    }
+    console.log('Fetched family memberships:', familyMembers?.length || 0, 'memberships');
+
+    // Combine the data
+    const usersWithRolesAndFamilies: User[] = usersData.map(userData => {
+      if (!userData.user_id) {
+        console.warn('User missing user_id:', userData);
+        return null;
+      }
+
+      const userRoleEntries = userRoles?.filter(ur => ur.user_id === userData.user_id) || [];
+      const userFamilyEntries = familyMembers?.filter(fm => fm.user_id === userData.user_id) || [];
+      
+      const families = userFamilyEntries
+        .map(fm => {
+          const familyData = fm.families;
+          if (familyData && typeof familyData === 'object') {
+            return {
+              family_code: (familyData as any).family_code || '',
+              display_name: (familyData as any).display_name || ''
+            };
+          }
+          return null;
+        })
+        .filter(Boolean);
+
+      return {
+        id: userData.user_id,
+        email: userData.email || '',
+        first_name: userData.first_name || '',
+        last_name: userData.last_name || '',
+        created_at: userData.created_at,
+        roles: userRoleEntries.map(ur => ur.role),
+        families: families
+      };
+    }).filter(Boolean) as User[];
+
+    console.log('Processed users:', usersWithRolesAndFamilies.length);
+    setUsers(usersWithRolesAndFamilies);
   };
 
   const filteredUsers = users.filter(user => {

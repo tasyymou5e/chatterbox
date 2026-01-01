@@ -92,7 +92,7 @@ export function UserViewDialog({ open, onOpenChange, user }: UserViewDialogProps
                   Email Address
                 </label>
                 <p className="text-white bg-gray-700 rounded px-3 py-2 mt-1 font-mono text-sm">
-                  {user.email}
+                  {user.email || <span className="text-gray-500 italic">Not available</span>}
                 </p>
               </div>
 

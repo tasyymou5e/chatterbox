@@ -211,15 +211,18 @@ export function UserEditDialog({ open, onOpenChange, user, onSuccess }: UserEdit
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-gray-300">Email Address *</Label>
+                <Label htmlFor="email" className="text-gray-300">Email Address</Label>
                 <Input
                   id="email"
                   type="email"
                   value={formData.email}
-                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                  className="bg-gray-700 border-gray-600 text-white"
-                  placeholder="Enter email address"
+                  readOnly
+                  disabled
+                  className="bg-gray-600 border-gray-600 text-gray-400 cursor-not-allowed"
                 />
+                <p className="text-xs text-gray-500">
+                  Email cannot be changed here. Use Supabase dashboard to modify email addresses.
+                </p>
               </div>
             </div>
 
