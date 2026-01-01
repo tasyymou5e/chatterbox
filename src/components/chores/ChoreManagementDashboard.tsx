@@ -201,28 +201,23 @@ export const ChoreManagementDashboard = ({ familyId }: ChoreManagementDashboardP
     
     setIsAssigning(true);
     try {
-      const result = await assignChore(
+      // assignChore returns the assignment data directly on success, null on failure
+      // Success/error toasts are already handled by useStoreResult hook
+      const assignmentData = await assignChore(
         selectedChoreId, 
         selectedMemberId, 
         dueDate ? format(dueDate, 'yyyy-MM-dd') : undefined
       );
       
-      if (result?.success) {
-        toast({ 
-          title: 'Success', 
-          description: 'Chore assigned successfully!' 
-        });
+      // Check if assignment data was returned (has id = success)
+      if (assignmentData?.id) {
+        // Close dialog and reset state - toast already shown by useStoreResult
         setAssignDialogOpen(false);
         setSelectedChoreId('');
         setSelectedMemberId('');
         setDueDate(undefined);
-      } else {
-        toast({ 
-          title: 'Error', 
-          description: 'Failed to assign chore', 
-          variant: 'destructive' 
-        });
       }
+      // Error toast is already shown by useStoreResult hook, no need for duplicate
     } finally {
       setIsAssigning(false);
     }
