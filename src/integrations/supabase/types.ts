@@ -3366,6 +3366,10 @@ export type Database = {
           next_level_xp: number
         }[]
       }
+      calculate_next_due_date: {
+        Args: { current_due_date: string; pattern: Json }
+        Returns: string
+      }
       calculate_performance_insights: {
         Args: { p_days_back?: number; p_family_id: string }
         Returns: {
@@ -3447,6 +3451,10 @@ export type Database = {
       }
       create_child_account_secure: {
         Args: { p_family_id: string; p_first_name: string; p_last_name: string }
+        Returns: string
+      }
+      create_next_recurring_assignment: {
+        Args: { p_assignment_id: string }
         Returns: string
       }
       create_security_alert:
@@ -3885,6 +3893,7 @@ export type Database = {
         | "completed"
         | "verified"
         | "overdue"
+        | "needs_redo"
       connection_role:
         | "grandparent"
         | "uncle"
@@ -4059,6 +4068,7 @@ export const Constants = {
         "completed",
         "verified",
         "overdue",
+        "needs_redo",
       ],
       connection_role: [
         "grandparent",

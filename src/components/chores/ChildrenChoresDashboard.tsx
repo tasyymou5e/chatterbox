@@ -6,8 +6,8 @@ import { Progress } from '@/components/ui/progress';
 import { useChoreManagement } from '@/hooks/useChoreManagement';
 import { useGamification } from '@/hooks/useGamification';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { ChoreCompletionDialog } from './ChoreCompletionDialog';
 import { 
   Play,
   CheckCircle,
@@ -20,7 +20,9 @@ import {
   Zap,
   Medal,
   Crown,
-  Sparkles
+  Sparkles,
+  AlertCircle,
+  RotateCcw
 } from 'lucide-react';
 
 interface ChildrenChoresDashboardProps {
@@ -43,6 +45,8 @@ export const ChildrenChoresDashboard = ({ familyId }: ChildrenChoresDashboardPro
 
   const [activeTimer, setActiveTimer] = useState<string | null>(null);
   const [timerSeconds, setTimerSeconds] = useState(0);
+  const [completionDialogOpen, setCompletionDialogOpen] = useState(false);
+  const [selectedAssignment, setSelectedAssignment] = useState<typeof assignments[0] | null>(null);
 
   // Filter assignments for current user
   const myAssignments = assignments.filter(a => a.assigned_to === user?.id);
@@ -51,6 +55,9 @@ export const ChildrenChoresDashboard = ({ familyId }: ChildrenChoresDashboardPro
     return new Date(a.due_date).toDateString() === new Date().toDateString();
   });
 
+  // Filter by status
+  const needsRedoAssignments = myAssignments.filter(a => a.status === 'needs_redo');
+  const pendingVerification = myAssignments.filter(a => a.status === 'completed');
   const completedToday = todaysAssignments.filter(a => 
     a.status === 'completed' || a.status === 'verified'
   ).length;
@@ -83,54 +90,15 @@ export const ChildrenChoresDashboard = ({ familyId }: ChildrenChoresDashboardPro
     await updateAssignmentStatus(assignmentId, 'in_progress');
   };
 
-  const completeChore = async (assignmentId: string) => {
-    if (activeTimer === assignmentId) {
-      setActiveTimer(null);
-      const timeSpent = Math.floor(timerSeconds / 60); // Convert to minutes
-      
-      const assignment = myAssignments.find(a => a.id === assignmentId);
-      const basePoints = assignment?.chores?.base_points || 0;
-      const estimatedTime = assignment?.chores?.estimated_duration || 15;
-      
-      // Calculate bonus points for speed
-      let bonusPoints = 0;
-      if (timeSpent < estimatedTime) {
-        bonusPoints = Math.round(basePoints * 0.2); // 20% bonus for completing early
-      }
+  const openCompletionDialog = (assignment: typeof assignments[0]) => {
+    setSelectedAssignment(assignment);
+    setCompletionDialogOpen(true);
+  };
 
-      await updateAssignmentStatus(assignmentId, 'completed', {
-        points_earned: basePoints + bonusPoints,
-        time_bonus: bonusPoints,
-      });
-
-      // Log completion in chore_completions table
-      await supabase.from('chore_completions').insert({
-        assignment_id: assignmentId,
-        family_id: familyId,
-        user_id: user?.id,
-        chore_id: assignment?.chore_id,
-        actual_duration: timeSpent,
-        points_earned: basePoints + bonusPoints,
-      });
-
-      // Update gamification stats
-      await supabase.rpc('update_user_gamification_stats', {
-        p_user_id: user?.id,
-        p_family_id: familyId,
-        p_points_earned: basePoints + bonusPoints,
-      });
-
-      // Check for new achievements
-      await checkAchievements();
-
-      setTimerSeconds(0);
-      
-      toast({
-        title: '🎉 Chore Completed!',
-        description: `Great job! You earned ${basePoints + bonusPoints} points!`,
-        duration: 5000,
-      });
-    }
+  const handleCompletionSuccess = () => {
+    setActiveTimer(null);
+    setTimerSeconds(0);
+    checkAchievements();
   };
 
   const formatTime = (seconds: number) => {
@@ -166,6 +134,28 @@ export const ChildrenChoresDashboard = ({ familyId }: ChildrenChoresDashboardPro
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto p-4">
+      {/* Completion Dialog */}
+      {selectedAssignment && (
+        <ChoreCompletionDialog
+          open={completionDialogOpen}
+          onOpenChange={setCompletionDialogOpen}
+          assignment={{
+            id: selectedAssignment.id,
+            chore_id: selectedAssignment.chore_id || '',
+            family_id: selectedAssignment.family_id || familyId,
+            chore: selectedAssignment.chores ? {
+              id: selectedAssignment.chores.id || '',
+              title: selectedAssignment.chores.title || '',
+              description: selectedAssignment.chores.description || undefined,
+              base_points: selectedAssignment.chores.base_points || 10,
+            } : undefined,
+          }}
+          userId={user?.id || ''}
+          timerSeconds={timerSeconds}
+          onComplete={handleCompletionSuccess}
+        />
+      )}
+
       {/* Welcome Header */}
       <div className="text-center space-y-2">
         <h1 className="text-3xl font-bold text-foreground flex items-center justify-center gap-2">
@@ -177,6 +167,42 @@ export const ChildrenChoresDashboard = ({ familyId }: ChildrenChoresDashboardPro
           Let's make today awesome together! 🌟
         </p>
       </div>
+
+      {/* Needs Redo Section */}
+      {needsRedoAssignments.length > 0 && (
+        <Card className="border-destructive bg-destructive/5">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-destructive">
+              <RotateCcw className="h-5 w-5" />
+              Please Redo ({needsRedoAssignments.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {needsRedoAssignments.map(a => (
+              <div key={a.id} className="p-3 bg-background rounded-lg border">
+                <p className="font-medium">{a.chores?.title}</p>
+                {a.parent_feedback && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    💬 {a.parent_feedback}
+                  </p>
+                )}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Pending Verification Notice */}
+      {pendingVerification.length > 0 && (
+        <Card className="border-warning bg-warning/5">
+          <CardContent className="p-4 flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-warning" />
+            <span className="text-sm">
+              {pendingVerification.length} task(s) waiting for parent verification
+            </span>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Gamification Stats Row */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -292,13 +318,12 @@ export const ChildrenChoresDashboard = ({ familyId }: ChildrenChoresDashboardPro
 
                       <div className="flex items-center gap-2">
                         {isCompleted ? (
-                          <Button disabled className="bg-secondary">
-                            <CheckCircle className="h-4 w-4 mr-2" />
-                            {assignment.status === 'verified' ? 'Verified!' : 'Completed!'}
-                          </Button>
+                          <Badge variant={assignment.status === 'verified' ? 'default' : 'secondary'}>
+                            {assignment.status === 'verified' ? '✅ Verified!' : '⏳ Pending'}
+                          </Badge>
                         ) : isActive ? (
                           <Button 
-                            onClick={() => completeChore(assignment.id)}
+                            onClick={() => openCompletionDialog(assignment)}
                             className="bg-secondary hover:bg-secondary-hover animate-pulse"
                           >
                             <CheckCircle className="h-4 w-4 mr-2" />

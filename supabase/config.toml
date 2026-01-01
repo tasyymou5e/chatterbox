@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.send-family-email]
 verify_jwt = true
+
+[functions.process-recurring-chores]
+verify_jwt = false
