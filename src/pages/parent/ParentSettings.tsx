@@ -7,8 +7,8 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useAuthStore } from '@/stores/authStore';
 import { useParentPortalGuard } from '@/hooks/useParentPortalGuard';
-import { Skeleton } from '@/components/ui/skeleton';
 import { 
+  Settings,
   User, 
   Bell, 
   Shield, 
@@ -42,12 +42,11 @@ export default function ParentSettings() {
       <div className="min-h-screen bg-background">
         <ParentNavigation />
         <main className="container mx-auto px-4 py-8">
-          <Skeleton className="h-8 w-48 mb-6" />
-          <div className="grid gap-6 md:grid-cols-2">
-            <Skeleton className="h-48" />
-            <Skeleton className="h-48" />
-            <Skeleton className="h-48" />
-            <Skeleton className="h-48" />
+          <div className="flex items-center justify-center min-h-[50vh]">
+            <div className="text-center">
+              <Settings className="h-12 w-12 mx-auto mb-4 animate-pulse text-primary" />
+              <p className="text-muted-foreground">Loading settings...</p>
+            </div>
           </div>
         </main>
       </div>
@@ -55,7 +54,20 @@ export default function ParentSettings() {
   }
 
   if (!isAuthorized) {
-    return null;
+    return (
+      <div className="min-h-screen bg-background">
+        <ParentNavigation />
+        <main className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center min-h-[50vh]">
+            <div className="text-center">
+              <Settings className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <h2 className="text-xl font-semibold text-foreground mb-2">Access Denied</h2>
+              <p className="text-muted-foreground">You don't have access to this page.</p>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
   }
 
   return (

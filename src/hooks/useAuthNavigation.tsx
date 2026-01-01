@@ -73,7 +73,7 @@ export const useAuthNavigation = () => {
               navigate('/admin/dashboard');
               break;
             case 'parent':
-              navigate('/parent-dashboard');
+              navigate('/parent');
               break;
             case 'child':
               navigate('/children/tasks');

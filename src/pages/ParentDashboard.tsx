@@ -165,7 +165,8 @@ const ParentDashboard = () => {
   };
 
   // Show loading while checking authorization or loading profile
-  if (checking || !isAuthorized || profileLoading) {
+  // Keep navigation visible during loading for better UX
+  if (checking || profileLoading) {
     return (
       <div className="min-h-screen bg-background">
         <ParentNavigation />
@@ -175,6 +176,25 @@ const ParentDashboard = () => {
               <Heart className="h-12 w-12 mx-auto mb-4 animate-pulse text-primary" />
               <p className="text-muted-foreground">Loading your parent dashboard...</p>
               {checking && <p className="text-sm text-muted-foreground mt-2">Verifying access...</p>}
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+  
+  // If not authorized after check completes, show access denied with navigation
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-screen bg-background">
+        <ParentNavigation />
+        <main className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center min-h-[50vh]">
+            <div className="text-center">
+              <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <h2 className="text-xl font-semibold text-foreground mb-2">Access Denied</h2>
+              <p className="text-muted-foreground mb-4">You don't have access to this page.</p>
+              <Button onClick={() => navigate('/auth')}>Go to Login</Button>
             </div>
           </div>
         </main>
