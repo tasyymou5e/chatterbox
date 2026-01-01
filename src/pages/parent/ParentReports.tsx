@@ -4,6 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ParentNavigation } from '@/components/parent/ParentNavigation';
 import { ParentActivityLogsTable } from '@/components/reports/ParentActivityLogsTable';
+import { ChildrenAchievementsPanel } from '@/components/parent/ChildrenAchievementsPanel';
+import { ChildrenContentUsage } from '@/components/parent/ChildrenContentUsage';
+import { ProgressReportExport } from '@/components/parent/ProgressReportExport';
 import { useAuthStore } from '@/stores/authStore';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -111,15 +114,19 @@ export default function ParentReports() {
       <ParentNavigation />
       
       <main className="container mx-auto px-4 py-6 space-y-6">
-        {/* Page Header */}
         <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <BarChart3 className="h-6 w-6 text-primary" />
-            Family Reports
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Track your children's activity and progress
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+                <BarChart3 className="h-6 w-6 text-primary" />
+                Family Reports
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                Track your children's activity and progress
+              </p>
+            </div>
+            <ProgressReportExport />
+          </div>
         </div>
 
         {/* Stats Overview */}
@@ -178,24 +185,9 @@ export default function ParentReports() {
             <ParentActivityLogsTable />
           </TabsContent>
 
-          <TabsContent value="progress">
-            <Card>
-              <CardHeader>
-                <CardTitle>Progress Summary</CardTitle>
-                <CardDescription>
-                  Overview of your children's learning progress
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-12 text-muted-foreground">
-                  <TrendingUp className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Progress tracking is coming soon!</p>
-                  <p className="text-sm mt-2">
-                    View detailed progress on each child's learning journey
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+          <TabsContent value="progress" className="space-y-6">
+            <ChildrenAchievementsPanel />
+            <ChildrenContentUsage />
           </TabsContent>
         </Tabs>
       </main>

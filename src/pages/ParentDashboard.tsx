@@ -5,14 +5,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useAuth } from '@/hooks/useAuth';
 import { useParentPortalGuard } from '@/hooks/useParentPortalGuard';
 import { supabase } from '@/integrations/supabase/client';
-import { getCurrentUserFamilies, getSecureFamilyMembers } from '@/utils/secureFamilyAccess';
+import { getCurrentUserFamilies, getSecureFamilyMembers, FamilyMemberInfo } from '@/utils/secureFamilyAccess';
 import { toast } from '@/hooks/use-toast';
-import { Heart, Users, Plus, Target } from 'lucide-react';
+import { Heart, Users, Plus, Target, User } from 'lucide-react';
 import CreateChildAccountDialog from '@/components/parent/CreateChildAccountDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { ParentNavigation } from '@/components/parent/ParentNavigation';
+import { WeeklyProgressSummary } from '@/components/parent/WeeklyProgressSummary';
 
 interface Profile {
   id: string;
@@ -26,12 +27,7 @@ interface FamilyData {
   created_at: string;
 }
 
-interface FamilyMember {
-  user_id: string;
-  family_id: string;
-  role: string;
-  joined_at: string;
-}
+// FamilyMemberInfo is now imported from secureFamilyAccess
 
 const ParentDashboard = () => {
   const { signOut } = useAuth();
@@ -42,7 +38,7 @@ const ParentDashboard = () => {
   const [showCreateChildDialog, setShowCreateChildDialog] = useState(false);
   const [showFamilyDialog, setShowFamilyDialog] = useState(false);
   const [familyData, setFamilyData] = useState<FamilyData[]>([]);
-  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
+  const [familyMembers, setFamilyMembers] = useState<FamilyMemberInfo[]>([]);
   const [familyLoading, setFamilyLoading] = useState(false);
 
   useEffect(() => {
@@ -276,8 +272,13 @@ const ParentDashboard = () => {
           </Card>
         </div>
 
+        {/* Weekly Progress Summary */}
+        <div className="mt-6">
+          <WeeklyProgressSummary />
+        </div>
+
         {/* Welcome Message */}
-        <Card className="mt-8 bg-gradient-primary text-primary-foreground shadow-medium">
+        <Card className="mt-6 bg-gradient-primary text-primary-foreground shadow-medium">
           <CardContent className="p-6">
             <h3 className="text-lg font-semibold mb-2">Welcome to Chatterbox!</h3>
             <p className="opacity-90">
@@ -324,24 +325,35 @@ const ParentDashboard = () => {
                   <p className="text-sm">Create a child account to get started</p>
                 </div>
               ) : (
-                familyMembers.map((member) => (
-                  <Card key={member.user_id} className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-medium">Family Member</h4>
-                        <p className="text-sm text-muted-foreground">User ID: {member.user_id}</p>
+                familyMembers.map((member) => {
+                  const displayName = member.first_name && member.last_name
+                    ? `${member.first_name} ${member.last_name}`
+                    : member.first_name || 'Family Member';
+                  
+                  return (
+                    <Card key={member.user_id} className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                            <User className="h-5 w-5 text-primary" />
+                          </div>
+                          <div>
+                            <h4 className="font-medium text-foreground">{displayName}</h4>
+                            <p className="text-sm text-muted-foreground capitalize">{member.role}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <Badge variant={member.role === 'parent' ? 'default' : 'secondary'}>
+                            {member.role}
+                          </Badge>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Joined {new Date(member.joined_at).toLocaleDateString()}
+                          </p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <Badge variant={member.role === 'parent' ? 'default' : 'secondary'}>
-                          {member.role}
-                        </Badge>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Joined {new Date(member.joined_at).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-                  </Card>
-                ))
+                    </Card>
+                  );
+                })
               )}
             </div>
           </ScrollArea>

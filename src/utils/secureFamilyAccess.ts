@@ -16,6 +16,8 @@ export interface FamilyMemberInfo {
   family_id: string;
   role: string;
   joined_at: string;
+  first_name?: string;
+  last_name?: string;
 }
 
 /**
@@ -72,7 +74,8 @@ export const getSecureFamilyMembers = async (familyId: string): Promise<FamilyMe
       return [];
     }
 
-    const { data, error } = await supabase
+    // Fetch family members with profile data
+    const { data: members, error } = await supabase
       .from('family_members')
       .select('user_id, family_id, role, joined_at')
       .eq('family_id', familyId);
@@ -82,7 +85,25 @@ export const getSecureFamilyMembers = async (familyId: string): Promise<FamilyMe
       return [];
     }
 
-    return data || [];
+    if (!members || members.length === 0) {
+      return [];
+    }
+
+    // Fetch profiles for all members
+    const userIds = members.map(m => m.user_id);
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('user_id, first_name, last_name')
+      .in('user_id', userIds);
+
+    // Merge profile data with member data
+    const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+    
+    return members.map(member => ({
+      ...member,
+      first_name: profileMap.get(member.user_id)?.first_name || undefined,
+      last_name: profileMap.get(member.user_id)?.last_name || undefined,
+    }));
   } catch (error) {
     console.error('Error in getSecureFamilyMembers:', error);
     return [];
