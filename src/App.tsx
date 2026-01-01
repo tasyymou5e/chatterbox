@@ -93,7 +93,7 @@ const App = () => {
                 <Route path="/" element={<Index />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/about" element={<About />} />
-                <Route path="/parent-dashboard" element={<ParentDashboard />} />
+                <Route path="/parent-dashboard" element={<Navigate to="/parent" replace />} />
                 <Route path="/parent" element={<ParentDashboard />} />
                 <Route path="/parent/chores" element={<ParentChoreManagement />} />
                 <Route path="/parent/connections" element={<ParentConnectionManagement />} />
