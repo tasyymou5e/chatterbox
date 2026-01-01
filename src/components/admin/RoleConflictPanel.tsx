@@ -17,7 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 
 interface RoleConflict {
   user_id: string;
-  email: string;
+  email: string | null;
   first_name: string;
   last_name: string;
   conflicting_roles: string[];
@@ -186,7 +186,7 @@ export const RoleConflictPanel: React.FC = () => {
                           <h4 className="font-medium">
                             {conflict.first_name} {conflict.last_name}
                           </h4>
-                          <p className="text-sm text-muted-foreground">{conflict.email}</p>
+                          <p className="text-sm text-muted-foreground">{conflict.email || conflict.user_id}</p>
                         </div>
                         <Badge variant={getConflictSeverity(conflict.conflict_type) === 'critical' ? 'destructive' : 'secondary'}>
                           {conflict.conflict_type.replace('_', ' ').toUpperCase()}
