@@ -3,10 +3,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Home, Users, Calendar, User, Mail, Clock, Key } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Home, Users, Calendar, User, Mail, Clock, Key, Send } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { supabase } from '@/integrations/supabase/client';
 import { UserPasswordResetDialog } from '@/components/admin/UserPasswordResetDialog';
+import BulkEmailDialog from '@/components/admin/BulkEmailDialog';
 
 interface FamilyMember {
   id: string;
@@ -38,6 +40,7 @@ interface FamilyViewDialogProps {
 export default function FamilyViewDialog({ family, open, onOpenChange }: FamilyViewDialogProps) {
   const { userRole } = useAuthStore();
   const [passwordResetDialogOpen, setPasswordResetDialogOpen] = useState(false);
+  const [bulkEmailDialogOpen, setBulkEmailDialogOpen] = useState(false);
   const [selectedMemberForPasswordReset, setSelectedMemberForPasswordReset] = useState<{
     id: string;
     email: string;
@@ -46,6 +49,13 @@ export default function FamilyViewDialog({ family, open, onOpenChange }: FamilyV
   } | null>(null);
 
   if (!family) return null;
+
+  // Get members with valid emails for bulk email
+  const membersWithEmails = (family.members || []).filter(m => m.email && m.email.trim().length > 0);
+  const emailRecipients = membersWithEmails.map(m => ({
+    email: m.email!,
+    name: m.first_name && m.last_name ? `${m.first_name} ${m.last_name}` : m.email!
+  }));
 
   const getRoleColor = (role: string) => {
     return role === 'parent' ? 'bg-purple-600' : 'bg-green-600';
@@ -81,10 +91,36 @@ export default function FamilyViewDialog({ family, open, onOpenChange }: FamilyV
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bg-gray-800 border-gray-700 text-white max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center text-xl">
-            <Home className="h-5 w-5 mr-2 text-blue-400" />
-            Family Details
-          </DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="flex items-center text-xl">
+              <Home className="h-5 w-5 mr-2 text-blue-400" />
+              Family Details
+            </DialogTitle>
+            {userRole === 'admin' && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setBulkEmailDialogOpen(true)}
+                      disabled={membersWithEmails.length === 0}
+                      className="border-blue-600 text-blue-400 hover:bg-blue-600/20 hover:text-blue-300"
+                    >
+                      <Send className="h-4 w-4 mr-2" />
+                      Email All ({membersWithEmails.length})
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {membersWithEmails.length === 0 
+                      ? 'No members have email addresses'
+                      : `Send email to ${membersWithEmails.length} members with email addresses`
+                    }
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </div>
         </DialogHeader>
 
         <div className="space-y-6">
@@ -218,6 +254,14 @@ export default function FamilyViewDialog({ family, open, onOpenChange }: FamilyV
           onSuccess={() => {
             setSelectedMemberForPasswordReset(null);
           }}
+        />
+
+        {/* Bulk Email Dialog */}
+        <BulkEmailDialog
+          open={bulkEmailDialogOpen}
+          onOpenChange={setBulkEmailDialogOpen}
+          familyName={family.display_name}
+          recipients={emailRecipients}
         />
       </DialogContent>
     </Dialog>
