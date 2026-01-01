@@ -14,13 +14,14 @@ export interface InstructionStep {
 }
 
 export interface RecurrencePattern {
-  frequency: 'daily' | 'weekly' | 'monthly' | 'custom';
+  frequency: 'daily' | 'weekly' | 'custom';
   interval: number;
   daysOfWeek?: number[];
   endDate?: string;
   maxOccurrences?: number;
   skipWeekends?: boolean;
   timeOfDay?: string;
+  currentOccurrence?: number;
 }
 
 export interface ChoreSettings {
