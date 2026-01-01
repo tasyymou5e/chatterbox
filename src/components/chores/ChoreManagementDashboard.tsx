@@ -7,6 +7,7 @@ import { useChoreManagement } from '@/hooks/useChoreManagement';
 import { supabase } from '@/integrations/supabase/client';
 import { getSecureFamilyInfo, getSecureFamilyMembers } from '@/utils/secureFamilyAccess';
 import { toast } from '@/hooks/use-toast';
+import { logSupabaseQuery, logDataAccessIssue, createQueryTimer } from '@/utils/parentPortalLogger';
 import { 
   Plus, 
   Clock, 
@@ -57,6 +58,8 @@ export const ChoreManagementDashboard = ({ familyId }: ChoreManagementDashboardP
   // Fetch family details and members
   useEffect(() => {
     const fetchFamilyData = async () => {
+      const timer = createQueryTimer();
+      
       // Fetch family info
       const { data: familyData, error: familyError } = await supabase
         .from('families')
@@ -64,8 +67,18 @@ export const ChoreManagementDashboard = ({ familyId }: ChoreManagementDashboardP
         .eq('id', familyId)
         .single();
 
+      logSupabaseQuery(
+        { component: 'ChoresDashboard', operation: 'fetchFamily', familyId, table: 'families' },
+        { success: !familyError, error: familyError || undefined, rowCount: familyData ? 1 : 0 }
+      );
+
       if (familyError) {
-        console.error('Error fetching family:', familyError);
+        logDataAccessIssue('ChoresDashboard', 'Failed to fetch family', {
+          familyId,
+          expectedData: 'family record',
+          actualResult: familyError.message,
+          possibleCause: 'Family may not exist or user lacks access'
+        });
         return;
       }
 
@@ -84,8 +97,18 @@ export const ChoreManagementDashboard = ({ familyId }: ChoreManagementDashboardP
         `)
         .eq('family_id', familyId);
 
+      logSupabaseQuery(
+        { component: 'ChoresDashboard', operation: 'fetchFamilyMembers', familyId, table: 'family_members' },
+        { success: !membersError, error: membersError || undefined, rowCount: membersData?.length || 0, duration: timer.elapsed() }
+      );
+
       if (membersError) {
-        console.error('Error fetching family members:', membersError);
+        logDataAccessIssue('ChoresDashboard', 'Failed to fetch family members', {
+          familyId,
+          expectedData: 'family members',
+          actualResult: membersError.message,
+          possibleCause: 'RLS policy may be blocking access'
+        });
         return;
       }
 

@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthStore } from '@/stores/authStore';
 import { toast } from 'sonner';
+import { logSupabaseQuery, logDataAccessIssue, logDataFetchSuccess, createQueryTimer } from '@/utils/parentPortalLogger';
 
 interface ActivityLog {
   id: string;
@@ -42,16 +43,28 @@ export function ParentActivityLogsTable() {
     if (!user?.id) return;
     
     setLoading(true);
+    const timer = createQueryTimer();
+    
     try {
       // Get families created by this parent
       const { data: families, error: familiesError } = await supabase
         .from('families')
         .select('id')
         .eq('created_by', user.id);
+
+      logSupabaseQuery(
+        { component: 'ActivityLogs', operation: 'fetchFamilies', userId: user.id, table: 'families' },
+        { success: !familiesError, error: familiesError || undefined, rowCount: families?.length || 0 }
+      );
       
       if (familiesError) throw familiesError;
       
       if (!families || families.length === 0) {
+        logDataAccessIssue('ActivityLogs', 'No families found', {
+          userId: user.id,
+          expectedData: 'at least 1 family',
+          actualResult: '0 families'
+        });
         setLogs([]);
         setLoading(false);
         return;
@@ -66,9 +79,19 @@ export function ParentActivityLogsTable() {
         .in('family_id', familyIds)
         .eq('role', 'child');
 
+      logSupabaseQuery(
+        { component: 'ActivityLogs', operation: 'fetchChildMembers', userId: user.id, table: 'family_members', metadata: { familyIds } },
+        { success: !membersError, error: membersError || undefined, rowCount: childMembers?.length || 0 }
+      );
+
       if (membersError) throw membersError;
       
       if (!childMembers || childMembers.length === 0) {
+        logDataAccessIssue('ActivityLogs', 'No child members found', {
+          userId: user.id,
+          expectedData: 'at least 1 child',
+          actualResult: '0 children'
+        });
         setLogs([]);
         setLoading(false);
         return;
@@ -103,6 +126,11 @@ export function ParentActivityLogsTable() {
 
       const { data: activityLogs, error: logsError } = await query;
 
+      logSupabaseQuery(
+        { component: 'ActivityLogs', operation: 'fetchActivityLogs', userId: user.id, table: 'user_activity_logs', metadata: { dateRange, activityFilter } },
+        { success: !logsError, error: logsError || undefined, rowCount: activityLogs?.length || 0 }
+      );
+
       if (logsError) throw logsError;
 
       // Fetch profiles for the child users
@@ -110,6 +138,11 @@ export function ParentActivityLogsTable() {
         .from('profiles')
         .select('user_id, first_name, last_name')
         .in('user_id', childUserIds);
+
+      logSupabaseQuery(
+        { component: 'ActivityLogs', operation: 'fetchProfiles', userId: user.id, table: 'profiles' },
+        { success: !profilesError, error: profilesError || undefined, rowCount: profiles?.length || 0 }
+      );
 
       if (profilesError) throw profilesError;
 
@@ -120,9 +153,20 @@ export function ParentActivityLogsTable() {
         profiles: profileMap.get(log.user_id) || null
       }));
 
+      logDataFetchSuccess('ActivityLogs', {
+        familyCount: families.length,
+        memberCount: childMembers.length,
+        recordCount: activityLogs?.length || 0,
+        userId: user.id,
+        duration: timer.elapsed()
+      });
+
       setLogs(logsWithProfiles);
     } catch (error) {
-      console.error('Error fetching activity logs:', error);
+      logSupabaseQuery(
+        { component: 'ActivityLogs', operation: 'fetchLogs', userId: user.id },
+        { success: false, error: error as Error, duration: timer.elapsed() }
+      );
       toast.error('Failed to load activity logs');
     } finally {
       setLoading(false);

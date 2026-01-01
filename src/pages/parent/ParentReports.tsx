@@ -9,6 +9,7 @@ import { ChildrenContentUsage } from '@/components/parent/ChildrenContentUsage';
 import { ProgressReportExport } from '@/components/parent/ProgressReportExport';
 import { useAuthStore } from '@/stores/authStore';
 import { supabase } from '@/integrations/supabase/client';
+import { logSupabaseQuery, logDataAccessIssue, logDataFetchSuccess, createQueryTimer } from '@/utils/parentPortalLogger';
 
 interface FamilyStats {
   totalChildren: number;
@@ -33,15 +34,27 @@ export default function ParentReports() {
 
   const fetchStats = async () => {
     if (!user?.id) return;
+    const timer = createQueryTimer();
     
     try {
       // Get families created by this parent
-      const { data: families } = await supabase
+      const { data: families, error: familiesError } = await supabase
         .from('families')
         .select('id')
         .eq('created_by', user.id);
+
+      logSupabaseQuery(
+        { component: 'Reports', operation: 'fetchFamilies', userId: user.id, table: 'families' },
+        { success: !familiesError, error: familiesError || undefined, rowCount: families?.length || 0 }
+      );
       
       if (!families || families.length === 0) {
+        logDataAccessIssue('Reports', 'No families found', {
+          userId: user.id,
+          expectedData: 'at least 1 family',
+          actualResult: '0 families',
+          possibleCause: 'User has not created a family yet'
+        });
         setLoading(false);
         return;
       }
@@ -49,22 +62,38 @@ export default function ParentReports() {
       const familyIds = families.map(f => f.id);
 
       // Get child count
-      const { count: childCount } = await supabase
+      const { count: childCount, error: countError } = await supabase
         .from('family_members')
         .select('*', { count: 'exact', head: true })
         .in('family_id', familyIds)
         .eq('role', 'child');
 
+      logSupabaseQuery(
+        { component: 'Reports', operation: 'fetchChildCount', userId: user.id, table: 'family_members' },
+        { success: !countError, error: countError || undefined, rowCount: childCount || 0 }
+      );
+
       // Get child user IDs for activity queries
-      const { data: childMembers } = await supabase
+      const { data: childMembers, error: membersError } = await supabase
         .from('family_members')
         .select('user_id')
         .in('family_id', familyIds)
         .eq('role', 'child');
 
+      logSupabaseQuery(
+        { component: 'Reports', operation: 'fetchChildMembers', userId: user.id, table: 'family_members', metadata: { familyIds } },
+        { success: !membersError, error: membersError || undefined, rowCount: childMembers?.length || 0 }
+      );
+
       const childUserIds = childMembers?.map(m => m.user_id) || [];
 
       if (childUserIds.length === 0) {
+        logDataAccessIssue('Reports', 'No child members found', {
+          userId: user.id,
+          expectedData: 'at least 1 child member',
+          actualResult: '0 children',
+          possibleCause: 'No children have been added to the family yet'
+        });
         setStats({
           totalChildren: childCount || 0,
           activeToday: 0,
@@ -79,11 +108,16 @@ export default function ParentReports() {
       today.setHours(0, 0, 0, 0);
 
       // Get active children today
-      const { data: todayActivity } = await supabase
+      const { data: todayActivity, error: todayError } = await supabase
         .from('user_activity_logs')
         .select('user_id')
         .in('user_id', childUserIds)
         .gte('created_at', today.toISOString());
+
+      logSupabaseQuery(
+        { component: 'Reports', operation: 'fetchTodayActivity', userId: user.id, table: 'user_activity_logs' },
+        { success: !todayError, error: todayError || undefined, rowCount: todayActivity?.length || 0 }
+      );
 
       const activeToday = new Set(todayActivity?.map(a => a.user_id) || []).size;
 
@@ -91,11 +125,24 @@ export default function ParentReports() {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-      const { count: totalActivities } = await supabase
+      const { count: totalActivities, error: activitiesError } = await supabase
         .from('user_activity_logs')
         .select('*', { count: 'exact', head: true })
         .in('user_id', childUserIds)
         .gte('created_at', thirtyDaysAgo.toISOString());
+
+      logSupabaseQuery(
+        { component: 'Reports', operation: 'fetchTotalActivities', userId: user.id, table: 'user_activity_logs' },
+        { success: !activitiesError, error: activitiesError || undefined, rowCount: totalActivities || 0 }
+      );
+
+      logDataFetchSuccess('Reports', {
+        familyCount: families.length,
+        memberCount: childMembers?.length || 0,
+        recordCount: totalActivities || 0,
+        userId: user.id,
+        duration: timer.elapsed()
+      });
 
       setStats({
         totalChildren: childCount || 0,
@@ -103,7 +150,10 @@ export default function ParentReports() {
         totalActivities: totalActivities || 0,
       });
     } catch (error) {
-      console.error('Error fetching stats:', error);
+      logSupabaseQuery(
+        { component: 'Reports', operation: 'fetchStats', userId: user.id },
+        { success: false, error: error as Error, duration: timer.elapsed() }
+      );
     } finally {
       setLoading(false);
     }

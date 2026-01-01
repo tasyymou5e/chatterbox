@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthStore } from '@/stores/authStore';
+import { logSupabaseQuery, logDataAccessIssue, logDataFetchSuccess, createQueryTimer } from '@/utils/parentPortalLogger';
 
 interface Achievement {
   id: string;
@@ -36,15 +37,27 @@ export function ChildrenAchievementsPanel() {
 
   const fetchChildrenAchievements = async () => {
     if (!user?.id) return;
+    const timer = createQueryTimer();
 
     try {
       // Get families created by this parent
-      const { data: families } = await supabase
+      const { data: families, error: familiesError } = await supabase
         .from('families')
         .select('id')
         .eq('created_by', user.id);
 
+      logSupabaseQuery(
+        { component: 'Achievements', operation: 'fetchFamilies', userId: user.id, table: 'families' },
+        { success: !familiesError, error: familiesError || undefined, rowCount: families?.length || 0 }
+      );
+
       if (!families || families.length === 0) {
+        logDataAccessIssue('Achievements', 'No families found', {
+          userId: user.id,
+          expectedData: 'at least 1 family',
+          actualResult: '0 families',
+          possibleCause: 'User has not created a family yet'
+        });
         setLoading(false);
         return;
       }
@@ -52,13 +65,24 @@ export function ChildrenAchievementsPanel() {
       const familyIds = families.map(f => f.id);
 
       // Get child members with profiles
-      const { data: childMembers } = await supabase
+      const { data: childMembers, error: membersError } = await supabase
         .from('family_members')
         .select('user_id')
         .in('family_id', familyIds)
         .eq('role', 'child');
 
+      logSupabaseQuery(
+        { component: 'Achievements', operation: 'fetchChildMembers', userId: user.id, table: 'family_members', metadata: { familyIds } },
+        { success: !membersError, error: membersError || undefined, rowCount: childMembers?.length || 0 }
+      );
+
       if (!childMembers || childMembers.length === 0) {
+        logDataAccessIssue('Achievements', 'No child members found', {
+          userId: user.id,
+          expectedData: 'at least 1 child member',
+          actualResult: '0 children',
+          possibleCause: 'No children have been added to the family yet'
+        });
         setLoading(false);
         return;
       }
@@ -66,13 +90,18 @@ export function ChildrenAchievementsPanel() {
       const childUserIds = childMembers.map(m => m.user_id);
 
       // Get profiles for children
-      const { data: profiles } = await supabase
+      const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('user_id, first_name, last_name')
         .in('user_id', childUserIds);
 
+      logSupabaseQuery(
+        { component: 'Achievements', operation: 'fetchProfiles', userId: user.id, table: 'profiles' },
+        { success: !profilesError, error: profilesError || undefined, rowCount: profiles?.length || 0 }
+      );
+
       // Get achievements for all children
-      const { data: userAchievements } = await supabase
+      const { data: userAchievements, error: achievementsError } = await supabase
         .from('user_achievements')
         .select(`
           user_id,
@@ -88,6 +117,11 @@ export function ChildrenAchievementsPanel() {
         `)
         .in('user_id', childUserIds)
         .order('unlocked_at', { ascending: false });
+
+      logSupabaseQuery(
+        { component: 'Achievements', operation: 'fetchUserAchievements', userId: user.id, table: 'user_achievements' },
+        { success: !achievementsError, error: achievementsError || undefined, rowCount: userAchievements?.length || 0 }
+      );
 
       // Group achievements by child
       const achievementsByChild = new Map<string, Achievement[]>();
@@ -115,9 +149,20 @@ export function ChildrenAchievementsPanel() {
         };
       });
 
+      logDataFetchSuccess('Achievements', {
+        familyCount: families.length,
+        memberCount: childMembers.length,
+        recordCount: userAchievements?.length || 0,
+        userId: user.id,
+        duration: timer.elapsed()
+      });
+
       setChildrenAchievements(result);
     } catch (error) {
-      console.error('Error fetching children achievements:', error);
+      logSupabaseQuery(
+        { component: 'Achievements', operation: 'fetchChildrenAchievements', userId: user.id },
+        { success: false, error: error as Error, duration: timer.elapsed() }
+      );
     } finally {
       setLoading(false);
     }

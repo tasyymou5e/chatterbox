@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthStore } from '@/stores/authStore';
+import { logSupabaseQuery, logDataAccessIssue, logDataFetchSuccess, createQueryTimer } from '@/utils/parentPortalLogger';
 
 interface WeeklyStats {
   pointsThisWeek: number;
@@ -27,15 +28,27 @@ export function WeeklyProgressSummary() {
 
   const fetchWeeklyStats = async () => {
     if (!user?.id) return;
+    const timer = createQueryTimer();
 
     try {
       // Get families created by this parent
-      const { data: families } = await supabase
+      const { data: families, error: familiesError } = await supabase
         .from('families')
         .select('id')
         .eq('created_by', user.id);
 
+      logSupabaseQuery(
+        { component: 'WeeklyProgress', operation: 'fetchFamilies', userId: user.id, table: 'families' },
+        { success: !familiesError, error: familiesError || undefined, rowCount: families?.length || 0 }
+      );
+
       if (!families || families.length === 0) {
+        logDataAccessIssue('WeeklyProgress', 'No families found', {
+          userId: user.id,
+          expectedData: 'at least 1 family',
+          actualResult: '0 families',
+          possibleCause: 'User has not created a family yet'
+        });
         setLoading(false);
         return;
       }
@@ -43,11 +56,16 @@ export function WeeklyProgressSummary() {
       const familyIds = families.map(f => f.id);
 
       // Get child members
-      const { data: childMembers } = await supabase
+      const { data: childMembers, error: membersError } = await supabase
         .from('family_members')
         .select('user_id')
         .in('family_id', familyIds)
         .eq('role', 'child');
+
+      logSupabaseQuery(
+        { component: 'WeeklyProgress', operation: 'fetchChildMembers', userId: user.id, table: 'family_members', metadata: { familyIds } },
+        { success: !membersError, error: membersError || undefined, rowCount: childMembers?.length || 0 }
+      );
 
       const childUserIds = childMembers?.map(m => m.user_id) || [];
 
@@ -64,19 +82,29 @@ export function WeeklyProgressSummary() {
       lastWeekEnd.setMilliseconds(-1);
 
       // Get chore completions this week
-      const { data: thisWeekCompletions } = await supabase
+      const { data: thisWeekCompletions, error: thisWeekError } = await supabase
         .from('chore_completions')
         .select('user_id, points_earned')
         .in('family_id', familyIds)
         .gte('completion_date', thisWeekStart.toISOString().split('T')[0]);
 
+      logSupabaseQuery(
+        { component: 'WeeklyProgress', operation: 'fetchThisWeekCompletions', userId: user.id, table: 'chore_completions' },
+        { success: !thisWeekError, error: thisWeekError || undefined, rowCount: thisWeekCompletions?.length || 0 }
+      );
+
       // Get chore completions last week
-      const { data: lastWeekCompletions } = await supabase
+      const { data: lastWeekCompletions, error: lastWeekError } = await supabase
         .from('chore_completions')
         .select('user_id, points_earned')
         .in('family_id', familyIds)
         .gte('completion_date', lastWeekStart.toISOString().split('T')[0])
         .lt('completion_date', thisWeekStart.toISOString().split('T')[0]);
+
+      logSupabaseQuery(
+        { component: 'WeeklyProgress', operation: 'fetchLastWeekCompletions', userId: user.id, table: 'chore_completions' },
+        { success: !lastWeekError, error: lastWeekError || undefined, rowCount: lastWeekCompletions?.length || 0 }
+      );
 
       // Calculate stats
       const pointsThisWeek = thisWeekCompletions?.reduce((sum, c) => sum + (c.points_earned || 0), 0) || 0;
@@ -88,15 +116,28 @@ export function WeeklyProgressSummary() {
       // Get longest current streak
       let currentStreak = 0;
       if (childUserIds.length > 0) {
-        const { data: streaks } = await supabase
+        const { data: streaks, error: streaksError } = await supabase
           .from('daily_streaks')
           .select('current_streak')
           .in('user_id', childUserIds)
           .order('current_streak', { ascending: false })
           .limit(1);
 
+        logSupabaseQuery(
+          { component: 'WeeklyProgress', operation: 'fetchStreaks', userId: user.id, table: 'daily_streaks' },
+          { success: !streaksError, error: streaksError || undefined, rowCount: streaks?.length || 0 }
+        );
+
         currentStreak = streaks?.[0]?.current_streak || 0;
       }
+
+      logDataFetchSuccess('WeeklyProgress', {
+        familyCount: families.length,
+        memberCount: childMembers?.length || 0,
+        recordCount: (thisWeekCompletions?.length || 0) + (lastWeekCompletions?.length || 0),
+        userId: user.id,
+        duration: timer.elapsed()
+      });
 
       setStats({
         pointsThisWeek,
@@ -107,7 +148,10 @@ export function WeeklyProgressSummary() {
         currentStreak,
       });
     } catch (error) {
-      console.error('Error fetching weekly stats:', error);
+      logSupabaseQuery(
+        { component: 'WeeklyProgress', operation: 'fetchWeeklyStats', userId: user.id },
+        { success: false, error: error as Error, duration: timer.elapsed() }
+      );
     } finally {
       setLoading(false);
     }
