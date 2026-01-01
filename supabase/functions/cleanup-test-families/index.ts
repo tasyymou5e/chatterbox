@@ -11,6 +11,7 @@ interface CleanupResponse {
   familiesDeleted: number;
   usersDeleted: number;
   authUsersDeleted: number;
+  childAccountsDeleted: number;
   details?: any;
   error?: string;
 }
@@ -44,15 +45,18 @@ serve(async (req) => {
     }
 
     let authUsersDeleted = 0;
+    let childAccountsDeleted = 0;
     let cleanupDetails = null;
 
     if (cleanupData && cleanupData.length > 0) {
       const result = cleanupData[0];
       cleanupDetails = result.cleanup_details;
+      childAccountsDeleted = cleanupDetails?.child_accounts_deleted || 0;
       
       console.log('Database cleanup completed:', {
         familiesDeleted: result.families_deleted,
-        usersDeleted: result.users_deleted
+        usersDeleted: result.users_deleted,
+        childAccountsDeleted: childAccountsDeleted
       });
 
       // Delete auth users (database function can't do this directly)
@@ -78,6 +82,7 @@ serve(async (req) => {
         familiesDeleted: result.families_deleted || 0,
         usersDeleted: result.users_deleted || 0,
         authUsersDeleted: authUsersDeleted,
+        childAccountsDeleted: childAccountsDeleted,
         details: {
           timestamp: new Date().toISOString(),
           cleanupDetails: cleanupDetails
@@ -100,6 +105,7 @@ serve(async (req) => {
         familiesDeleted: 0,
         usersDeleted: 0,
         authUsersDeleted: 0,
+        childAccountsDeleted: 0,
         details: {
           message: 'No test families found to cleanup',
           timestamp: new Date().toISOString()
@@ -125,6 +131,7 @@ serve(async (req) => {
       familiesDeleted: 0,
       usersDeleted: 0,
       authUsersDeleted: 0,
+      childAccountsDeleted: 0,
       error: error instanceof Error ? error.message : 'Unknown error occurred'
     };
     

@@ -84,11 +84,25 @@ export async function addUserToFamily(
 export async function deleteTestFamily(familyId: string): Promise<void> {
   const client = getServiceRoleClient();
   
-  // Delete family members first
-  await client
+  // Delete child accounts first (before family_members due to potential FK constraints)
+  const { error: childAccountsError } = await client
+    .from('child_accounts')
+    .delete()
+    .eq('family_id', familyId);
+  
+  if (childAccountsError) {
+    console.error(`Failed to delete child_accounts for family ${familyId}:`, childAccountsError.message);
+  }
+  
+  // Delete family members
+  const { error: membersError } = await client
     .from('family_members')
     .delete()
     .eq('family_id', familyId);
+  
+  if (membersError) {
+    console.error(`Failed to delete family_members for family ${familyId}:`, membersError.message);
+  }
   
   // Delete family
   const { error } = await client
