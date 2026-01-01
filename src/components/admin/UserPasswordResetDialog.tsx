@@ -123,31 +123,36 @@ export const UserPasswordResetDialog: React.FC<UserPasswordResetDialogProps> = (
     setIsLoading(true);
 
     try {
+      // Verify session exists (for early error detection)
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
-        throw new Error('No active session');
+        throw new Error('No active session. Please log in again.');
       }
 
-      const response = await supabase.functions.invoke('admin-update-user', {
+      console.log('Calling admin-update-user for user:', user.id);
+
+      // Call edge function - SDK handles auth automatically
+      const { data, error } = await supabase.functions.invoke('admin-update-user', {
         body: {
           userId: user.id,
           newPassword: password,
           forcePasswordChange
-        },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`
         }
       });
 
-      if (response.error) {
-        throw new Error(response.error.message || 'Failed to reset password');
+      console.log('Edge function response:', { data, error });
+
+      // Check for invocation error (network/CORS/etc)
+      if (error) {
+        console.error('Edge function invocation error:', error);
+        throw new Error(error.message || 'Failed to call password reset service');
       }
 
-      const { data, error } = response;
-      
-      if (error || data?.error) {
-        throw new Error(data?.error || error?.message || 'Failed to reset password');
+      // Check for application-level error in response data
+      if (data?.error) {
+        console.error('Edge function returned error:', data.error);
+        throw new Error(data.error);
       }
 
       toast({
