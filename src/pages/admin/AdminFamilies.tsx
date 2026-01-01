@@ -43,6 +43,7 @@ interface FamilyMember {
   joined_at: string;
   first_name?: string;
   last_name?: string;
+  email?: string;
 }
 
 interface Family {
@@ -131,20 +132,36 @@ export default function AdminFamilies() {
       );
       console.log('Profiles map created:', profilesMap);
 
+      // Fetch emails using secure admin function
+      const { data: emailsData, error: emailsError } = await supabase.rpc('get_users_with_emails');
+      
+      if (emailsError) {
+        console.error('Error fetching user emails:', emailsError);
+        // Continue without emails rather than failing completely
+      }
+
+      // Create email lookup map
+      const emailsMap = new Map(
+        (emailsData || []).map((user: { user_id: string; email: string }) => [user.user_id, user.email])
+      );
+      console.log('Emails map created:', emailsMap.size, 'entries');
+
       // Transform the data to include member details and count
       const familiesWithMembers = (familiesData || []).map(family => {
         const members = (family.family_members || [])
           .filter((member: any) => member.role !== 'read_only') // Filter out read_only roles
           .map((member: any) => {
             const profile = profilesMap.get(member.user_id);
-            console.log(`Member ${member.user_id}:`, { member, profile });
+            const email = emailsMap.get(member.user_id);
+            console.log(`Member ${member.user_id}:`, { member, profile, email });
             return {
               id: member.id,
               user_id: member.user_id,
               role: member.role as 'parent' | 'child' | 'admin' | 'therapist' | 'teacher' | 'grandparent' | 'family_friend',
               joined_at: member.joined_at,
               first_name: profile?.first_name,
-              last_name: profile?.last_name
+              last_name: profile?.last_name,
+              email: email
             };
           });
 
