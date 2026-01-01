@@ -1,28 +1,63 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.0'
-import { corsHeaders } from '../_shared/cors.ts'
-import { adminActionLimiter, passwordResetLimiter, RateLimiter } from '../_shared/rate-limiter.ts'
+import { getCorsHeaders } from '../_shared/cors.ts'
+import { adminActionLimiter, passwordResetLimiter } from '../_shared/rate-limiter.ts'
 import { PasswordValidator } from '../_shared/password-validator.ts'
 
 console.log('Admin update user function initialized')
 
 Deno.serve(async (req) => {
+  // Get origin-specific CORS headers for security
+  const origin = req.headers.get('origin')
+  const corsHeaders = getCorsHeaders(origin)
+  
+  // Log request for debugging (no sensitive data)
+  console.log('Request received:', {
+    method: req.method,
+    origin: origin,
+    url: req.url
+  })
+
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return new Response(null, { 
+      headers: { ...corsHeaders, 'Vary': 'Origin' } 
+    })
   }
 
   // Apply rate limiting for admin actions
   const adminRateCheck = adminActionLimiter.check(req);
   if (!adminRateCheck.allowed) {
     console.warn('Admin action rate limit exceeded');
-    return RateLimiter.createRateLimitResponse(adminRateCheck.resetTime);
+    return new Response(
+      JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
+      { 
+        status: 429, 
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json',
+          'Retry-After': String(Math.ceil((adminRateCheck.resetTime - Date.now()) / 1000)),
+          'Vary': 'Origin'
+        } 
+      }
+    );
   }
 
   // Apply stricter rate limiting for password resets specifically
   const passwordRateCheck = passwordResetLimiter.check(req);
   if (!passwordRateCheck.allowed) {
     console.warn('Password reset rate limit exceeded');
-    return RateLimiter.createRateLimitResponse(passwordRateCheck.resetTime);
+    return new Response(
+      JSON.stringify({ error: 'Too many password reset attempts. Please try again later.' }),
+      { 
+        status: 429, 
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json',
+          'Retry-After': String(Math.ceil((passwordRateCheck.resetTime - Date.now()) / 1000)),
+          'Vary': 'Origin'
+        } 
+      }
+    );
   }
 
   try {
@@ -32,7 +67,7 @@ Deno.serve(async (req) => {
       console.error('Missing authorization header')
       return new Response(
         JSON.stringify({ error: 'Missing authorization header' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Vary': 'Origin' } }
       )
     }
 
@@ -51,7 +86,7 @@ Deno.serve(async (req) => {
       console.error('Invalid user token:', userError)
       return new Response(
         JSON.stringify({ error: 'Invalid user token' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Vary': 'Origin' } }
       )
     }
 
@@ -63,7 +98,7 @@ Deno.serve(async (req) => {
       console.error('Error checking admin role:', roleError)
       return new Response(
         JSON.stringify({ error: 'Authentication error. Please try again.' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Vary': 'Origin' } }
       )
     }
 
@@ -71,7 +106,7 @@ Deno.serve(async (req) => {
       console.error('Access denied - user is not admin:', currentUser.email)
       return new Response(
         JSON.stringify({ error: 'Access denied. Admin role required.' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Vary': 'Origin' } }
       )
     }
 
@@ -81,7 +116,7 @@ Deno.serve(async (req) => {
     if (!userId || !newPassword) {
       return new Response(
         JSON.stringify({ error: 'Missing required fields: userId, newPassword' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Vary': 'Origin' } }
       )
     }
 
@@ -95,7 +130,7 @@ Deno.serve(async (req) => {
           strength: PasswordValidator.getStrengthDescription(passwordValidation.score),
           suggestions: PasswordValidator.generateSuggestions()
         }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Vary': 'Origin' } }
       )
     }
 
@@ -122,7 +157,7 @@ Deno.serve(async (req) => {
       console.error('Failed to update user password:', updateError)
       return new Response(
         JSON.stringify({ error: 'Failed to update password: ' + updateError.message }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Vary': 'Origin' } }
       )
     }
 
@@ -160,7 +195,7 @@ Deno.serve(async (req) => {
         }
       }),
       {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Vary': 'Origin' },
         status: 200
       }
     )
@@ -169,7 +204,7 @@ Deno.serve(async (req) => {
     console.error('Unexpected error in admin-update-user:', error)
     return new Response(
       JSON.stringify({ error: 'Internal server error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Vary': 'Origin' } }
     )
   }
 })
