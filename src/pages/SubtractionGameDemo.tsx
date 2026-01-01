@@ -7,10 +7,9 @@ import { ArrowLeft, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLessonProgressStore } from '@/stores/lessonProgressStore';
 
-// Test content item ID (should be registered in database)
-const TEST_CONTENT_ID = 'subtraction-game-test-001';
-// Using a placeholder category - would be a real category ID in production
-const MATH_CATEGORY_ID = 'math-subtraction-category';
+// Content IDs matching database records
+const TEST_CONTENT_ID = 'b2c3d4e5-f6a7-8901-bcde-f12345678901';
+const MATH_CATEGORY_ID = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
 
 export default function SubtractionGameDemo() {
   const { user, loading: authLoading } = useAuth();
