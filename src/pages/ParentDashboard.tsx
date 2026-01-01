@@ -117,13 +117,17 @@ const ParentDashboard = () => {
   // Show loading while checking authorization or loading profile
   if (checking || !isAuthorized || profileLoading) {
     return (
-      <div className="min-h-screen bg-gradient-hero flex items-center justify-center">
-        <div className="text-white text-center">
-          <Heart className="h-12 w-12 mx-auto mb-4 animate-pulse" />
-          <p>Loading your parent dashboard...</p>
-          {checking && <p className="text-sm opacity-75 mt-2">Verifying access...</p>}
-          {isAdmin && <p className="text-sm opacity-75 mt-2">Admin access verification...</p>}
-        </div>
+      <div className="min-h-screen bg-background">
+        <ParentNavigation />
+        <main className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center min-h-[50vh]">
+            <div className="text-center">
+              <Heart className="h-12 w-12 mx-auto mb-4 animate-pulse text-primary" />
+              <p className="text-muted-foreground">Loading your parent dashboard...</p>
+              {checking && <p className="text-sm text-muted-foreground mt-2">Verifying access...</p>}
+            </div>
+          </div>
+        </main>
       </div>
     );
   }
