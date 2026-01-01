@@ -109,17 +109,10 @@ export const ChoreManagementDashboard = ({ familyId }: ChoreManagementDashboardP
 
       setFamily(familyData);
 
-      // Fetch family members with proper join
+      // Fetch family members (without join since there's no FK relationship)
       const { data: membersData, error: membersError } = await supabase
         .from('family_members')
-        .select(`
-          user_id,
-          role,
-          profiles (
-            first_name,
-            last_name
-          )
-        `)
+        .select('user_id, role')
         .eq('family_id', familyId);
 
       logSupabaseQuery(
@@ -137,8 +130,23 @@ export const ChoreManagementDashboard = ({ familyId }: ChoreManagementDashboardP
         return;
       }
 
-      // Type assertion to handle the Supabase response
-      setFamilyMembers(membersData as any || []);
+      // Fetch profiles separately and merge with members
+      if (membersData && membersData.length > 0) {
+        const userIds = membersData.map(m => m.user_id);
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('user_id, first_name, last_name')
+          .in('user_id', userIds);
+
+        const membersWithProfiles: FamilyMember[] = membersData.map(member => ({
+          ...member,
+          profiles: profilesData?.find(p => p.user_id === member.user_id) || null
+        }));
+        
+        setFamilyMembers(membersWithProfiles);
+      } else {
+        setFamilyMembers([]);
+      }
     };
 
     fetchFamilyData();
