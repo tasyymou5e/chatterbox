@@ -1,3 +1,7 @@
+// Edge function: create-test-family
+// Last deployment trigger: 2026-01-01T12:00:00Z
+// Creates test families for development and testing purposes
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
