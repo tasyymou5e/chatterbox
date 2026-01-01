@@ -34,27 +34,57 @@ const ParentChoreManagement = () => {
 
   const fetchUserFamilies = async () => {
     if (!user) return;
-
+    
     try {
-      // Get families created by the user (parent)
-      const { data: userFamilies, error } = await supabase
+      // Step 1: Get family IDs where user is a member
+      const { data: memberFamilies, error: memberError } = await supabase
+        .from('family_members')
+        .select('family_id')
+        .eq('user_id', user.id);
+
+      if (memberError) {
+        console.error('Error fetching family memberships:', memberError);
+      }
+
+      // Step 2: Get families where user is creator
+      const { data: creatorFamilies, error: creatorError } = await supabase
         .from('families')
         .select('id, name, display_name')
         .eq('created_by', user.id);
 
-      if (error) {
-        console.error('Error fetching families:', error);
-        return;
+      if (creatorError) {
+        console.error('Error fetching created families:', creatorError);
       }
 
-      setFamilies(userFamilies || []);
+      // Step 3: Get families by member IDs
+      const memberFamilyIds = memberFamilies?.map(mf => mf.family_id) || [];
+      let memberFamiliesData: Family[] = [];
       
-      // Auto-select first family if only one exists
-      if (userFamilies && userFamilies.length === 1) {
-        setSelectedFamily(userFamilies[0].id);
+      if (memberFamilyIds.length > 0) {
+        const { data: familiesById, error: familiesError } = await supabase
+          .from('families')
+          .select('id, name, display_name')
+          .in('id', memberFamilyIds);
+
+        if (!familiesError && familiesById) {
+          memberFamiliesData = familiesById;
+        }
+      }
+
+      // Step 4: Merge and deduplicate
+      const allFamilies = [...(creatorFamilies || []), ...memberFamiliesData];
+      const uniqueFamilies = allFamilies.filter((family, index, self) =>
+        index === self.findIndex(f => f.id === family.id)
+      );
+
+      console.log('fetchUserFamilies: Found', uniqueFamilies.length, 'families');
+      setFamilies(uniqueFamilies);
+      
+      if (uniqueFamilies.length === 1) {
+        setSelectedFamily(uniqueFamilies[0].id);
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error fetching families:', error);
     } finally {
       setFamiliesLoading(false);
     }
