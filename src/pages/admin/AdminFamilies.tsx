@@ -25,7 +25,8 @@ import {
   ChevronRight,
   ChevronDown,
   User,
-  Mail
+  Mail,
+  Send
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import CreateTestFamilyButton from '@/components/admin/CreateTestFamilyButton';
@@ -33,6 +34,7 @@ import FamilyViewDialog from '@/components/admin/FamilyViewDialog';
 import FamilyEditDialog from '@/components/admin/FamilyEditDialog';
 import FamilyDeleteDialog from '@/components/admin/FamilyDeleteDialog';
 import AdminMemberManagementDialog from '@/components/admin/AdminMemberManagementDialog';
+import BulkEmailDialog from '@/components/admin/BulkEmailDialog';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { useAuthStore } from '@/stores/authStore';
 
@@ -71,6 +73,7 @@ export default function AdminFamilies() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [memberManagementDialogOpen, setMemberManagementDialogOpen] = useState(false);
+  const [bulkEmailDialogOpen, setBulkEmailDialogOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -213,6 +216,22 @@ export default function AdminFamilies() {
     e.stopPropagation();
     setSelectedFamily(family);
     setMemberManagementDialogOpen(true);
+  };
+
+  const handleBulkEmail = (family: Family, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedFamily(family);
+    setBulkEmailDialogOpen(true);
+  };
+
+  // Helper to get email recipients from a family
+  const getEmailRecipients = (family: Family) => {
+    return (family.members || [])
+      .filter(m => m.email && m.email.trim().length > 0)
+      .map(m => ({
+        email: m.email!,
+        name: m.first_name && m.last_name ? `${m.first_name} ${m.last_name}` : m.email!
+      }));
   };
 
   const toggleFamilyExpansion = (familyId: string, expanded: boolean) => {
@@ -400,6 +419,16 @@ export default function AdminFamilies() {
                               <Button
                                 variant="ghost"
                                 size="sm"
+                                className="text-purple-400 hover:text-purple-300 hover:bg-gray-700"
+                                onClick={(e) => handleBulkEmail(family, e)}
+                                title="Email Family Members"
+                                disabled={getEmailRecipients(family).length === 0}
+                              >
+                                <Send className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
                                 className="text-green-400 hover:text-green-300 hover:bg-gray-700"
                                 onClick={(e) => handleEditFamily(family, e)}
                               >
@@ -532,6 +561,13 @@ export default function AdminFamilies() {
           open={memberManagementDialogOpen}
           onOpenChange={setMemberManagementDialogOpen}
           onSuccess={fetchFamilies}
+        />
+
+        <BulkEmailDialog
+          open={bulkEmailDialogOpen}
+          onOpenChange={setBulkEmailDialogOpen}
+          familyName={selectedFamily?.display_name || ''}
+          recipients={selectedFamily ? getEmailRecipients(selectedFamily) : []}
         />
       </div>
     </ErrorBoundary>
