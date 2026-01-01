@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, UserPlus, Copy, CheckCircle2, ExternalLink, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
@@ -29,8 +30,14 @@ interface ChildAccountResult {
   passwordSetByParent?: boolean;
 }
 
+interface FamilyOption {
+  id: string;
+  name: string;
+  display_name: string;
+}
+
 export default function CreateChildAccountDialog({ open, onOpenChange, onSuccess }: CreateChildAccountDialogProps) {
-  const { user } = useAuth();
+  const { user, userRole } = useAuth();
   const { toast } = useToast();
   
   const [loading, setLoading] = useState(false);
@@ -40,6 +47,45 @@ export default function CreateChildAccountDialog({ open, onOpenChange, onSuccess
   const [showPassword, setShowPassword] = useState(false);
   const [createdAccount, setCreatedAccount] = useState<ChildAccountResult | null>(null);
   const [codeCopied, setCodeCopied] = useState(false);
+  
+  // For admin users - family selection
+  const [families, setFamilies] = useState<FamilyOption[]>([]);
+  const [selectedFamilyId, setSelectedFamilyId] = useState<string>('');
+  const [loadingFamilies, setLoadingFamilies] = useState(false);
+
+  const isAdmin = userRole === 'admin';
+
+  // Load families for admin users
+  useEffect(() => {
+    const loadFamilies = async () => {
+      if (!isAdmin || !open) return;
+      
+      setLoadingFamilies(true);
+      try {
+        const { data, error } = await supabase
+          .from('families')
+          .select('id, name, display_name')
+          .order('name');
+        
+        if (error) {
+          console.error('Error loading families:', error);
+          toast({ variant: "destructive", title: "Failed to load families" });
+          return;
+        }
+        
+        setFamilies(data || []);
+        if (data && data.length > 0 && !selectedFamilyId) {
+          setSelectedFamilyId(data[0].id);
+        }
+      } catch (error) {
+        console.error('Error loading families:', error);
+      } finally {
+        setLoadingFamilies(false);
+      }
+    };
+    
+    loadFamilies();
+  }, [isAdmin, open]);
 
   // Generate preview email
   const previewEmail = useMemo(() => {
@@ -54,6 +100,9 @@ export default function CreateChildAccountDialog({ open, onOpenChange, onSuccess
     setShowPassword(false);
     setCreatedAccount(null);
     setCodeCopied(false);
+    if (!isAdmin) {
+      setSelectedFamilyId('');
+    }
   };
 
   const validateForm = () => {
@@ -77,6 +126,11 @@ export default function CreateChildAccountDialog({ open, onOpenChange, onSuccess
       return false;
     }
 
+    if (isAdmin && !selectedFamilyId) {
+      toast({ variant: "destructive", title: "Please select a family" });
+      return false;
+    }
+
     return true;
   };
 
@@ -88,26 +142,34 @@ export default function CreateChildAccountDialog({ open, onOpenChange, onSuccess
       return;
     }
 
-    // Get user's family first
-    const { data: userFamily } = await supabase
-      .from('families')
-      .select('id')
-      .eq('created_by', user.id)
-      .single();
+    let targetFamilyId: string;
 
-    if (!userFamily) {
-      toast({ 
-        variant: "destructive", 
-        title: "No family found", 
-        description: "Please create a family first before adding children." 
-      });
-      return;
+    if (isAdmin) {
+      // Admin uses the selected family
+      targetFamilyId = selectedFamilyId;
+    } else {
+      // Parent uses their own family
+      const { data: userFamily } = await supabase
+        .from('families')
+        .select('id')
+        .eq('created_by', user.id)
+        .single();
+
+      if (!userFamily) {
+        toast({ 
+          variant: "destructive", 
+          title: "No family found", 
+          description: "Please create a family first before adding children." 
+        });
+        return;
+      }
+      targetFamilyId = userFamily.id;
     }
 
     setLoading(true);
     try {
-        const result = await createChildAccount(
-          userFamily.id,
+      const result = await createChildAccount(
+        targetFamilyId,
           firstName.trim(),
           lastName.trim(),
           password.trim()
@@ -186,8 +248,10 @@ export default function CreateChildAccountDialog({ open, onOpenChange, onSuccess
           </DialogTitle>
           <DialogDescription>
             {createdAccount 
-              ? 'Account is ready! Your child can now login with their credentials'
-              : 'Create a new account for your child with parental oversight'
+              ? 'Account is ready! The child can now login with their credentials'
+              : isAdmin 
+                ? 'Create a new child account for a family'
+                : 'Create a new account for your child with parental oversight'
             }
           </DialogDescription>
         </DialogHeader>
@@ -196,6 +260,36 @@ export default function CreateChildAccountDialog({ open, onOpenChange, onSuccess
           <ScrollArea className="min-h-0 pr-4">
             <div className="space-y-6 pb-2">
               <div className="space-y-4">
+                {/* Family selector for admin users */}
+                {isAdmin && (
+                  <div className="space-y-2">
+                    <Label htmlFor="family-select" className="flex items-center gap-2">
+                      Select Family <span className="text-destructive">*</span>
+                    </Label>
+                    {loadingFamilies ? (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Loading families...
+                      </div>
+                    ) : (
+                      <Select value={selectedFamilyId} onValueChange={setSelectedFamilyId}>
+                        <SelectTrigger id="family-select">
+                          <SelectValue placeholder="Select a family" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {families.map((family) => (
+                            <SelectItem key={family.id} value={family.id}>
+                              {family.display_name || family.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      The child account will be created in this family.
+                    </p>
+                  </div>
+                )}
                 <div className="space-y-2">
                   <Label htmlFor="child-first-name" className="flex items-center gap-2">
                     Child's First Name <span className="text-destructive">*</span>

@@ -11,6 +11,7 @@ interface CreateChildAccountRequest {
   lastName: string;
   parentUserId: string;
   password: string;
+  familyId?: string; // Optional - used by admins to specify which family
 }
 
 serve(async (req) => {
@@ -31,7 +32,7 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    const { firstName, lastName, parentUserId, password }: CreateChildAccountRequest = await req.json();
+    const { firstName, lastName, parentUserId, password, familyId }: CreateChildAccountRequest = await req.json();
     
     // Validate required fields
     if (!firstName || !lastName || !parentUserId || !password) {
@@ -44,59 +45,98 @@ serve(async (req) => {
       throw new Error('Password must be at least 8 characters long');
     }
 
-    console.log('Creating child account for parent:', parentUserId);
+    console.log('Creating child account for user:', parentUserId);
 
-    // Verify the requesting user is a parent and get their profile
-    const { data: parentProfile, error: parentError } = await supabase
+    // Verify the requesting user is a parent OR admin
+    const { data: userRole, error: roleError } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', parentUserId)
+      .in('role', ['parent', 'admin'])
+      .limit(1)
+      .maybeSingle();
+
+    if (roleError || !userRole) {
+      console.error('Role verification failed:', roleError);
+      throw new Error('Access denied: Parent or Admin role required');
+    }
+
+    const isAdmin = userRole.role === 'admin';
+    console.log('User role:', userRole.role, 'isAdmin:', isAdmin);
+
+    // Get user profile
+    const { data: userProfile, error: profileError } = await supabase
       .from('profiles')
       .select('user_id, first_name, last_name')
       .eq('user_id', parentUserId)
       .single();
 
-    if (parentError || !parentProfile) {
-      console.error('Parent profile not found:', parentError);
-      throw new Error('Parent profile not found');
+    if (profileError || !userProfile) {
+      console.error('User profile not found:', profileError);
+      throw new Error('User profile not found');
     }
 
-    // Get parent's email from auth.users
-    const { data: parentAuthData, error: parentAuthError } = await supabase.auth.admin.getUserById(parentUserId);
+    // Get user's email from auth.users
+    const { data: userAuthData, error: userAuthError } = await supabase.auth.admin.getUserById(parentUserId);
     
-    if (parentAuthError || !parentAuthData?.user?.email) {
-      console.error('Parent auth data not found:', parentAuthError);
-      throw new Error('Parent account not found');
+    if (userAuthError || !userAuthData?.user?.email) {
+      console.error('User auth data not found:', userAuthError);
+      throw new Error('User account not found');
     }
     
-    const parentEmail = parentAuthData.user.email;
+    const creatorEmail = userAuthData.user.email;
 
-    // Check if parent has parent role
-    const { data: parentRole, error: roleError } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', parentUserId)
-      .eq('role', 'parent')
-      .single();
+    // Get the family - logic differs for admin vs parent
+    let family;
+    
+    if (isAdmin) {
+      // Admin must specify a familyId
+      if (!familyId) {
+        throw new Error('Admin users must specify a familyId to create child accounts');
+      }
+      
+      const { data: adminFamily, error: adminFamilyError } = await supabase
+        .from('families')
+        .select('id, name, family_code, created_by')
+        .eq('id', familyId)
+        .single();
 
-    if (roleError || !parentRole) {
-      console.error('Parent role verification failed:', roleError);
-      throw new Error('Access denied: Parent role required');
+      if (adminFamilyError || !adminFamily) {
+        console.error('Family not found for admin:', adminFamilyError);
+        throw new Error('Specified family not found');
+      }
+      
+      family = adminFamily;
+      console.log('Admin creating child in family:', family.name);
+    } else {
+      // Parent creates in their own family
+      const { data: parentFamily, error: parentFamilyError } = await supabase
+        .from('families')
+        .select('id, name, family_code, created_by')
+        .eq('created_by', parentUserId)
+        .single();
+
+      if (parentFamilyError || !parentFamily) {
+        console.error('Family not found for parent:', parentFamilyError);
+        throw new Error('No family found for this parent. Please create a family first.');
+      }
+      
+      family = parentFamily;
     }
 
-    // Get the parent's family
-    const { data: family, error: familyError } = await supabase
-      .from('families')
-      .select('id, name, family_code')
-      .eq('created_by', parentUserId)
-      .single();
-
-    if (familyError || !family) {
-      console.error('Family not found for parent:', familyError);
-      throw new Error('No family found for this parent. Please create a family first.');
+    // For admin, get the family owner's email to use as base for child email
+    let baseEmail = creatorEmail;
+    if (isAdmin && family.created_by !== parentUserId) {
+      const { data: familyOwnerAuth } = await supabase.auth.admin.getUserById(family.created_by);
+      if (familyOwnerAuth?.user?.email) {
+        baseEmail = familyOwnerAuth.user.email;
+      }
     }
 
     // Generate child email and create auth user immediately
-    const childEmail = `${parentEmail}.${firstName.toLowerCase()}`;
+    const childEmail = `${baseEmail}.${firstName.toLowerCase()}`;
     
-    console.log('Creating auth user with parent-provided password');
+    console.log('Creating auth user with provided password');
     
     const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
       email: childEmail,
@@ -105,8 +145,9 @@ serve(async (req) => {
       user_metadata: {
         first_name: firstName,
         last_name: lastName,
-        created_by_parent: true,
-        parent_user_id: parentUserId,
+        created_by_parent: !isAdmin,
+        created_by_admin: isAdmin,
+        creator_user_id: parentUserId,
         family_id: family.id
       }
     });
@@ -133,11 +174,12 @@ serve(async (req) => {
         status: 'completed',
         completed_at: new Date().toISOString(),
         metadata: {
-          parent_email: parentEmail,
-          parent_name: `${parentProfile.first_name} ${parentProfile.last_name}`,
+          creator_email: creatorEmail,
+          creator_name: `${userProfile.first_name} ${userProfile.last_name}`,
+          creator_role: userRole.role,
           family_name: family.name,
-          created_via: 'parent_dashboard',
-          password_set_by_parent: true
+          created_via: isAdmin ? 'admin_dashboard' : 'parent_dashboard',
+          password_set_by_creator: true
         }
       })
       .select()
@@ -157,7 +199,7 @@ serve(async (req) => {
     console.log('Created child account record:', childAccount.id);
 
     // Create profile for the child
-    const { error: profileError } = await supabase
+    const { error: childProfileError } = await supabase
       .from('profiles')
       .insert({
         user_id: createdAuthUser.id,
@@ -166,8 +208,8 @@ serve(async (req) => {
         last_name: lastName
       });
 
-    if (profileError) {
-      console.error('Error creating child profile:', profileError);
+    if (childProfileError) {
+      console.error('Error creating child profile:', childProfileError);
       // Don't fail the whole operation for profile creation
     }
 
@@ -191,14 +233,15 @@ serve(async (req) => {
       .rpc('log_family_activity', {
         p_family_id: family.id,
         p_user_id: parentUserId,
-        p_member_role: 'parent',
+        p_member_role: isAdmin ? 'admin' : 'parent',
         p_activity_type: 'child_account_created',
         p_activity_details: {
           child_name: `${firstName} ${lastName}`,
           child_email: childEmail,
           child_account_id: childAccount.id,
           auth_user_created: true,
-          password_set_by_parent: true
+          password_set_by_creator: true,
+          created_by_admin: isAdmin
         }
       });
 
