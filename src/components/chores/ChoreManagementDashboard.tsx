@@ -167,16 +167,16 @@ export const ChoreManagementDashboard = ({ familyId }: ChoreManagementDashboardP
     
     setCreatingTemplateId(templateId);
     try {
-      const result = await createChoreFromTemplate(templateId);
-      if (result && result.success && result.result?.data?.id) {
+      // createChoreFromTemplate returns the created chore data directly (via useStoreResult)
+      // It returns null on failure, or the chore object on success
+      const newChore = await createChoreFromTemplate(templateId);
+      if (newChore?.id) {
         // Open assign dialog with the newly created chore pre-selected
-        setSelectedChoreId(result.result.data.id);
+        setSelectedChoreId(newChore.id);
         setAssignDialogOpen(true);
-        toast({
-          title: 'Chore Created',
-          description: 'Now assign it to a family member.',
-        });
+        // Success toast is already shown by useStoreResult hook
       }
+      // Error toast is already shown by useStoreResult hook
     } finally {
       setCreatingTemplateId(null);
     }

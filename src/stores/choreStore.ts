@@ -355,7 +355,17 @@ export const useChoreStore = create<ChoreState>()(
 
           if (error) {
             console.error('Error creating chore:', error);
-            const storeError = createStoreError('network', 'Failed to create chore', error.code, { error });
+            // Classify RLS/permission errors specifically
+            const isPermissionError = error.code === '42501' || 
+              error.message?.toLowerCase().includes('row-level security') ||
+              error.message?.toLowerCase().includes('permission denied');
+            
+            const errorType = isPermissionError ? 'permission' : 'network';
+            const errorMessage = isPermissionError 
+              ? 'You do not have permission to create chores for this family. Only parents can create chores.'
+              : 'Failed to create chore';
+            
+            const storeError = createStoreError(errorType, errorMessage, error.code, { error });
             set({ error: storeError });
             return { success: false, error: storeError };
           }
@@ -460,7 +470,17 @@ export const useChoreStore = create<ChoreState>()(
 
           if (error) {
             console.error('Error assigning chore:', error);
-            const storeError = createStoreError('network', 'Failed to assign chore', error.code, { error });
+            // Classify RLS/permission errors specifically
+            const isPermissionError = error.code === '42501' || 
+              error.message?.toLowerCase().includes('row-level security') ||
+              error.message?.toLowerCase().includes('permission denied');
+            
+            const errorType = isPermissionError ? 'permission' : 'network';
+            const errorMessage = isPermissionError 
+              ? 'You do not have permission to assign chores. Only parents can assign chores.'
+              : 'Failed to assign chore';
+            
+            const storeError = createStoreError(errorType, errorMessage, error.code, { error });
             set({ error: storeError });
             return { success: false, error: storeError };
           }
