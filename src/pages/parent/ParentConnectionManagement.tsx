@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { supabase } from '@/integrations/supabase/client';
 import { ConnectionManagementDashboard } from '@/components/connections/ConnectionManagementDashboard';
 import { ParentNavigation } from '@/components/parent/ParentNavigation';
+import { logSupabaseQuery, logDataAccessIssue, logDataFetchSuccess, createQueryTimer } from '@/utils/parentPortalLogger';
 
 interface Family {
   id: string;
@@ -26,6 +27,7 @@ export default function ParentConnectionManagement() {
 
   const fetchUserFamilies = async () => {
     if (!user?.id) return;
+    const timer = createQueryTimer();
     
     try {
       // Step 1: Get family IDs where user is a member
@@ -34,9 +36,10 @@ export default function ParentConnectionManagement() {
         .select('family_id')
         .eq('user_id', user.id);
 
-      if (memberError) {
-        console.error('Error fetching family memberships:', memberError);
-      }
+      logSupabaseQuery(
+        { component: 'ConnectionManagement', operation: 'fetchMemberFamilies', userId: user.id, table: 'family_members' },
+        { success: !memberError, error: memberError || undefined, rowCount: memberFamilies?.length || 0 }
+      );
 
       // Step 2: Get families where user is creator
       const { data: creatorFamilies, error: creatorError } = await supabase
@@ -44,9 +47,10 @@ export default function ParentConnectionManagement() {
         .select('id, name, display_name')
         .eq('created_by', user.id);
 
-      if (creatorError) {
-        console.error('Error fetching created families:', creatorError);
-      }
+      logSupabaseQuery(
+        { component: 'ConnectionManagement', operation: 'fetchCreatorFamilies', userId: user.id, table: 'families' },
+        { success: !creatorError, error: creatorError || undefined, rowCount: creatorFamilies?.length || 0 }
+      );
 
       // Step 3: Get families by member IDs
       const memberFamilyIds = memberFamilies?.map(mf => mf.family_id) || [];
@@ -57,6 +61,11 @@ export default function ParentConnectionManagement() {
           .from('families')
           .select('id, name, display_name')
           .in('id', memberFamilyIds);
+
+        logSupabaseQuery(
+          { component: 'ConnectionManagement', operation: 'fetchFamiliesById', userId: user.id, table: 'families', metadata: { familyIds: memberFamilyIds } },
+          { success: !familiesError, error: familiesError || undefined, rowCount: familiesById?.length || 0 }
+        );
 
         if (!familiesError && familiesById) {
           memberFamiliesData = familiesById;
@@ -69,14 +78,31 @@ export default function ParentConnectionManagement() {
         index === self.findIndex(f => f.id === family.id)
       );
 
-      console.log('fetchUserFamilies: Found', uniqueFamilies.length, 'families');
+      if (uniqueFamilies.length === 0) {
+        logDataAccessIssue('ConnectionManagement', 'No families found for user', {
+          userId: user.id,
+          expectedData: 'at least 1 family',
+          actualResult: '0 families',
+          possibleCause: 'User may not have created a family or is not a member of any family'
+        });
+      }
+
+      logDataFetchSuccess('ConnectionManagement', {
+        familyCount: uniqueFamilies.length,
+        userId: user.id,
+        duration: timer.elapsed()
+      });
+
       setFamilies(uniqueFamilies);
       
       if (uniqueFamilies.length > 0) {
         setSelectedFamily(uniqueFamilies[0]);
       }
     } catch (error) {
-      console.error('Error fetching families:', error);
+      logSupabaseQuery(
+        { component: 'ConnectionManagement', operation: 'fetchUserFamilies', userId: user.id },
+        { success: false, error: error as Error, duration: timer.elapsed() }
+      );
     } finally {
       setLoading(false);
     }

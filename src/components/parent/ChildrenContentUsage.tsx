@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthStore } from '@/stores/authStore';
+import { logSupabaseQuery, logDataAccessIssue, logDataFetchSuccess, createQueryTimer } from '@/utils/parentPortalLogger';
 
 interface ContentInteraction {
   contentTitle: string;
@@ -35,15 +36,27 @@ export function ChildrenContentUsage() {
 
   const fetchContentUsage = async () => {
     if (!user?.id) return;
+    const timer = createQueryTimer();
 
     try {
       // Get families created by this parent
-      const { data: families } = await supabase
+      const { data: families, error: familiesError } = await supabase
         .from('families')
         .select('id')
         .eq('created_by', user.id);
 
+      logSupabaseQuery(
+        { component: 'ContentUsage', operation: 'fetchFamilies', userId: user.id, table: 'families' },
+        { success: !familiesError, error: familiesError || undefined, rowCount: families?.length || 0 }
+      );
+
       if (!families || families.length === 0) {
+        logDataAccessIssue('ContentUsage', 'No families found', {
+          userId: user.id,
+          expectedData: 'at least 1 family',
+          actualResult: '0 families',
+          possibleCause: 'User has not created a family yet'
+        });
         setLoading(false);
         return;
       }
@@ -51,13 +64,24 @@ export function ChildrenContentUsage() {
       const familyIds = families.map(f => f.id);
 
       // Get child members with profiles
-      const { data: childMembers } = await supabase
+      const { data: childMembers, error: membersError } = await supabase
         .from('family_members')
         .select('user_id')
         .in('family_id', familyIds)
         .eq('role', 'child');
 
+      logSupabaseQuery(
+        { component: 'ContentUsage', operation: 'fetchChildMembers', userId: user.id, table: 'family_members', metadata: { familyIds } },
+        { success: !membersError, error: membersError || undefined, rowCount: childMembers?.length || 0 }
+      );
+
       if (!childMembers || childMembers.length === 0) {
+        logDataAccessIssue('ContentUsage', 'No child members found', {
+          userId: user.id,
+          expectedData: 'at least 1 child member',
+          actualResult: '0 children',
+          possibleCause: 'No children have been added to the family yet'
+        });
         setLoading(false);
         return;
       }
@@ -65,16 +89,21 @@ export function ChildrenContentUsage() {
       const childUserIds = childMembers.map(m => m.user_id);
 
       // Get profiles for children
-      const { data: profiles } = await supabase
+      const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('user_id, first_name, last_name')
         .in('user_id', childUserIds);
+
+      logSupabaseQuery(
+        { component: 'ContentUsage', operation: 'fetchProfiles', userId: user.id, table: 'profiles' },
+        { success: !profilesError, error: profilesError || undefined, rowCount: profiles?.length || 0 }
+      );
 
       // Get content interactions for last 30 days
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-      const { data: interactions } = await supabase
+      const { data: interactions, error: interactionsError } = await supabase
         .from('content_interactions')
         .select(`
           user_id,
@@ -89,6 +118,11 @@ export function ChildrenContentUsage() {
         .in('user_id', childUserIds)
         .gte('timestamp', thirtyDaysAgo.toISOString())
         .order('timestamp', { ascending: false });
+
+      logSupabaseQuery(
+        { component: 'ContentUsage', operation: 'fetchInteractions', userId: user.id, table: 'content_interactions' },
+        { success: !interactionsError, error: interactionsError || undefined, rowCount: interactions?.length || 0 }
+      );
 
       // Aggregate by child and content
       const usageByChild = new Map<string, Map<string, ContentInteraction>>();
@@ -147,9 +181,20 @@ export function ChildrenContentUsage() {
         };
       });
 
+      logDataFetchSuccess('ContentUsage', {
+        familyCount: families.length,
+        memberCount: childMembers.length,
+        recordCount: interactions?.length || 0,
+        userId: user.id,
+        duration: timer.elapsed()
+      });
+
       setChildrenUsage(result);
     } catch (error) {
-      console.error('Error fetching content usage:', error);
+      logSupabaseQuery(
+        { component: 'ContentUsage', operation: 'fetchContentUsage', userId: user.id },
+        { success: false, error: error as Error, duration: timer.elapsed() }
+      );
     } finally {
       setLoading(false);
     }

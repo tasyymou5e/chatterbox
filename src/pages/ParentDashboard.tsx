@@ -14,6 +14,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { ParentNavigation } from '@/components/parent/ParentNavigation';
 import { WeeklyProgressSummary } from '@/components/parent/WeeklyProgressSummary';
+import { logSupabaseQuery, logDataAccessIssue, logDataFetchSuccess, createQueryTimer } from '@/utils/parentPortalLogger';
 
 interface Profile {
   id: string;
@@ -49,16 +50,36 @@ const ParentDashboard = () => {
 
   const fetchProfile = async () => {
     if (!user) return;
+    const timer = createQueryTimer();
 
     try {
       // Fetch user families
       const userFamilies = await getCurrentUserFamilies();
+      logSupabaseQuery(
+        { component: 'Dashboard', operation: 'getCurrentUserFamilies', userId: user.id },
+        { success: true, rowCount: userFamilies.length, duration: timer.elapsed() }
+      );
+      
+      if (userFamilies.length === 0) {
+        logDataAccessIssue('Dashboard', 'No families found for user', {
+          userId: user.id,
+          expectedData: 'at least 1 family',
+          actualResult: '0 families',
+          possibleCause: 'User may not have created a family or RLS policy issue'
+        });
+      }
+      
       setFamilyData(userFamilies);
       
       // Fetch family members for the first family (assuming single family for now)
+      let fetchedMembers: FamilyMemberInfo[] = [];
       if (userFamilies.length > 0) {
-        const familyMembers = await getSecureFamilyMembers(userFamilies[0].id);
-        setFamilyMembers(familyMembers);
+        fetchedMembers = await getSecureFamilyMembers(userFamilies[0].id);
+        logSupabaseQuery(
+          { component: 'Dashboard', operation: 'getSecureFamilyMembers', userId: user.id, familyId: userFamilies[0].id },
+          { success: true, rowCount: fetchedMembers.length }
+        );
+        setFamilyMembers(fetchedMembers);
       }
       
       // Keep existing profile fetch for other data
@@ -68,13 +89,34 @@ const ParentDashboard = () => {
         .eq('user_id', user.id)
         .single();
 
+      logSupabaseQuery(
+        { component: 'Dashboard', operation: 'fetchProfile', userId: user.id, table: 'profiles' },
+        { success: !error, error: error || undefined, rowCount: data ? 1 : 0 }
+      );
+
       if (error) {
-        console.error('Error fetching profile:', error);
+        logDataAccessIssue('Dashboard', 'Failed to fetch user profile', {
+          userId: user.id,
+          expectedData: 'user profile record',
+          actualResult: error.message,
+          possibleCause: 'Profile may not exist or RLS policy issue'
+        });
       } else {
         setProfile(data);
       }
+      
+      // Log successful completion
+      logDataFetchSuccess('Dashboard', {
+        familyCount: userFamilies.length,
+        memberCount: fetchedMembers.length,
+        userId: user.id,
+        duration: timer.elapsed()
+      });
     } catch (error) {
-      console.error('Error:', error);
+      logSupabaseQuery(
+        { component: 'Dashboard', operation: 'fetchProfile', userId: user.id },
+        { success: false, error: error as Error, duration: timer.elapsed() }
+      );
     } finally {
       setProfileLoading(false);
     }
@@ -84,13 +126,21 @@ const ParentDashboard = () => {
     if (familyData.length === 0) return;
     
     setFamilyLoading(true);
+    const timer = createQueryTimer();
     try {
       // Refresh family members data when opening dialog
-      const familyMembers = await getSecureFamilyMembers(familyData[0].id);
-      setFamilyMembers(familyMembers);
+      const members = await getSecureFamilyMembers(familyData[0].id);
+      logSupabaseQuery(
+        { component: 'Dashboard', operation: 'handleViewFamily', userId: user?.id, familyId: familyData[0].id },
+        { success: true, rowCount: members.length, duration: timer.elapsed() }
+      );
+      setFamilyMembers(members);
       setShowFamilyDialog(true);
     } catch (error) {
-      console.error('Error fetching family members:', error);
+      logSupabaseQuery(
+        { component: 'Dashboard', operation: 'handleViewFamily', userId: user?.id, familyId: familyData[0].id },
+        { success: false, error: error as Error, duration: timer.elapsed() }
+      );
       toast({
         title: 'Error',
         description: 'Failed to load family members',

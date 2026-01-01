@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuthStore } from '@/stores/authStore';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
+import { logSupabaseQuery, logDataAccessIssue, logDataFetchSuccess, createQueryTimer } from '@/utils/parentPortalLogger';
 
 interface ChildProgress {
   name: string;
@@ -22,15 +23,26 @@ export function ProgressReportExport() {
     if (!user?.id) return;
 
     setExporting(true);
+    const timer = createQueryTimer();
 
     try {
       // Get families created by this parent
-      const { data: families } = await supabase
+      const { data: families, error: familiesError } = await supabase
         .from('families')
         .select('id, display_name')
         .eq('created_by', user.id);
 
+      logSupabaseQuery(
+        { component: 'ReportExport', operation: 'fetchFamilies', userId: user.id, table: 'families' },
+        { success: !familiesError, error: familiesError || undefined, rowCount: families?.length || 0 }
+      );
+
       if (!families || families.length === 0) {
+        logDataAccessIssue('ReportExport', 'No family found', {
+          userId: user.id,
+          expectedData: 'at least 1 family',
+          actualResult: '0 families'
+        });
         toast.error('No family found');
         return;
       }
@@ -39,13 +51,23 @@ export function ProgressReportExport() {
       const familyName = families[0].display_name;
 
       // Get child members with profiles
-      const { data: childMembers } = await supabase
+      const { data: childMembers, error: membersError } = await supabase
         .from('family_members')
         .select('user_id')
         .in('family_id', familyIds)
         .eq('role', 'child');
 
+      logSupabaseQuery(
+        { component: 'ReportExport', operation: 'fetchChildMembers', userId: user.id, table: 'family_members' },
+        { success: !membersError, error: membersError || undefined, rowCount: childMembers?.length || 0 }
+      );
+
       if (!childMembers || childMembers.length === 0) {
+        logDataAccessIssue('ReportExport', 'No children in family', {
+          userId: user.id,
+          expectedData: 'at least 1 child',
+          actualResult: '0 children'
+        });
         toast.error('No children in family');
         return;
       }
@@ -53,28 +75,51 @@ export function ProgressReportExport() {
       const childUserIds = childMembers.map(m => m.user_id);
 
       // Get profiles
-      const { data: profiles } = await supabase
+      const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('user_id, first_name, last_name')
         .in('user_id', childUserIds);
+
+      logSupabaseQuery(
+        { component: 'ReportExport', operation: 'fetchProfiles', userId: user.id, table: 'profiles' },
+        { success: !profilesError, error: profilesError || undefined, rowCount: profiles?.length || 0 }
+      );
 
       // Get last 30 days data
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
       // Get completions
-      const { data: completions } = await supabase
+      const { data: completions, error: completionsError } = await supabase
         .from('chore_completions')
         .select('user_id, points_earned, completion_date')
         .in('user_id', childUserIds)
         .gte('completion_date', thirtyDaysAgo.toISOString().split('T')[0]);
 
+      logSupabaseQuery(
+        { component: 'ReportExport', operation: 'fetchCompletions', userId: user.id, table: 'chore_completions' },
+        { success: !completionsError, error: completionsError || undefined, rowCount: completions?.length || 0 }
+      );
+
       // Get achievements
-      const { data: achievements } = await supabase
+      const { data: achievements, error: achievementsError } = await supabase
         .from('user_achievements')
         .select('user_id')
         .in('user_id', childUserIds)
         .gte('unlocked_at', thirtyDaysAgo.toISOString());
+
+      logSupabaseQuery(
+        { component: 'ReportExport', operation: 'fetchAchievements', userId: user.id, table: 'user_achievements' },
+        { success: !achievementsError, error: achievementsError || undefined, rowCount: achievements?.length || 0 }
+      );
+
+      logDataFetchSuccess('ReportExport', {
+        familyCount: families.length,
+        memberCount: childMembers.length,
+        recordCount: (completions?.length || 0) + (achievements?.length || 0),
+        userId: user.id,
+        duration: timer.elapsed()
+      });
 
       // Build progress data
       const childrenProgress: ChildProgress[] = childUserIds.map(userId => {
@@ -163,7 +208,10 @@ export function ProgressReportExport() {
       doc.save(`chatterbox-progress-report-${new Date().toISOString().split('T')[0]}.pdf`);
       toast.success('Progress report downloaded');
     } catch (error) {
-      console.error('Error generating report:', error);
+      logSupabaseQuery(
+        { component: 'ReportExport', operation: 'generateReport', userId: user.id },
+        { success: false, error: error as Error, duration: timer.elapsed() }
+      );
       toast.error('Failed to generate report');
     } finally {
       setExporting(false);

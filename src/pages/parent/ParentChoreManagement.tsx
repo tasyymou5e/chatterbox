@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Heart, Users } from 'lucide-react';
 import { ParentNavigation } from '@/components/parent/ParentNavigation';
+import { logSupabaseQuery, logDataAccessIssue, logDataFetchSuccess, createQueryTimer } from '@/utils/parentPortalLogger';
 
 interface Family {
   id: string;
@@ -34,6 +35,7 @@ const ParentChoreManagement = () => {
 
   const fetchUserFamilies = async () => {
     if (!user) return;
+    const timer = createQueryTimer();
     
     try {
       // Step 1: Get family IDs where user is a member
@@ -42,9 +44,10 @@ const ParentChoreManagement = () => {
         .select('family_id')
         .eq('user_id', user.id);
 
-      if (memberError) {
-        console.error('Error fetching family memberships:', memberError);
-      }
+      logSupabaseQuery(
+        { component: 'ChoreManagement', operation: 'fetchMemberFamilies', userId: user.id, table: 'family_members' },
+        { success: !memberError, error: memberError || undefined, rowCount: memberFamilies?.length || 0 }
+      );
 
       // Step 2: Get families where user is creator
       const { data: creatorFamilies, error: creatorError } = await supabase
@@ -52,9 +55,10 @@ const ParentChoreManagement = () => {
         .select('id, name, display_name')
         .eq('created_by', user.id);
 
-      if (creatorError) {
-        console.error('Error fetching created families:', creatorError);
-      }
+      logSupabaseQuery(
+        { component: 'ChoreManagement', operation: 'fetchCreatorFamilies', userId: user.id, table: 'families' },
+        { success: !creatorError, error: creatorError || undefined, rowCount: creatorFamilies?.length || 0 }
+      );
 
       // Step 3: Get families by member IDs
       const memberFamilyIds = memberFamilies?.map(mf => mf.family_id) || [];
@@ -65,6 +69,11 @@ const ParentChoreManagement = () => {
           .from('families')
           .select('id, name, display_name')
           .in('id', memberFamilyIds);
+
+        logSupabaseQuery(
+          { component: 'ChoreManagement', operation: 'fetchFamiliesById', userId: user.id, table: 'families', metadata: { familyIds: memberFamilyIds } },
+          { success: !familiesError, error: familiesError || undefined, rowCount: familiesById?.length || 0 }
+        );
 
         if (!familiesError && familiesById) {
           memberFamiliesData = familiesById;
@@ -77,14 +86,31 @@ const ParentChoreManagement = () => {
         index === self.findIndex(f => f.id === family.id)
       );
 
-      console.log('fetchUserFamilies: Found', uniqueFamilies.length, 'families');
+      if (uniqueFamilies.length === 0) {
+        logDataAccessIssue('ChoreManagement', 'No families found for user', {
+          userId: user.id,
+          expectedData: 'at least 1 family',
+          actualResult: '0 families',
+          possibleCause: 'User may not have created a family or is not a member of any family'
+        });
+      }
+
+      logDataFetchSuccess('ChoreManagement', {
+        familyCount: uniqueFamilies.length,
+        userId: user.id,
+        duration: timer.elapsed()
+      });
+
       setFamilies(uniqueFamilies);
       
       if (uniqueFamilies.length === 1) {
         setSelectedFamily(uniqueFamilies[0].id);
       }
     } catch (error) {
-      console.error('Error fetching families:', error);
+      logSupabaseQuery(
+        { component: 'ChoreManagement', operation: 'fetchUserFamilies', userId: user.id },
+        { success: false, error: error as Error, duration: timer.elapsed() }
+      );
     } finally {
       setFamiliesLoading(false);
     }
