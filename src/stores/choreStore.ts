@@ -244,39 +244,56 @@ export const useChoreStore = create<ChoreState>()(
         if (!familyId) return;
 
         try {
-          const { data, error } = await supabase
+          // Fetch assignments first
+          const { data: assignmentsData, error: assignError } = await supabase
             .from('chore_assignments')
-            .select(`
-              *,
-              chores (
-                id,
-                title,
-                description,
-                estimated_duration,
-                difficulty,
-                base_points,
-                instructions,
-                chore_categories (
-                  name,
-                  icon,
-                  color
-                )
-              ),
-              profiles!chore_assignments_assigned_to_fkey (
-                id,
-                first_name,
-                last_name
-              )
-            `)
+            .select('*')
             .eq('family_id', familyId)
             .order('assigned_at', { ascending: false });
 
-          if (error) {
-            console.error('Error fetching assignments:', error);
+          if (assignError) {
+            console.error('Error fetching assignments:', assignError);
             return;
           }
 
-          set({ assignments: (data as unknown as ChoreAssignment[]) || [] });
+          // Get unique IDs for related data
+          const choreIds = [...new Set((assignmentsData || []).map(a => a.chore_id).filter(Boolean))] as string[];
+          const userIds = [...new Set((assignmentsData || []).map(a => a.assigned_to).filter(Boolean))] as string[];
+
+          // Fetch chores separately
+          let choresMap: Record<string, { id: string; title: string; description: string | null; estimated_duration: number | null; difficulty: string | null; base_points: number | null; instructions: Json }> = {};
+          if (choreIds.length > 0) {
+            const { data: choresData } = await supabase
+              .from('chores')
+              .select('id, title, description, estimated_duration, difficulty, base_points, instructions')
+              .in('id', choreIds);
+            choresMap = (choresData || []).reduce((acc, c) => { 
+              acc[c.id] = c; 
+              return acc; 
+            }, {} as typeof choresMap);
+          }
+
+          // Fetch profiles separately
+          let profilesMap: Record<string, { first_name: string | null; last_name: string | null }> = {};
+          if (userIds.length > 0) {
+            const { data: profilesData } = await supabase
+              .from('profiles')
+              .select('user_id, first_name, last_name')
+              .in('user_id', userIds);
+            profilesMap = (profilesData || []).reduce((acc, p) => { 
+              acc[p.user_id] = { first_name: p.first_name, last_name: p.last_name }; 
+              return acc; 
+            }, {} as typeof profilesMap);
+          }
+
+          // Combine data
+          const assignments = (assignmentsData || []).map(a => ({
+            ...a,
+            chores: a.chore_id ? choresMap[a.chore_id] : undefined,
+            profiles: a.assigned_to ? profilesMap[a.assigned_to] : undefined,
+          })) as ChoreAssignment[];
+
+          set({ assignments });
         } catch (error) {
           console.error('Error fetching assignments:', error);
         }

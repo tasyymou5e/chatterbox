@@ -544,6 +544,20 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "chore_assignments_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "chore_assignments_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "chore_assignments_chore_id_fkey"
             columns: ["chore_id"]
             isOneToOne: false

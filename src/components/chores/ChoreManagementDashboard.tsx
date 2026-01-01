@@ -3,11 +3,16 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useChoreManagement } from '@/hooks/useChoreManagement';
 import { supabase } from '@/integrations/supabase/client';
-import { getSecureFamilyInfo, getSecureFamilyMembers } from '@/utils/secureFamilyAccess';
 import { toast } from '@/hooks/use-toast';
 import { logSupabaseQuery, logDataAccessIssue, createQueryTimer } from '@/utils/parentPortalLogger';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 import { 
   Plus, 
   Clock, 
@@ -15,9 +20,10 @@ import {
   Users, 
   CheckCircle, 
   AlertCircle,
-  Calendar,
+  Calendar as CalendarIcon,
   Target,
-  TrendingUp
+  TrendingUp,
+  UserPlus
 } from 'lucide-react';
 
 interface Family {
@@ -54,6 +60,16 @@ export const ChoreManagementDashboard = ({ familyId }: ChoreManagementDashboardP
   const [family, setFamily] = useState<Family | null>(null);
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+  
+  // Assign chore dialog state
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [selectedChoreId, setSelectedChoreId] = useState<string>('');
+  const [selectedMemberId, setSelectedMemberId] = useState<string>('');
+  const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
+  const [isAssigning, setIsAssigning] = useState(false);
+
+  // Filter to get only child members for assignment
+  const childMembers = familyMembers.filter(m => m.role === 'child');
 
   // Fetch family details and members
   useEffect(() => {
@@ -132,8 +148,14 @@ export const ChoreManagementDashboard = ({ familyId }: ChoreManagementDashboardP
 
   const handleCreateFromTemplate = async (templateId: string) => {
     const result = await createChoreFromTemplate(templateId);
-    if (result) {
-      setSelectedTemplate(null);
+    if (result && result.success && result.result?.data?.id) {
+      // Open assign dialog with the newly created chore pre-selected
+      setSelectedChoreId(result.result.data.id);
+      setAssignDialogOpen(true);
+      toast({
+        title: 'Chore Created',
+        description: 'Now assign it to a family member.',
+      });
     }
   };
 
@@ -144,12 +166,58 @@ export const ChoreManagementDashboard = ({ familyId }: ChoreManagementDashboardP
     await assignChore(choreId, memberId, tomorrow.toISOString().split('T')[0]);
   };
 
+  const handleAssignSubmit = async () => {
+    if (!selectedChoreId || !selectedMemberId) {
+      toast({ 
+        title: 'Error', 
+        description: 'Please select a chore and family member', 
+        variant: 'destructive' 
+      });
+      return;
+    }
+    
+    setIsAssigning(true);
+    try {
+      const result = await assignChore(
+        selectedChoreId, 
+        selectedMemberId, 
+        dueDate ? format(dueDate, 'yyyy-MM-dd') : undefined
+      );
+      
+      if (result?.success) {
+        toast({ 
+          title: 'Success', 
+          description: 'Chore assigned successfully!' 
+        });
+        setAssignDialogOpen(false);
+        setSelectedChoreId('');
+        setSelectedMemberId('');
+        setDueDate(undefined);
+      } else {
+        toast({ 
+          title: 'Error', 
+          description: 'Failed to assign chore', 
+          variant: 'destructive' 
+        });
+      }
+    } finally {
+      setIsAssigning(false);
+    }
+  };
+
   const handleVerifyCompletion = async (assignmentId: string) => {
     await updateAssignmentStatus(assignmentId, 'verified');
     toast({
       title: 'Completion Verified',
       description: 'Great job! The chore has been verified.',
     });
+  };
+
+  const openAssignDialog = () => {
+    setSelectedChoreId('');
+    setSelectedMemberId('');
+    setDueDate(undefined);
+    setAssignDialogOpen(true);
   };
 
   if (loading) {
@@ -173,10 +241,16 @@ export const ChoreManagementDashboard = ({ familyId }: ChoreManagementDashboardP
             Manage daily tasks for {family?.display_name || 'your family'}
           </p>
         </div>
-        <Button className="bg-secondary hover:bg-secondary-hover">
-          <Plus className="h-4 w-4 mr-2" />
-          Create Custom Chore
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={openAssignDialog} className="bg-primary hover:bg-primary/90">
+            <UserPlus className="h-4 w-4 mr-2" />
+            Assign Chore
+          </Button>
+          <Button variant="outline">
+            <Plus className="h-4 w-4 mr-2" />
+            Create Custom Chore
+          </Button>
+        </div>
       </div>
 
       {/* Quick Stats */}
@@ -357,10 +431,11 @@ export const ChoreManagementDashboard = ({ familyId }: ChoreManagementDashboardP
                 
                 {assignments.length === 0 && (
                   <div className="text-center py-8">
+                    <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <p className="text-muted-foreground mb-4">No active assignments</p>
-                    <Button>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Create First Assignment
+                    <Button onClick={openAssignDialog}>
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Assign First Chore
                     </Button>
                   </div>
                 )}
@@ -430,6 +505,121 @@ export const ChoreManagementDashboard = ({ familyId }: ChoreManagementDashboardP
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Assign Chore Dialog */}
+      <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="h-5 w-5 text-primary" />
+              Assign Chore
+            </DialogTitle>
+            <DialogDescription>
+              Select a chore and family member to create an assignment.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {/* Chore Selection */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Select Chore</label>
+              <Select value={selectedChoreId} onValueChange={setSelectedChoreId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a chore..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {chores.map((chore) => (
+                    <SelectItem key={chore.id} value={chore.id}>
+                      <div className="flex items-center gap-2">
+                        <span>{chore.title}</span>
+                        <Badge variant="outline" className="text-xs">
+                          {chore.base_points} pts
+                        </Badge>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {chores.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  No chores available. Create one from a template first.
+                </p>
+              )}
+            </div>
+
+            {/* Family Member Selection */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Assign To</label>
+              <Select value={selectedMemberId} onValueChange={setSelectedMemberId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a family member..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {childMembers.length > 0 ? (
+                    childMembers.map((member) => (
+                      <SelectItem key={member.user_id} value={member.user_id}>
+                        {member.profiles?.first_name} {member.profiles?.last_name}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    familyMembers.map((member) => (
+                      <SelectItem key={member.user_id} value={member.user_id}>
+                        {member.profiles?.first_name} {member.profiles?.last_name}
+                        <Badge variant="outline" className="ml-2 text-xs">{member.role}</Badge>
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+              {familyMembers.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  No family members found.
+                </p>
+              )}
+            </div>
+
+            {/* Due Date Selection */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Due Date (Optional)</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !dueDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {dueDate ? format(dueDate, "PPP") : "Pick a due date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={dueDate}
+                    onSelect={setDueDate}
+                    disabled={(date) => date < new Date()}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAssignDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleAssignSubmit}
+              disabled={!selectedChoreId || !selectedMemberId || isAssigning}
+            >
+              {isAssigning ? 'Assigning...' : 'Assign Chore'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
