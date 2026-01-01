@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { logSupabaseQuery, logDataAccessIssue, logDataFetchSuccess } from '@/utils/parentPortalLogger';
 
 /**
  * Secure family access utilities
@@ -70,7 +71,11 @@ export const getSecureFamilyMembers = async (familyId: string): Promise<FamilyMe
     // First check if user has access
     const hasAccess = await checkFamilyAccess(familyId);
     if (!hasAccess) {
-      console.warn('Access denied to family members for family:', familyId);
+      logDataAccessIssue('secureFamilyAccess', 'Access denied to family members', {
+        familyId,
+        expectedData: 'family member access',
+        actualResult: 'access denied'
+      });
       return [];
     }
 
@@ -80,32 +85,82 @@ export const getSecureFamilyMembers = async (familyId: string): Promise<FamilyMe
       .select('user_id, family_id, role, joined_at')
       .eq('family_id', familyId);
 
+    logSupabaseQuery(
+      { component: 'secureFamilyAccess', operation: 'getSecureFamilyMembers', table: 'family_members', familyId },
+      { success: !error, error, rowCount: members?.length || 0 }
+    );
+
     if (error) {
       console.error('Error fetching family members:', error);
       return [];
     }
 
     if (!members || members.length === 0) {
+      logDataAccessIssue('secureFamilyAccess', 'No family members found', {
+        familyId,
+        expectedData: 'at least 1 member',
+        actualResult: '0 members'
+      });
       return [];
     }
 
     // Fetch profiles for all members
     const userIds = members.map(m => m.user_id);
-    const { data: profiles } = await supabase
+    const { data: profiles, error: profileError } = await supabase
       .from('profiles')
       .select('user_id, first_name, last_name')
       .in('user_id', userIds);
 
+    logSupabaseQuery(
+      { component: 'secureFamilyAccess', operation: 'fetchMemberProfiles', table: 'profiles', familyId },
+      { success: !profileError, error: profileError, rowCount: profiles?.length || 0 }
+    );
+
+    if (profileError) {
+      console.error('Error fetching profiles for family members:', profileError);
+      // Still return members even if profile fetch fails
+      logDataAccessIssue('secureFamilyAccess', 'Profile fetch failed, returning members without names', {
+        familyId,
+        expectedData: `profiles for ${userIds.length} members`,
+        actualResult: 'profile query failed'
+      });
+      return members.map(member => ({
+        ...member,
+        first_name: undefined,
+        last_name: undefined,
+      }));
+    }
+
     // Merge profile data with member data
     const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
     
-    return members.map(member => ({
+    const result = members.map(member => ({
       ...member,
       first_name: profileMap.get(member.user_id)?.first_name || undefined,
       last_name: profileMap.get(member.user_id)?.last_name || undefined,
     }));
+
+    // Log if some profiles are missing
+    const missingProfiles = members.filter(m => !profileMap.has(m.user_id));
+    if (missingProfiles.length > 0) {
+      logDataAccessIssue('secureFamilyAccess', 'Some member profiles not found', {
+        familyId,
+        expectedData: `${members.length} profiles`,
+        actualResult: `${profiles?.length || 0} profiles found, ${missingProfiles.length} missing`
+      });
+    }
+
+    logDataFetchSuccess('secureFamilyAccess.getSecureFamilyMembers', {
+      recordCount: result.length,
+    });
+
+    return result;
   } catch (error) {
     console.error('Error in getSecureFamilyMembers:', error);
+    logDataAccessIssue('secureFamilyAccess', 'Exception in getSecureFamilyMembers', {
+      familyId,
+      actualResult: error instanceof Error ? error.message : 'Unknown error'
+    });
     return [];
   }
 };
