@@ -228,6 +228,21 @@ serve(async (req) => {
       // Don't fail the whole operation for family member creation
     }
 
+    // Add child role to user_roles table
+    const { error: roleError } = await supabase
+      .from('user_roles')
+      .insert({
+        user_id: createdAuthUser.id,
+        role: 'child'
+      });
+
+    if (roleError) {
+      console.error('Error assigning child role:', roleError);
+      // Don't throw - role may have been created by trigger, just log it
+    } else {
+      console.log('Child role assigned in user_roles');
+    }
+
     // Log the activity
     const { error: logError } = await supabase
       .rpc('log_family_activity', {
