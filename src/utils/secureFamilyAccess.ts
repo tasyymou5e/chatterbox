@@ -111,25 +111,74 @@ export const getSecureFamilyMembers = async (familyId: string): Promise<FamilyMe
 };
 
 /**
- * Securely get current user's families
+ * Get family IDs where user is a member
+ */
+export const getUserFamilyIds = async (userId: string): Promise<string[]> => {
+  try {
+    const { data: memberFamilies, error } = await supabase
+      .from('family_members')
+      .select('family_id')
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('Error fetching family memberships:', error);
+      return [];
+    }
+
+    return memberFamilies?.map(mf => mf.family_id) || [];
+  } catch (error) {
+    console.error('Error in getUserFamilyIds:', error);
+    return [];
+  }
+};
+
+/**
+ * Securely get current user's families (where user is creator OR member)
  */
 export const getCurrentUserFamilies = async (): Promise<SecureFamilyInfo[]> => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return [];
-
-    // Get families where user is creator or member
-    const { data: families, error } = await supabase
-      .from('families')
-      .select('id, display_name, created_at')
-      .or(`created_by.eq.${user.id},id.in.(select family_id from family_members where user_id=${user.id})`);
-
-    if (error) {
-      console.error('Error fetching user families:', error);
+    if (!user) {
+      console.warn('getCurrentUserFamilies: No authenticated user');
       return [];
     }
 
-    return families || [];
+    // Step 1: Get family IDs where user is a member
+    const memberFamilyIds = await getUserFamilyIds(user.id);
+
+    // Step 2: Get families where user is creator
+    const { data: creatorFamilies, error: creatorError } = await supabase
+      .from('families')
+      .select('id, display_name, created_at')
+      .eq('created_by', user.id);
+
+    if (creatorError) {
+      console.error('Error fetching created families:', creatorError);
+    }
+
+    // Step 3: Get families by member IDs (if any)
+    let memberFamiliesData: SecureFamilyInfo[] = [];
+    if (memberFamilyIds.length > 0) {
+      const { data: familiesById, error: familiesError } = await supabase
+        .from('families')
+        .select('id, display_name, created_at')
+        .in('id', memberFamilyIds);
+
+      if (familiesError) {
+        console.error('Error fetching member families:', familiesError);
+      } else {
+        memberFamiliesData = familiesById || [];
+      }
+    }
+
+    // Step 4: Merge and deduplicate results
+    const allFamilies = [...(creatorFamilies || []), ...memberFamiliesData];
+    const uniqueFamilies = allFamilies.filter((family, index, self) =>
+      index === self.findIndex(f => f.id === family.id)
+    );
+
+    console.log('getCurrentUserFamilies: Found', uniqueFamilies.length, 'families for user');
+    return uniqueFamilies;
   } catch (error) {
     console.error('Error in getCurrentUserFamilies:', error);
     return [];
