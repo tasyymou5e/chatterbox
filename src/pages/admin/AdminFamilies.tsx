@@ -455,7 +455,17 @@ export default function AdminFamilies() {
                                     </div>
                                     <div className="flex items-center space-x-2 text-sm text-gray-400">
                                       <Mail className="h-3 w-3" />
-                                      <span>User ID: {member.user_id.substring(0, 8)}...</span>
+                                      {member.email ? (
+                                        <a 
+                                          href={`mailto:${member.email}`} 
+                                          className="text-blue-400 hover:text-blue-300 hover:underline"
+                                          onClick={(e) => e.stopPropagation()}
+                                        >
+                                          {member.email}
+                                        </a>
+                                      ) : (
+                                        <span className="text-gray-500 italic">No email</span>
+                                      )}
                                     </div>
                                   </div>
                                 </div>
