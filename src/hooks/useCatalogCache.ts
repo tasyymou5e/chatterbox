@@ -6,27 +6,27 @@ import { useAuth } from './useAuth';
 interface ContentItem {
   id: string;
   title: string;
-  description: string;
+  description: string | null;
   content_type: string;
-  category_id: string;
+  category_id: string | null;
   url: string;
-  thumbnail_url: string;
-  age_min: number;
-  age_max: number;
+  thumbnail_url: string | null;
+  age_min: number | null;
+  age_max: number | null;
   autism_features: any;
-  tags: string[];
-  is_free: boolean;
+  tags: string[] | null;
+  is_free: boolean | null;
   content_categories?: {
     name: string;
-    icon: string;
-  };
+    icon: string | null;
+  } | null;
 }
 
 interface Category {
   id: string;
   name: string;
-  icon: string;
-  description: string;
+  icon: string | null;
+  description: string | null;
 }
 
 export const useCatalogCache = (userFamily?: string) => {
@@ -46,7 +46,7 @@ export const useCatalogCache = (userFamily?: string) => {
 
       // Fetch from database
       // Check authentication status for appropriate field selection
-      const { data: { user } } = await supabase.auth.getUser();
+      await supabase.auth.getUser();
       
       const { data, error } = await supabase
         .from('content_items')

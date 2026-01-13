@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useCallback, useMemo, useState, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useCallback, useMemo, useState, useEffect, type ReactNode } from 'react';
 import { useLessonProgressStore } from '@/stores/lessonProgressStore';
 import type { CategoryProgress, SkillLevel, CelebrationEvent } from '@/types/lessonProgress';
 import type { GameSessionStats } from '@/types/gameEvents';

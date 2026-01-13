@@ -5,8 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Users, Activity, Clock, TrendingUp, Download } from 'lucide-react';
-import { format, subDays, startOfDay, endOfDay } from 'date-fns';
+import { Users, Activity, Clock, Download } from 'lucide-react';
+import { format, subDays } from 'date-fns';
 
 interface FamilyActivitySummary {
   family_id: string;
@@ -32,7 +32,8 @@ const FamilyActivityReport = () => {
   const [familyReports, setFamilyReports] = useState<FamilyActivitySummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState<string>('7');
-  const [selectedFamily, setSelectedFamily] = useState<string>('all');
+  const [_selectedFamily, _setSelectedFamily] = useState<string>('all');
+  void _selectedFamily; void _setSelectedFamily; // Kept for future filtering
 
   const fetchFamilyReports = async () => {
     if (!user) return;

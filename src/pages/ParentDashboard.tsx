@@ -32,7 +32,8 @@ interface FamilyData {
 
 const ParentDashboard = () => {
   const { signOut } = useAuth();
-  const { isAuthorized, checking, user, isAdmin } = useParentPortalGuard();
+  const { isAuthorized, checking, user, isAdmin: _isAdmin } = useParentPortalGuard();
+  void _isAdmin; // Available for future admin-specific UI
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);

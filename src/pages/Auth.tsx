@@ -35,7 +35,8 @@ const Auth = () => {
   // Child signup states
   const [childAccountCode, setChildAccountCode] = useState('');
   const [childSignupPassword, setChildSignupPassword] = useState('');
-  const [childAccountData, setChildAccountData] = useState<any>(null);
+  const [_childAccountData, _setChildAccountData] = useState<any>(null);
+  void _childAccountData; void _setChildAccountData; // Kept for future child signup flow
   
   const { signUp, signIn, resetPassword } = useAuth();
   const { logActivity, createSession } = useAuthLogging();

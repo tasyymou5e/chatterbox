@@ -35,7 +35,8 @@ export function CompletionCelebrationModal({
 }: CompletionCelebrationModalProps) {
   const [showFireworks, setShowFireworks] = useState(false);
   const [showCertificate, setShowCertificate] = useState(false);
-  const { generateAndDownload, saving } = useCertificateGenerator();
+  const { generateAndDownload, saving: _saving } = useCertificateGenerator();
+  void _saving; // Available for future loading indicator
 
   useEffect(() => {
     if (isOpen) {
@@ -53,6 +54,7 @@ export function CompletionCelebrationModal({
       setShowFireworks(false);
       setShowCertificate(false);
     }
+    return undefined;
   }, [isOpen]);
 
   const handleDownload = async () => {

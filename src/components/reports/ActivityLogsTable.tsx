@@ -23,11 +23,11 @@ interface ActivityLog {
   activity_type: string;
   timestamp: string;
   ip_address?: unknown;
-  user_agent?: string;
+  user_agent?: string | null;
   device_info: any;
-  session_id?: string;
+  session_id?: string | null;
   success: boolean;
-  failure_reason?: string;
+  failure_reason?: string | null;
   metadata: any;
   profiles?: any;
 }

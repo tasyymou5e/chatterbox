@@ -3,10 +3,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { 
   Heart, 
-  Star, 
   Users, 
   Brain, 
-  Gamepad2, 
+  Gamepad2,
   Award,
   Clock,
   Calendar,

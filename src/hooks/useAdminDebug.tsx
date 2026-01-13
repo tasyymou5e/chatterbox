@@ -16,7 +16,7 @@ export const useAdminDebug = () => {
       logs.push('1. Testing Supabase Connection...');
       try {
         // Use a less sensitive table for connection test
-        const { data, error } = await supabase.from('families').select('count').limit(1);
+        const { error } = await supabase.from('families').select('count').limit(1);
         if (error) {
           logs.push(`❌ Supabase Error: ${error.message}`);
         } else {

@@ -14,12 +14,13 @@ interface SecurityEvent {
   userId?: string;
 }
 
-interface SecurityMetrics {
-  failedLogins: number;
-  suspiciousQueries: number;
-  rlsViolations: number;
-  unauthorizedAccess: number;
-}
+// SecurityMetrics interface - kept for future dashboard implementation
+// interface SecurityMetrics {
+//   failedLogins: number;
+//   suspiciousQueries: number;
+//   rlsViolations: number;
+//   unauthorizedAccess: number;
+// }
 
 export const useSecurityMonitoring = () => {
   const { toast } = useToast();
