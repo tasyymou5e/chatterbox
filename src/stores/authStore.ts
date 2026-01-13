@@ -1,3 +1,19 @@
+/**
+ * Authentication Store
+ * 
+ * @description Centralized Zustand store for all authentication state and actions.
+ * Handles user sessions, role management, and authentication flows.
+ * 
+ * @module authStore
+ * 
+ * @example
+ * // Access auth state
+ * const { user, isAdmin, loading } = useAuthStore();
+ * 
+ * // Perform auth actions
+ * const { signIn, signOut } = useAuthStore();
+ * await signIn('user@example.com', 'password');
+ */
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { User, Session } from '@supabase/supabase-js';
@@ -5,6 +21,20 @@ import { supabase } from '@/integrations/supabase/client';
 import { authLoggingService } from '@/services/authLoggingService';
 import { type AuthError, type AuthMetadata } from '@/types/auth';
 
+/**
+ * Authentication state interface.
+ * 
+ * @interface AuthState
+ * @property {User | null} user - Current authenticated user or null
+ * @property {Session | null} session - Current Supabase session or null
+ * @property {string | null} userRole - User's role: 'admin', 'parent', 'child', or null
+ * @property {boolean} isAdmin - Whether user has admin privileges
+ * @property {boolean} loading - Loading state during auth operations
+ * @property {boolean} isCheckingRole - Whether role is being verified
+ * @property {boolean} sessionReady - Whether session has been initialized
+ * @property {boolean} signingOut - Whether sign out is in progress
+ * @property {boolean} isHydrated - Whether store has been hydrated from storage
+ */
 interface AuthState {
   // State
   user: User | null;
@@ -63,7 +93,19 @@ export const useAuthStore = create<AuthState>()(
         setIsCheckingRole: (isCheckingRole) => set({ isCheckingRole }),
         setSessionReady: (sessionReady) => set({ sessionReady }),
 
-        // Helper function to fetch user role
+        /**
+         * Fetches the highest-priority role for a user.
+         * 
+         * @description Checks roles in priority order: admin > parent > child.
+         * Uses the `has_role` RPC function for each role check.
+         * 
+         * @param userId - The user ID to check roles for
+         * @returns Promise resolving to role string or null if no role found
+         * 
+         * @example
+         * const role = await fetchUserRole('user-uuid');
+         * // Returns: 'admin' | 'parent' | 'child' | null
+         */
         fetchUserRole: async (userId: string): Promise<string | null> => {
           try {
             // Check roles in priority order: admin > parent > child
@@ -91,7 +133,21 @@ export const useAuthStore = create<AuthState>()(
           }
         },
 
-        // Helper to check if user has admin role (full admin or read-only admin)
+        /**
+         * Checks if a user has admin privileges.
+         * 
+         * @description Verifies if user has either 'admin' or 'read_only' role,
+         * both of which grant access to the admin dashboard.
+         * 
+         * @param userId - The user ID to check
+         * @returns Promise resolving to true if user has admin privileges
+         * 
+         * @example
+         * const canAccessAdmin = await checkAdminRole('user-uuid');
+         * if (canAccessAdmin) {
+         *   navigate('/admin');
+         * }
+         */
         checkAdminRole: async (userId: string): Promise<boolean> => {
           try {
             // Check for full admin role
