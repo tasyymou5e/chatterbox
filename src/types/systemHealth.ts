@@ -42,14 +42,14 @@ export interface SystemAlert {
   alert_type: string;
   severity: 'critical' | 'high' | 'medium' | 'low' | 'info';
   title: string;
-  description?: string;
-  acknowledged: boolean;
-  acknowledged_by?: string;
-  acknowledged_at?: string;
-  resolved: boolean;
-  resolved_at?: string;
+  description?: string | null;
+  acknowledged: boolean | null;
+  acknowledged_by?: string | null;
+  acknowledged_at?: string | null;
+  resolved: boolean | null;
+  resolved_at?: string | null;
   created_at: string;
-  triggered_by?: string;
+  triggered_by?: string | null;
   metadata?: Record<string, any>;
 }
 

@@ -1,7 +1,7 @@
 import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { MessageCircle, Volume2, Image, Smartphone, ArrowRight } from "lucide-react";
+import { MessageCircle, Volume2, Smartphone, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export default function CommunicationSupport() {

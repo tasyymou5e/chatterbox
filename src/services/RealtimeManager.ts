@@ -2,11 +2,12 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
-interface ChannelSubscription {
-  callback: Function;
-  channelName: string;
-  filter?: string;
-}
+// ChannelSubscription interface for reference (not currently used directly)
+// interface ChannelSubscription {
+//   callback: Function;
+//   channelName: string;
+//   filter?: string;
+// }
 
 class RealtimeManager {
   private static instance: RealtimeManager;
@@ -100,7 +101,7 @@ class RealtimeManager {
       });
 
       // Handle connection status
-      channel.subscribe((status, err) => {
+      channel.subscribe((status, _err) => {
         if (status === 'SUBSCRIBED') {
           this.reconnectAttempts = 0; // Reset on successful connection
         } else if (status === 'CHANNEL_ERROR') {
@@ -182,7 +183,7 @@ class RealtimeManager {
 
   // Manual cleanup for all connections
   cleanup(): void {
-    for (const [key, channel] of this.channels) {
+    for (const [_key, channel] of this.channels) {
       try {
         supabase.removeChannel(channel);
       } catch (error) {

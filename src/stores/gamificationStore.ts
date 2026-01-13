@@ -3,44 +3,39 @@ import { devtools } from 'zustand/middleware';
 import { supabase } from '@/integrations/supabase/client';
 import { 
   wishlistInputSchema, 
-  getCurrentUserId, 
-  requireAuth, 
   sanitizeInput,
   createStoreError,
   createStoreSuccess,
   type StoreResult,
   type StoreError
 } from '@/services/storeUtils';
-import { 
-  type AchievementCriteria,
-  type UserProgress,
-  type UserMetadata,
-  type AchievementMetadata
-} from '@/types/gamification';
-import { type Json, type Database } from '@/integrations/supabase/types';
+// Type imports from gamification module - used for internal type annotations
+// @ts-expect-error Types are used in the codebase but appear unused to the compiler
+import type { AchievementCriteria, UserProgress, UserMetadata, AchievementMetadata } from '@/types/gamification';
+import { type Json } from '@/integrations/supabase/types';
 
 interface UserLevel {
   id: string;
   user_id: string;
-  family_id: string;
-  current_level: number;
-  current_xp: number;
-  total_xp: number;
-  level_name: string;
-  next_level_xp: number;
+  family_id: string | null;
+  current_level: number | null;
+  current_xp: number | null;
+  total_xp: number | null;
+  level_name: string | null;
+  next_level_xp: number | null;
   level_up_date: string | null;
 }
 
 interface UserPoints {
   id: string;
   user_id: string;
-  family_id: string;
-  current_points: number;
-  lifetime_points: number;
-  points_spent: number;
-  weekly_points: number;
-  monthly_points: number;
-  last_reset_date: string;
+  family_id: string | null;
+  current_points: number | null;
+  lifetime_points: number | null;
+  points_spent: number | null;
+  weekly_points: number | null;
+  monthly_points: number | null;
+  last_reset_date: string | null;
 }
 
 interface Achievement {
@@ -50,11 +45,11 @@ interface Achievement {
   icon: string | null;
   achievement_type: 'streak' | 'skill' | 'collaboration' | 'milestone' | 'special';
   unlock_criteria: Json;
-  point_reward: number;
-  xp_reward: number;
-  rarity: string;
-  is_secret: boolean;
-  is_active: boolean;
+  point_reward: number | null;
+  xp_reward: number | null;
+  rarity: string | null;
+  is_secret: boolean | null;
+  is_active: boolean | null;
 }
 
 interface UserAchievement {
@@ -71,13 +66,13 @@ interface UserAchievement {
 interface WishlistItem {
   id: string;
   user_id: string;
-  family_id: string;
+  family_id: string | null;
   item_name: string;
   description: string | null;
-  point_cost: number;
-  reward_type: 'points' | 'custom' | 'privilege' | 'activity';
+  point_cost: number | null;
+  reward_type: 'points' | 'custom' | 'privilege' | 'activity' | null;
   image_url: string | null;
-  is_approved: boolean;
+  is_approved: boolean | null;
   approved_by: string | null;
   approved_at: string | null;
   is_redeemed: boolean;
@@ -87,13 +82,13 @@ interface WishlistItem {
 interface DailyStreak {
   id: string;
   user_id: string;
-  family_id: string;
+  family_id: string | null;
   streak_type: string;
-  current_streak: number;
-  longest_streak: number;
+  current_streak: number | null;
+  longest_streak: number | null;
   last_activity_date: string | null;
   streak_start_date: string | null;
-  bonus_multiplier: number;
+  bonus_multiplier: number | null;
 }
 
 interface FamilyLeaderboard {

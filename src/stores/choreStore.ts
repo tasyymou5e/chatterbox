@@ -12,12 +12,6 @@ import {
   type StoreError
 } from '@/services/storeUtils';
 import { 
-  type InstructionStep,
-  type RecurrencePattern,
-  type ChoreSettings,
-  type AutismFriendlyFeatures,
-  type SensoryConsiderations,
-  type AutismAccommodations,
   type CompletionData
 } from '@/types/chore';
 import { type Json, type Database } from '@/integrations/supabase/types';
@@ -27,10 +21,10 @@ interface ChoreCategory {
   name: string;
   description: string | null;
   icon: string | null;
-  color: string;
+  color: string | null;
   autism_friendly_features: Json;
-  sort_order: number;
-  is_active: boolean;
+  sort_order: number | null;
+  is_active: boolean | null;
 }
 
 interface ChoreTemplate {

@@ -2,7 +2,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Microscope, Users, FileText, Calendar, CheckCircle, ExternalLink, ArrowRight } from "lucide-react";
+import { Microscope, Users, FileText, CheckCircle, ExternalLink, ArrowRight } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 

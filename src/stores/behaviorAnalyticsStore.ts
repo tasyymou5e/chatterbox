@@ -22,13 +22,13 @@ interface GamificationEffectiveness {
   user_id: string;
   family_id: string;
   date_tracked: string;
-  points_earned: number;
-  achievements_unlocked: number;
-  mini_games_played: number;
-  social_interactions: number;
-  session_length_minutes: number;
-  engagement_score: number;
-  motivation_level: number;
+  points_earned: number | null;
+  achievements_unlocked: number | null;
+  mini_games_played: number | null;
+  social_interactions: number | null;
+  session_length_minutes: number | null;
+  engagement_score: number | null;
+  motivation_level: number | null;
   feature_usage: Record<string, any>;
   effectiveness_metrics: Record<string, any>;
   created_at: string;
@@ -490,7 +490,7 @@ export const useBehaviorAnalyticsStore = create<BehaviorAnalyticsState>()(
         }
       },
 
-      generateRecommendations: async (userId: string, familyId: string) => {
+      generateRecommendations: async (_userId: string, _familyId: string) => {
         try {
           const state = get();
           const recommendations: string[] = [];
