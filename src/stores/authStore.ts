@@ -4,7 +4,6 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { authLoggingService } from '@/services/authLoggingService';
 import { type AuthError, type AuthMetadata } from '@/types/auth';
-import { type Database } from '@/integrations/supabase/types';
 
 interface AuthState {
   // State
@@ -253,7 +252,8 @@ export const useAuthStore = create<AuthState>()(
           });
 
           // Log signup attempt with proper metadata
-          if (data.user) {
+          if (data?.user) {
+            const userId = data.user.id;
             setTimeout(() => {
               const metadata: AuthMetadata = {
                 signupMethod: 'email_password',
@@ -263,24 +263,24 @@ export const useAuthStore = create<AuthState>()(
                 }
               };
               
-               authLoggingService.logActivity(
-                 data.user.id,
-                 'signup',
-                 !error,
-                 error?.message,
-                 { 
-                   email, 
-                   firstName, 
-                   lastName,
-                   signupMethod: 'email_password',
-                   emailConfirmationRequired: !data.session,
-                   ...metadata
-                 }
-               ).catch(() => {
-                 // Log failure silently
-               });
+              authLoggingService.logActivity(
+                userId,
+                'signup',
+                !error,
+                error?.message,
+                { 
+                  email, 
+                  firstName, 
+                  lastName,
+                  signupMethod: 'email_password',
+                  emailConfirmationRequired: !data.session,
+                  ...metadata
+                }
+              ).catch(() => {
+                // Log failure silently
+              });
             }, 0);
-           }
+          }
 
            return { error: error as AuthError | null };
         },
@@ -473,9 +473,9 @@ export const useAuthStore = create<AuthState>()(
               }
             }
 
-            return { error };
+            return { error: error as AuthError | null };
           } catch (timeoutError) {
-            return { error: timeoutError };
+            return { error: timeoutError as AuthError };
           }
         },
 

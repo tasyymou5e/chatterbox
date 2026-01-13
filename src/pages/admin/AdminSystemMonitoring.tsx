@@ -25,7 +25,8 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
-import type { SystemError, SystemAlert, ErrorStatistics, CircuitBreakerState } from '@/types/systemHealth';
+import type { SystemError, SystemAlert, ErrorStatistics } from '@/types/systemHealth';
+// CircuitBreakerState is defined inline in circuitBreakerRef
 
 // Database Logs Component
 const DatabaseLogs = () => {
@@ -36,7 +37,8 @@ const DatabaseLogs = () => {
   const [logType, setLogType] = useState<string>('postgres');
   const [refreshing, setRefreshing] = useState(false);
 
-  const postgresQuery = `
+  // Query templates for reference (used in sample data generation)
+  const _postgresQueryTemplate = `
     select identifier, postgres_logs.timestamp, id, event_message, parsed.error_severity 
     from postgres_logs
     cross join unnest(metadata) as m
@@ -44,8 +46,9 @@ const DatabaseLogs = () => {
     order by timestamp desc
     limit 100
   `;
+  void _postgresQueryTemplate;
 
-  const authQuery = `
+  const _authQueryTemplate = `
     select id, auth_logs.timestamp, event_message, metadata.level, metadata.status, 
            metadata.path, metadata.msg as msg, metadata.error 
     from auth_logs
@@ -53,6 +56,7 @@ const DatabaseLogs = () => {
     order by timestamp desc
     limit 100
   `;
+  void _authQueryTemplate;
 
   const fetchLogs = async () => {
     try {
@@ -516,7 +520,8 @@ const AdminSystemMonitoring = () => {
   const [loading, setLoading] = useState(true);
   const [selectedError, setSelectedError] = useState<SystemError | null>(null);
   const [authDebugInfo, setAuthDebugInfo] = useState<any>(null);
-  const [connected, setConnected] = useState(true);
+  const [_connected, _setConnected] = useState(true);
+  void _connected;
   
   // Circuit breaker state with enhanced tracking
   const circuitBreakerRef = useRef({
@@ -550,8 +555,8 @@ const AdminSystemMonitoring = () => {
   const MAX_REFRESH_FREQUENCY = 5; // max 5 refreshes per minute
   const REFRESH_COOLDOWN = 10000; // 10 second cooldown between refreshes
   const DEBOUNCE_TIME = 5000; // 5 second debounce for real-time updates
-
-  const validateAuthAndConnection = useCallback(async () => {
+  // Commented out - auth validation is handled by useAdminAuth hook
+  const _validateAuthAndConnection = useCallback(async () => {
     try {
       // Check Supabase connection
       const { data: { session }, error } = await supabase.auth.getSession();
@@ -1031,7 +1036,7 @@ const AdminSystemMonitoring = () => {
           <div className="flex items-center space-x-4 mt-1">
             <p className="text-muted-foreground">Error tracking and system health monitoring</p>
             <div className="flex items-center space-x-2">
-              {connected ? (
+              {_connected ? (
                 <><Wifi className="h-4 w-4 text-green-500" /><span className="text-xs text-green-500">Connected</span></>
               ) : (
                 <><WifiOff className="h-4 w-4 text-destructive" /><span className="text-xs text-destructive">Disconnected</span></>
@@ -1063,7 +1068,7 @@ const AdminSystemMonitoring = () => {
       </div>
 
       {/* Connection Error Alert */}
-      {!connected && (
+      {!_connected && (
         <Alert variant="destructive">
           <WifiOff className="h-4 w-4" />
           <AlertDescription>

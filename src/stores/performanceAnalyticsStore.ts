@@ -13,7 +13,7 @@ interface TaskPerformanceMetric {
   completion_time: string | null;
   estimated_duration: number | null;
   actual_duration: number | null;
-  difficulty_level: string;
+  difficulty_level: string | null;
   efficiency_score: number | null;
   quality_rating: number | null;
   time_of_day: string | null;
@@ -80,7 +80,7 @@ interface PerformanceAnalyticsState {
 
 export const usePerformanceAnalyticsStore = create<PerformanceAnalyticsState>()(
   devtools(
-    (set, get) => ({
+    (set, _get) => ({
       // Initial State
       performanceMetrics: [],
       performanceInsights: [],

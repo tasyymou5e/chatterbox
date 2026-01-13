@@ -150,6 +150,8 @@ interface TooltipPayloadItem {
   color?: string;
   fill?: string;
   payload?: Record<string, unknown>;
+  // Required by recharts Payload type
+  graphicalItemId?: string;
 }
 
 const ChartTooltipContent = React.forwardRef<

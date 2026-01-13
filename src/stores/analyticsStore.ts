@@ -229,7 +229,7 @@ export const useAnalyticsStore = create<AnalyticsState>()(
           // Transform and reverse data for chronological order in charts
           const transformedData = (data || [])
             .reverse()
-            .map(item => ({
+            .map((item: { date: string; [key: string]: unknown }) => ({
               ...item,
               date: new Date(item.date).toLocaleDateString('en-US', { 
                 month: 'short', 

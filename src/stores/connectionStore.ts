@@ -192,7 +192,7 @@ export const useConnectionStore = create<ConnectionState>()(
           set({ loading: true, error: null });
           
           try {
-            const { data, error } = await supabase
+            const { error } = await supabase
               .from('family_invitations')
               .insert(invitation)
               .select()
@@ -349,7 +349,7 @@ export const useConnectionStore = create<ConnectionState>()(
       }),
       {
         name: 'connection-store',
-        partialize: (state) => ({
+        partialize: (_state) => ({
           // Only persist loading and error state, refresh data on app load
           loading: false,
           error: null,

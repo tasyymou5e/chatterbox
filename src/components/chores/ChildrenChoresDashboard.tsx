@@ -107,9 +107,11 @@ export const ChildrenChoresDashboard = ({ familyId }: ChildrenChoresDashboardPro
 
   const getLevelProgress = () => {
     if (!userLevel) return 0;
-    const currentLevelXP = userLevel.current_level * userLevel.current_level * 100;
-    const nextLevelXP = userLevel.next_level_xp;
-    const progressXP = userLevel.current_xp - currentLevelXP;
+    const currentLevel = userLevel.current_level ?? 0;
+    const currentXp = userLevel.current_xp ?? 0;
+    const nextLevelXP = userLevel.next_level_xp ?? 100;
+    const currentLevelXP = currentLevel * currentLevel * 100;
+    const progressXP = currentXp - currentLevelXP;
     const neededXP = nextLevelXP - currentLevelXP;
     return Math.max(0, Math.min(100, (progressXP / neededXP) * 100));
   };

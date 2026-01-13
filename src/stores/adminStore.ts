@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { supabase } from '@/integrations/supabase/client';
 import { useSystemHealthStore } from './systemHealthStore';
 import { type SystemHealthMetric } from '@/types/systemHealth';
 
@@ -18,7 +17,7 @@ interface AdminState {
 
 export const useAdminStore = create<AdminState>()(
   devtools(
-    (set, get) => ({
+    (set, _get) => ({
       // Initial state
       systemMetrics: [],
       loading: false,

@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import { supabase } from '@/integrations/supabase/client';
 import type { 
   LessonProgress, 
-  LessonHistoryEntry, 
   SkillLevel, 
   CelebrationEvent,
   CategoryProgress 
@@ -143,7 +142,7 @@ export const useLessonProgressStore = create<LessonProgressState>((set, get) => 
       let progress = progressByCategory.get(categoryId);
       if (!progress) {
         progress = await get().fetchProgress(categoryId);
-        if (!progress) return null;
+        if (!progress) return undefined;
       }
 
       // Calculate new stars

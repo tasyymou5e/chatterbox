@@ -4,7 +4,7 @@
  */
 
 export interface AuthError {
-  code: string;
+  code?: string;
   message: string;
   status?: number;
   name?: string;
