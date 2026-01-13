@@ -53,6 +53,7 @@ export function StarBurstCelebration({
 
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [isActive, onComplete]);
 
   if (!isActive && stars.length === 0) return null;

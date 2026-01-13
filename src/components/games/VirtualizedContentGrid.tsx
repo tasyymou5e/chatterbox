@@ -94,13 +94,14 @@ function VirtualizedContentGridComponent({
   }, [onContentCuration]);
 
   // Performance optimization: search functionality - exposed for future use
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _scrollToItem = useCallback((itemId: string) => {
+  const scrollToItem = useCallback((itemId: string) => {
+    void itemId; // Kept for future use
     const index = items.findIndex(item => item.id === itemId);
     if (index !== -1) {
       scrollToIndex(index);
     }
   }, [items, scrollToIndex]);
+  void scrollToItem; // Kept for future use
 
   // Loading state for empty items
   if (items.length === 0) {

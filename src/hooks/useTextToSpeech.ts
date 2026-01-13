@@ -42,6 +42,7 @@ export function useTextToSpeech(): UseTextToSpeechReturn {
         window.speechSynthesis.onvoiceschanged = null;
       };
     }
+    return undefined;
   }, []);
 
   const getVoice = useCallback((voiceType: Voice): SpeechSynthesisVoice | null => {

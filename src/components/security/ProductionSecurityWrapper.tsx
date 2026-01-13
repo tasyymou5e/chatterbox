@@ -34,6 +34,7 @@ export const ProductionSecurityWrapper: React.FC<ProductionSecurityWrapperProps>
           e.preventDefault();
           return false;
         }
+        return undefined;
       };
       
       // Disable drag and drop for security
@@ -87,6 +88,7 @@ export const ProductionSecurityWrapper: React.FC<ProductionSecurityWrapperProps>
         document.removeEventListener('drop', disableDragDrop);
       };
     }
+    return undefined;
   }, []);
 
   // Content Security Policy meta tag injection

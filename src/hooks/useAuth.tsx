@@ -1,7 +1,6 @@
 // Bridge adapter - migrated to use Zustand store internally
 import { useEffect } from 'react';
 import { useAuthStore } from '@/stores/authStore';
-import { useAuthLogging } from './useAuthLogging';
 import type { User, Session, SupabaseError } from '@/types/supabase';
 
 export interface AuthContextType {

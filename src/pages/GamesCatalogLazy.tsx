@@ -69,15 +69,9 @@ class LazyLoadErrorBoundary extends React.Component<
     return { hasError: true };
   }
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    // Report error to error tracking service in production
-    if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
-      // Only report in production, not during development
-      import('@/hooks/useErrorTracking').then(({ useErrorTracking }) => {
-        // Note: This would need to be called from a component context in a real implementation
-        // For now, we'll just silently handle the error
-      });
-    }
+  componentDidCatch(_error: Error, _errorInfo: React.ErrorInfo) {
+    // Error logging handled by error boundary
+    // Could add error reporting service here in production
   }
 
   render() {

@@ -1,11 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Moon, Star, Trophy, ChevronRight } from 'lucide-react';
 import { MoonProgressBar } from './MoonProgressBar';
 import { 
   SKILL_LEVEL_COLORS, 
   SKILL_LEVEL_LABELS, 
-  type SkillLevel,
   type CategoryProgress 
 } from '@/types/lessonProgress';
 import { ScrollArea } from '@/components/ui/scroll-area';

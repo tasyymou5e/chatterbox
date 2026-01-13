@@ -10,15 +10,14 @@ interface UseCelebrationReturn {
   playPraiseSound: () => void;
 }
 
-// Preloaded celebration sounds (short base64 chime)
-const PRAISE_SOUNDS = {
-  chime: '/audio/chime.mp3', // We'll use a simple audio element
-};
+// Praise sounds configuration - kept for future audio file support
+// const PRAISE_SOUNDS = {
+//   chime: '/audio/chime.mp3',
+// };
 
 export function useCelebration(): UseCelebrationReturn {
   const [isActive, setIsActive] = useState(false);
   const [celebrationType, setCelebrationType] = useState<CelebrationType>('confetti');
-  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const playPraiseSound = useCallback(() => {
     // Create a simple oscillator-based celebration sound

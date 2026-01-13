@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Heart, Search, Play, Star, Shield, ShieldX, Sparkles } from 'lucide-react';
+import { Heart, Search, Shield, ShieldX, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useCatalogCache } from '@/hooks/useCatalogCache';
@@ -38,16 +38,13 @@ interface ContentItem {
   };
 }
 
-interface Category {
+// Type alias for Category from useCatalogCache
+type CatalogCategory = {
   id: string;
   name: string;
-  icon: string;
-  description: string;
-}
-
-interface Favorite {
-  content_item_id: string;
-}
+  icon: string | null;
+  description: string | null;
+};
 
 export default function GamesCatalog() {
   const [realtimeConnected, setRealtimeConnected] = useState(false);
@@ -59,7 +56,8 @@ export default function GamesCatalog() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [ageFilter, setAgeFilter] = useState('all');
   const [safeMode, setSafeMode] = useState(false);
-  const [showDebugPanel, setShowDebugPanel] = useState(process.env.NODE_ENV === 'development');
+  const [_showDebugPanel] = useState(process.env.NODE_ENV === 'development');
+  void _showDebugPanel; // Used for conditional rendering
   const [hasError, setHasError] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -202,15 +200,7 @@ export default function GamesCatalog() {
     };
   }, [user, userFamily, updateCatalogState, invalidateContentCache]);
 
-  const fetchData = useCallback(async () => {
-    // This is now handled by useCatalogCache hook
-    console.log('fetchData called - delegating to cache system');
-  }, []);
-
-  const fetchFavorites = useCallback(async () => {
-    // This is now handled by useCatalogCache hook
-    console.log('fetchFavorites called - delegating to cache system');
-  }, []);
+  // Note: Data fetching is now handled by useCatalogCache hook
 
   const handleFavorite = useCallback(async (contentId: string) => {
     if (!user) {

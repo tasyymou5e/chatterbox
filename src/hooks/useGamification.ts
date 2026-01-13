@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useGamificationStore } from '@/stores/gamificationStore';
 import { useStoreResult } from '@/hooks/useStoreResult';
 import { useUIStore } from '@/stores/uiStore';
-import { withRetry, type RetryState } from '@/services/storeUtils';
+import { withRetry } from '@/services/storeUtils';
 
 // Re-export interfaces for backward compatibility
 export interface UserLevel {

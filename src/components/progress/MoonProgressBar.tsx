@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { Moon, Star } from 'lucide-react';
 import { STARS_PER_MOON } from '@/types/lessonProgress';

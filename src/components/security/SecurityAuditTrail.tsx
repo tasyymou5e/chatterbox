@@ -8,18 +8,18 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Filter, Download, Search, Shield, User, Database, AlertTriangle } from 'lucide-react';
+import { Filter, Download, Search, Shield, User, Database, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface AuditEvent {
   id: string;
-  user_id: string;
+  user_id: string | null;
   event_type: string;
   severity: string;
   event_details: any;
   created_at: string;
   ip_address?: unknown;
-  user_agent?: string;
+  user_agent?: string | null;
 }
 
 interface AuditFilters {

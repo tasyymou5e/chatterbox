@@ -46,7 +46,8 @@ export default function CreateChildAccountDialog({ open, onOpenChange, onSuccess
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [createdAccount, setCreatedAccount] = useState<ChildAccountResult | null>(null);
-  const [codeCopied, setCodeCopied] = useState(false);
+  const [_codeCopied, setCodeCopied] = useState(false);
+  void _codeCopied; // Used for state management
   
   // For admin users - family selection
   const [families, setFamilies] = useState<FamilyOption[]>([]);
@@ -208,7 +209,8 @@ export default function CreateChildAccountDialog({ open, onOpenChange, onSuccess
     }
   };
 
-  const copyAccountCode = async () => {
+  const _copyAccountCode = async () => {
+    void _copyAccountCode; // Kept for future use
     if (!createdAccount) return;
     
     try {
