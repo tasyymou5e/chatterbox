@@ -9,3 +9,6 @@ export { useBehaviorAnalyticsStore } from './behaviorAnalyticsStore';
 export { useGamificationStore } from './gamificationStore';
 export { useAdminStore } from './adminStore';
 export { useConnectionStore } from './connectionStore';
+export { useLessonProgressStore } from './lessonProgressStore';
+export { useSystemHealthStore } from './systemHealthStore';
+export { useGameSessionStore } from './gameSessionStore';
