@@ -156,8 +156,11 @@ interface TooltipPayloadItem {
 
 const ChartTooltipContent = React.forwardRef<
   HTMLDivElement,
-  React.ComponentProps<typeof RechartsPrimitive.Tooltip> &
+  Omit<React.ComponentProps<typeof RechartsPrimitive.Tooltip>, 'payload' | 'label'> &
     React.ComponentProps<"div"> & {
+      active?: boolean
+      payload?: TooltipPayloadItem[]
+      label?: string
       hideLabel?: boolean
       hideIndicator?: boolean
       indicator?: "line" | "dot" | "dashed"
@@ -201,7 +204,7 @@ const ChartTooltipContent = React.forwardRef<
       if (labelFormatter) {
         return (
           <div className={cn("font-medium", labelClassName)}>
-            {labelFormatter(value, payload)}
+            {labelFormatter(value, payload as any)}
           </div>
         )
       }
@@ -251,8 +254,8 @@ const ChartTooltipContent = React.forwardRef<
                   indicator === "dot" && "items-center"
                 )}
               >
-                {formatter && item?.value !== undefined && item.name ? (
-                  formatter(item.value, item.name, item, index, itemPayload)
+              {formatter && item?.value !== undefined && item.name ? (
+                  formatter(item.value, item.name, item as any, index, itemPayload as any)
                 ) : (
                   <>
                     {itemConfig?.icon ? (

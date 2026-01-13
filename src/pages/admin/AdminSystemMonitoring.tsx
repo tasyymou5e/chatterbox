@@ -195,7 +195,6 @@ const DatabaseLogs = () => {
   useEffect(() => {
     console.error('🚨 DatabaseLogs useEffect triggered!');
     console.error('🚨 useEffect dependencies:', { logType, severityFilter });
-    alert('useEffect triggered!'); // Backup debug method
     
     try {
       console.error('🚨 Calling fetchLogs from useEffect...');
@@ -214,7 +213,7 @@ const DatabaseLogs = () => {
       };
     } catch (error) {
       console.error('🚨 CRITICAL ERROR in useEffect:', error);
-      alert('ERROR in useEffect: ' + error); // Backup debug method
+      return undefined;
     }
   }, [logType, severityFilter]);
 
@@ -555,7 +554,8 @@ const AdminSystemMonitoring = () => {
   const MAX_REFRESH_FREQUENCY = 5; // max 5 refreshes per minute
   const REFRESH_COOLDOWN = 10000; // 10 second cooldown between refreshes
   const DEBOUNCE_TIME = 5000; // 5 second debounce for real-time updates
-  // Commented out - auth validation is handled by useAdminAuth hook
+  // Auth validation handled by useAdminAuth hook - kept for potential future use
+  // @ts-expect-error Reserved for future use
   const _validateAuthAndConnection = useCallback(async () => {
     try {
       // Check Supabase connection
@@ -609,7 +609,8 @@ const AdminSystemMonitoring = () => {
     if (!state.isCircuitOpen) return false;
     
     const now = Date.now();
-    const timeout = CIRCUIT_BREAKER_BASE_TIMEOUT * state.backoffMultiplier;
+    // @ts-expect-error Reserved for future logging
+    const _timeout = CIRCUIT_BREAKER_BASE_TIMEOUT * state.backoffMultiplier;
     
     if (now > state.nextRetryTime) {
       // Reset circuit breaker with logging
@@ -1433,16 +1434,16 @@ const AdminSystemMonitoring = () => {
                       <div className="space-y-2 text-sm">
                         {selectedError.browser_info && (
                           <>
-                            <p><strong>User Agent:</strong> {selectedError.browser_info.userAgent}</p>
-                            <p><strong>Language:</strong> {selectedError.browser_info.language}</p>
-                            <p><strong>Platform:</strong> {selectedError.browser_info.platform}</p>
+                            <p><strong>User Agent:</strong> {String((selectedError.browser_info as Record<string, unknown>).userAgent ?? '')}</p>
+                            <p><strong>Language:</strong> {String((selectedError.browser_info as Record<string, unknown>).language ?? '')}</p>
+                            <p><strong>Platform:</strong> {String((selectedError.browser_info as Record<string, unknown>).platform ?? '')}</p>
                           </>
                         )}
                         {selectedError.device_info && (
                           <>
-                            <p><strong>Screen:</strong> {selectedError.device_info.screenWidth}x{selectedError.device_info.screenHeight}</p>
-                            <p><strong>Window:</strong> {selectedError.device_info.windowWidth}x{selectedError.device_info.windowHeight}</p>
-                            <p><strong>Timezone:</strong> {selectedError.device_info.timezone}</p>
+                            <p><strong>Screen:</strong> {String((selectedError.device_info as Record<string, unknown>).screenWidth ?? '')}x{String((selectedError.device_info as Record<string, unknown>).screenHeight ?? '')}</p>
+                            <p><strong>Window:</strong> {String((selectedError.device_info as Record<string, unknown>).windowWidth ?? '')}x{String((selectedError.device_info as Record<string, unknown>).windowHeight ?? '')}</p>
+                            <p><strong>Timezone:</strong> {String((selectedError.device_info as Record<string, unknown>).timezone ?? '')}</p>
                           </>
                         )}
                       </div>

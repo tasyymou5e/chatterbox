@@ -75,8 +75,9 @@ interface WishlistItem {
   is_approved: boolean | null;
   approved_by: string | null;
   approved_at: string | null;
-  is_redeemed: boolean;
+  is_redeemed: boolean | null;
   redeemed_at: string | null;
+  created_at: string;
 }
 
 interface DailyStreak {
@@ -413,8 +414,8 @@ export const useGamificationStore = create<GamificationState>()(
           return { success: false, error };
         }
 
-        if (!userPoints || userPoints.current_points < item.point_cost) {
-          const error = createStoreError('validation', `You need ${item.point_cost} points to redeem this item`);
+        if (!userPoints || (userPoints.current_points ?? 0) < (item.point_cost ?? 0)) {
+          const error = createStoreError('validation', `You need ${item.point_cost ?? 0} points to redeem this item`);
           set({ error });
           return { success: false, error };
         }
@@ -427,14 +428,14 @@ export const useGamificationStore = create<GamificationState>()(
 
         try {
           // Create redemption record
-          const { data: redemption, error: redemptionError } = await supabase
+          const { data: redemptionData, error: redemptionError } = await supabase
             .from('reward_redemptions')
             .insert({
               user_id: userId,
               family_id: familyId,
               wishlist_item_id: itemId,
-              points_spent: item.point_cost,
-            })
+              points_spent: item.point_cost ?? 0,
+            } as any)
             .select()
             .single();
 
@@ -462,8 +463,8 @@ export const useGamificationStore = create<GamificationState>()(
           const { error: pointsError } = await supabase
             .from('user_points')
             .update({
-              current_points: userPoints.current_points - item.point_cost,
-              points_spent: userPoints.points_spent + item.point_cost,
+              current_points: (userPoints.current_points ?? 0) - (item.point_cost ?? 0),
+              points_spent: (userPoints.points_spent ?? 0) + (item.point_cost ?? 0),
             })
             .eq('user_id', userId)
             .eq('family_id', familyId);
@@ -480,7 +481,7 @@ export const useGamificationStore = create<GamificationState>()(
 
           return { 
             success: true, 
-            result: createStoreSuccess(redemption, `Redeemed "${item.item_name}" for ${item.point_cost} points`)
+            result: createStoreSuccess(redemptionData, `Redeemed "${item.item_name}" for ${item.point_cost ?? 0} points`)
           };
         } catch (error: unknown) {
           console.error('Error redeeming wishlist item:', error);

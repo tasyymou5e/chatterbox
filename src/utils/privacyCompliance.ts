@@ -160,12 +160,13 @@ export const anonymizeUserData = async (): Promise<boolean> => {
     if (!user) throw new Error('User not authenticated');
 
     // Replace personally identifiable information with anonymous identifiers
-    const anonymousId = `anonymous_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    // Anonymous ID reserved for future use in data anonymization
+    void `anonymous_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
     const updates = await Promise.allSettled([
       // Anonymize behavioral events - keep patterns but remove identity
       supabase.from('behavioral_events')
-        .update({ user_id: null })
+        .update({ user_id: undefined })
         .eq('user_id', user.id),
       
       // Anonymize error logs

@@ -228,11 +228,11 @@ export default function AdminContent() {
                   <CardTitle className="text-lg">{item.title}</CardTitle>
                   <div className="flex flex-wrap gap-2">
                     <Badge variant="outline">{item.content_type}</Badge>
-                    <Badge className={getStatusColor(item.approval_status)}>
-                      {item.approval_status}
+                    <Badge className={getStatusColor(item.approval_status ?? 'pending')}>
+                      {item.approval_status ?? 'pending'}
                     </Badge>
                     <Badge variant="secondary">
-                      {item.content_categories?.name}
+                      {item.content_categories?.name ?? 'Uncategorized'}
                     </Badge>
                   </div>
                 </div>

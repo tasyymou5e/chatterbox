@@ -141,8 +141,9 @@ export const useLessonProgressStore = create<LessonProgressState>((set, get) => 
       // Get or create progress
       let progress = progressByCategory.get(categoryId);
       if (!progress) {
-        progress = await get().fetchProgress(categoryId);
-        if (!progress) return undefined;
+        const fetchedProgress = await get().fetchProgress(categoryId);
+        if (!fetchedProgress) return null;
+        progress = fetchedProgress;
       }
 
       // Calculate new stars

@@ -12,20 +12,20 @@ import { useToast } from '@/hooks/use-toast';
 interface ContentItem {
   id: string;
   title: string;
-  description: string;
+  description: string | null;
   content_type: string;
-  category_id: string;
+  category_id: string | null;
   url: string;
-  thumbnail_url: string;
-  age_min: number;
-  age_max: number;
-  approval_status: string;
-  is_active: boolean;
-  platform: string;
-  is_free: boolean;
-  content_rating: string;
-  tags: string[];
-  autism_features: Record<string, boolean>;
+  thumbnail_url: string | null;
+  age_min: number | null;
+  age_max: number | null;
+  approval_status: string | null;
+  is_active: boolean | null;
+  platform: string | null;
+  is_free: boolean | null;
+  content_rating: string | null;
+  tags: string[] | null;
+  autism_features: Record<string, boolean> | null;
 }
 
 interface Category {
@@ -69,19 +69,19 @@ export function ContentItemDialog({ open, onOpenChange, item, categories, onSucc
         title: item.title,
         description: item.description || '',
         content_type: item.content_type,
-        category_id: item.category_id,
+        category_id: item.category_id || '',
         url: item.url,
         thumbnail_url: item.thumbnail_url || '',
-        age_min: item.age_min,
-        age_max: item.age_max,
-        platform: item.platform,
-        is_free: item.is_free,
-        content_rating: item.content_rating,
+        age_min: item.age_min ?? 3,
+        age_max: item.age_max ?? 18,
+        platform: item.platform || '',
+        is_free: item.is_free ?? true,
+        content_rating: item.content_rating || 'E',
         tags: item.tags?.join(', ') || '',
         sensory_friendly: item.autism_features?.sensory_friendly || false,
         non_verbal_friendly: item.autism_features?.non_verbal_friendly || false,
         executive_function: item.autism_features?.executive_function || false,
-        is_active: item.is_active
+        is_active: item.is_active ?? true
       });
     } else {
       // Reset form for new item

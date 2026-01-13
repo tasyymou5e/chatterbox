@@ -401,8 +401,8 @@ export const ChildrenChoresDashboard = ({ familyId }: ChildrenChoresDashboardPro
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {wishlistItems.filter(item => !item.is_redeemed).slice(0, 2).map((item) => {
-                const canAfford = (userPoints?.current_points || 0) >= item.point_cost;
+            {wishlistItems.filter(item => !item.is_redeemed).slice(0, 2).map((item) => {
+                const canAfford = (userPoints?.current_points || 0) >= (item.point_cost ?? 0);
                 
                 return (
                   <div 

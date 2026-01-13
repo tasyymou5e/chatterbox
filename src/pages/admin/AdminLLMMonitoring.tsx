@@ -378,8 +378,8 @@ const AdminLLMMonitoring = () => {
                           </td>
                           <td className="p-2 text-sm">{call.model}</td>
                           <td className="p-2 text-sm">{call.function_name}</td>
-                          <td className="p-2 text-sm">{formatNumber(call.total_tokens)}</td>
-                          <td className="p-2 text-sm">{formatCurrency(call.cost_usd)}</td>
+                          <td className="p-2 text-sm">{formatNumber(call.total_tokens ?? 0)}</td>
+                          <td className="p-2 text-sm">{formatCurrency(call.cost_usd ?? 0)}</td>
                           <td className="p-2 text-sm">{call.response_time_ms}ms</td>
                           <td className="p-2">{getStatusBadge(call.status)}</td>
                         </tr>

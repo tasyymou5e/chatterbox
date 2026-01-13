@@ -7,14 +7,14 @@ interface ProgressSnapshot {
   user_id: string;
   family_id: string;
   snapshot_date: string;
-  total_points: number;
-  total_xp: number;
-  current_level: number;
-  achievements_unlocked: number;
-  chores_completed_today: number;
-  chores_completed_week: number;
-  chores_completed_month: number;
-  streak_count: number;
+  total_points: number | null;
+  total_xp: number | null;
+  current_level: number | null;
+  achievements_unlocked: number | null;
+  chores_completed_today: number | null;
+  chores_completed_week: number | null;
+  chores_completed_month: number | null;
+  streak_count: number | null;
   metadata: Record<string, any>;
   created_at: string;
 }
@@ -208,11 +208,11 @@ export const useProgressAnalyticsStore = create<ProgressAnalyticsState>()(
               streak: 0
             };
             
-            existing.points += snapshot.total_points;
-            existing.xp += snapshot.total_xp;
-            existing.level = Math.max(existing.level, snapshot.current_level);
-            existing.achievements += snapshot.achievements_unlocked;
-            existing.streak = Math.max(existing.streak, snapshot.streak_count);
+            existing.points += snapshot.total_points ?? 0;
+            existing.xp += snapshot.total_xp ?? 0;
+            existing.level = Math.max(existing.level, snapshot.current_level ?? 0);
+            existing.achievements += snapshot.achievements_unlocked ?? 0;
+            existing.streak = Math.max(existing.streak, snapshot.streak_count ?? 0);
             
             trendMap.set(date, existing);
           });
@@ -258,22 +258,22 @@ export const useProgressAnalyticsStore = create<ProgressAnalyticsState>()(
             family_id: familyId,
             total_members: members?.length || 0,
             active_members: latestSnapshots?.length || 0,
-            total_points: latestSnapshots?.reduce((sum, s) => sum + s.total_points, 0) || 0,
-            total_achievements: latestSnapshots?.reduce((sum, s) => sum + s.achievements_unlocked, 0) || 0,
+            total_points: latestSnapshots?.reduce((sum, s) => sum + (s.total_points ?? 0), 0) || 0,
+            total_achievements: latestSnapshots?.reduce((sum, s) => sum + (s.achievements_unlocked ?? 0), 0) || 0,
             average_level: latestSnapshots?.length ? 
-              latestSnapshots.reduce((sum, s) => sum + s.current_level, 0) / latestSnapshots.length : 0,
+              latestSnapshots.reduce((sum, s) => sum + (s.current_level ?? 0), 0) / latestSnapshots.length : 0,
             completion_rate: members?.length ? 
               (latestSnapshots?.length || 0) / members.length : 0,
             top_performers: latestSnapshots
-              ?.sort((a, b) => b.total_points - a.total_points)
+              ?.sort((a, b) => (b.total_points ?? 0) - (a.total_points ?? 0))
               .slice(0, 5)
               .map(snapshot => {
                 const profile = profiles?.find(p => p.user_id === snapshot.user_id);
                 return {
                   user_id: snapshot.user_id,
                   name: profile ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Unknown' : 'Unknown',
-                  points: snapshot.total_points,
-                  level: snapshot.current_level
+                  points: snapshot.total_points ?? 0,
+                  level: snapshot.current_level ?? 0
                 };
               }) || []
           };
@@ -303,11 +303,11 @@ export const useProgressAnalyticsStore = create<ProgressAnalyticsState>()(
 
           const trends: ProgressTrend[] = snapshots?.map(snapshot => ({
             date: snapshot.snapshot_date,
-            points: snapshot.total_points,
-            xp: snapshot.total_xp,
-            level: snapshot.current_level,
-            achievements: snapshot.achievements_unlocked,
-            streak: snapshot.streak_count
+            points: snapshot.total_points ?? 0,
+            xp: snapshot.total_xp ?? 0,
+            level: snapshot.current_level ?? 0,
+            achievements: snapshot.achievements_unlocked ?? 0,
+            streak: snapshot.streak_count ?? 0
           })) || [];
 
           set({ 

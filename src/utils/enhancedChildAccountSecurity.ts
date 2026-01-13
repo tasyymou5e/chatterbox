@@ -154,7 +154,7 @@ export const validateChildAccountAccess = async (
     }
 
     // Check expiration
-    if (new Date(account.expires_at) < new Date()) {
+    if (account.expires_at && new Date(account.expires_at) < new Date()) {
       return { valid: false, expired: true, error: 'Account access has expired' };
     }
 
@@ -164,7 +164,7 @@ export const validateChildAccountAccess = async (
     }
 
     // Check attempt count (security feature)
-    if (account.creation_attempt_count > 5) {
+    if ((account.creation_attempt_count ?? 0) > 5) {
       return { valid: false, error: 'Too many access attempts. Please contact your parent.' };
     }
 

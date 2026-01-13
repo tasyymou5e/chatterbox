@@ -33,8 +33,8 @@ class CacheManager {
 
     // If we're at capacity, remove oldest item
     if (this.memoryCache.size >= maxItems) {
-      const oldestKey = this.memoryCache.keys().next().value;
-      this.memoryCache.delete(oldestKey);
+      const oldestKey = this.memoryCache.keys().next().value as string | undefined;
+      if (oldestKey) this.memoryCache.delete(oldestKey);
     }
 
     const item: CacheItem<T> = {
