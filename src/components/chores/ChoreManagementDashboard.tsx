@@ -49,7 +49,6 @@ interface ChoreManagementDashboardProps {
 
 export const ChoreManagementDashboard = ({ familyId }: ChoreManagementDashboardProps) => {
   const {
-    categories,
     templates,
     chores,
     assignments,
@@ -65,7 +64,8 @@ export const ChoreManagementDashboard = ({ familyId }: ChoreManagementDashboardP
 
   const [family, setFamily] = useState<Family | null>(null);
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
-  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_selectedTemplate, _setSelectedTemplate] = useState<string | null>(null);
   
   // Assign chore dialog state
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
@@ -94,7 +94,7 @@ export const ChoreManagementDashboard = ({ familyId }: ChoreManagementDashboardP
 
       logSupabaseQuery(
         { component: 'ChoresDashboard', operation: 'fetchFamily', familyId, table: 'families' },
-        { success: !familyError, error: familyError || undefined, rowCount: familyData ? 1 : 0 }
+        { success: !familyError, error: familyError ?? undefined, rowCount: familyData ? 1 : 0 }
       );
 
       if (familyError) {
@@ -117,7 +117,7 @@ export const ChoreManagementDashboard = ({ familyId }: ChoreManagementDashboardP
 
       logSupabaseQuery(
         { component: 'ChoresDashboard', operation: 'fetchFamilyMembers', familyId, table: 'family_members' },
-        { success: !membersError, error: membersError || undefined, rowCount: membersData?.length || 0, duration: timer.elapsed() }
+        { success: !membersError, error: membersError ?? undefined, rowCount: membersData?.length || 0, duration: timer.elapsed() }
       );
 
       if (membersError) {
@@ -190,7 +190,9 @@ export const ChoreManagementDashboard = ({ familyId }: ChoreManagementDashboardP
     }
   };
 
-  const handleQuickAssign = async (choreId: string, memberId: string) => {
+  // Quick assign functionality - currently unused but kept for future use
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _handleQuickAssign = async (choreId: string, memberId: string) => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     

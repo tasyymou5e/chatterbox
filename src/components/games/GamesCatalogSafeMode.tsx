@@ -12,11 +12,11 @@ import { Link } from 'react-router-dom';
 interface ContentItem {
   id: string;
   title: string;
-  description?: string; // Optional for anonymous users
-  url?: string; // Optional for anonymous users
+  description?: string | null | undefined;
+  url?: string | undefined;
   content_type: string;
-  tags?: string[]; // Optional for anonymous users
-  is_free: boolean;
+  tags?: string[] | null | undefined;
+  is_free: boolean | null;
 }
 
 export const GamesCatalogSafeMode: React.FC = () => {

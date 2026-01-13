@@ -93,8 +93,9 @@ function VirtualizedContentGridComponent({
     }
   }, [onContentCuration]);
 
-  // Performance optimization: search functionality
-  const scrollToItem = useCallback((itemId: string) => {
+  // Performance optimization: search functionality - exposed for future use
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _scrollToItem = useCallback((itemId: string) => {
     const index = items.findIndex(item => item.id === itemId);
     if (index !== -1) {
       scrollToIndex(index);
@@ -128,7 +129,7 @@ function VirtualizedContentGridComponent({
       {/* Virtual scrolling container */}
       <div {...containerProps} className="relative">
         <div {...listProps}>
-          {visibleItems.map(({ item, index, style }) => (
+          {visibleItems.map(({ item, style }) => (
             <div
               key={item.id}
               style={style}

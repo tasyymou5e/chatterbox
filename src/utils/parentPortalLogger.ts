@@ -12,7 +12,7 @@ interface QueryContext {
 interface QueryResult {
   success: boolean;
   rowCount?: number;
-  error?: Error | { message: string; code?: string; details?: string; hint?: string };
+  error?: Error | { message: string; code?: string; details?: string; hint?: string } | null | undefined;
   duration?: number;
 }
 

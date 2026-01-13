@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useState, useRef } from 'react';
+import { useEffect, useCallback, useState, useRef } from 'react';
 import { X, Star, Loader2, AlertCircle } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,6 @@ import { StarBurstCelebration } from '@/components/progress/StarBurstCelebration
 import { CompletionCelebrationModal } from '@/components/progress/CompletionCelebrationModal';
 import { isValidGameEvent, type GameEvent } from '@/types/gameEvents';
 import type { CelebrationEvent, SkillLevel, CategoryProgress } from '@/types/lessonProgress';
-import { cn } from '@/lib/utils';
 
 interface ContentItem {
   id: string;

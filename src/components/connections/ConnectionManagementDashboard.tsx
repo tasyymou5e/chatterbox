@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { useConnectionStore, FamilyConnection, FamilyInvitation } from '@/stores/connectionStore';
+import { useConnectionStore, FamilyConnection } from '@/stores/connectionStore';
 import { useToast } from '@/hooks/use-toast';
 import { InviteConnectionDialog } from './InviteConnectionDialog';
 import { ConnectionPermissionsDialog } from './ConnectionPermissionsDialog';

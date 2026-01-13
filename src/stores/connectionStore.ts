@@ -35,7 +35,7 @@ export interface FamilyInvitation {
   invited_email: string;
   connection_role: ConnectionRole;
   invited_by: string;
-  invitation_message?: string;
+  invitation_message: string;
   permissions: {
     can_view_progress: boolean;
     can_comment: boolean;

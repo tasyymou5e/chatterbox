@@ -7,10 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, UserPlus, Copy, CheckCircle2, ExternalLink, Eye, EyeOff } from 'lucide-react';
+import { Loader2, UserPlus, CheckCircle2, ExternalLink, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { createChildAccount, ChildAccountInfo } from '@/utils/secureChildAccountAccess';
+import { createChildAccount } from '@/utils/secureChildAccountAccess';
 import { supabase } from '@/integrations/supabase/client';
 import { PasswordStrengthIndicator } from '@/components/auth/PasswordStrengthIndicator';
 

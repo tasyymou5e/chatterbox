@@ -55,7 +55,7 @@ export default function TestFamilyResultsDialog({
   };
 
   const copyAllCredentials = () => {
-    const credentialsList = successfulMembers.map(member => 
+    const fullText = successfulMembers.map(member => 
       `${member.name} (${member.role})\nEmail: ${member.email}\nPassword: ${member.tempPassword || results.tempPassword || 'N/A'}\n`
     ).join('\n');
 
@@ -63,10 +63,6 @@ export default function TestFamilyResultsDialog({
   };
 
   const downloadCredentials = () => {
-    const credentialsList = successfulMembers.map(member => 
-      `${member.name},${member.role},${member.email},${member.tempPassword || results.tempPassword || 'N/A'}`
-    ).join('\n');
-
     const csvContent = `Family,Role,Name,Email,Password\n` + 
       successfulMembers.map(member => 
         `"${results.displayName} (${results.familyCode})",${member.role},"${member.name}","${member.email}","${member.tempPassword || results.tempPassword || 'N/A'}"`

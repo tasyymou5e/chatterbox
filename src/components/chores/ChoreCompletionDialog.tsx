@@ -18,8 +18,7 @@ import {
   Clock, 
   Star,
   Loader2,
-  CheckCircle2,
-  ImageIcon
+  CheckCircle2
 } from 'lucide-react';
 import { useChorePhotoUpload } from '@/hooks/useChorePhotoUpload';
 import { supabase } from '@/integrations/supabase/client';
@@ -36,8 +35,8 @@ interface ChoreCompletionDialogProps {
     chore?: {
       id: string;
       title: string;
-      description?: string;
-      base_points?: number;
+      description?: string | undefined;
+      base_points?: number | undefined;
     };
   };
   userId: string;
