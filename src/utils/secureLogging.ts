@@ -8,7 +8,8 @@ interface LogLevel {
   SECURITY: 'security';
 }
 
-const LOG_LEVELS: LogLevel = {
+// Exported for potential future use
+export const LOG_LEVELS: LogLevel = {
   DEVELOPMENT: 'dev',
   PRODUCTION: 'prod', 
   SECURITY: 'security'

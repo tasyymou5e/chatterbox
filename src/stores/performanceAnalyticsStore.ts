@@ -394,7 +394,7 @@ export const usePerformanceAnalyticsStore = create<PerformanceAnalyticsState>()(
           const difficultyMap = new Map<string, { totalEfficiency: number; count: number; completed: number }>();
           
           data?.forEach(metric => {
-            const difficulty = metric.difficulty_level;
+            const difficulty = metric.difficulty_level ?? 'unknown';
             const existing = difficultyMap.get(difficulty) || { totalEfficiency: 0, count: 0, completed: 0 };
             existing.totalEfficiency += metric.efficiency_score || 0;
             existing.count += 1;

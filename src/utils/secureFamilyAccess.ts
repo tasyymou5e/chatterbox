@@ -128,16 +128,18 @@ export const getSecureFamilyMembers = async (familyId: string): Promise<FamilyMe
         ...member,
         first_name: undefined,
         last_name: undefined,
-      }));
+        joined_at: member.joined_at ?? new Date().toISOString(),
+      })) as FamilyMemberInfo[];
     }
 
     // Merge profile data with member data
     const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
     
-    const result = members.map(member => ({
+    const result: FamilyMemberInfo[] = members.map(member => ({
       ...member,
       first_name: profileMap.get(member.user_id)?.first_name || undefined,
       last_name: profileMap.get(member.user_id)?.last_name || undefined,
+      joined_at: member.joined_at ?? new Date().toISOString(),
     }));
 
     // Log if some profiles are missing
@@ -245,7 +247,7 @@ export const getCurrentUserFamilies = async (): Promise<SecureFamilyInfo[]> => {
  */
 export const validateFamilyOperation = async (
   familyId: string,
-  operation: string,
+  _operation: string,
   requiresCreatorAccess: boolean = false
 ): Promise<{ allowed: boolean; reason?: string }> => {
   try {
