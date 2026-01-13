@@ -19,6 +19,7 @@ export default function AdminLayout() {
   const { signOut, user, signingOut } = useAdminAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  void navigate; // Available for future navigation needs
   const location = useLocation();
 
   const handleSignOut = async () => {

@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { 
   BarChart3, 
   Users, 
@@ -11,8 +10,7 @@ import {
   Clock, 
   AlertTriangle,
   CheckCircle,
-  Eye,
-  Download
+  Eye
 } from 'lucide-react';
 import ActivityLogsTable from '@/components/reports/ActivityLogsTable';
 import FamilyActivityReport from '@/components/reports/FamilyActivityReport';

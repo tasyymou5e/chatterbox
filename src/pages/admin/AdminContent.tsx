@@ -12,24 +12,24 @@ import { ContentItemDialog } from '@/components/admin/ContentItemDialog';
 interface ContentItem {
   id: string;
   title: string;
-  description: string;
+  description: string | null;
   content_type: string;
-  category_id: string;
+  category_id: string | null;
   url: string;
-  thumbnail_url: string;
-  age_min: number;
-  age_max: number;
-  approval_status: 'pending' | 'approved' | 'rejected';
-  is_active: boolean;
+  thumbnail_url: string | null;
+  age_min: number | null;
+  age_max: number | null;
+  approval_status: 'pending' | 'approved' | 'rejected' | null;
+  is_active: boolean | null;
   created_at: string;
-  platform: string;
-  is_free: boolean;
-  content_rating: string;
-  tags: string[];
+  platform: string | null;
+  is_free: boolean | null;
+  content_rating: string | null;
+  tags: string[] | null;
   autism_features: any;
   content_categories?: {
     name: string;
-  };
+  } | null;
 }
 
 interface Category {
@@ -72,7 +72,7 @@ export default function AdminContent() {
       if (itemsResult.error) throw itemsResult.error;
       if (categoriesResult.error) throw categoriesResult.error;
 
-      setContentItems(itemsResult.data || []);
+      setContentItems((itemsResult.data || []) as ContentItem[]);
       setCategories(categoriesResult.data || []);
     } catch (error) {
       console.error('Error fetching data:', error);
