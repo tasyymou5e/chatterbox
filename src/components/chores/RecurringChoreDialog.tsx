@@ -18,7 +18,7 @@ import {
   RefreshCw,
   Check
 } from 'lucide-react';
-import { format, addDays, addWeeks } from 'date-fns';
+import { format, addDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { RecurrencePattern } from '@/types/chore';
 
@@ -61,7 +61,7 @@ export const RecurringChoreDialog: React.FC<RecurringChoreDialogProps> = ({
   const [endDate, setEndDate] = useState<Date | undefined>(
     initialPattern?.endDate ? new Date(initialPattern.endDate) : undefined
   );
-  const [maxOccurrences, setMaxOccurrences] = useState<number | undefined>(
+  const [maxOccurrences] = useState<number | undefined>(
     initialPattern?.maxOccurrences
   );
 
@@ -104,9 +104,9 @@ export const RecurringChoreDialog: React.FC<RecurringChoreDialogProps> = ({
     const pattern: RecurrencePattern = {
       frequency,
       interval: frequency === 'custom' ? interval : 1,
-      daysOfWeek: frequency === 'weekly' ? daysOfWeek : undefined,
-      endDate: endDate?.toISOString().split('T')[0],
-      maxOccurrences,
+      ...(frequency === 'weekly' && daysOfWeek.length > 0 ? { daysOfWeek } : {}),
+      ...(endDate ? { endDate: endDate.toISOString().split('T')[0] } : {}),
+      ...(maxOccurrences !== undefined ? { maxOccurrences } : {}),
     };
     onSave(pattern);
     onOpenChange(false);

@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Star } from 'lucide-react';
 
-interface StarBurstCelebrationProps {
+export interface StarBurstCelebrationProps {
   isActive: boolean;
   onComplete?: () => void;
-  message?: string;
+  message?: string | undefined;
   className?: string;
 }
 

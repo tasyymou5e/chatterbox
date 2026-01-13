@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { RefreshCw, Search, Download, AlertTriangle, AlertCircle, Info, Bug } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { SystemError } from '@/types/systemHealth';
-import type { BrowserInfo, DeviceInfo, ErrorMetadata } from '@/types/supabase';
+// Types from supabase are used via casting since types.ts is read-only
 import { logger } from '@/utils/logger';
 
 export const ApplicationLogs = () => {
@@ -40,12 +40,12 @@ export const ApplicationLogs = () => {
 
       if (error) throw error;
 
-      setLogs((data || []).map(error => ({
-        ...error,
-        severity: error.severity as 'critical' | 'high' | 'medium' | 'low',
-        browser_info: (error.browser_info as BrowserInfo) || {},
-        device_info: (error.device_info as DeviceInfo) || {},
-        metadata: (error.metadata as ErrorMetadata) || {}
+      setLogs((data || []).map(item => ({
+        ...item,
+        severity: item.severity as 'critical' | 'high' | 'medium' | 'low',
+        browser_info: (item.browser_info as Record<string, unknown>) || {},
+        device_info: (item.device_info as Record<string, unknown>) || {},
+        metadata: (item.metadata as Record<string, unknown>) || {}
       })));
     } catch (error: unknown) {
       logger.error('Error fetching application logs', error instanceof Error ? error : new Error(String(error)));

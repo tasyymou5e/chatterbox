@@ -6,7 +6,6 @@ import { Progress } from '@/components/ui/progress';
 import { useChoreManagement } from '@/hooks/useChoreManagement';
 import { useGamification } from '@/hooks/useGamification';
 import { useAuth } from '@/hooks/useAuth';
-import { toast } from '@/hooks/use-toast';
 import { ChoreCompletionDialog } from './ChoreCompletionDialog';
 import { 
   Play,
@@ -37,7 +36,6 @@ export const ChildrenChoresDashboard = ({ familyId }: ChildrenChoresDashboardPro
     userPoints, 
     userAchievements, 
     wishlistItems,
-    dailyStreaks,
     leaderboard,
     loading: gamificationLoading,
     checkAchievements 
@@ -146,8 +144,8 @@ export const ChildrenChoresDashboard = ({ familyId }: ChildrenChoresDashboardPro
             chore: selectedAssignment.chores ? {
               id: selectedAssignment.chores.id || '',
               title: selectedAssignment.chores.title || '',
-              description: selectedAssignment.chores.description || undefined,
-              base_points: selectedAssignment.chores.base_points || 10,
+              description: selectedAssignment.chores.description ?? undefined,
+              base_points: selectedAssignment.chores.base_points ?? 10,
             } : undefined,
           }}
           userId={user?.id || ''}

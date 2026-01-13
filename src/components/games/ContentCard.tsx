@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Heart, Play, Star, Shield, ShieldX, Sparkles } from 'lucide-react';
+import { Heart, Play, Shield, ShieldX, Sparkles } from 'lucide-react';
 
 interface ContentItem {
   id: string;

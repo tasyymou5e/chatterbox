@@ -189,7 +189,7 @@ export function LLMCostThresholdSettings() {
           const percentUsed = threshold.threshold_value > 0
             ? (currentCost / threshold.threshold_value) * 100
             : 0;
-          const isWarning = percentUsed >= threshold.warning_percentage;
+          const isWarning = percentUsed >= (threshold.warning_percentage ?? 80);
           const isExceeded = percentUsed >= 100;
 
           return (
@@ -219,7 +219,7 @@ export function LLMCostThresholdSettings() {
                   </div>
                 </div>
                 <Switch
-                  checked={threshold.enabled}
+                  checked={threshold.enabled ?? false}
                   onCheckedChange={(checked) => updateThreshold(threshold.id, "enabled", checked)}
                 />
               </div>
@@ -262,7 +262,7 @@ export function LLMCostThresholdSettings() {
                     type="number"
                     min="1"
                     max="100"
-                    value={threshold.warning_percentage}
+                    value={threshold.warning_percentage ?? 80}
                     onChange={(e) =>
                       updateThreshold(
                         threshold.id,

@@ -19,7 +19,6 @@ interface PerformanceMetric {
   user_id: string | null;
   metadata: PerformanceMetadata;
   created_at: string;
-  created_at: string;
 }
 
 export const SystemHealthLogs = () => {
@@ -284,7 +283,7 @@ export const SystemHealthLogs = () => {
                       )}
                     </td>
                     <td className="p-3">
-                      <Badge className={`${getThresholdColor(log.threshold_exceeded)}`}>
+                      <Badge className={`${getThresholdColor(log.threshold_exceeded ?? false)}`}>
                         {log.threshold_exceeded ? 'Threshold Exceeded' : 'Normal'}
                       </Badge>
                     </td>

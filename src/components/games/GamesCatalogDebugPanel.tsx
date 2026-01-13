@@ -24,7 +24,7 @@ export const GamesCatalogDebugPanel: React.FC<GamesCatalogDebugPanelProps> = ({
   categories,
   favorites,
   userFamily,
-  isParent,
+  isParent: _isParent,
   realtimeConnected,
   cacheStats,
   onCacheReset,

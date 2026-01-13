@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import React from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { usePrivacyConsent } from '@/hooks/usePrivacyConsent';
 import PrivacyConsentDialog from '@/components/privacy/PrivacyConsentDialog';

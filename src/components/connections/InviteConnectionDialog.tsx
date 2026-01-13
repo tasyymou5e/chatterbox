@@ -64,7 +64,7 @@ export function InviteConnectionDialog({ open, onOpenChange, familyId }: InviteC
       invited_email: formData.email,
       connection_role: formData.role,
       invited_by: user.id,
-      invitation_message: formData.message || undefined,
+      invitation_message: formData.message || '',
       permissions: formData.permissions,
     });
 
