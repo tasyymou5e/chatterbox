@@ -1,18 +1,14 @@
 // Phase 3: Optimized Realtime with Connection Pooling
 import { supabase } from '@/integrations/supabase/client';
-import type { RealtimeChannel } from '@supabase/supabase-js';
+import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
-// ChannelSubscription interface for reference (not currently used directly)
-// interface ChannelSubscription {
-//   callback: Function;
-//   channelName: string;
-//   filter?: string;
-// }
+// Typed callback for realtime subscriptions
+type RealtimeCallback = (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => void;
 
 class RealtimeManager {
   private static instance: RealtimeManager;
   private channels = new Map<string, RealtimeChannel>();
-  private subscribers = new Map<string, Set<Function>>();
+  private subscribers = new Map<string, Set<RealtimeCallback>>();
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private reconnectDelay = 1000; // Start with 1 second
@@ -28,7 +24,7 @@ class RealtimeManager {
   subscribe(
     channelName: string, 
     table: string,
-    callback: Function,
+    callback: RealtimeCallback,
     filter?: string
   ): () => void {
     const subscriptionKey = `${channelName}:${table}:${filter || 'all'}`;
@@ -50,7 +46,7 @@ class RealtimeManager {
   subscribeFamilyChannel(
     familyId: string,
     table: string,
-    callback: Function,
+    callback: RealtimeCallback,
     filter?: string
   ): () => void {
     const channelName = `family-${familyId}`;
@@ -60,7 +56,7 @@ class RealtimeManager {
   // Subscribe to global channel
   subscribeGlobalChannel(
     table: string,
-    callback: Function,
+    callback: RealtimeCallback,
     filter?: string
   ): () => void {
     return this.subscribe('global-catalog', table, callback, filter);
@@ -150,7 +146,7 @@ class RealtimeManager {
   }
 
   // Unsubscribe from a channel
-  private unsubscribe(subscriptionKey: string, callback: Function): void {
+  private unsubscribe(subscriptionKey: string, callback: RealtimeCallback): void {
     const callbacks = this.subscribers.get(subscriptionKey);
     if (callbacks) {
       callbacks.delete(callback);
