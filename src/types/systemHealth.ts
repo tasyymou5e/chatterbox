@@ -23,18 +23,18 @@ export interface SystemError {
   error_type: string;
   severity: 'critical' | 'high' | 'medium' | 'low';
   message: string;
-  component_name?: string;
-  route_path?: string;
+  component_name: string | null;
+  route_path?: string | null;
   created_at: string;
-  resolved: boolean;
-  resolved_by?: string;
-  resolved_at?: string;
-  user_id?: string;
-  session_id?: string;
-  stack_trace?: string;
-  browser_info?: Record<string, any>;
-  device_info?: Record<string, any>;
-  metadata?: Record<string, any>;
+  resolved: boolean | null;
+  resolved_by?: string | null;
+  resolved_at?: string | null;
+  user_id?: string | null;
+  session_id?: string | null;
+  stack_trace?: string | null;
+  browser_info?: Record<string, unknown>;
+  device_info?: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface SystemAlert {

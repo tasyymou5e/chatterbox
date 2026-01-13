@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { RefreshCw, Search, Download, User, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cError } from '@/utils/conditionalLogger';
-import type { ActivityLogRecord, DeviceInfoData, ActivityMetadata } from '@/types/interfaces';
+import type { DeviceInfoData, ActivityMetadata } from '@/types/interfaces';
 
 interface UserActivityLog {
   id: string;

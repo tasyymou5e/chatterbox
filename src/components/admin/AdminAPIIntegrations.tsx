@@ -5,7 +5,6 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Zap, 
   CheckCircle2, 
-  XCircle, 
   RefreshCw, 
   ExternalLink,
   Key,

@@ -25,10 +25,11 @@ interface CostAlert {
   severity: string;
   provider: string | null;
   message: string;
-  acknowledged: boolean;
+  acknowledged: boolean | null;
   acknowledged_at: string | null;
+  acknowledged_by?: string | null;
   metadata: unknown;
-  created_at: string;
+  created_at: string | null;
 }
 
 interface LLMCostAlertsProps {
@@ -251,7 +252,7 @@ export function LLMCostAlerts({ onAlertCountChange }: LLMCostAlertsProps) {
                           {getSeverityBadge(alert.severity)}
                           <span className="text-xs text-muted-foreground flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            {format(new Date(alert.created_at), "MMM d, h:mm a")}
+                            {alert.created_at ? format(new Date(alert.created_at), "MMM d, h:mm a") : 'N/A'}
                           </span>
                         </div>
                         <AlertDescription className="text-sm">
@@ -287,7 +288,7 @@ export function LLMCostAlerts({ onAlertCountChange }: LLMCostAlertsProps) {
                         {alert.message}
                       </span>
                       <span className="text-xs text-muted-foreground">
-                        {format(new Date(alert.created_at), "MMM d")}
+                        {alert.created_at ? format(new Date(alert.created_at), "MMM d") : 'N/A'}
                       </span>
                     </div>
                   ))}

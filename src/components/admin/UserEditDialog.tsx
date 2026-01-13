@@ -18,7 +18,6 @@ import {
   X,
   Shield,
   UserCheck,
-  Activity,
   Key,
   Eye,
   Baby,

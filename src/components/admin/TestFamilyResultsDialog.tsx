@@ -59,7 +59,6 @@ export default function TestFamilyResultsDialog({
       `${member.name} (${member.role})\nEmail: ${member.email}\nPassword: ${member.tempPassword || results.tempPassword || 'N/A'}\n`
     ).join('\n');
 
-    const fullText = `Test Family: ${results.displayName} (${results.familyCode})\n\n${credentialsList}`;
     copyToClipboard(fullText, 'All credentials');
   };
 

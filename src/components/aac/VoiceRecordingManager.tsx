@@ -14,11 +14,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { Upload, Trash2, Loader2, Check, Mic } from 'lucide-react';
 import { toast } from 'sonner';
 
-interface VoiceRecordingManagerProps {
+export interface VoiceRecordingManagerProps {
   phraseKey: string;
   phraseLabel: string;
-  familyId?: string;
-  currentRecordingUrl?: string;
+  familyId: string;
+  currentRecordingUrl?: string | undefined;
   onRecordingChange: (url: string | null) => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;

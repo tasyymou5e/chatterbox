@@ -9,7 +9,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
 } from "recharts";
 import { TrendingUp, DollarSign, Cpu, Activity } from "lucide-react";
 
@@ -202,7 +201,7 @@ export function LLMUsageTrendsChart({ dailyUsage, isLoading }: LLMUsageTrendsCha
                   borderRadius: "8px",
                 }}
                 labelStyle={{ color: "hsl(var(--foreground))" }}
-                formatter={(value: number) => [formatValue(value, activeMetric), config.label]}
+                formatter={(value: number | undefined) => value !== undefined ? [formatValue(value, activeMetric), config.label] : ['N/A', config.label]}
               />
               <Area
                 type="monotone"

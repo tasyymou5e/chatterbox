@@ -7,17 +7,18 @@ import { Badge } from '@/components/ui/badge';
 import { RefreshCw, Search, Download, Activity, TrendingUp, Clock, Zap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cError } from '@/utils/conditionalLogger';
-import type { PerformanceMetricData, PerformanceMetadata } from '@/types/interfaces';
+import type { PerformanceMetadata } from '@/types/interfaces';
 
 interface PerformanceMetric {
   id: string;
   metric_type: string;
   value: number;
-  threshold_exceeded: boolean;
+  threshold_exceeded: boolean | null;
   component_name: string | null;
   route_path: string | null;
   user_id: string | null;
   metadata: PerformanceMetadata;
+  created_at: string;
   created_at: string;
 }
 

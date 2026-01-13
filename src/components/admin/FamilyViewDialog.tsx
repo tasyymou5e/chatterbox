@@ -68,21 +68,23 @@ export default function FamilyViewDialog({ family, open, onOpenChange }: FamilyV
       
       const userData = data?.find((u: { user_id: string }) => u.user_id === member.user_id);
       
-      setSelectedMemberForPasswordReset({
+      const resetData: { id: string; email: string; first_name?: string; last_name?: string } = {
         id: member.user_id,
-        email: userData?.email || member.email || '',
-        first_name: member.first_name,
-        last_name: member.last_name
-      });
+        email: userData?.email || member.email || ''
+      };
+      if (member.first_name !== undefined) resetData.first_name = member.first_name;
+      if (member.last_name !== undefined) resetData.last_name = member.last_name;
+      setSelectedMemberForPasswordReset(resetData);
       setPasswordResetDialogOpen(true);
     } catch (error) {
       console.error('Error fetching user email:', error);
-      setSelectedMemberForPasswordReset({
+      const resetData: { id: string; email: string; first_name?: string; last_name?: string } = {
         id: member.user_id,
-        email: member.email || '',
-        first_name: member.first_name,
-        last_name: member.last_name
-      });
+        email: member.email || ''
+      };
+      if (member.first_name !== undefined) resetData.first_name = member.first_name;
+      if (member.last_name !== undefined) resetData.last_name = member.last_name;
+      setSelectedMemberForPasswordReset(resetData);
       setPasswordResetDialogOpen(true);
     }
   };

@@ -383,12 +383,14 @@ export function ParentResponseButton({
       </Card>
 
       {/* Voice Recording Manager Dialog */}
-      {selectedPhraseForRecording && (
+      {selectedPhraseForRecording && familyId && (
         <VoiceRecordingManager
           phraseKey={selectedPhraseForRecording.id}
           phraseLabel={selectedPhraseForRecording.label}
           familyId={familyId}
-          currentRecordingUrl={getCustomRecording(selectedPhraseForRecording.id)?.audioUrl}
+          {...(getCustomRecording(selectedPhraseForRecording.id)?.audioUrl !== undefined 
+            ? { currentRecordingUrl: getCustomRecording(selectedPhraseForRecording.id)?.audioUrl } 
+            : {})}
           onRecordingChange={handleRecordingChange}
           open={recordingDialogOpen}
           onOpenChange={setRecordingDialogOpen}

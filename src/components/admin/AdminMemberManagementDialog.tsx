@@ -67,22 +67,24 @@ export default function AdminMemberManagementDialog({
       
       const userData = data?.find((u: { user_id: string }) => u.user_id === member.user_id);
       
-      setSelectedMemberForPasswordReset({
+      const resetData: { id: string; email: string; first_name?: string; last_name?: string } = {
         id: member.user_id,
-        email: userData?.email || '',
-        first_name: member.first_name,
-        last_name: member.last_name
-      });
+        email: userData?.email || ''
+      };
+      if (member.first_name !== undefined) resetData.first_name = member.first_name;
+      if (member.last_name !== undefined) resetData.last_name = member.last_name;
+      setSelectedMemberForPasswordReset(resetData);
       setPasswordResetDialogOpen(true);
     } catch (error) {
       console.error('Error fetching user email:', error);
       // Still open dialog with available info
-      setSelectedMemberForPasswordReset({
+      const resetData: { id: string; email: string; first_name?: string; last_name?: string } = {
         id: member.user_id,
-        email: '',
-        first_name: member.first_name,
-        last_name: member.last_name
-      });
+        email: ''
+      };
+      if (member.first_name !== undefined) resetData.first_name = member.first_name;
+      if (member.last_name !== undefined) resetData.last_name = member.last_name;
+      setSelectedMemberForPasswordReset(resetData);
       setPasswordResetDialogOpen(true);
     }
   };
@@ -124,10 +126,10 @@ export default function AdminMemberManagementDialog({
     }
   };
 
-  const handleAddMember = async (userToAdd: any) => {
+  const handleAddMember = async (userToAdd: { user_id: string; first_name?: string; last_name?: string }) => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('admin-add-family-member', {
+      const { error } = await supabase.functions.invoke('admin-add-family-member', {
         body: {
           familyId: family.id,
           userId: userToAdd.user_id,
@@ -169,7 +171,7 @@ export default function AdminMemberManagementDialog({
     setLoading(true);
     try {
       const userName = `${selectedMemberToRemove.first_name || ''} ${selectedMemberToRemove.last_name || ''}`.trim() || 'User';
-      const { data, error } = await supabase.functions.invoke('admin-remove-family-member', {
+      const { error } = await supabase.functions.invoke('admin-remove-family-member', {
         body: {
           familyId: family.id,
           userId: selectedMemberToRemove.user_id,

@@ -237,11 +237,6 @@ export default function FamilyNameSuggestions({
     setPopularSuggestions(getPopularSuggestions());
   }, []);
 
-  // Get all suggestions flattened for random generation and search
-  const allSuggestions = useMemo(() => {
-    return Object.values(familySuggestions).flatMap(category => category.items);
-  }, []);
-
   // Create weighted array for random selection
   const weightedSuggestions = useMemo(() => {
     const weighted: string[] = [];

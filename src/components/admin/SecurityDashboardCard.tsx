@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { Shield, AlertTriangle, TrendingUp } from 'lucide-react';
+import { Shield, TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import SecurityMonitoringWidget from './SecurityMonitoringWidget';
 
 export default function SecurityDashboardCard() {
