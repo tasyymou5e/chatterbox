@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Plus, Minus, Loader2, Users, Mail, CheckCircle2, Trash2, AlertTriangle, CheckCircle, XCircle, Key, Shield } from 'lucide-react';
+import { Plus, Minus, Loader2, Users, Mail, Trash2, AlertTriangle, CheckCircle, Key, Shield, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -39,9 +39,7 @@ export default function CreateTestFamilyDialog({ open, onOpenChange, onSuccess }
   const { toast } = useToast();
   const { 
     getLoading, 
-    setLoading, 
-    setError,
-    clearError 
+    setLoading
   } = useUIStore();
   
   const loading = getLoading('createTestFamily');

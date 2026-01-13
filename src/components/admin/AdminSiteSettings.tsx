@@ -61,7 +61,7 @@ export default function AdminSiteSettings() {
   const updateSiteSetting = async (settingKey: string, settingValue: boolean | number) => {
     setUpdatingSettings(true);
     try {
-      const { data, error } = await supabase.functions.invoke('update-site-settings', {
+      const { error } = await supabase.functions.invoke('update-site-settings', {
         body: {
           setting_key: settingKey,
           setting_value: settingValue

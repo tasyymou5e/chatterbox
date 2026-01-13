@@ -11,7 +11,6 @@ import {
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 import { 
-  Home, 
   Gamepad2,
   LayoutDashboard, 
   LogOut, 

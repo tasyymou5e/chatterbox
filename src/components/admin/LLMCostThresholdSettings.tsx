@@ -13,8 +13,8 @@ interface CostThreshold {
   id: string;
   threshold_type: string;
   threshold_value: number;
-  warning_percentage: number;
-  enabled: boolean;
+  warning_percentage: number | null;
+  enabled: boolean | null;
 }
 
 interface CurrentCosts {

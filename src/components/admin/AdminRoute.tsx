@@ -2,8 +2,7 @@ import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import { RefreshCw, AlertCircle } from 'lucide-react';
-import { cLog, cWarn, cInfo, cError } from '@/utils/conditionalLogger';
-import type { ErrorContext } from '@/types/interfaces';
+import { cLog, cWarn, cInfo } from '@/utils/conditionalLogger';
 
 interface AdminRouteProps {
   children: React.ReactNode;
@@ -17,10 +16,6 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
   const [emergencyLoadingTimeout, setEmergencyLoadingTimeout] = React.useState(false);
   const [emergencySignOutTimeout, setEmergencySignOutTimeout] = React.useState(false);
   const [authDebugInfo, setAuthDebugInfo] = React.useState<string>('');
-
-  const handleError = (error: unknown, context: ErrorContext) => {
-    cError('Auth error in AdminRoute', error, context);
-  };
 
   // Debug auth state changes
   React.useEffect(() => {
@@ -38,9 +33,9 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
       }, 15000); // Reduced to 15 seconds with better UX
 
       return () => clearTimeout(timeout);
-    } else {
-      setEmergencyLoadingTimeout(false);
     }
+    setEmergencyLoadingTimeout(false);
+    return undefined;
   }, [loading]);
 
   React.useEffect(() => {
@@ -52,9 +47,9 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
       }, 8000); // Reduced to 8 seconds with better UX
 
       return () => clearTimeout(timeout);
-    } else {
-      setEmergencySignOutTimeout(false);
     }
+    setEmergencySignOutTimeout(false);
+    return undefined;
   }, [signingOut]);
 
   // Show enhanced loading state with progress indicators

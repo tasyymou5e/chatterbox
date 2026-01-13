@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { cn } from '@/lib/utils';
 
 interface CelebrationEffectProps {
   isActive: boolean;
@@ -51,11 +50,12 @@ export function CelebrationEffect({
 
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [isActive, type, onComplete]);
 
   if (!isActive || particles.length === 0) return null;
 
-  const renderParticle = (particle: Particle) => {
+  const renderParticle = (particle: Particle): React.ReactNode => {
     const baseStyle = {
       left: `${particle.x}%`,
       top: `${particle.y}%`,

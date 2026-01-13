@@ -15,7 +15,7 @@ interface AdminErrorBoundaryProps {
 function AdminErrorFallback({ error, resetErrorBoundary, componentName }: {
   error: Error;
   resetErrorBoundary: () => void;
-  componentName?: string;
+  componentName?: string | undefined;
 }) {
   const { logComponentError } = useErrorTracking();
 

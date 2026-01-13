@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 
 export const EdgeFunctionLogs = () => {
   const [logs, setLogs] = useState<any[]>([]);
@@ -8,18 +7,6 @@ export const EdgeFunctionLogs = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [functionFilter, setFunctionFilter] = useState<string>('all');
   const [refreshing, setRefreshing] = useState(false);
-
-  const edgeFunctionQuery = `
-    select id, function_edge_logs.timestamp, event_message, 
-           response.status_code, request.method, 
-           m.function_id, m.execution_time_ms, m.deployment_id, m.version
-    from function_edge_logs
-    cross join unnest(metadata) as m
-    cross join unnest(m.response) as response
-    cross join unnest(m.request) as request
-    order by timestamp desc
-    limit 100
-  `;
 
   const fetchLogs = async () => {
     try {

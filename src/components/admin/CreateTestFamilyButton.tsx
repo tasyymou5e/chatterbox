@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Users, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import CreateTestFamilyDialog from './CreateTestFamilyDialog';
 
 interface CreateTestFamilyButtonProps {
@@ -24,7 +24,7 @@ export default function CreateTestFamilyButton({ onSuccess }: CreateTestFamilyBu
       <CreateTestFamilyDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
-        onSuccess={onSuccess}
+        {...(onSuccess !== undefined ? { onSuccess } : {})}
       />
     </>
   );
