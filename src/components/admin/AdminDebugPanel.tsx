@@ -13,13 +13,8 @@ export const AdminDebugPanel = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  // Test if useAdminDebug is the issue
-  let debugHookData = null;
-  try {
-    debugHookData = useAdminDebug();
-  } catch (error) {
-    console.error('useAdminDebug hook error:', error);
-  }
+  // Hook must be called unconditionally at top level
+  const debugHookData = useAdminDebug();
 
   const [testState, setTestState] = useState('Initial State');
   const [adminEmail, setAdminEmail] = useState('');
