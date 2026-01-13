@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { devtools } from 'zustand/middleware';
 import { supabase } from '@/integrations/supabase/client';
 import type { 
   LessonProgress, 
@@ -12,17 +13,19 @@ import {
   STARS_PER_MOON, 
   ACCURACY_SAMPLE_SIZE 
 } from '@/types/lessonProgress';
+import { type StoreError, createStoreError } from '@/services/storeUtils';
 
 interface LessonProgressState {
   progressByCategory: Map<string, LessonProgress>;
   loading: boolean;
-  error: string | null;
+  error: StoreError | null;
   userId: string | null;
   familyId: string | null;
   pendingCelebration: CelebrationEvent | null;
   
   // Actions
   setUser: (userId: string, familyId: string) => void;
+  clearError: () => void;
   fetchProgress: (categoryId: string) => Promise<LessonProgress | null>;
   fetchAllProgress: () => Promise<void>;
   recordAnswer: (
@@ -38,17 +41,21 @@ interface LessonProgressState {
   unlockNextLevel: (categoryId: string) => Promise<void>;
 }
 
-export const useLessonProgressStore = create<LessonProgressState>((set, get) => ({
-  progressByCategory: new Map(),
-  loading: false,
-  error: null,
-  userId: null,
-  familyId: null,
-  pendingCelebration: null,
+export const useLessonProgressStore = create<LessonProgressState>()(
+  devtools(
+    (set, get) => ({
+      progressByCategory: new Map(),
+      loading: false,
+      error: null,
+      userId: null,
+      familyId: null,
+      pendingCelebration: null,
 
-  setUser: (userId: string, familyId: string) => {
-    set({ userId, familyId });
-  },
+      setUser: (userId: string, familyId: string) => {
+        set({ userId, familyId });
+      },
+
+      clearError: () => set({ error: null }),
 
   fetchProgress: async (categoryId: string) => {
     const { userId, familyId } = get();
@@ -102,10 +109,11 @@ export const useLessonProgressStore = create<LessonProgressState>((set, get) => 
       });
 
       return progress;
-    } catch (error) {
-      set({ error: (error as Error).message, loading: false });
-      return null;
-    }
+      } catch (err) {
+        const storeError = createStoreError('network', err instanceof Error ? err.message : 'Failed to fetch progress');
+        set({ error: storeError, loading: false });
+        return null;
+      }
   },
 
   fetchAllProgress: async () => {
@@ -128,9 +136,10 @@ export const useLessonProgressStore = create<LessonProgressState>((set, get) => 
       });
 
       set({ progressByCategory: newMap, loading: false });
-    } catch (error) {
-      set({ error: (error as Error).message, loading: false });
-    }
+      } catch (err) {
+        const storeError = createStoreError('network', err instanceof Error ? err.message : 'Failed to fetch all progress');
+        set({ error: storeError, loading: false });
+      }
   },
 
   recordAnswer: async (categoryId, contentItemId, isCorrect, responseTimeMs) => {
@@ -340,5 +349,8 @@ export const useLessonProgressStore = create<LessonProgressState>((set, get) => 
         return { progressByCategory: newMap };
       });
     }
-  },
-}));
+    },
+    }),
+    { name: 'LessonProgressStore' }
+  )
+);

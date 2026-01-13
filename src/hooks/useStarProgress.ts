@@ -20,7 +20,7 @@ interface UseStarProgressReturn {
   
   // State
   loading: boolean;
-  error: string | null;
+  error: { message: string } | null;
   pendingCelebration: CelebrationEvent | null;
   clearCelebration: () => void;
 }
