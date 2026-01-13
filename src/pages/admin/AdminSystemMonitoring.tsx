@@ -499,10 +499,10 @@ const LogsTabContent = () => {
   );
 };
 
-// Debounce utility function
-const debounce = (func: Function, wait: number) => {
+// Debounce utility function with proper typing
+const debounce = <T extends (...args: unknown[]) => void>(func: T, wait: number) => {
   let timeout: NodeJS.Timeout;
-  return function executedFunction(...args: any[]) {
+  return function executedFunction(...args: Parameters<T>) {
     const later = () => {
       clearTimeout(timeout);
       func(...args);

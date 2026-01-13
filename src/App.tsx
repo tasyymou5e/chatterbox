@@ -10,8 +10,8 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import { useAutoErrorLogging } from "@/hooks/useAutoErrorLogging";
 import { SecurityMonitoringProvider } from '@/components/security/SecurityMonitoringService';
 import { ProductionSecurityWrapper } from '@/components/security/ProductionSecurityWrapper';
-// Performance monitoring temporarily disabled to fix cache issues
-// import { usePerformanceMonitoringSafe } from "@/hooks/usePerformanceMonitoringSafe";
+// Performance monitoring re-enabled
+import { usePerformanceMonitoringSafe } from "@/hooks/usePerformanceMonitoringSafe";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import About from "./pages/About";
@@ -69,18 +69,33 @@ const App = () => {
   // Enable automatic error logging
   useAutoErrorLogging();
   
-  // Performance monitoring temporarily disabled to fix cache/hot-reload issues
-  // TODO: Re-enable once browser cache is cleared and stable
+  // Performance monitoring hooks
+  const { measurePageLoad, measureMemoryUsage } = usePerformanceMonitoringSafe();
   
-  // Feature flag for performance monitoring (disabled for now)
-  const ENABLE_PERFORMANCE_MONITORING = false;
+  // Feature flag for performance monitoring
+  const ENABLE_PERFORMANCE_MONITORING = true;
   
   useEffect(() => {
-    if (ENABLE_PERFORMANCE_MONITORING) {
-      // Performance monitoring will be re-enabled here later
-      console.log('Performance monitoring would be initialized here');
+    if (!ENABLE_PERFORMANCE_MONITORING) {
+      return;
     }
-  }, []);
+    
+    // Measure page load after initial render
+    const timer = setTimeout(() => {
+      measurePageLoad();
+      measureMemoryUsage();
+    }, 1000);
+    
+    // Set up periodic memory monitoring (every minute)
+    const memoryInterval = setInterval(() => {
+      measureMemoryUsage();
+    }, 60000);
+    
+    return () => {
+      clearTimeout(timer);
+      clearInterval(memoryInterval);
+    };
+  }, [ENABLE_PERFORMANCE_MONITORING, measurePageLoad, measureMemoryUsage]);
 
   return (
     <QueryClientProvider client={queryClient}>

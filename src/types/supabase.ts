@@ -87,3 +87,46 @@ export interface ActivityMetadata {
   result?: 'success' | 'error' | 'cancelled';
   context?: Record<string, unknown>;
 }
+
+/**
+ * Generic Supabase API response type
+ * Matches the shape returned by Supabase client operations
+ */
+export interface SupabaseResponse<T> {
+  data: T | null;
+  error: SupabaseError | null;
+  count: number | null;
+  status: number;
+  statusText: string;
+}
+
+/**
+ * Simplified response for single-item queries
+ */
+export interface SupabaseSingleResponse<T> {
+  data: T | null;
+  error: SupabaseError | null;
+}
+
+/**
+ * Response type for list queries with pagination
+ */
+export interface SupabaseListResponse<T> {
+  data: T[] | null;
+  error: SupabaseError | null;
+  count: number | null;
+}
+
+/**
+ * Type helper for extracting data from Supabase responses
+ */
+export type ExtractData<T> = T extends SupabaseResponse<infer U> ? U : never;
+
+/**
+ * Type guard to check if response was successful
+ */
+export function isSuccessResponse<T>(
+  response: SupabaseSingleResponse<T> | SupabaseListResponse<T>
+): response is { data: NonNullable<T>; error: null } & typeof response {
+  return response.error === null && response.data !== null;
+}
