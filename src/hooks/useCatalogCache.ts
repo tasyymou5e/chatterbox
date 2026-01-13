@@ -154,7 +154,8 @@ export const useCatalogCache = (userFamily?: string) => {
           return []; // Return empty array instead of throwing
         }
 
-        const favoriteIds = data?.map((fav) => fav.content_item_id) || [];
+        const favoriteIds = (data?.map((fav) => fav.content_item_id) || [])
+          .filter((id): id is string => id !== null);
         
         // Cache favorites for 5 minutes
         cacheManager.set(cacheKey, favoriteIds, { ttl: 5 * 60 * 1000 });

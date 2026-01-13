@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Heart, Search, Shield, ShieldX, Sparkles } from 'lucide-react';
+import { Search, Shield, ShieldX, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useCatalogCache } from '@/hooks/useCatalogCache';
@@ -19,32 +19,25 @@ import { GamesCatalogDebugPanel } from '@/components/games/GamesCatalogDebugPane
 import { GamesCatalogEmergencyNav } from '@/components/games/GamesCatalogEmergencyNav';
 import { GamesCatalogSafeMode } from '@/components/games/GamesCatalogSafeMode';
 
+// ContentItem type matching useCatalogCache (with null-able properties)
 interface ContentItem {
   id: string;
   title: string;
-  description: string;
+  description: string | null;
   content_type: string;
-  category_id: string;
+  category_id: string | null;
   url: string;
-  thumbnail_url: string;
-  age_min: number;
-  age_max: number;
+  thumbnail_url: string | null;
+  age_min: number | null;
+  age_max: number | null;
   autism_features: any;
-  tags: string[];
-  is_free: boolean;
+  tags: string[] | null;
+  is_free: boolean | null;
   content_categories?: {
     name: string;
-    icon: string;
-  };
+    icon: string | null;
+  } | null;
 }
-
-// Type alias for Category from useCatalogCache
-type CatalogCategory = {
-  id: string;
-  name: string;
-  icon: string | null;
-  description: string | null;
-};
 
 export default function GamesCatalog() {
   const [realtimeConnected, setRealtimeConnected] = useState(false);
@@ -325,14 +318,18 @@ export default function GamesCatalog() {
       
       const matchesCategory = selectedCategory === 'all' || item.category_id === selectedCategory;
       
+      // Handle null age values with defaults
+      const ageMin = item.age_min ?? 0;
+      const ageMax = item.age_max ?? 100;
+      
       const matchesAge = ageFilter === 'all' || (
-        ageFilter === '3-5' && item.age_min <= 5 && item.age_max >= 3
+        ageFilter === '3-5' && ageMin <= 5 && ageMax >= 3
       ) || (
-        ageFilter === '6-8' && item.age_min <= 8 && item.age_max >= 6
+        ageFilter === '6-8' && ageMin <= 8 && ageMax >= 6
       ) || (
-        ageFilter === '9-12' && item.age_min <= 12 && item.age_max >= 9
+        ageFilter === '9-12' && ageMin <= 12 && ageMax >= 9
       ) || (
-        ageFilter === '13+' && item.age_max >= 13
+        ageFilter === '13+' && ageMax >= 13
       );
       
       return matchesSearch && matchesCategory && matchesAge;
@@ -442,12 +439,12 @@ export default function GamesCatalog() {
         <div className="container mx-auto px-4 py-6 pt-20">
 
         {/* Debug Panel */}
-        {showDebugPanel && (
+        {_showDebugPanel && (
           <GamesCatalogDebugPanel
             isLoading={isLoading}
-            contentItems={contentItems}
-            categories={categories}
-            favorites={favorites}
+            contentItems={contentItems as any[]}
+            categories={categories as any[]}
+            favorites={favorites as string[]}
             userFamily={userFamily}
             isParent={isParent}
             realtimeConnected={realtimeConnected}
@@ -547,7 +544,7 @@ export default function GamesCatalog() {
 
         {/* Category Filter */}
         <CategoryFilter
-          categories={categories}
+          categories={categories.map(c => ({ ...c, icon: c.icon || 'Circle', description: c.description || '' }))}
           selectedCategory={selectedCategory}
           onCategoryChange={setSelectedCategory}
         />
@@ -588,8 +585,8 @@ export default function GamesCatalog() {
             {filteredItems.map((item) => (
               <ContentCard
                 key={item.id}
-                item={item}
-                isFavorited={favorites.includes(item.id)}
+                item={item as any}
+                isFavorited={(favorites as string[]).includes(item.id)}
                 onFavorite={() => handleFavorite(item.id)}
                 onClick={() => handleContentClick(item)}
                 showCurationControls={showCuration && isParent}
@@ -599,8 +596,8 @@ export default function GamesCatalog() {
           </div>
         ) : (
           <VirtualizedContentGrid
-            items={filteredItems}
-            favorites={favorites}
+            items={filteredItems as any[]}
+            favorites={favorites as string[]}
             onFavorite={handleFavorite}
             onContentClick={handleContentClick}
             showCurationControls={showCuration && isParent}

@@ -152,7 +152,7 @@ const ParentDashboard = () => {
     }
   };
 
-  const handleSignOut = async () => {
+  const _handleSignOut = async () => {
     const { error } = await signOut();
     if (error) {
       toast({
@@ -164,6 +164,7 @@ const ParentDashboard = () => {
       navigate('/');
     }
   };
+  void _handleSignOut; // Available for future UI integration
 
   // Show loading while checking authorization or loading profile
   // Keep navigation visible during loading for better UX
@@ -203,9 +204,10 @@ const ParentDashboard = () => {
     );
   }
 
-  const displayName = profile?.first_name && profile?.last_name 
+  const _displayName = profile?.first_name && profile?.last_name 
     ? `${profile.first_name} ${profile.last_name}`
     : user?.email || 'Parent';
+  void _displayName; // Available for future use in welcome message
 
   return (
     <div className="min-h-screen bg-background">

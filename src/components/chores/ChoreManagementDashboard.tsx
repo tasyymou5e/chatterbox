@@ -190,14 +190,16 @@ export const ChoreManagementDashboard = ({ familyId }: ChoreManagementDashboardP
     }
   };
 
-  // Quick assign functionality - currently unused but kept for future use
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _handleQuickAssign = async (choreId: string, memberId: string) => {
+  // Quick assign functionality - kept for future use
+  /* eslint-disable @typescript-eslint/no-unused-vars */
+  const handleQuickAssign = async (choreId: string, memberId: string) => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     
     await assignChore(choreId, memberId, tomorrow.toISOString().split('T')[0]);
   };
+  void handleQuickAssign; // Silence unused warning - kept for future use
+  /* eslint-enable @typescript-eslint/no-unused-vars */
 
   const handleAssignSubmit = async () => {
     if (!selectedChoreId || !selectedMemberId) {

@@ -9,11 +9,8 @@ import {
   UserCheck, 
   Activity,
   TrendingUp,
-  Clock,
   RefreshCw,
-  BarChart3,
-  Shield,
-  Database
+  BarChart3
 } from 'lucide-react';
 import CreateTestFamilyButton from '@/components/admin/CreateTestFamilyButton';
 import { AnalyticsKPICard } from '@/components/analytics/AnalyticsKPICard';
@@ -25,7 +22,6 @@ import { useUIStore } from '@/stores/uiStore';
 import { useAdminStore } from '@/stores/adminStore';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { useAuthStore } from '@/stores/authStore';
-import SecurityDashboardCard from '@/components/admin/SecurityDashboardCard';
 import EnhancedSecurityDashboard from '@/components/admin/EnhancedSecurityDashboard';
 import AdminSiteSettings from '@/components/admin/AdminSiteSettings';
 import AdminAPIIntegrations from '@/components/admin/AdminAPIIntegrations';
@@ -43,8 +39,7 @@ export default function AdminDashboard() {
   const { sessionReady, isAdmin } = useAuthStore();
   const { 
     getLoading, 
-    setLoading, 
-    setError 
+    setLoading
   } = useUIStore();
   const {
     systemMetrics,
@@ -128,42 +123,6 @@ export default function AdminDashboard() {
       setLoading('adminDashboard', false);
     }
   };
-
-  const StatCard = ({ 
-    title, 
-    value, 
-    description, 
-    icon: Icon, 
-    trend 
-  }: { 
-    title: string; 
-    value: number; 
-    description: string; 
-    icon: React.ElementType; 
-    trend?: string;
-  }) => (
-    <Card className="bg-gray-800 border-gray-700">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-gray-300">
-          {title}
-        </CardTitle>
-        <Icon className="h-4 w-4 text-blue-400" />
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold text-white">
-          {dashboardLoading ? '...' : value.toLocaleString()}
-        </div>
-        <p className="text-xs text-gray-400">
-          {description}
-        </p>
-        {trend && (
-          <p className="text-xs text-green-400 mt-1">
-            {trend}
-          </p>
-        )}
-      </CardContent>
-    </Card>
-  );
 
   const getEngagementMetric = (metricName: string) => {
     const metric = engagementMetrics.find(m => m.metric === metricName);

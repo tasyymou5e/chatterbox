@@ -196,7 +196,7 @@ export default function AdminUsers() {
     }
   };
 
-  const getRoleIcon = (role: string) => {
+  const _getRoleIcon = (role: string) => {
     switch (role) {
       case 'admin': return Shield;
       case 'read_only': return Eye;
@@ -205,6 +205,7 @@ export default function AdminUsers() {
       default: return Users;
     }
   };
+  void _getRoleIcon; // Available for future use
 
   const roleStats = {
     total: users.length,

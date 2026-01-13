@@ -1,19 +1,10 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { getSecurityAlerts } from '@/utils/secureFamilyAccess';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { 
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { 
   Home, 
   Search, 
@@ -21,12 +12,11 @@ import {
   Eye,
   Edit,
   Trash2,
-  Plus,
   ChevronRight,
   ChevronDown,
   User,
-  Mail,
-  Send
+  Send,
+  Mail
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import CreateTestFamilyButton from '@/components/admin/CreateTestFamilyButton';
@@ -176,7 +166,7 @@ export default function AdminFamilies() {
         };
       });
 
-      setFamilies(familiesWithMembers);
+      setFamilies(familiesWithMembers as Family[]);
       console.log('Successfully loaded families with member details');
     } catch (error: any) {
       console.error('Error fetching families:', error);

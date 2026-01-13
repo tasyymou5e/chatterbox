@@ -30,12 +30,12 @@ interface LLMCall {
   provider: string;
   model: string;
   function_name: string;
-  total_tokens: number;
-  cost_usd: number;
+  total_tokens: number | null;
+  cost_usd: number | null;
   status: string;
-  response_time_ms: number;
+  response_time_ms: number | null;
   created_at: string;
-  error_message?: string;
+  error_message?: string | null;
 }
 
 const AdminLLMMonitoring = () => {
@@ -66,7 +66,7 @@ const AdminLLMMonitoring = () => {
         'get_llm_usage_stats',
         { 
           p_days_back: parseInt(timeframe),
-          p_provider: selectedProvider === "all" ? null : selectedProvider
+          p_provider: selectedProvider === "all" ? undefined : selectedProvider
         }
       );
 
