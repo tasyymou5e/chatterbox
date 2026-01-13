@@ -1,5 +1,6 @@
 // Phase 3: Code Splitting and Lazy Loading
 import React, { Suspense } from 'react';
+import { reportError } from '@/utils/productionErrorReporter';
 
 // Lazy load the main GamesCatalog component
 const GamesCatalog = React.lazy(() => import('./GamesCatalog'));
@@ -69,9 +70,12 @@ class LazyLoadErrorBoundary extends React.Component<
     return { hasError: true };
   }
 
-  componentDidCatch(_error: Error, _errorInfo: React.ErrorInfo) {
-    // Error logging handled by error boundary
-    // Could add error reporting service here in production
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    // Report error to production error collector
+    reportError(error, 'GamesCatalogLazy', 'high', {
+      componentStack: errorInfo.componentStack,
+      errorBoundary: 'LazyLoadErrorBoundary',
+    });
   }
 
   render() {
