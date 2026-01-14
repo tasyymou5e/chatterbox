@@ -27,6 +27,12 @@ interface SiteHeaderProps {
   className?: string;
 }
 
+interface FeatureItem {
+  title: string;
+  href: string;
+  highlight?: boolean;
+}
+
 export function SiteHeader({ className }: SiteHeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { user } = useAuth();
@@ -37,7 +43,7 @@ export function SiteHeader({ className }: SiteHeaderProps) {
     navigate('/');
   };
 
-  const featuresItems = [
+  const featuresItems: FeatureItem[] = [
     { title: "Educational Games", href: "/features/educational-games" },
     { title: "Communication Support", href: "/features/communication-support" },
     { title: "Progress Tracking", href: "/features/progress-tracking" },
@@ -92,13 +98,13 @@ export function SiteHeader({ className }: SiteHeaderProps) {
                           to={item.href}
                           className={cn(
                             "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
-                            (item as any).highlight && "bg-primary/10 border border-primary/20"
+                            item.highlight && "bg-primary/10 border border-primary/20"
                           )}
                         >
                           <div className="text-sm font-medium leading-none flex items-center gap-2">
-                            {(item as any).highlight && <Volume2 className="h-4 w-4 text-primary" />}
+                            {item.highlight && <Volume2 className="h-4 w-4 text-primary" />}
                             {item.title}
-                            {(item as any).highlight && (
+                            {item.highlight && (
                               <span className="text-xs bg-primary text-primary-foreground px-1.5 py-0.5 rounded">New</span>
                             )}
                           </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,7 +18,7 @@ export const ApplicationLogs = () => {
   const [refreshing, setRefreshing] = useState(false);
   const { toast } = useToast();
 
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
     try {
       setRefreshing(true);
       
@@ -58,7 +58,7 @@ export const ApplicationLogs = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [severityFilter, searchTerm, toast]);
 
   useEffect(() => {
     fetchLogs();
@@ -81,7 +81,7 @@ export const ApplicationLogs = () => {
       supabase.removeChannel(channel);
       clearInterval(interval);
     };
-  }, [searchTerm, severityFilter]);
+  }, [fetchLogs]);
 
   const getSeverityIcon = (severity: string) => {
     switch (severity) {
