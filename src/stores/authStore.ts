@@ -19,7 +19,7 @@ import { devtools, persist } from 'zustand/middleware';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { authLoggingService } from '@/services/authLoggingService';
-import { type AuthError, type AuthMetadata, UserRoles, isAdminRole } from '@/types/auth';
+import { type AuthError, type AuthMetadata, isAdminRole } from '@/types/auth';
 
 /**
  * Authentication state interface.
@@ -142,28 +142,18 @@ export const useAuthStore = create<AuthState>()(
          */
         checkAdminRole: async (userId: string): Promise<boolean> => {
           try {
-            // Check for full admin role
-            const { data: isAdmin, error: adminError } = await supabase.rpc('has_role', {
-              _user_id: userId,
-              _role: UserRoles.ADMIN
+            // Single RPC call using get_primary_role instead of 2 has_role calls
+            const { data: role, error } = await supabase.rpc('get_primary_role', {
+              _user_id: userId
             });
 
-            if (adminError) {
-              console.warn('Error checking admin role:', adminError);
+            if (error) {
+              console.warn('Error checking admin role:', error);
+              return false;
             }
 
-            // Check for read-only admin role
-            const { data: isReadOnly, error: readOnlyError } = await supabase.rpc('has_role', {
-              _user_id: userId,
-              _role: UserRoles.READ_ONLY
-            });
-
-            if (readOnlyError) {
-              console.warn('Error checking read_only role:', readOnlyError);
-            }
-
-            // Return true if user has either admin or read_only role
-            return (isAdmin || false) || (isReadOnly || false);
+            // Admin access if role is 'admin' or 'read_only'
+            return role === 'admin' || role === 'read_only';
           } catch (error) {
             console.error('Error in checkAdminRole:', error);
             return false;

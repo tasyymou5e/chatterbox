@@ -1,7 +1,7 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+// QueryClient is provided by main.tsx - no duplicate needed here
 import { Routes, Route, Navigate } from "react-router-dom";
 import React, { useEffect, Suspense } from "react";
 // Context providers removed - using Zustand stores now
@@ -79,14 +79,7 @@ const ResearchStudiesLazy = React.lazy(() => import("./pages/connect/ResearchStu
 const AACDemoLazy = React.lazy(() => import("./pages/AACDemo"));
 const SubtractionGameDemoLazy = React.lazy(() => import("./pages/SubtractionGameDemo"));
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 3,
-      staleTime: 1000 * 60 * 5, // 5 minutes
-    },
-  },
-});
+// QueryClient is created and provided in main.tsx to avoid duplication
 
 // Wrapper component for lazy-loaded routes with consistent fallback
 const LazyRoute: React.FC<{ children: React.ReactNode; variant?: 'dashboard' | 'table' | 'form' | 'game' | 'default' }> = ({ 
@@ -131,13 +124,12 @@ const App = () => {
   }, [ENABLE_PERFORMANCE_MONITORING, measurePageLoad, measureMemoryUsage]);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <ProductionSecurityWrapper>
-          <SecurityMonitoringProvider>
-            <ErrorBoundary componentName="App">
-              <Toaster />
-              <Sonner />
+    <TooltipProvider>
+      <ProductionSecurityWrapper>
+        <SecurityMonitoringProvider>
+          <ErrorBoundary componentName="App">
+            <Toaster />
+            <Sonner />
               <Routes>
                 {/* Core routes - eagerly loaded */}
                 <Route path="/" element={<Index />} />
@@ -340,11 +332,10 @@ const App = () => {
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
-            </ErrorBoundary>
-          </SecurityMonitoringProvider>
-        </ProductionSecurityWrapper>
-      </TooltipProvider>
-    </QueryClientProvider>
+          </ErrorBoundary>
+        </SecurityMonitoringProvider>
+      </ProductionSecurityWrapper>
+    </TooltipProvider>
   );
 };
 
