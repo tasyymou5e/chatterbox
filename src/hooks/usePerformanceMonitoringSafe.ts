@@ -8,14 +8,32 @@ interface PerformanceMetric {
   metadata?: Record<string, any>;
 }
 
-// Safe version of performance monitoring hook with error handling
+// Throttle interval in milliseconds (5 seconds)
+const METRIC_THROTTLE_MS = 5000;
+
+// Safe version of performance monitoring hook with error handling and throttling
 export const usePerformanceMonitoringSafe = () => {
   const performanceTimers = useRef<Map<string, number>>(new Map());
+  const lastLogTime = useRef<Map<string, number>>(new Map());
 
+  // Throttled metric logging to prevent performance overhead
   const logPerformanceMetric = useCallback(async (metric: PerformanceMetric) => {
     try {
-      // For now, just log to console - we'll integrate with Supabase later
-      console.log('Performance Metric:', metric);
+      const now = Date.now();
+      const metricKey = `${metric.metricType}_${metric.componentName || 'global'}`;
+      const lastTime = lastLogTime.current.get(metricKey) || 0;
+      
+      // Only log if enough time has passed since last log for this metric type
+      if (now - lastTime < METRIC_THROTTLE_MS) {
+        return;
+      }
+      
+      lastLogTime.current.set(metricKey, now);
+      
+      // Log to console in development
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Performance Metric:', metric);
+      }
       
       // TODO: Re-enable Supabase integration once import issues are resolved
       // const { data: { user } } = await supabase.auth.getUser();

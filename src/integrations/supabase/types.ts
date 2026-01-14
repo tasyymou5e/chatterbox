@@ -3616,6 +3616,7 @@ export type Database = {
           title: string
         }[]
       }
+      get_primary_role: { Args: { _user_id: string }; Returns: string }
       get_safe_family_profile_data: {
         Args: { p_user_id: string }
         Returns: {
@@ -3631,6 +3632,12 @@ export type Database = {
           metric_name: string
           metric_value: number
           status: string
+        }[]
+      }
+      get_user_roles: {
+        Args: { _user_id: string }
+        Returns: {
+          role: Database["public"]["Enums"]["app_role"]
         }[]
       }
       get_users_with_emails: {
