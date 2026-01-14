@@ -13,5 +13,12 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     storage: localStorage,
     persistSession: true,
     autoRefreshToken: true,
-  }
+    detectSessionInUrl: true,
+    flowType: 'pkce', // Use PKCE for enhanced security
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'chatterbox-web',
+    },
+  },
 });

@@ -1,13 +1,33 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import DOMPurify from 'dompurify';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
 /**
+ * Sanitizes HTML content using DOMPurify.
+ * For cases where HTML rendering is necessary.
+ * 
+ * @param input - Raw HTML string
+ * @param options - Optional DOMPurify configuration
+ * @returns Sanitized HTML string
+ * 
+ * @example
+ * const safeHtml = sanitizeHtml(userContent, { ALLOWED_TAGS: ['b', 'i', 'em', 'strong'] });
+ */
+export function sanitizeHtml(input: string, options?: Record<string, unknown>): string {
+  return DOMPurify.sanitize(input, {
+    ALLOWED_TAGS: [],
+    ALLOWED_ATTR: [],
+    ...options,
+  });
+}
+
+/**
  * Sanitizes user input to prevent XSS attacks.
- * Removes script tags, javascript: protocols, and event handlers.
+ * Uses DOMPurify as primary defense with additional cleanup.
  * 
  * @param input - Raw user input string
  * @returns Sanitized string safe for rendering
@@ -17,11 +37,13 @@ export function cn(...inputs: ClassValue[]) {
  * const safeDescription = sanitizeInput(description);
  */
 export function sanitizeInput(input: string): string {
-  return input
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+  // First pass: DOMPurify for XSS prevention
+  const purified = DOMPurify.sanitize(input, { ALLOWED_TAGS: [] });
+  
+  // Second pass: Additional cleanup
+  return purified
     .replace(/javascript:/gi, '')
     .replace(/on\w+\s*=/gi, '')
-    .replace(/<(iframe|object|embed|link|meta|form|input|textarea|select|option)\b[^>]*>/gi, '')
     .replace(/\s+/g, ' ')
     .trim();
 }

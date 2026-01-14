@@ -96,39 +96,31 @@ export const useAuthStore = create<AuthState>()(
         /**
          * Fetches the highest-priority role for a user.
          * 
-         * @description Checks roles in priority order: admin > parent > child.
-         * Uses the `has_role` RPC function for each role check.
+         * @description Uses single RPC call to get_primary_role for efficiency.
+         * Returns highest priority role: admin > read_only > parent > child.
          * 
          * @param userId - The user ID to check roles for
          * @returns Promise resolving to role string or null if no role found
          * 
          * @example
          * const role = await fetchUserRole('user-uuid');
-         * // Returns: 'admin' | 'parent' | 'child' | null
+         * // Returns: 'admin' | 'read_only' | 'parent' | 'child' | null
          */
         fetchUserRole: async (userId: string): Promise<string | null> => {
           try {
-            // Check roles in priority order: admin > parent > child
-            const { data: adminCheck } = await supabase.rpc('has_role', { 
-              _user_id: userId, 
-              _role: UserRoles.ADMIN 
+            // Single RPC call instead of multiple role checks
+            const { data, error } = await supabase.rpc('get_primary_role', { 
+              _user_id: userId 
             });
-            if (adminCheck) return UserRoles.ADMIN;
-
-            const { data: parentCheck } = await supabase.rpc('has_role', { 
-              _user_id: userId, 
-              _role: UserRoles.PARENT 
-            });
-            if (parentCheck) return UserRoles.PARENT;
-
-            const { data: childCheck } = await supabase.rpc('has_role', { 
-              _user_id: userId, 
-              _role: UserRoles.CHILD 
-            });
-            if (childCheck) return UserRoles.CHILD;
-
-            return null;
+            
+            if (error) {
+              console.error('Error fetching role:', error);
+              return null;
+            }
+            
+            return data;
           } catch (error) {
+            console.error('Error in fetchUserRole:', error);
             return null;
           }
         },

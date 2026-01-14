@@ -13,6 +13,18 @@ export type ProfileRow = Tables['profiles']['Row'];
 export type FamilyRow = Tables['families']['Row'];
 export type ChoreRow = Tables['chores']['Row'];
 export type SystemErrorRow = Tables['system_errors']['Row'];
+export type UserRoleRow = Tables['user_roles']['Row'];
+
+// Typed RPC response types
+export type PrimaryRole = 'admin' | 'read_only' | 'parent' | 'child' | null;
+
+export interface GetPrimaryRoleResponse {
+  role: PrimaryRole;
+}
+
+export interface GetUserRolesResponse {
+  roles: ('admin' | 'parent' | 'child' | 'read_only')[];
+}
 
 // Enhanced error types
 export interface SupabaseError {
