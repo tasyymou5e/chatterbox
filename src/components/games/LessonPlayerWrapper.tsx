@@ -93,10 +93,24 @@ export function LessonPlayerWrapper({
     }
   }, [isOpen, isActive, startSession]);
 
+  // SECURITY: Allowed origins for postMessage communication
+  // Add CDN or external game domains here as needed
+  const ALLOWED_GAME_ORIGINS = [
+    window.location.origin, // Same-origin games
+    // Add trusted external game domains here if needed
+    // 'https://games.example.com',
+  ];
+
   // Listen for postMessage events from embedded games
   useEffect(() => {
     const handleMessage = async (event: MessageEvent) => {
-      // Validate event source (could add origin check for security)
+      // SECURITY: Validate origin before processing any message
+      if (!ALLOWED_GAME_ORIGINS.includes(event.origin)) {
+        console.warn('[SECURITY] Rejected postMessage from untrusted origin:', event.origin);
+        return;
+      }
+
+      // Validate event structure
       if (!isValidGameEvent(event.data)) return;
 
       const gameEvent: GameEvent = event.data;
@@ -125,7 +139,7 @@ export function LessonPlayerWrapper({
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [recordAnswer]);
+  }, [ALLOWED_GAME_ORIGINS, recordAnswer]);
 
   // Handle iframe load
   const handleIframeLoad = useCallback(() => {
