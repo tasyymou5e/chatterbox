@@ -1,6 +1,7 @@
 // Phase 3: Virtual Scrolling Content Grid for 10K+ Items
 import React, { useMemo, useCallback } from 'react';
 import { useVirtualScrolling } from '@/hooks/useVirtualScrolling';
+import { useWindowSize } from '@/hooks/useWindowSize';
 import { ContentCard } from './ContentCard';
 
 interface ContentItem {
@@ -52,14 +53,16 @@ function VirtualizedContentGridComponent({
   containerHeight = CONTAINER_HEIGHT
 }: VirtualizedContentGridProps) {
   
-  // Responsive items per row calculation
+  // Use responsive hook for window size tracking
+  const { width } = useWindowSize();
+  
+  // Responsive items per row calculation - now updates on resize
   const itemsPerRow = useMemo(() => {
-    const width = window.innerWidth;
     if (width >= 1280) return ITEMS_PER_ROW_MAP.xl; // xl breakpoint
     if (width >= 1024) return ITEMS_PER_ROW_MAP.lg; // lg breakpoint
     if (width >= 768) return ITEMS_PER_ROW_MAP.md;  // md breakpoint
     return ITEMS_PER_ROW_MAP.sm;                     // sm and below
-  }, []);
+  }, [width]);
 
   // Virtual scrolling configuration
   const virtualScrollConfig = useMemo(() => ({
@@ -75,7 +78,6 @@ function VirtualizedContentGridComponent({
     visibleItems,
     containerProps,
     listProps,
-    scrollToIndex
   } = useVirtualScrolling(items, virtualScrollConfig);
 
   // Memoized handlers to prevent unnecessary re-renders
@@ -93,15 +95,6 @@ function VirtualizedContentGridComponent({
     }
   }, [onContentCuration]);
 
-  // Performance optimization: search functionality - exposed for future use
-  const scrollToItem = useCallback((itemId: string) => {
-    void itemId; // Kept for future use
-    const index = items.findIndex(item => item.id === itemId);
-    if (index !== -1) {
-      scrollToIndex(index);
-    }
-  }, [items, scrollToIndex]);
-  void scrollToItem; // Kept for future use
 
   // Loading state for empty items
   if (items.length === 0) {

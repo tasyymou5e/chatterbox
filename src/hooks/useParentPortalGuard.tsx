@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import { supabase } from '@/integrations/supabase/client';
 import { logSupabaseQuery, logDataAccessIssue } from '@/utils/parentPortalLogger';
+import { UserRoles } from '@/types/auth';
 
 interface ParentPortalGuardOptions {
   requiredFamilyAccess?: boolean;
@@ -58,7 +59,7 @@ export const useParentPortalGuard = (options: ParentPortalGuardOptions = {}) => 
         }
 
         // For non-admin users, check they have parent role
-        if (!isAdmin && userRole !== 'parent') {
+        if (!isAdmin && userRole !== UserRoles.PARENT) {
           console.log('ParentPortalGuard: User role is not parent:', userRole);
           setChecking(false);
           navigate('/auth');
@@ -120,7 +121,7 @@ export const useParentPortalGuard = (options: ParentPortalGuardOptions = {}) => 
           }
 
           // If no family found and this is a new parent, wait for auto-creation
-          if (!hasFamily && userRole === 'parent' && familyCreationAttempts < 3) {
+          if (!hasFamily && userRole === UserRoles.PARENT && familyCreationAttempts < 3) {
             console.log('ParentPortalGuard: No family found, waiting for auto-creation...', {
               attempt: familyCreationAttempts + 1
             });

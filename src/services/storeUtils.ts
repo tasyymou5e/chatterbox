@@ -101,9 +101,10 @@ export const requireAuth = (): string => {
 };
 
 /**
- * Sanitizes user input by trimming and removing script tags.
+ * Sanitizes user input by removing dangerous HTML patterns.
  * 
- * @description Basic XSS prevention for user-provided strings.
+ * @description Prevents XSS attacks by removing script tags, javascript: protocols,
+ * event handlers, and dangerous HTML elements.
  * 
  * @param input - Raw user input string
  * @returns Sanitized string
@@ -112,7 +113,13 @@ export const requireAuth = (): string => {
  * const safeName = sanitizeInput(userInput);
  */
 export const sanitizeInput = (input: string): string => {
-  return input.trim().replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+  return input
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/javascript:/gi, '')
+    .replace(/on\w+\s*=/gi, '')
+    .replace(/<(iframe|object|embed|link|meta|form|input|textarea|select|option)\b[^>]*>/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 };
 
 // ============================================

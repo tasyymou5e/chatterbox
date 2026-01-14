@@ -54,8 +54,3 @@ export const useAdminAuth = (): AdminAuthContextType => {
     signOut: storeSignOut as () => Promise<{ error: SupabaseError | null }>
   };
 };
-
-// Legacy AdminAuthProvider - now empty wrapper (will be removed in cleanup)
-export const AdminAuthProvider = ({ children }: { children: React.ReactNode }) => {
-  return <>{children}</>;
-};

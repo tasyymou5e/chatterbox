@@ -19,7 +19,7 @@ import { devtools, persist } from 'zustand/middleware';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { authLoggingService } from '@/services/authLoggingService';
-import { type AuthError, type AuthMetadata } from '@/types/auth';
+import { type AuthError, type AuthMetadata, UserRoles, isAdminRole } from '@/types/auth';
 
 /**
  * Authentication state interface.
@@ -111,21 +111,21 @@ export const useAuthStore = create<AuthState>()(
             // Check roles in priority order: admin > parent > child
             const { data: adminCheck } = await supabase.rpc('has_role', { 
               _user_id: userId, 
-              _role: 'admin' 
+              _role: UserRoles.ADMIN 
             });
-            if (adminCheck) return 'admin';
+            if (adminCheck) return UserRoles.ADMIN;
 
             const { data: parentCheck } = await supabase.rpc('has_role', { 
               _user_id: userId, 
-              _role: 'parent' 
+              _role: UserRoles.PARENT 
             });
-            if (parentCheck) return 'parent';
+            if (parentCheck) return UserRoles.PARENT;
 
             const { data: childCheck } = await supabase.rpc('has_role', { 
               _user_id: userId, 
-              _role: 'child' 
+              _role: UserRoles.CHILD 
             });
-            if (childCheck) return 'child';
+            if (childCheck) return UserRoles.CHILD;
 
             return null;
           } catch (error) {
@@ -153,7 +153,7 @@ export const useAuthStore = create<AuthState>()(
             // Check for full admin role
             const { data: isAdmin, error: adminError } = await supabase.rpc('has_role', {
               _user_id: userId,
-              _role: 'admin'
+              _role: UserRoles.ADMIN
             });
 
             if (adminError) {
@@ -163,7 +163,7 @@ export const useAuthStore = create<AuthState>()(
             // Check for read-only admin role
             const { data: isReadOnly, error: readOnlyError } = await supabase.rpc('has_role', {
               _user_id: userId,
-              _role: 'read_only'
+              _role: UserRoles.READ_ONLY
             });
 
             if (readOnlyError) {
@@ -206,10 +206,10 @@ export const useAuthStore = create<AuthState>()(
                   
                   // Check role synchronously to prevent race conditions
                   get().fetchUserRole(session.user.id).then(role => {
-                    const isAdmin = role === 'admin' || role === 'read_only';
+                    const hasAdminAccess = isAdminRole(role);
                     set({ 
                       userRole: role, 
-                      isAdmin,
+                      isAdmin: hasAdminAccess,
                       isCheckingRole: false 
                     });
                   }).catch(() => {
@@ -251,10 +251,10 @@ export const useAuthStore = create<AuthState>()(
               // Re-validate role every time we restore a session
               try {
                 const role = await get().fetchUserRole(session.user.id);
-                const isAdmin = role === 'admin' || role === 'read_only';
+                const hasAdminAccess = isAdminRole(role);
                 set({ 
                   userRole: role, 
-                  isAdmin,
+                  isAdmin: hasAdminAccess,
                   isCheckingRole: false 
                 });
               } catch {
@@ -399,14 +399,14 @@ export const useAuthStore = create<AuthState>()(
             if (data?.user && data?.session) {
               // Synchronously check role to prevent race conditions
               const userRole = await get().fetchUserRole(data.user.id);
-              const isAdmin = userRole === 'admin' || userRole === 'read_only';
+              const hasAdminAccess = isAdminRole(userRole);
               
               // Set ALL auth state atomically in single operation to prevent race conditions
               set({
                 user: data.user,
                 session: data.session,
                 userRole,
-                isAdmin,
+                isAdmin: hasAdminAccess,
                 loading: false,
                 isCheckingRole: false,
                 sessionReady: true
@@ -439,7 +439,7 @@ export const useAuthStore = create<AuthState>()(
                 });
               }, 0);
 
-              return { error: null, user: data.user, isAdmin };
+              return { error: null, user: data.user, isAdmin: hasAdminAccess };
             }
 
             set({ loading: false, isCheckingRole: false });
