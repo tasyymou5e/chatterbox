@@ -98,8 +98,3 @@ export const useAuth = (): AuthContextType => {
     resetPassword: useAuthStore.getState().resetPassword as (email: string, userType?: 'admin' | 'user') => Promise<{ error: SupabaseError | null }>
   };
 };
-
-// Legacy AuthProvider - now empty wrapper (will be removed in cleanup)
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  return <>{children}</>;
-};

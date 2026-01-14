@@ -3,6 +3,71 @@
  * Replaces generic 'any' types with structured interfaces
  */
 
+// ============================================
+// User Role Constants
+// ============================================
+
+/**
+ * User role constants - use these instead of magic strings.
+ * 
+ * @example
+ * import { UserRoles } from '@/types/auth';
+ * 
+ * if (userRole === UserRoles.ADMIN) {
+ *   // Admin-specific logic
+ * }
+ */
+export const UserRoles = {
+  ADMIN: 'admin',
+  PARENT: 'parent',
+  CHILD: 'child',
+  READ_ONLY: 'read_only',
+} as const;
+
+/**
+ * Type representing valid user roles.
+ */
+export type UserRole = typeof UserRoles[keyof typeof UserRoles];
+
+/**
+ * Role categories for grouping related roles.
+ */
+export const RoleCategories = {
+  /** Roles with administrative dashboard access */
+  ADMIN_ROLES: [UserRoles.ADMIN, UserRoles.READ_ONLY] as const,
+  /** Roles within a family unit */
+  FAMILY_ROLES: [UserRoles.PARENT, UserRoles.CHILD] as const,
+} as const;
+
+/**
+ * Type guard to check if a string is a valid UserRole.
+ * 
+ * @param role - String to validate
+ * @returns True if the string is a valid UserRole
+ * 
+ * @example
+ * if (isValidRole(someString)) {
+ *   // TypeScript knows someString is UserRole
+ * }
+ */
+export function isValidRole(role: string): role is UserRole {
+  return Object.values(UserRoles).includes(role as UserRole);
+}
+
+/**
+ * Check if a role has admin-level access.
+ * 
+ * @param role - Role to check
+ * @returns True if the role grants admin dashboard access
+ */
+export function isAdminRole(role: string | null): boolean {
+  return role === UserRoles.ADMIN || role === UserRoles.READ_ONLY;
+}
+
+// ============================================
+// Auth Error Types
+// ============================================
+
 export interface AuthError {
   code?: string;
   message: string;
