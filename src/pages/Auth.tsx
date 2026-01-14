@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
 import { useAuthNavigation } from '@/hooks/useAuthNavigation';
 import { useAuthLogging } from '@/hooks/useAuthLogging';
+import { useLoginRateLimiter } from '@/hooks/useLoginRateLimiter';
 import { toast } from '@/hooks/use-toast';
 import { Loader2, Heart, Mail, ArrowLeft, Shield, CheckCircle, UserPlus, AlertCircle } from 'lucide-react';
 import { PasswordStrengthIndicator } from '@/components/auth/PasswordStrengthIndicator';
@@ -41,6 +42,9 @@ const Auth = () => {
   const { signUp, signIn, resetPassword } = useAuth();
   const { logActivity, createSession } = useAuthLogging();
   const navigate = useNavigate();
+  
+  // Rate limiting for login attempts
+  const { checkAttempt, formattedTimeRemaining, refreshStatus } = useLoginRateLimiter('user');
   
   // Set up navigation for auth context
   useAuthNavigation();
@@ -197,11 +201,22 @@ const Auth = () => {
 
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsLoading(true);
 
     const formData = new FormData(e.currentTarget);
     const email = formData.get('signin-email') as string;
     const password = formData.get('signin-password') as string;
+
+    // Check rate limit BEFORE attempting login
+    if (!checkAttempt(email)) {
+      toast({
+        title: 'Too Many Attempts',
+        description: `Account temporarily locked. Please wait ${formattedTimeRemaining} before trying again.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsLoading(true);
 
     try {
       const { error, user } = await signIn(email, password);
@@ -213,6 +228,9 @@ const Auth = () => {
           errorType: error.name || 'SigninError',
           attemptedAt: new Date().toISOString()
         });
+        
+        // Refresh rate limit status after failed attempt
+        refreshStatus(email);
         
         const errorDetails = getErrorMessage(error);
         toast({
@@ -239,6 +257,7 @@ const Auth = () => {
         // Navigation will be handled by useAuthNavigation after role detection
       }
     } catch (err) {
+      refreshStatus(email);
       const errorDetails = getErrorMessage(err);
       toast({
         title: errorDetails.title,

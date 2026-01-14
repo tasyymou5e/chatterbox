@@ -1,18 +1,23 @@
 import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
+import { useLoginRateLimiter } from '@/hooks/useLoginRateLimiter';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Shield, AlertTriangle } from 'lucide-react';
+import { Loader2, Shield, AlertTriangle, Clock } from 'lucide-react';
 
 export default function AdminLogin() {
   const { signIn, loading, user, isAdmin } = useAdminAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isSigningIn, setIsSigningIn] = useState(false);
+  const [loginEmail, setLoginEmail] = useState('');
+  
+  // Stricter rate limiting for admin login: 3 attempts per 10 minutes
+  const { checkAttempt, remainingAttempts, isLocked, formattedTimeRemaining, refreshStatus } = useLoginRateLimiter('admin');
 
   // Enhanced redirect check - only if fully authenticated and admin status confirmed
   if (!loading && user && isAdmin && user.id && user.email) {
@@ -23,13 +28,13 @@ export default function AdminLogin() {
 
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsSigningIn(true);
     
     const formData = new FormData(e.currentTarget);
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
     
-    console.log('🔐 Admin login attempt for:', email);
+    // Update tracked email for rate limiting
+    setLoginEmail(email);
     
     if (!email || !password) {
       toast({
@@ -37,9 +42,22 @@ export default function AdminLogin() {
         description: "Please fill in all fields",
         variant: "destructive",
       });
-      setIsSigningIn(false);
       return;
     }
+    
+    // Check rate limit BEFORE attempting login
+    if (!checkAttempt(email)) {
+      console.log('🚫 Admin login blocked by rate limiter for:', email);
+      toast({
+        title: "Account Temporarily Locked",
+        description: `Too many failed attempts. Please wait ${formattedTimeRemaining} before trying again.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsSigningIn(true);
+    console.log('🔐 Admin login attempt for:', email);
 
     try {
       const result = await signIn(email, password);
@@ -71,6 +89,8 @@ export default function AdminLogin() {
             variant: "destructive",
           });
         }
+        // Refresh rate limit status after failed attempt
+        refreshStatus(email);
         setIsSigningIn(false);
       } else if (result.isAdmin) {
         console.log('✅ Admin login successful, navigating immediately...');
@@ -85,6 +105,7 @@ export default function AdminLogin() {
         setIsSigningIn(false);
       } else {
         console.error('❌ User is not an admin');
+        refreshStatus(email);
         toast({
           title: "Access Denied",
           description: "Access denied. Admin privileges required.",
@@ -106,6 +127,19 @@ export default function AdminLogin() {
   return (
     <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
+        {/* Rate Limit Lockout Alert */}
+        {isLocked && (
+          <div className="mb-6 p-4 bg-red-900/40 border border-red-500/50 rounded-lg animate-pulse">
+            <div className="flex items-center space-x-2 text-red-300">
+              <Clock className="h-5 w-5" />
+              <span className="text-sm font-medium">Account Temporarily Locked</span>
+            </div>
+            <p className="mt-1 text-xs text-red-200">
+              Too many failed login attempts. Please wait <span className="font-mono font-bold">{formattedTimeRemaining}</span> before trying again.
+            </p>
+          </div>
+        )}
+
         {/* Warning Banner */}
         <div className="mb-6 p-4 bg-red-900/20 border border-red-500/30 rounded-lg">
           <div className="flex items-center space-x-2 text-red-400">
@@ -161,18 +195,30 @@ export default function AdminLogin() {
               </div>
               <Button
                 type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                disabled={isSigningIn}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50"
+                disabled={isSigningIn || isLocked}
               >
                 {isSigningIn ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Signing In & Verifying Access...
                   </>
+                ) : isLocked ? (
+                  <>
+                    <Clock className="mr-2 h-4 w-4" />
+                    Locked - Wait {formattedTimeRemaining}
+                  </>
                 ) : (
                   'Sign In to Admin Portal'
                 )}
               </Button>
+              
+              {/* Remaining attempts warning */}
+              {!isLocked && remainingAttempts < 3 && loginEmail && (
+                <p className="mt-2 text-xs text-amber-400 text-center">
+                  ⚠️ {remainingAttempts} attempt{remainingAttempts !== 1 ? 's' : ''} remaining before lockout
+                </p>
+              )}
             </form>
 
 
