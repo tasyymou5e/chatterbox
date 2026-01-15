@@ -1,8 +1,17 @@
 # RLS Policy Test Suite Documentation
 
+**Last Updated**: 2026-01-15
+
 ## Overview
 
 This test suite provides comprehensive automated testing of all Row Level Security (RLS) policies in the Chatterbox application. It ensures that access controls work correctly across all roles and prevents security regressions.
+
+| Metric | Value |
+|--------|-------|
+| **RLS Test Files** | 4 directories |
+| **Tables Covered** | profiles, families, child_accounts, cross-cutting |
+| **Test Patterns** | Own data, family isolation, admin access, anonymous blocking |
+| **Compliance Testing** | COPPA, GDPR, SOC2 |
 
 ## Installation & Setup
 

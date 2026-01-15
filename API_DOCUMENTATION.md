@@ -1,8 +1,17 @@
 # API Documentation
 
 **Chatterbox Edge Functions API Reference**  
-**Version**: 1.0.0  
-**Base URL**: `https://<project-ref>.supabase.co/functions/v1`
+**Version**: 1.1.0  
+**Base URL**: `https://<project-ref>.supabase.co/functions/v1`  
+**Last Updated**: 2026-01-15
+
+---
+
+## Recent Updates (2026-01-15)
+
+- Improved type-safe error handling in all edge functions
+- Updated error responses to use `getErrorMessage` pattern
+- Enhanced input validation with proper TypeScript types
 
 ---
 
