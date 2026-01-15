@@ -18,6 +18,11 @@ interface State {
 }
 
 class ErrorBoundary extends Component<Props, State> {
+  // Rate limiting for error logging
+  private errorLogCount = 0;
+  private lastErrorLogTime = 0;
+  private static readonly MAX_ERRORS_PER_MINUTE = 10;
+
   constructor(props: Props) {
     super(props);
     this.state = { hasError: false, error: null, errorInfo: null };
@@ -32,7 +37,31 @@ class ErrorBoundary extends Component<Props, State> {
     this.logErrorToSystem(error, errorInfo);
   }
 
+  private shouldLogError(): boolean {
+    const now = Date.now();
+    
+    // Reset counter every minute
+    if (now - this.lastErrorLogTime > 60000) {
+      this.errorLogCount = 0;
+      this.lastErrorLogTime = now;
+    }
+    
+    // Check if we've exceeded the rate limit
+    if (this.errorLogCount >= ErrorBoundary.MAX_ERRORS_PER_MINUTE) {
+      return false;
+    }
+    
+    this.errorLogCount++;
+    return true;
+  }
+
   private async logErrorToSystem(error: Error, errorInfo: ErrorInfo) {
+    // Rate limit error logging to prevent log flooding
+    if (!this.shouldLogError()) {
+      secureLog.warn('Error logging rate limited - too many errors in a short period', null, 'ErrorBoundary');
+      return;
+    }
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
