@@ -1,29 +1,63 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Shield, AlertTriangle, Eye, Clock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { getSecurityAlerts } from '@/utils/secureFamilyAccess';
 
+interface SecurityAlertEventDetails {
+  families_attempted?: number;
+  failed_attempts?: number;
+  [key: string]: unknown;
+}
+
+interface SecurityAlert {
+  id: string;
+  severity: string;
+  created_at: string;
+  event_details: SecurityAlertEventDetails | null;
+}
+
 export default function SecurityMonitoringWidget() {
-  const [alerts, setAlerts] = useState<any[]>([]);
+  const [alerts, setAlerts] = useState<SecurityAlert[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchSecurityAlerts();
-  }, []);
-
-  const fetchSecurityAlerts = async () => {
+  const fetchSecurityAlerts = useCallback(async (isMounted: boolean) => {
     try {
       setLoading(true);
       const securityAlerts = await getSecurityAlerts(24);
-      setAlerts(securityAlerts);
+      if (isMounted) {
+        // Type-safe mapping from API response
+        const typedAlerts: SecurityAlert[] = securityAlerts.map((a: Record<string, unknown>) => ({
+          id: String(a.id ?? ''),
+          severity: String(a.severity ?? 'low'),
+          created_at: String(a.created_at ?? new Date().toISOString()),
+          event_details: a.event_details as SecurityAlertEventDetails | null,
+        }));
+        setAlerts(typedAlerts);
+      }
     } catch (error) {
-      console.error('Error fetching security alerts:', error);
+      if (isMounted) {
+        console.error('Error fetching security alerts:', error);
+      }
     } finally {
-      setLoading(false);
+      if (isMounted) {
+        setLoading(false);
+      }
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    fetchSecurityAlerts(isMounted);
+    return () => {
+      isMounted = false;
+    };
+  }, [fetchSecurityAlerts]);
+
+  const handleRefresh = useCallback(() => {
+    fetchSecurityAlerts(true);
+  }, [fetchSecurityAlerts]);
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
@@ -75,6 +109,8 @@ export default function SecurityMonitoringWidget() {
           <div className="space-y-2 max-h-48 overflow-y-auto">
             {alerts.slice(0, 5).map((alert) => {
               const details = alert.event_details;
+              const familiesAttempted = details?.families_attempted ?? 0;
+              const failedAttempts = details?.failed_attempts ?? 0;
               return (
                 <div key={alert.id} className="flex items-start gap-2 p-2 rounded border bg-card">
                   <AlertTriangle className={`h-4 w-4 mt-0.5 ${getSeverityColor(alert.severity)} text-white rounded`} />
@@ -83,7 +119,7 @@ export default function SecurityMonitoringWidget() {
                       Suspicious Family Access Pattern
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      User attempted access to {details.families_attempted} families ({details.failed_attempts} failures)
+                      User attempted access to {familiesAttempted} families ({failedAttempts} failures)
                     </p>
                     <div className="flex items-center gap-2 mt-1">
                       <Clock className="h-3 w-3 text-muted-foreground" />
@@ -112,7 +148,7 @@ export default function SecurityMonitoringWidget() {
         <Button 
           variant="outline" 
           size="sm" 
-          onClick={fetchSecurityAlerts} 
+          onClick={handleRefresh} 
           className="w-full"
         >
           Refresh Alerts

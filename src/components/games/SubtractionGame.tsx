@@ -25,6 +25,7 @@ export function SubtractionGame({
   const [current, setCurrent] = useState<{ a: number; b: number; correct: number } | null>(null);
   const [options, setOptions] = useState<number[]>([]);
   const startTime = useRef(0);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [score, setScore] = useState({ correct: 0, total: 0, streak: 0 });
   const [isAnswering, setIsAnswering] = useState(false);
   const [done, setDone] = useState(false);
@@ -79,7 +80,7 @@ export function SubtractionGame({
       streak: isCorrect ? s.streak + 1 : 0
     }));
 
-    setTimeout(() => {
+    timeoutRef.current = setTimeout(() => {
       setIsAnswering(false);
       setShowCelebration(false);
       if (score.total + 1 >= 20) {
@@ -95,7 +96,14 @@ export function SubtractionGame({
     }, isCorrect ? 900 : 1800);
   };
 
-  useEffect(() => { generate(); }, [generate]);
+  useEffect(() => {
+    generate();
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [generate]);
 
   if (done) {
     const accuracy = Math.round((score.correct / score.total) * 100);
