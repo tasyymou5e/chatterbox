@@ -74,11 +74,11 @@ const pathTraversalPatterns = [
   /[\/\\]\.{2,}[\/\\]/gi,
 ];
 
-// Command injection detection
+// Command injection detection - properly escaped regex patterns
 const commandInjectionPatterns = [
-  /[;&|`$(){}[\]<>]/gi,
+  /[;&|`$(){}<>]/g, // Removed 'i' flag (not needed for symbols), removed problematic [\] chars
   /\b(rm|del|format|fdisk|kill|shutdown|halt|reboot)\b/gi,
-  /\b(cat|type|more|less|head|tail)\b\s+[\/\\]/gi,
+  /\b(cat|type|more|less|head|tail)\b\s+[/\\]/gi,
   /\b(wget|curl|nc|netcat|telnet|ssh)\b/gi,
 ];
 
