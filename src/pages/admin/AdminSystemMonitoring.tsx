@@ -25,12 +25,22 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
+import { debugLog } from '@/utils/debugLogger';
 import type { SystemError, SystemAlert, ErrorStatistics } from '@/types/systemHealth';
-// CircuitBreakerState is defined inline in circuitBreakerRef
+import type { DatabaseLog, PostgresLog, AuthLog } from '@/types/logs';
+
+// Type guards for database logs
+const isPostgresLog = (log: DatabaseLog): log is PostgresLog => {
+  return 'error_severity' in log && 'identifier' in log;
+};
+
+const isAuthLog = (log: DatabaseLog): log is AuthLog => {
+  return 'level' in log && 'status' in log;
+};
 
 // Database Logs Component
 const DatabaseLogs = () => {
-  const [logs, setLogs] = useState<any[]>([]);
+  const [logs, setLogs] = useState<DatabaseLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [severityFilter, setSeverityFilter] = useState<string>('all');
@@ -58,17 +68,17 @@ const DatabaseLogs = () => {
   `;
   void _authQueryTemplate;
 
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
     try {
       setRefreshing(true);
       
       // Use sample data based on real database logs structure
-      let sampleLogs;
+      let sampleLogs: DatabaseLog[];
       
       if (logType === 'postgres') {
         sampleLogs = [
           {
-            id: 'static-id-1', // Replace crypto.randomUUID() for debugging
+            id: 'static-id-1',
             timestamp: 1757360819537000,
             identifier: "lxuqfgbukrrickanmmic",
             event_message: "connection authenticated: user=\"authenticator\" method=trust (/etc/postgresql/pg_hba.conf:85)",
@@ -111,7 +121,7 @@ const DatabaseLogs = () => {
           }
         ];
       } else {
-        console.error('🚨 Creating auth sample data...');
+        debugLog.debug('DatabaseLogs', 'Creating auth sample data');
         // Auth logs sample data
         sampleLogs = [
           {
@@ -177,79 +187,57 @@ const DatabaseLogs = () => {
         ];
       }
       
-      console.error('🚨 Sample data created, setting logs. Count:', sampleLogs.length);
-      console.error('🚨 Sample data preview:', sampleLogs[0]);
+      debugLog.debug('DatabaseLogs', 'Sample data created', { count: sampleLogs.length });
       setLogs(sampleLogs);
-      console.error('🚨 Logs set successfully!');
     } catch (error) {
-      console.error('🚨 CRITICAL ERROR in fetchLogs:', error);
-      alert('ERROR in fetchLogs: ' + error); // Backup debug method
+      debugLog.error('DatabaseLogs', 'Error in fetchLogs', error);
       setLogs([]);
     } finally {
-      console.error('🚨 fetchLogs finally block - setting loading false');
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [logType]);
 
   useEffect(() => {
-    console.error('🚨 DatabaseLogs useEffect triggered!');
-    console.error('🚨 useEffect dependencies:', { logType, severityFilter });
+    debugLog.debug('DatabaseLogs', 'useEffect triggered', { logType, severityFilter });
     
-    try {
-      console.error('🚨 Calling fetchLogs from useEffect...');
+    fetchLogs();
+    
+    const interval = setInterval(() => {
       fetchLogs();
-      
-      console.error('🚨 Setting up interval...');
-      const interval = setInterval(() => {
-        console.error('🚨 Interval tick - calling fetchLogs...');
-        fetchLogs();
-      }, 30000);
-      
-      console.error('🚨 useEffect setup complete');
-      return () => {
-        console.error('🚨 useEffect cleanup - clearing interval');
-        clearInterval(interval);
-      };
-    } catch (error) {
-      console.error('🚨 CRITICAL ERROR in useEffect:', error);
-      return undefined;
-    }
-  }, [logType, severityFilter]);
+    }, 30000);
+    
+    return () => {
+      clearInterval(interval);
+    };
+  }, [logType, severityFilter, fetchLogs]);
 
   const filteredLogs = useMemo(() => {
-    console.error('🚨 filteredLogs useMemo called!');
-    console.error('🚨 useMemo inputs:', {
-      totalLogs: logs.length,
-      searchTerm: searchTerm.trim(),
-      severityFilter,
-      logType,
-      sampleLog: logs[0]
-    });
+    debugLog.debug('DatabaseLogs', 'filteredLogs useMemo', { totalLogs: logs.length, searchTerm, severityFilter });
 
     try {
       const filtered = logs.filter(log => {
         const searchValue = searchTerm.trim().toLowerCase();
-        const matchesSearch = !searchValue || 
-          log.event_message?.toLowerCase().includes(searchValue) ||
-          log.identifier?.toLowerCase().includes(searchValue) ||
-          log.msg?.toLowerCase().includes(searchValue);
+        const eventMessage = 'event_message' in log ? log.event_message : '';
+        const identifier = 'identifier' in log ? log.identifier : '';
+        const msg = 'msg' in log ? log.msg : '';
         
+        const matchesSearch = !searchValue || 
+          eventMessage?.toLowerCase().includes(searchValue) ||
+          identifier?.toLowerCase().includes(searchValue) ||
+          msg?.toLowerCase().includes(searchValue);
+        
+        const logSeverity = 'error_severity' in log ? log.error_severity : ('level' in log ? log.level : '');
         const matchesSeverity = severityFilter === 'all' || 
-          log.error_severity?.toLowerCase() === severityFilter.toLowerCase() ||
-          log.level?.toLowerCase() === severityFilter.toLowerCase();
+          logSeverity?.toLowerCase() === severityFilter.toLowerCase();
         
         return matchesSearch && matchesSeverity;
       });
 
-      console.error('🚨 filteredLogs calculated:', {
-        filteredCount: filtered.length,
-        matchCriteria: { searchTerm: searchTerm.trim(), severityFilter }
-      });
-
+      debugLog.debug('DatabaseLogs', 'filteredLogs calculated', { filteredCount: filtered.length });
       return filtered;
     } catch (error) {
-      console.error('🚨 ERROR in filteredLogs useMemo:', error);
+      debugLog.error('DatabaseLogs', 'Error in filteredLogs useMemo', error);
       return [];
     }
   }, [logs, searchTerm, severityFilter]);
@@ -257,10 +245,6 @@ const DatabaseLogs = () => {
   const formatTimestamp = (timestamp: number) => {
     return new Date(timestamp / 1000).toLocaleString();
   };
-
-  // CRITICAL DEBUG: Render detection
-  console.error('🚨 DatabaseLogs RENDER method called!');
-  console.error('🚨 Render state:', { loading, filteredLogsCount: filteredLogs.length, logsCount: logs.length });
   
   return (
     <div className="space-y-4">
@@ -351,41 +335,47 @@ const DatabaseLogs = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredLogs.map((log, index) => (
-                  <tr key={log.id || index} className="border-b">
-                    <td className="p-3 text-xs font-mono">
-                      {formatTimestamp(log.timestamp)}
-                    </td>
-                    <td className="p-3">
-                      <span className={`px-2 py-1 rounded text-xs ${
-                        (log.error_severity || log.level || '').toLowerCase().includes('error') 
-                          ? 'bg-destructive text-destructive-foreground' 
-                          : 'bg-secondary text-secondary-foreground'
-                      }`}>
-                        {log.error_severity || log.level || 'LOG'}
-                      </span>
-                    </td>
-                    <td className="p-3 max-w-md truncate">
-                      {log.event_message || log.msg || 'No message'}
-                    </td>
-                    <td className="p-3 text-xs font-mono">
-                      {log.identifier || 'N/A'}
-                    </td>
-                    {logType === 'auth' && (
-                      <td className="p-3">
-                        {log.status && (
-                          <span className={`px-2 py-1 rounded text-xs ${
-                            log.status >= 400 
-                              ? 'bg-destructive text-destructive-foreground' 
-                              : 'bg-secondary text-secondary-foreground'
-                          }`}>
-                            {log.status}
-                          </span>
-                        )}
+                {filteredLogs.map((log, index) => {
+                  const severity = isPostgresLog(log) ? log.error_severity : (isAuthLog(log) ? log.level : 'LOG');
+                  const message = log.event_message || (isAuthLog(log) ? log.msg : '') || 'No message';
+                  const identifier = isPostgresLog(log) ? log.identifier : 'N/A';
+                  
+                  return (
+                    <tr key={log.id || index} className="border-b">
+                      <td className="p-3 text-xs font-mono">
+                        {formatTimestamp(log.timestamp)}
                       </td>
-                    )}
-                  </tr>
-                ))}
+                      <td className="p-3">
+                        <span className={`px-2 py-1 rounded text-xs ${
+                          severity.toLowerCase().includes('error') 
+                            ? 'bg-destructive text-destructive-foreground' 
+                            : 'bg-secondary text-secondary-foreground'
+                        }`}>
+                          {severity}
+                        </span>
+                      </td>
+                      <td className="p-3 max-w-md truncate">
+                        {message}
+                      </td>
+                      <td className="p-3 text-xs font-mono">
+                        {identifier}
+                      </td>
+                      {logType === 'auth' && isAuthLog(log) && (
+                        <td className="p-3">
+                          {log.status && (
+                            <span className={`px-2 py-1 rounded text-xs ${
+                              log.status >= 400 
+                                ? 'bg-destructive text-destructive-foreground' 
+                                : 'bg-secondary text-secondary-foreground'
+                            }`}>
+                              {log.status}
+                            </span>
+                          )}
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -614,7 +604,7 @@ const AdminSystemMonitoring = () => {
     
     if (now > state.nextRetryTime) {
       // Reset circuit breaker with logging
-      console.log('🔧 Circuit breaker reset after timeout');
+      debugLog.info('AdminSystemMonitoring', 'Circuit breaker reset after timeout');
       circuitBreakerRef.current = {
         consecutiveFailures: 0,
         lastFailureTime: 0,
@@ -642,10 +632,10 @@ const AdminSystemMonitoring = () => {
       backoffMultiplier: newBackoffMultiplier
     };
     
-    console.log(`⚠️ Circuit breaker failure ${newFailureCount}/${CIRCUIT_BREAKER_THRESHOLD}, backoff: ${newBackoffMultiplier}x`);
+    debugLog.warn('AdminSystemMonitoring', `Circuit breaker failure ${newFailureCount}/${CIRCUIT_BREAKER_THRESHOLD}`, { backoff: newBackoffMultiplier });
     
     if (newFailureCount >= CIRCUIT_BREAKER_THRESHOLD) {
-      console.log('🚨 Circuit breaker opened, next retry in', timeout / 1000, 'seconds');
+      debugLog.warn('AdminSystemMonitoring', `Circuit breaker opened, next retry in ${timeout / 1000} seconds`);
       toast({
         title: 'System Monitoring Disabled',
         description: `Too many consecutive failures. Monitoring will resume in ${timeout / 1000} seconds.`,
@@ -664,7 +654,7 @@ const AdminSystemMonitoring = () => {
       backoffMultiplier: 1
     };
     if (wasOpen) {
-      console.log('✅ Circuit breaker closed - system recovered');
+      debugLog.info('AdminSystemMonitoring', 'Circuit breaker closed - system recovered');
     }
   }, []);
 
@@ -672,19 +662,19 @@ const AdminSystemMonitoring = () => {
     const requestId = 'error-statistics';
     
     if (isCircuitBreakerOpen()) {
-      console.log('🚫 Circuit breaker is open, skipping error statistics fetch');
+      debugLog.debug('AdminSystemMonitoring', 'Circuit breaker open, skipping error statistics fetch');
       return;
     }
 
     // Request deduplication
     if (activeRequestsRef.current.has(requestId)) {
-      console.log('🔄 Error statistics fetch already in progress, skipping duplicate');
+      debugLog.debug('AdminSystemMonitoring', 'Error statistics fetch already in progress');
       return;
     }
 
     try {
       activeRequestsRef.current.add(requestId);
-      console.log('📊 Fetching error statistics...');
+      debugLog.debug('AdminSystemMonitoring', 'Fetching error statistics');
       
       const { data, error } = await supabase.rpc('get_error_statistics', { days_back: 7 });
       if (error) {
@@ -700,9 +690,9 @@ const AdminSystemMonitoring = () => {
       }
       setStatistics(data[0] || null);
       recordSuccess();
-      console.log('✅ Error statistics fetched successfully');
+      debugLog.debug('AdminSystemMonitoring', 'Error statistics fetched successfully');
     } catch (error) {
-      console.error('❌ Error fetching statistics:', error);
+      debugLog.error('AdminSystemMonitoring', 'Error fetching statistics', error);
       recordFailure();
     } finally {
       activeRequestsRef.current.delete(requestId);
@@ -713,19 +703,19 @@ const AdminSystemMonitoring = () => {
     const requestId = 'recent-errors';
     
     if (isCircuitBreakerOpen()) {
-      console.log('🚫 Circuit breaker is open, skipping recent errors fetch');
+      debugLog.debug('AdminSystemMonitoring', 'Circuit breaker open, skipping recent errors fetch');
       return;
     }
 
     // Request deduplication
     if (activeRequestsRef.current.has(requestId)) {
-      console.log('🔄 Recent errors fetch already in progress, skipping duplicate');
+      debugLog.debug('AdminSystemMonitoring', 'Recent errors fetch already in progress');
       return;
     }
 
     try {
       activeRequestsRef.current.add(requestId);
-      console.log('🐛 Fetching recent errors...');
+      debugLog.debug('AdminSystemMonitoring', 'Fetching recent errors');
       
       const { data, error } = await supabase
         .from('system_errors')
@@ -734,23 +724,23 @@ const AdminSystemMonitoring = () => {
         .limit(50);
       
       if (error) throw error;
-      setErrors((data || []).map(error => ({
-        ...error,
-        severity: error.severity as 'critical' | 'high' | 'medium' | 'low',
-        browser_info: error.browser_info && typeof error.browser_info === 'object' 
-          ? error.browser_info as Record<string, any>
+      setErrors((data || []).map(err => ({
+        ...err,
+        severity: err.severity as 'critical' | 'high' | 'medium' | 'low',
+        browser_info: err.browser_info && typeof err.browser_info === 'object' 
+          ? err.browser_info as Record<string, unknown>
           : undefined,
-        device_info: error.device_info && typeof error.device_info === 'object' 
-          ? error.device_info as Record<string, any>
+        device_info: err.device_info && typeof err.device_info === 'object' 
+          ? err.device_info as Record<string, unknown>
           : undefined,
-        metadata: error.metadata && typeof error.metadata === 'object' 
-          ? error.metadata as Record<string, any>
+        metadata: err.metadata && typeof err.metadata === 'object' 
+          ? err.metadata as Record<string, unknown>
           : undefined,
       })));
       recordSuccess();
-      console.log('✅ Recent errors fetched successfully');
+      debugLog.debug('AdminSystemMonitoring', 'Recent errors fetched successfully');
     } catch (error) {
-      console.error('❌ Error fetching recent errors:', error);
+      debugLog.error('AdminSystemMonitoring', 'Error fetching recent errors', error);
       recordFailure();
     } finally {
       activeRequestsRef.current.delete(requestId);
@@ -761,19 +751,18 @@ const AdminSystemMonitoring = () => {
     const requestId = 'system-alerts';
     
     if (isCircuitBreakerOpen()) {
-      console.log('🚫 Circuit breaker is open, skipping system alerts fetch');
+      debugLog.debug('AdminSystemMonitoring', 'Circuit breaker open, skipping alerts');
       return;
     }
 
-    // Request deduplication
     if (activeRequestsRef.current.has(requestId)) {
-      console.log('🔄 System alerts fetch already in progress, skipping duplicate');
+      debugLog.debug('AdminSystemMonitoring', 'Alerts fetch in progress');
       return;
     }
 
     try {
       activeRequestsRef.current.add(requestId);
-      console.log('🚨 Fetching system alerts...');
+      debugLog.debug('AdminSystemMonitoring', 'Fetching system alerts');
       
       const { data, error } = await supabase
         .from('system_alerts')
@@ -786,13 +775,12 @@ const AdminSystemMonitoring = () => {
         ...alert,
         severity: alert.severity as 'critical' | 'high' | 'medium' | 'low',
         metadata: (typeof alert.metadata === 'object' && alert.metadata !== null) 
-          ? alert.metadata as Record<string, any>
+          ? alert.metadata as Record<string, unknown>
           : {}
       })));
       recordSuccess();
-      console.log('✅ System alerts fetched successfully');
     } catch (error) {
-      console.error('❌ Error fetching system alerts:', error);
+      debugLog.error('AdminSystemMonitoring', 'Error fetching alerts', error);
       recordFailure();
     } finally {
       activeRequestsRef.current.delete(requestId);
@@ -806,26 +794,23 @@ const AdminSystemMonitoring = () => {
   const stableRefreshData = useCallback(async () => {
     if (isCircuitBreakerOpen() || !isAuthenticated) return;
     
-    // Check cooldown period
     const now = Date.now();
     if (now - lastRefreshTimeRef.current < REFRESH_COOLDOWN) {
-      console.log('🕒 Refresh blocked by cooldown period');
+      debugLog.debug('AdminSystemMonitoring', 'Refresh blocked by cooldown');
       return;
     }
     
-    // Loop detection
-    const timeWindow = 60000; // 1 minute window
+    const timeWindow = 60000;
     const callTracker = callFrequencyRef.current;
     
     if (now - callTracker.windowStart > timeWindow) {
-      // Reset window
       callTracker.windowStart = now;
       callTracker.refreshCount = 0;
     }
     
     callTracker.refreshCount++;
     if (callTracker.refreshCount > MAX_REFRESH_FREQUENCY) {
-      console.warn('🚨 Excessive refresh frequency detected, blocking request');
+      debugLog.warn('AdminSystemMonitoring', 'Excessive refresh frequency detected');
       toast({
         title: 'System Protection',
         description: 'Too many refresh attempts. Please wait a moment.',
@@ -837,16 +822,15 @@ const AdminSystemMonitoring = () => {
     lastRefreshTimeRef.current = now;
     
     try {
-      console.log('🔄 Starting data refresh...');
+      debugLog.debug('AdminSystemMonitoring', 'Starting data refresh');
       setLoading(true);
       await Promise.all([
         fetchErrorStatistics(),
         fetchRecentErrors(),
         fetchSystemAlerts()
       ]);
-      console.log('✅ Data refresh completed');
     } catch (error) {
-      console.error('❌ Error refreshing data:', error);
+      debugLog.error('AdminSystemMonitoring', 'Error refreshing data', error);
     } finally {
       setLoading(false);
     }
