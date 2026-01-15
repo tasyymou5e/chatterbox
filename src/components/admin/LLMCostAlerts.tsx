@@ -41,7 +41,7 @@ export function LLMCostAlerts({ onAlertCountChange }: LLMCostAlertsProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isChecking, setIsChecking] = useState(false);
 
-  const fetchAlerts = useCallback(async () => {
+  const fetchAlerts = useCallback(async (isMounted = true) => {
     try {
       const { data, error } = await supabase
         .from("llm_cost_alerts")
@@ -50,14 +50,19 @@ export function LLMCostAlerts({ onAlertCountChange }: LLMCostAlertsProps) {
         .limit(50);
 
       if (error) throw error;
-      setAlerts(data || []);
-      
-      const unacknowledgedCount = (data || []).filter((a) => !a.acknowledged).length;
-      onAlertCountChange?.(unacknowledgedCount);
+      if (isMounted) {
+        setAlerts(data || []);
+        const unacknowledgedCount = (data || []).filter((a) => !a.acknowledged).length;
+        onAlertCountChange?.(unacknowledgedCount);
+      }
     } catch (error) {
-      console.error("Failed to fetch alerts:", error);
+      if (isMounted) {
+        console.error("Failed to fetch alerts:", error);
+      }
     } finally {
-      setIsLoading(false);
+      if (isMounted) {
+        setIsLoading(false);
+      }
     }
   }, [onAlertCountChange]);
 
@@ -141,7 +146,11 @@ export function LLMCostAlerts({ onAlertCountChange }: LLMCostAlertsProps) {
   };
 
   useEffect(() => {
-    fetchAlerts();
+    let isMounted = true;
+    fetchAlerts(isMounted);
+    return () => {
+      isMounted = false;
+    };
   }, [fetchAlerts]);
 
   const getSeverityBadge = (severity: string) => {
