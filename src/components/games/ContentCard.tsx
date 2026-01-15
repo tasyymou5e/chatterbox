@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Heart, Play, Shield, ShieldX, Sparkles } from 'lucide-react';
+import type { AutismFeatures } from '@/types/autism';
 
 interface ContentItem {
   id: string;
@@ -13,7 +14,7 @@ interface ContentItem {
   thumbnail_url: string;
   age_min: number;
   age_max: number;
-  autism_features: any;
+  autism_features: AutismFeatures | null;
   tags: string[];
   is_free: boolean;
   content_categories?: {
@@ -49,8 +50,9 @@ function ContentCardComponent({
     }
   };
 
-  const getAutismBadges = (features: any) => {
-    const badges = [];
+  const getAutismBadges = (features: AutismFeatures | null) => {
+    if (!features) return [];
+    const badges: string[] = [];
     if (features.sensory_friendly) badges.push('Sensory Friendly');
     if (features.non_verbal_friendly) badges.push('Non-Verbal');
     if (features.executive_function) badges.push('Executive Function');

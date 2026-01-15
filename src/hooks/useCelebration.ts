@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import '@/types/navigator'; // Import type extensions for webkitAudioContext
 
 type CelebrationType = 'confetti' | 'stars' | 'hearts';
 
@@ -22,8 +23,12 @@ export function useCelebration(): UseCelebrationReturn {
   const playPraiseSound = useCallback(() => {
     // Create a simple oscillator-based celebration sound
     try {
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) {
+        console.log('AudioContext not supported');
+        return;
+      }
+      const audioContext = new AudioContextClass();
       // Create a pleasant chime sequence
       const playNote = (frequency: number, startTime: number, duration: number) => {
         const oscillator = audioContext.createOscillator();
