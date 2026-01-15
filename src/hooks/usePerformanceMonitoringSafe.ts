@@ -1,11 +1,12 @@
 import { useCallback, useRef } from 'react';
+import '@/types/navigator'; // Import type extensions for Performance.memory
 
 interface PerformanceMetric {
   metricType: string;
   value: number;
   thresholdExceeded?: boolean;
   componentName?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 // Throttle interval in milliseconds (5 seconds)
@@ -113,8 +114,8 @@ export const usePerformanceMonitoringSafe = () => {
 
   const measureMemoryUsage = useCallback(() => {
     try {
-      if ('memory' in performance) {
-        const memory = (performance as any).memory;
+      if (performance.memory) {
+        const memory = performance.memory;
         logPerformanceMetric({
           metricType: 'memory_usage',
           value: memory.usedJSHeapSize,

@@ -191,8 +191,9 @@ serve(async (req) => {
       }
     )
 
-  } catch (error: any) {
-    console.error('Function error:', error)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Function error:', message)
     return new Response(
       JSON.stringify({ error: 'Internal server error' }),
       { 

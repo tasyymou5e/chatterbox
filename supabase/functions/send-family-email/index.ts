@@ -210,9 +210,10 @@ serve(async (req) => {
           console.log(`Email sent successfully to ${email}:`, data);
           results.push({ email, success: true });
         }
-      } catch (emailError: any) {
-        console.error(`Error sending email to ${email}:`, emailError);
-        results.push({ email, success: false, error: emailError.message || 'Unknown error' });
+      } catch (emailError) {
+        const errorMessage = emailError instanceof Error ? emailError.message : 'Unknown error';
+        console.error(`Error sending email to ${email}:`, errorMessage);
+        results.push({ email, success: false, error: errorMessage });
       }
     }
 
@@ -255,10 +256,11 @@ serve(async (req) => {
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
-  } catch (error: any) {
-    console.error('Error in send-family-email function:', error);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Internal server error';
+    console.error('Error in send-family-email function:', message);
     return new Response(
-      JSON.stringify({ error: error.message || 'Internal server error' }),
+      JSON.stringify({ error: message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

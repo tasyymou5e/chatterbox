@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { cError } from '@/utils/conditionalLogger';
 import { getErrorMessage } from '@/types/interfaces';
+import type { Database } from '@/integrations/supabase/types';
 import { 
   Users, 
   Save,
@@ -131,14 +132,14 @@ export function UserEditDialog({ open, onOpenChange, user, onSuccess }: UserEdit
       if (deleteError) throw deleteError;
 
       // Add new roles
-      const newRoles = [adminRole, familyRole].filter(Boolean);
+      const newRoles = [adminRole, familyRole].filter((role): role is string => Boolean(role));
       if (newRoles.length > 0) {
         const { error: insertError } = await supabase
           .from('user_roles')
           .insert(
             newRoles.map(role => ({
               user_id: user.id,
-              role: role as any
+              role: role as Database['public']['Enums']['app_role']
             }))
           );
 
