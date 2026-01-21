@@ -1,46 +1,24 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Shield, ShieldX, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useCatalogCache } from '@/hooks/useCatalogCache';
-import { realtimeManager } from '@/services/RealtimeManager';
-import { ContentCard } from '@/components/games/ContentCard';
+import { useCatalogRealtime } from '@/components/games/hooks/useCatalogRealtime';
 import { CategoryFilter } from '@/components/games/CategoryFilter';
-import { VirtualizedContentGrid } from '@/components/games/VirtualizedContentGrid';
 import { SiteHeader } from '@/components/SiteHeader';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { GamesCatalogDebugPanel } from '@/components/games/GamesCatalogDebugPanel';
 import { GamesCatalogEmergencyNav } from '@/components/games/GamesCatalogEmergencyNav';
 import { GamesCatalogSafeMode } from '@/components/games/GamesCatalogSafeMode';
-
-// ContentItem type matching useCatalogCache (with null-able properties)
-interface ContentItem {
-  id: string;
-  title: string;
-  description: string | null;
-  content_type: string;
-  category_id: string | null;
-  url: string;
-  thumbnail_url: string | null;
-  age_min: number | null;
-  age_max: number | null;
-  autism_features: any;
-  tags: string[] | null;
-  is_free: boolean | null;
-  content_categories?: {
-    name: string;
-    icon: string | null;
-  } | null;
-}
+import {
+  CatalogHeader,
+  CatalogSearchBar,
+  CatalogContentGrid,
+  CurationPanel
+} from '@/components/games/catalog';
+import type { CatalogContentItem, CurationAccessType } from '@/components/games/types/catalog';
 
 export default function GamesCatalog() {
-  const [realtimeConnected, setRealtimeConnected] = useState(false);
   const [userFamily, setUserFamily] = useState<string | null>(null);
   const [isParent, setIsParent] = useState(false);
   const [showCuration, setShowCuration] = useState(false);
@@ -49,11 +27,10 @@ export default function GamesCatalog() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [ageFilter, setAgeFilter] = useState('all');
   const [safeMode, setSafeMode] = useState(false);
-  const [_showDebugPanel] = useState(process.env.NODE_ENV === 'development');
-  void _showDebugPanel; // Used for conditional rendering
   const [hasError, setHasError] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
+  const isDevelopment = process.env.NODE_ENV === 'development';
 
   // Phase 3: Use advanced caching strategy with error handling
   const {
@@ -68,6 +45,13 @@ export default function GamesCatalog() {
     cacheStats
   } = useCatalogCache(userFamily || undefined);
 
+  // Phase 3: Use extracted realtime hook
+  const { realtimeConnected } = useCatalogRealtime({
+    userId: user?.id,
+    userFamily,
+    invalidateContentCache
+  });
+
   // Enhanced error handling for data loading
   useEffect(() => {
     if (!isLoading && contentItems.length === 0 && categories.length === 0) {
@@ -77,26 +61,6 @@ export default function GamesCatalog() {
       setHasError(false);
     }
   }, [isLoading, contentItems.length, categories.length]);
-  // Phase 3: Optimized realtime state updates
-  const updateCatalogState = useCallback((payload: any) => {
-    console.log('GamesCatalog: Received realtime update:', payload.eventType);
-    
-    switch (payload.eventType) {
-      case 'INSERT':
-        if (payload.new.approval_status === 'approved' && payload.new.is_active) {
-          invalidateContentCache();
-        }
-        break;
-      case 'UPDATE':
-        if (payload.new.approval_status === 'approved' && payload.new.is_active) {
-          invalidateContentCache();
-        }
-        break;
-      case 'DELETE':
-        invalidateContentCache();
-        break;
-    }
-  }, [invalidateContentCache]);
 
   // Get user's family and role on mount
   useEffect(() => {
@@ -132,68 +96,6 @@ export default function GamesCatalog() {
       preloadPopularContent();
     }
   }, [user, preloadPopularContent]);
-
-  // Phase 3: Optimized Realtime with Connection Pooling
-  useEffect(() => {
-    if (!user) return;
-
-    let unsubscribeContent: (() => void) | undefined;
-    let unsubscribeCategories: (() => void) | undefined;
-    let unsubscribeFamilyAccess: (() => void) | undefined;
-
-    if (userFamily) {
-      // Family-specific subscriptions
-      console.log(`Setting up family realtime for family: ${userFamily}`);
-      
-      unsubscribeContent = realtimeManager.subscribeFamilyChannel(
-        userFamily,
-        'content_items',
-        updateCatalogState
-      );
-
-      unsubscribeCategories = realtimeManager.subscribeFamilyChannel(
-        userFamily,
-        'content_categories',
-        () => invalidateContentCache()
-      );
-
-      unsubscribeFamilyAccess = realtimeManager.subscribeFamilyChannel(
-        userFamily,
-        'family_content_access',
-        () => invalidateContentCache(),
-        `family_id=eq.${userFamily}`
-      );
-
-      setRealtimeConnected(true);
-    } else {
-      // Global subscriptions for users without families
-      console.log('Setting up global realtime channels');
-      
-      unsubscribeContent = realtimeManager.subscribeGlobalChannel(
-        'content_items',
-        updateCatalogState,
-        'is_active=eq.true'
-      );
-
-      unsubscribeCategories = realtimeManager.subscribeGlobalChannel(
-        'content_categories',
-        () => invalidateContentCache()
-      );
-
-      setRealtimeConnected(true);
-    }
-
-    // Cleanup function
-    return () => {
-      console.log('Cleaning up realtime subscriptions');
-      unsubscribeContent?.();
-      unsubscribeCategories?.();
-      unsubscribeFamilyAccess?.();
-      setRealtimeConnected(false);
-    };
-  }, [user, userFamily, updateCatalogState, invalidateContentCache]);
-
-  // Note: Data fetching is now handled by useCatalogCache hook
 
   const handleFavorite = useCallback(async (contentId: string) => {
     if (!user) {
@@ -238,7 +140,7 @@ export default function GamesCatalog() {
     }
   }, [user, favorites, toast, invalidateFavoritesCache]);
 
-  const handleContentClick = useCallback(async (item: ContentItem) => {
+  const handleContentClick = useCallback(async (item: CatalogContentItem) => {
     // Log the interaction
     if (user) {
       try {
@@ -266,9 +168,9 @@ export default function GamesCatalog() {
 
     // Open the content
     window.open(item.url, '_blank', 'noopener,noreferrer');
-  }, [user, userFamily]);
+  }, [user]);
 
-  const handleContentCuration = useCallback(async (contentId: string, accessType: 'allowed' | 'blocked' | 'featured') => {
+  const handleContentCuration = useCallback(async (contentId: string, accessType: CurationAccessType) => {
     if (!user || !userFamily || !isParent) {
       toast({
         title: "Access denied",
@@ -370,6 +272,15 @@ export default function GamesCatalog() {
     });
   }, [resetAllCache, toast]);
 
+  // Toggle handlers for header
+  const handleToggleCuration = useCallback(() => {
+    setShowCuration(prev => !prev);
+  }, []);
+
+  const handleToggleVirtualScrolling = useCallback(() => {
+    setUseVirtualScrolling(prev => !prev);
+  }, []);
+
   // If safe mode is enabled, render the safe mode component
   if (safeMode) {
     return <GamesCatalogSafeMode />;
@@ -388,7 +299,7 @@ export default function GamesCatalog() {
               {realtimeConnected && (
                 <p className="text-green-600">✓ {userFamily ? 'Family channel' : 'Global channel'} active</p>
               )}
-              {process.env.NODE_ENV === 'development' && (
+              {isDevelopment && (
                 <p>Cache stats: {JSON.stringify(cacheStats)}</p>
               )}
             </div>
@@ -399,7 +310,7 @@ export default function GamesCatalog() {
             <GamesCatalogEmergencyNav 
               onSafeMode={handleSafeMode}
               onClearCache={handleClearCache}
-              showDebugOptions={process.env.NODE_ENV === 'development'}
+              showDebugOptions={isDevelopment}
             />
           </div>
         </div>
@@ -425,7 +336,7 @@ export default function GamesCatalog() {
             onRetry={handleRetry}
             onSafeMode={handleSafeMode}
             onClearCache={handleClearCache}
-            showDebugOptions={process.env.NODE_ENV === 'development'}
+            showDebugOptions={isDevelopment}
           />
         </div>
       </div>
@@ -438,183 +349,73 @@ export default function GamesCatalog() {
         <SiteHeader />
         <div className="container mx-auto px-4 py-6 pt-20">
 
-        {/* Debug Panel */}
-        {_showDebugPanel && (
-          <GamesCatalogDebugPanel
-            isLoading={isLoading}
-            contentItems={contentItems as any[]}
-            categories={categories as any[]}
-            favorites={favorites as string[]}
+          {/* Debug Panel */}
+          {isDevelopment && (
+            <GamesCatalogDebugPanel
+              isLoading={isLoading}
+              contentItems={contentItems}
+              categories={categories}
+              favorites={favorites}
+              userFamily={userFamily}
+              isParent={isParent}
+              realtimeConnected={realtimeConnected}
+              cacheStats={cacheStats}
+              onCacheReset={resetAllCache}
+              onForceRefresh={handleRetry}
+            />
+          )}
+
+          {/* Emergency Navigation (always available) */}
+          <div className="mb-4">
+            <GamesCatalogEmergencyNav 
+              onRetry={handleRetry}
+              onSafeMode={handleSafeMode}
+              onClearCache={handleClearCache}
+              showDebugOptions={isDevelopment}
+            />
+          </div>
+
+          {/* Header */}
+          <CatalogHeader
+            isAuthenticated={!!user}
+            realtimeConnected={realtimeConnected}
             userFamily={userFamily}
             isParent={isParent}
-            realtimeConnected={realtimeConnected}
-            cacheStats={cacheStats}
-            onCacheReset={resetAllCache}
-            onForceRefresh={handleRetry}
+            showCuration={showCuration}
+            onToggleCuration={handleToggleCuration}
+            useVirtualScrolling={useVirtualScrolling}
+            onToggleVirtualScrolling={handleToggleVirtualScrolling}
+            isDevelopment={isDevelopment}
           />
-        )}
 
-        {/* Emergency Navigation (always available) */}
-        <div className="mb-4">
-          <GamesCatalogEmergencyNav 
-            onRetry={handleRetry}
-            onSafeMode={handleSafeMode}
-            onClearCache={handleClearCache}
-            showDebugOptions={process.env.NODE_ENV === 'development'}
+          {/* Search and Filters */}
+          <CatalogSearchBar
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            ageFilter={ageFilter}
+            onAgeFilterChange={setAgeFilter}
           />
-        </div>
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-primary mb-4">
-            🎮 Games & Activities Catalog
-          </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Discover educational games, videos, and interactive content designed for children with autism and special needs
-          </p>
-          
-          {/* Authentication Status */}
-          {!user && (
-            <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg mt-4 max-w-md mx-auto">
-              <p className="text-sm">
-                <strong>Sign in</strong> to access full content details, save favorites, and unlock family-specific activities.
-              </p>
-            </div>
-          )}
-          
-          <div className="flex flex-wrap justify-center gap-2 mt-4">
-            {realtimeConnected && (
-              <div className="text-xs text-green-600 bg-green-50 px-3 py-1 rounded-full">
-                ✓ {userFamily ? 'Family channel' : 'Global channel'} active
-              </div>
-            )}
-            {userFamily && (
-              <div className="text-xs text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
-                👨‍👩‍👧‍👦 Family content enabled
-              </div>
-            )}
-            {isParent && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowCuration(!showCuration)}
-                className="text-xs"
-              >
-                {showCuration ? 'Hide' : 'Show'} Content Management
-              </Button>
-            )}
-            {process.env.NODE_ENV === 'development' && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setUseVirtualScrolling(!useVirtualScrolling)}
-                className="text-xs"
-              >
-                {useVirtualScrolling ? 'Disable' : 'Enable'} Virtual Scrolling
-              </Button>
-            )}
-          </div>
-        </div>
 
-        {/* Search and Filters */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-          <div className="flex flex-col lg:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search games, videos, and activities..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 text-lg"
-              />
-            </div>
-            <Select value={ageFilter} onValueChange={setAgeFilter}>
-              <SelectTrigger className="w-full lg:w-48">
-                <SelectValue placeholder="Age Range" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Ages</SelectItem>
-                <SelectItem value="3-5">Ages 3-5</SelectItem>
-                <SelectItem value="6-8">Ages 6-8</SelectItem>
-                <SelectItem value="9-12">Ages 9-12</SelectItem>
-                <SelectItem value="13+">Ages 13+</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+          {/* Category Filter */}
+          <CategoryFilter
+            categories={categories.map(c => ({ ...c, icon: c.icon || 'Circle', description: c.description || '' }))}
+            selectedCategory={selectedCategory}
+            onCategoryChange={setSelectedCategory}
+          />
 
-        {/* Category Filter */}
-        <CategoryFilter
-          categories={categories.map(c => ({ ...c, icon: c.icon || 'Circle', description: c.description || '' }))}
-          selectedCategory={selectedCategory}
-          onCategoryChange={setSelectedCategory}
-        />
+          {/* Content Curation Panel */}
+          <CurationPanel isVisible={showCuration && isParent} />
 
-        {/* Content Grid */}
-        {showCuration && isParent && (
-          <div className="mb-8">
-            <Card className="bg-blue-50 border-blue-200">
-              <CardContent className="p-4">
-                <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
-                  <Shield className="h-5 w-5" />
-                  Family Content Management Active
-                </h3>
-                <p className="text-sm text-muted-foreground mb-3">
-                  Use the controls on each content card to manage what your family can access.
-                </p>
-                <div className="flex gap-2 text-xs">
-                  <Badge variant="outline" className="bg-yellow-100 text-yellow-700">
-                    <Sparkles className="h-3 w-3 mr-1" />
-                    Feature: Highlight for family
-                  </Badge>
-                  <Badge variant="outline" className="bg-green-100 text-green-700">
-                    <Shield className="h-3 w-3 mr-1" />
-                    Allow: Normal access
-                  </Badge>
-                  <Badge variant="outline" className="bg-red-100 text-red-700">
-                    <ShieldX className="h-3 w-3 mr-1" />
-                    Block: Hide from family
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {!useVirtualScrolling ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredItems.map((item) => (
-              <ContentCard
-                key={item.id}
-                item={item as any}
-                isFavorited={(favorites as string[]).includes(item.id)}
-                onFavorite={() => handleFavorite(item.id)}
-                onClick={() => handleContentClick(item)}
-                showCurationControls={showCuration && isParent}
-                onContentCuration={handleContentCuration}
-              />
-            ))}
-          </div>
-        ) : (
-          <VirtualizedContentGrid
-            items={filteredItems as any[]}
-            favorites={favorites as string[]}
+          {/* Content Grid */}
+          <CatalogContentGrid
+            items={filteredItems}
+            favorites={favorites}
             onFavorite={handleFavorite}
             onContentClick={handleContentClick}
             showCurationControls={showCuration && isParent}
             onContentCuration={handleContentCuration}
+            useVirtualScrolling={useVirtualScrolling}
           />
-        )}
-
-        {/* No Results */}
-        {filteredItems.length === 0 && (
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">🔍</div>
-            <h3 className="text-xl font-semibold mb-2">No content found</h3>
-            <p className="text-muted-foreground">
-              Try adjusting your search or filter criteria
-            </p>
-          </div>
-        )}
         </div>
       </div>
     </ErrorBoundary>

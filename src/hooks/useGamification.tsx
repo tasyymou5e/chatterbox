@@ -2,6 +2,7 @@
 import { useEffect } from 'react';
 import { useGamificationStore } from '@/stores/gamificationStore';
 import { useAuth } from './useAuth';
+import type { AchievementCriteria } from '@/types/gamification';
 
 // Re-export interfaces for backward compatibility
 export interface UserLevel {
@@ -33,7 +34,7 @@ export interface Achievement {
   icon: string;
   category: string;
   points_reward: number;
-  requirements: any;
+  requirements: AchievementCriteria;
   is_active: boolean;
   created_at: string;
 }
