@@ -1,10 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.0';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { getCorsHeaders } from '../_shared/cors.ts';
 
 interface CreateUserRequest {
   email: string;
@@ -46,6 +42,8 @@ function generateSecurePassword(): string {
 }
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req.headers.get('origin'));
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -242,10 +240,10 @@ serve(async (req) => {
     }
 
     // Delete any conflicting roles first to prevent role conflicts
-    const adminRoles = roles.filter(role => ['admin', 'read_only'].includes(role));
-    const familyRoles = roles.filter(role => ['parent', 'child'].includes(role));
+    const newAdminRoles = roles.filter(role => ['admin', 'read_only'].includes(role));
+    const newFamilyRoles = roles.filter(role => ['parent', 'child'].includes(role));
     
-    if (adminRoles.length > 0) {
+    if (newAdminRoles.length > 0) {
       // Remove any family roles if assigning admin roles
       console.log('Removing family roles before assigning admin roles');
       await supabase
@@ -255,7 +253,7 @@ serve(async (req) => {
         .in('role', ['parent', 'child']);
     }
     
-    if (familyRoles.length > 0) {
+    if (newFamilyRoles.length > 0) {
       // Remove any admin roles if assigning family roles
       console.log('Removing admin roles before assigning family roles');
       await supabase

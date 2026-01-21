@@ -1,10 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import { getCorsHeaders } from '../_shared/cors.ts'
 
 interface CreateChildAccountRequest {
   firstName: string;
@@ -15,6 +11,8 @@ interface CreateChildAccountRequest {
 }
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req.headers.get('origin'));
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -229,15 +227,15 @@ serve(async (req) => {
     }
 
     // Add child role to user_roles table
-    const { error: roleError } = await supabase
+    const { error: childRoleError } = await supabase
       .from('user_roles')
       .insert({
         user_id: createdAuthUser.id,
         role: 'child'
       });
 
-    if (roleError) {
-      console.error('Error assigning child role:', roleError);
+    if (childRoleError) {
+      console.error('Error assigning child role:', childRoleError);
       // Don't throw - role may have been created by trigger, just log it
     } else {
       console.log('Child role assigned in user_roles');
@@ -304,7 +302,7 @@ serve(async (req) => {
         error: error instanceof Error ? error.message : 'Unknown error occurred'
       }),
       {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...getCorsHeaders(req.headers.get('origin')), 'Content-Type': 'application/json' },
         status: 500,
       }
     );
