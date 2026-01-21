@@ -79,6 +79,11 @@ const ResearchStudiesLazy = React.lazy(() => import("./pages/connect/ResearchStu
 const AACDemoLazy = React.lazy(() => import("./pages/AACDemo"));
 const SubtractionGameDemoLazy = React.lazy(() => import("./pages/SubtractionGameDemo"));
 
+// Lazy loaded pages - Games
+const MemoryMatchGameLazy = React.lazy(() => import("./components/games/MemoryMatchGame"));
+const PatternMatchGameLazy = React.lazy(() => import("./components/games/PatternMatchGame"));
+const SoundsMatchGameLazy = React.lazy(() => import("./components/games/SoundsMatchGame"));
+
 // QueryClient is created and provided in main.tsx to avoid duplication
 
 // Wrapper component for lazy-loaded routes with consistent fallback
@@ -231,6 +236,17 @@ const App = () => {
                 } />
                 <Route path="/games/subtraction-demo" element={
                   <LazyRoute variant="game"><SubtractionGameDemoLazy /></LazyRoute>
+                } />
+                
+                {/* Autism-friendly games */}
+                <Route path="/games/memory-match" element={
+                  <LazyRoute variant="game"><MemoryMatchGameLazy onClose={() => window.history.back()} /></LazyRoute>
+                } />
+                <Route path="/games/pattern-match" element={
+                  <LazyRoute variant="game"><PatternMatchGameLazy onClose={() => window.history.back()} /></LazyRoute>
+                } />
+                <Route path="/games/sounds-match" element={
+                  <LazyRoute variant="game"><SoundsMatchGameLazy onClose={() => window.history.back()} /></LazyRoute>
                 } />
                 
                 {/* Admin Routes - auth pages eagerly loaded */}

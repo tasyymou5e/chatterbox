@@ -25,6 +25,17 @@ class UnifiedContentServiceClass {
       results.push(...chores);
     }
 
+    if (!contentType || contentType === 'task') {
+      const assignedGames = await this.getAssignedGamesForChild(childId, familyId);
+      // Mark assigned games and add any not already in results
+      const existingIds = new Set(results.map(r => r.id));
+      for (const game of assignedGames) {
+        if (!existingIds.has(game.id)) {
+          results.push(game);
+        }
+      }
+    }
+
     const filtered = onlyFavorites ? results.filter(item => item.isFavorite) : results;
     return filtered.slice(offset, offset + limit);
   }
@@ -132,6 +143,64 @@ class UnifiedContentServiceClass {
       }).filter(Boolean) as KidContentItem[];
     } catch (error) {
       console.error('Error fetching chores:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get games that have been specifically assigned to a child by a parent
+   */
+  async getAssignedGamesForChild(childId: string, familyId: string): Promise<KidContentItem[]> {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: assignments, error } = await (supabase.rpc as any)('get_child_game_assignments', {
+        p_child_id: childId,
+        p_family_id: familyId,
+      }) as { data: { content_item_id: string; is_required: boolean; difficulty_override: string | null; due_date: string | null }[] | null; error: { code?: string; message?: string } | null };
+
+      if (error) {
+        console.error('Error fetching assigned games:', error);
+        return [];
+      }
+
+      if (!assignments || assignments.length === 0) return [];
+
+      // Fetch the actual content items for these assignments
+      const contentIds = assignments.map(a => a.content_item_id);
+      const { data: contentItems, error: contentError } = await supabase
+        .from('content_items')
+        .select(`
+          id, title, description, url, thumbnail_url, content_type,
+          age_min, age_max, autism_features, category_id,
+          content_categories ( id, name )
+        `)
+        .in('id', contentIds);
+
+      if (contentError) throw contentError;
+
+      const assignmentMap = new Map(assignments.map(a => [a.content_item_id, a]));
+
+      return (contentItems || []).map(item => {
+        const assignment = assignmentMap.get(item.id);
+        return {
+          id: item.id,
+          type: 'task' as ContentType, // Show as task since it's assigned
+          title: item.title,
+          description: item.description || '',
+          ageGroup: this.getAgeGroup(item.age_min, item.age_max),
+          familyAccess: 'featured' as AccessLevel, // Assigned games are featured
+          autismFeatures: item.autism_features as AutismFeatures | undefined,
+          thumbnailUrl: item.thumbnail_url || undefined,
+          launchUrl: item.url || undefined,
+          categoryId: item.category_id || undefined,
+          categoryName: (item.content_categories as { name: string } | null)?.name,
+          difficultyLevel: (assignment?.difficulty_override as 'easy' | 'medium' | 'hard') || undefined,
+          // Mark as assigned
+          isFavorite: assignment?.is_required || false,
+        };
+      });
+    } catch (error) {
+      console.error('Error fetching assigned games:', error);
       return [];
     }
   }
