@@ -131,6 +131,14 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
     })
     .join("\n");
 
+  /**
+   * SECURITY NOTE: dangerouslySetInnerHTML is used here for CSS injection ONLY.
+   * This is secure because all values are strictly sanitized:
+   * - Colors: sanitizeCSSColor() validates against allowlist of hex, rgb, rgba, hsl, hsla, CSS vars, and named colors
+   * - Keys: sanitizeCSSKey() only allows alphanumeric characters, hyphens, and underscores
+   * - Null values are filtered out before building the CSS string
+   * No user-controlled HTML or JavaScript can be injected through this mechanism.
+   */
   return (
     <style
       dangerouslySetInnerHTML={{

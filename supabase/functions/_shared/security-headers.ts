@@ -1,10 +1,25 @@
+import { getCorsHeaders } from './cors.ts';
+
+// Production-safe CSP configuration (no unsafe-inline/unsafe-eval)
+const getCSPPolicy = (): string => {
+  return [
+    "default-src 'self'",
+    "script-src 'self'", // Removed unsafe-inline and unsafe-eval for production
+    "style-src 'self' 'unsafe-inline'", // Keep for Tailwind CSS
+    "img-src 'self' data: https: blob:",
+    "font-src 'self' data:",
+    "connect-src 'self' https://lxuqfgbukrrickanmmic.supabase.co wss://lxuqfgbukrrickanmmic.supabase.co https://api.x.ai",
+    "media-src 'self' blob:",
+    "object-src 'none'",
+    "frame-ancestors 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "upgrade-insecure-requests"
+  ].join('; ');
+};
+
 export const securityHeaders = {
-  // CORS Headers
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  
-  // Security Headers
+  // Security Headers (CORS handled dynamically)
   'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
   'X-Content-Type-Options': 'nosniff',
   'X-Frame-Options': 'DENY',
@@ -12,18 +27,8 @@ export const securityHeaders = {
   'Referrer-Policy': 'strict-origin-when-cross-origin',
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
   
-  // Content Security Policy
-  'Content-Security-Policy': [
-    "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-    "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: https:",
-    "font-src 'self'",
-    "connect-src 'self' https://lxuqfgbukrrickanmmic.supabase.co",
-    "frame-ancestors 'none'",
-    "base-uri 'self'",
-    "form-action 'self'"
-  ].join('; '),
+  // Content Security Policy (production-safe)
+  'Content-Security-Policy': getCSPPolicy(),
   
   // Rate Limiting Headers
   'X-RateLimit-Limit': '100',
@@ -40,10 +45,22 @@ export const securityHeaders = {
   'X-Request-ID': () => crypto.randomUUID()
 };
 
-export function getSecurityHeaders(requestId?: string): Record<string, string> {
-  const headers: Record<string, string> = {};
+/**
+ * Get security headers with dynamic CORS based on request origin
+ */
+export function getSecurityHeaders(requestOrigin?: string | null, requestId?: string): Record<string, string> {
+  // Get dynamic CORS headers based on origin
+  const corsHeaders = getCorsHeaders(requestOrigin || null);
   
+  const headers: Record<string, string> = {
+    ...corsHeaders // Include CORS headers first
+  };
+  
+  // Add static security headers
   Object.entries(securityHeaders).forEach(([key, value]) => {
+    // Skip CORS headers since we've already added them dynamically
+    if (key.startsWith('Access-Control')) return;
+    
     if (typeof value === 'function') {
       headers[key] = value();
     } else {

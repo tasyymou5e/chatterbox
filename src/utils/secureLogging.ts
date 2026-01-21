@@ -116,8 +116,9 @@ export const secureLog = {
 
   /**
    * Security event logging - goes to audit trail
+   * Critical/high severity events are sent to security-monitoring edge function
    */
-  security: (event: string, data?: unknown, severity: 'low' | 'medium' | 'high' | 'critical' = 'medium') => {
+  security: async (event: string, data?: unknown, severity: 'low' | 'medium' | 'high' | 'critical' = 'medium') => {
     const securityEvent = {
       timestamp: new Date().toISOString(),
       event,
@@ -132,8 +133,18 @@ export const secureLog = {
       console.warn(`[SECURITY-${severity.toUpperCase()}] ${event}`, securityEvent);
     }
     
-    // TODO: Send to security monitoring service
-    // securityMonitoringService.logEvent(securityEvent);
+    // Send critical and high severity events to security monitoring edge function
+    if (severity === 'critical' || severity === 'high') {
+      try {
+        await fetch('https://lxuqfgbukrrickanmmic.supabase.co/functions/v1/security-monitoring', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(securityEvent),
+        });
+      } catch {
+        // Silent fail - security logging shouldn't break the app
+      }
+    }
   },
 
   /**
