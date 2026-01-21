@@ -23,6 +23,21 @@ export interface AuthLog {
 
 export type DatabaseLog = PostgresLog | AuthLog;
 
+/**
+ * Edge Function log entry from Supabase analytics
+ */
+export interface EdgeFunctionLog {
+  id: string;
+  timestamp: number;
+  event_message: string;
+  status_code: number;
+  method: string;
+  function_id: string;
+  execution_time_ms: number;
+  deployment_id: string;
+  version: string;
+}
+
 export interface AuthDebugInfo {
   hasUser: boolean;
   hasSession: boolean;

@@ -1,22 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { updatePrivacySettings } from './privacySettings';
-
-interface UserDataExport {
-  profile: any;
-  privacy_settings: any;
-  behavioral_events: any[];
-  chore_completions: any[];
-  user_achievements: any[];
-  families: any[];
-  error_logs: any[];
-}
-
-interface DataDeletionOptions {
-  deleteBehavioralData?: boolean;
-  deleteProfileData?: boolean;
-  deleteActivityLogs?: boolean;
-  retainFamilyData?: boolean;
-}
+import type { UserDataExport, DataDeletionOptions } from '@/types/privacy';
 
 /**
  * Export all user data for GDPR compliance
