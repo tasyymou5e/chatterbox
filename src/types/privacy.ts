@@ -2,18 +2,22 @@
  * Type definitions for privacy compliance
  */
 
-import type { Database } from '@/integrations/supabase/types';
+import type { Database, Json } from '@/integrations/supabase/types';
 
+/**
+ * User profile data for export - matches profiles table structure
+ */
 export interface UserProfile {
   user_id: string;
   first_name: string | null;
   last_name: string | null;
-  email: string | null;
-  role: Database['public']['Enums']['app_role'];
-  family_id: string | null;
-  avatar_url: string | null;
   created_at: string;
   updated_at: string;
+  // Optional fields that may exist in full profile
+  email?: string | null;
+  role?: Database['public']['Enums']['app_role'];
+  family_id?: string | null;
+  avatar_url?: string | null;
 }
 
 export interface PrivacySettings {
@@ -32,7 +36,7 @@ export interface BehavioralEvent {
   family_id: string | null;
   event_type: string;
   event_category: string;
-  event_data: Record<string, unknown> | null;
+  event_data: Json;
   page_path: string | null;
   session_id: string | null;
   device_type: string | null;
@@ -56,27 +60,27 @@ export interface ChoreCompletion {
   satisfaction_rating: number | null;
   difficulty_rating: number | null;
   completion_photos: string[] | null;
-  mini_game_scores: Record<string, unknown> | null;
-  metadata: Record<string, unknown> | null;
+  mini_game_scores: Json;
+  metadata: Json;
   created_at: string;
 }
 
 export interface UserAchievement {
   id: string;
   user_id: string;
-  achievement_id: string;
+  achievement_id: string | null;
   family_id: string | null;
   unlocked_at: string;
-  progress: Record<string, unknown> | null;
-  points_earned: number | null;
-  created_at: string;
+  progress: Json;
+  metadata?: Json;
+  shared_with_connections?: Json;
 }
 
 export interface FamilyMember {
   user_id: string;
   family_id: string;
   role: Database['public']['Enums']['app_role'];
-  joined_at: string;
+  joined_at: string | null;
   families: {
     id: string;
     display_name: string;
@@ -94,10 +98,10 @@ export interface SystemErrorLog {
   route_path: string | null;
   stack_trace: string | null;
   session_id: string | null;
-  browser_info: Record<string, unknown> | null;
-  device_info: Record<string, unknown> | null;
-  metadata: Record<string, unknown> | null;
-  resolved: boolean;
+  browser_info: Json;
+  device_info: Json;
+  metadata: Json;
+  resolved: boolean | null;
   resolved_at: string | null;
   resolved_by: string | null;
   created_at: string;

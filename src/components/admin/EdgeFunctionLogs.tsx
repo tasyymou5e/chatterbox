@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
+import type { EdgeFunctionLog } from '@/types/logs';
 
 export const EdgeFunctionLogs = () => {
-  const [logs, setLogs] = useState<any[]>([]);
+  const [logs, setLogs] = useState<EdgeFunctionLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
