@@ -40,7 +40,7 @@ export const useAuthLogging = () => {
           ...metadata,
           timestamp: new Date().toISOString(),
           browserInfo: {
-            vendor: (navigator as any).vendor || '',
+            vendor: (navigator as Navigator & { vendor?: string }).vendor || '',
             product: navigator.product || '',
             appName: navigator.appName || '',
             appVersion: navigator.appVersion || ''

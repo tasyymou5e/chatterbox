@@ -47,7 +47,7 @@ const SENSITIVE_FIELDS = [
 /**
  * Sanitizes objects by removing or redacting sensitive fields
  */
-function sanitizeObject(obj: any, depth = 0): any {
+function sanitizeObject(obj: unknown, depth = 0): unknown {
   if (depth > 10) return '[MAX_DEPTH_REACHED]'; // Prevent infinite recursion
   
   if (obj === null || obj === undefined) return obj;
@@ -66,7 +66,7 @@ function sanitizeObject(obj: any, depth = 0): any {
     return obj.map(item => sanitizeObject(item, depth + 1));
   }
   
-  const sanitized: any = {};
+  const sanitized: Record<string, unknown> = {};
   
   for (const [key, value] of Object.entries(obj)) {
     // Check if key is sensitive
@@ -94,7 +94,7 @@ export const secureLog = {
   /**
    * Development-only logging
    */
-  dev: (message: string, data?: any) => {
+  dev: (message: string, data?: unknown) => {
     if (process.env.NODE_ENV === 'development') {
       console.log(`[DEV] ${message}`, data ? sanitizeObject(data) : '');
     }
@@ -103,13 +103,13 @@ export const secureLog = {
   /**
    * Production error logging - minimal sensitive data
    */
-  error: (message: string, error?: any, context?: string) => {
-    const sanitizedError = error ? {
+  error: (message: string, error?: Error | unknown, context?: string) => {
+    const sanitizedError = error instanceof Error ? {
       name: error.name,
       message: error.message,
       // Don't include stack trace in production
       ...(process.env.NODE_ENV === 'development' && { stack: error.stack })
-    } : null;
+    } : error ? { message: String(error) } : null;
     
     console.error(`[ERROR]${context ? ` [${context}]` : ''} ${message}`, sanitizedError);
   },
@@ -117,7 +117,7 @@ export const secureLog = {
   /**
    * Security event logging - goes to audit trail
    */
-  security: (event: string, data?: any, severity: 'low' | 'medium' | 'high' | 'critical' = 'medium') => {
+  security: (event: string, data?: unknown, severity: 'low' | 'medium' | 'high' | 'critical' = 'medium') => {
     const securityEvent = {
       timestamp: new Date().toISOString(),
       event,
@@ -148,14 +148,14 @@ export const secureLog = {
   /**
    * Warning logging - production safe
    */
-  warn: (message: string, data?: any, context?: string) => {
+  warn: (message: string, data?: unknown, context?: string) => {
     console.warn(`[WARN]${context ? ` [${context}]` : ''} ${message}`, data ? sanitizeObject(data) : '');
   },
 
   /**
    * Info logging - production safe  
    */
-  info: (message: string, data?: any, context?: string) => {
+  info: (message: string, data?: unknown, context?: string) => {
     console.info(`[INFO]${context ? ` [${context}]` : ''} ${message}`, data ? sanitizeObject(data) : '');
   }
 };

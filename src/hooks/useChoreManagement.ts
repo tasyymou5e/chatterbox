@@ -4,8 +4,11 @@ import { useChoreStore } from '@/stores/choreStore';
 import { useStoreResult } from '@/hooks/useStoreResult';
 import { useUIStore } from '@/stores/uiStore';
 import { withRetry } from '@/services/storeUtils';
+import type { Json } from '@/integrations/supabase/types';
 
-// Re-export interfaces for backward compatibility - using any to avoid type conflicts
+import type { InstructionStep, RecurrencePattern, CompletionData } from '@/types/chore';
+
+// Re-export interfaces for backward compatibility with proper types
 export interface ChoreCategory {
   id: string;
   name: string;
@@ -23,7 +26,7 @@ export interface ChoreTemplate {
   estimated_duration: number;
   difficulty: 'easy' | 'medium' | 'hard';
   base_points: number;
-  instructions?: any[];
+  instructions?: InstructionStep[];
   age_min?: number;
   age_max?: number;
   created_at: string;
@@ -40,7 +43,8 @@ export interface Chore {
   estimated_duration: number;
   difficulty: 'easy' | 'medium' | 'hard';
   base_points: number;
-  instructions?: any[];
+  instructions?: InstructionStep[];
+  custom_settings?: Record<string, unknown>;
   is_active: boolean;
   template_id?: string;
   created_at: string;
@@ -65,6 +69,10 @@ export interface ChoreAssignment {
   created_at: string;
   updated_at: string;
 }
+
+// Helper to convert typed objects to Json for store compatibility
+const toJson = <T>(value: T | undefined): Json | undefined => 
+  value as unknown as Json | undefined;
 
 // Individual loading states interface
 interface ChoreLoadingStates {
@@ -126,13 +134,20 @@ export const useChoreManagement = (familyId?: string) => {
   }, [familyId, setFamilyId]);
 
   // Enhanced wrapper functions with individual loading states and retry logic
-  const createChoreFromTemplate = async (templateId: string, customizations?: Partial<Chore>): Promise<any> => {
+  const createChoreFromTemplate = async (templateId: string, customizations?: Partial<Chore>): Promise<{ success: boolean; data?: Chore }> => {
     const loadingKey = getLoadingKey('create');
     setLoading(loadingKey, true);
     
     try {
+      // Convert customizations to store-compatible format
+      const storeCustomizations = customizations ? {
+        ...customizations,
+        instructions: toJson(customizations.instructions),
+        custom_settings: toJson(customizations.custom_settings)
+      } : undefined;
+      
       const result = await withRetry(
-        () => storeCreateChoreFromTemplate(templateId, customizations as any),
+        () => storeCreateChoreFromTemplate(templateId, storeCustomizations),
         { maxRetries: 2 }
       );
       
@@ -145,13 +160,21 @@ export const useChoreManagement = (familyId?: string) => {
     }
   };
 
-  const createCustomChore = async (choreData: Omit<Chore, 'id' | 'created_at' | 'updated_at' | 'family_id' | 'created_by'>): Promise<any> => {
+  const createCustomChore = async (choreData: Omit<Chore, 'id' | 'created_at' | 'updated_at' | 'family_id' | 'created_by'>): Promise<{ success: boolean; data?: Chore }> => {
     const loadingKey = getLoadingKey('create');
     setLoading(loadingKey, true);
     
     try {
+      // Convert to store-compatible format using type assertion for Json compatibility
+      const storeChoreData = {
+        ...choreData,
+        template_id: choreData.template_id ?? null,
+        instructions: toJson(choreData.instructions),
+        custom_settings: toJson(choreData.custom_settings) ?? {}
+      } as Parameters<typeof storeCreateCustomChore>[0];
+      
       const result = await withRetry(
-        () => storeCreateCustomChore(choreData as any),
+        () => storeCreateCustomChore(storeChoreData),
         { maxRetries: 2 }
       );
       
@@ -168,14 +191,14 @@ export const useChoreManagement = (familyId?: string) => {
     choreId: string,
     assignedTo: string,
     dueDate?: string,
-    recurrencePattern?: any
-  ): Promise<any> => {
+    recurrencePattern?: RecurrencePattern
+  ): Promise<{ success: boolean; data?: ChoreAssignment }> => {
     const loadingKey = getLoadingKey('assign');
     setLoading(loadingKey, true);
     
     try {
       const result = await withRetry(
-        () => storeAssignChore(choreId, assignedTo, dueDate, recurrencePattern),
+        () => storeAssignChore(choreId, assignedTo, dueDate, toJson(recurrencePattern)),
         { maxRetries: 2 }
       );
       
@@ -192,14 +215,20 @@ export const useChoreManagement = (familyId?: string) => {
     choreId: string;
     assignedTo: string;
     dueDate?: string;
-    recurrencePattern?: any;
-  }>): Promise<any> => {
+    recurrencePattern?: RecurrencePattern;
+  }>): Promise<{ success: boolean; count?: number }> => {
     const loadingKey = getLoadingKey('bulk-assign');
     setLoading(loadingKey, true);
     
     try {
+      // Convert recurrence patterns to Json
+      const storeAssignments = assignments.map(a => ({
+        ...a,
+        recurrencePattern: toJson(a.recurrencePattern)
+      }));
+      
       const result = await withRetry(
-        () => storeBulkAssignChores(assignments),
+        () => storeBulkAssignChores(storeAssignments),
         { maxRetries: 2 }
       );
       
@@ -215,20 +244,14 @@ export const useChoreManagement = (familyId?: string) => {
   const updateAssignmentStatus = async (
     assignmentId: string,
     status: ChoreAssignment['status'],
-    completionData?: {
-      points_earned?: number;
-      time_bonus?: number;
-      streak_bonus?: number;
-      completion_notes?: string;
-      parent_feedback?: string;
-    }
-  ): Promise<any> => {
+    completionData?: CompletionData
+  ): Promise<{ success: boolean; data?: ChoreAssignment }> => {
     const loadingKey = getLoadingKey('update-status');
     setLoading(loadingKey, true);
     
     try {
       const result = await withRetry(
-        () => storeUpdateAssignmentStatus(assignmentId, status as any, completionData),
+        () => storeUpdateAssignmentStatus(assignmentId, status, completionData),
         { maxRetries: 2 }
       );
       
@@ -242,23 +265,24 @@ export const useChoreManagement = (familyId?: string) => {
   };
 
   // Retry functions for failed operations
-  const retryCreateChore = useCallback(async (templateId?: string, choreData?: any, customizations?: any) => {
+  const retryCreateChore = useCallback(async (templateId?: string, choreData?: Omit<Chore, 'id' | 'created_at' | 'updated_at' | 'family_id' | 'created_by'>, customizations?: Partial<Chore>) => {
     if (templateId) {
       return createChoreFromTemplate(templateId, customizations);
-    } else {
+    } else if (choreData) {
       return createCustomChore(choreData);
     }
+    return { success: false };
   }, []);
 
-  const retryAssignChore = useCallback(async (choreId: string, assignedTo: string, dueDate?: string, recurrencePattern?: any) => {
+  const retryAssignChore = useCallback(async (choreId: string, assignedTo: string, dueDate?: string, recurrencePattern?: RecurrencePattern) => {
     return assignChore(choreId, assignedTo, dueDate, recurrencePattern);
   }, []);
 
-  const retryBulkAssign = useCallback(async (assignments: Array<any>) => {
+  const retryBulkAssign = useCallback(async (assignments: Array<{ choreId: string; assignedTo: string; dueDate?: string; recurrencePattern?: RecurrencePattern }>) => {
     return bulkAssignChores(assignments);
   }, []);
 
-  const retryUpdateStatus = useCallback(async (assignmentId: string, status: any, completionData?: any) => {
+  const retryUpdateStatus = useCallback(async (assignmentId: string, status: ChoreAssignment['status'], completionData?: CompletionData) => {
     return updateAssignmentStatus(assignmentId, status, completionData);
   }, []);
 

@@ -16,19 +16,19 @@ interface LogContext {
 class ConditionalLogger {
   private isDevelopment = import.meta.env.DEV;
   
-  debug(message: string, context?: LogContext | any): void {
+  debug(message: string, context?: LogContext | unknown): void {
     if (this.isDevelopment) {
       console.debug(`🔍 [DEBUG] ${message}`, context);
     }
   }
 
-  info(message: string, context?: LogContext | any): void {
+  info(message: string, context?: LogContext | unknown): void {
     if (this.isDevelopment) {
       console.info(`ℹ️ [INFO] ${message}`, context);
     }
   }
 
-  warn(message: string, context?: LogContext | any): void {
+  warn(message: string, context?: LogContext | unknown): void {
     // Warnings always shown, but with cleaner formatting in production
     if (this.isDevelopment) {
       console.warn(`⚠️ [WARN] ${message}`, context);
@@ -37,7 +37,7 @@ class ConditionalLogger {
     }
   }
 
-  error(message: string, error?: Error | any, context?: LogContext | any): void {
+  error(message: string, error?: Error | unknown, context?: LogContext | unknown): void {
     // Errors always shown
     if (this.isDevelopment) {
       console.error(`❌ [ERROR] ${message}`, error, context);
@@ -46,7 +46,7 @@ class ConditionalLogger {
     }
   }
 
-  log(message: string, data?: any): void {
+  log(message: string, data?: unknown): void {
     if (this.isDevelopment) {
       console.log(`📝 ${message}`, data);
     }

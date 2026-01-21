@@ -391,8 +391,9 @@ export const useGamificationStore = create<GamificationState>()(
           return { success: true, result: createStoreSuccess(data, 'Wishlist item added successfully') };
         } catch (error: unknown) {
           console.error('Error adding wishlist item:', error);
-          const storeError = (error as any)?.name === 'ZodError' 
-            ? createStoreError('validation', 'Invalid input data', undefined, { validation: (error as any).errors })
+          const isZodError = error instanceof Error && error.name === 'ZodError';
+          const storeError = isZodError
+            ? createStoreError('validation', 'Invalid input data', undefined, { validation: (error as Error & { errors?: unknown[] }).errors })
             : createStoreError('network', error instanceof Error ? error.message : 'Failed to add wishlist item');
           set({ error: storeError });
           return { success: false, error: storeError };
@@ -510,7 +511,7 @@ export const useGamificationStore = create<GamificationState>()(
 
           if (data && data.length > 0) {
             // Log achievements earned - UI layer will handle notifications
-            console.log('🏆 Achievements earned:', data.map((a: any) => a.achievement_id));
+            console.log('🏆 Achievements earned:', data.map((a: { achievement_id: string }) => a.achievement_id));
 
             // Refresh achievements
             await fetchUserAchievements();

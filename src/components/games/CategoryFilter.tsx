@@ -18,7 +18,8 @@ interface CategoryFilterProps {
 
 function CategoryFilterComponent({ categories, selectedCategory, onCategoryChange }: CategoryFilterProps) {
   const getIcon = (iconName: string) => {
-    const Icon = (LucideIcons as any)[iconName];
+    // Dynamic icon lookup from lucide-react
+    const Icon = (LucideIcons as unknown as Record<string, React.ComponentType<{ className?: string }>>)[iconName];
     return Icon ? <Icon className="h-5 w-5" /> : <LucideIcons.Circle className="h-5 w-5" />;
   };
 
