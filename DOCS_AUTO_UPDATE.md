@@ -83,11 +83,61 @@ All 32+ documentation files are registered in `src/config/docRegistry.ts`. Each 
 | `countDirectories` | Directory count | Component categories |
 | `generateTree` | Markdown tree structure | Architecture docs |
 | `listExports` | Exported functions/classes | Utils, hooks docs |
-| `extractInterfaces` | TypeScript interfaces/types | Types documentation |
+| `extractInterfaces` | TypeScript interfaces/types (regex) | Types documentation |
+| `extractInterfacesAST` | TypeScript interfaces (AST parser) | Accurate type extraction |
 | `extractEnums` | Enum definitions | Types documentation |
 | `listEdgeFunctions` | Edge function table | Backend docs |
 | `countTestFiles` | Test file count | Testing docs |
-| `parseJSDoc` | JSDoc comments | API documentation |
+| `parseJSDoc` | JSDoc comments (regex) | API documentation |
+| `parseJSDocAST` | JSDoc comments (AST parser) | Accurate JSDoc parsing |
+| `jsDocCoverage` | JSDoc coverage report | Documentation metrics |
+
+### TypeScript AST Parser
+
+The `scripts/extractors/astParser.ts` provides accurate TypeScript parsing using the official TypeScript Compiler API:
+
+```typescript
+import { TypeScriptASTParser, parseFromPatterns } from './scripts/extractors';
+
+// Parse files and get detailed type information
+const parser = new TypeScriptASTParser();
+const nodes = parser.parseFile('src/types/auth.ts');
+
+// Or parse from glob patterns
+const allNodes = parseFromPatterns(baseDir, ['src/types/**/*.ts']);
+
+// Available node types
+interface ParsedInterface {
+  name: string;
+  kind: 'interface';
+  file: string;
+  line: number;
+  properties: PropertyInfo[];
+  extends: string[];
+  generics: string[];
+  jsdoc?: JSDocInfo;
+  exported: boolean;
+}
+
+interface JSDocInfo {
+  description: string;
+  params: { name: string; description: string; type?: string }[];
+  returns?: { description: string; type?: string };
+  example?: string;
+  deprecated?: boolean;
+  since?: string;
+  tags: { name: string; text: string }[];
+}
+```
+
+**Supported Constructs:**
+- Interfaces (with properties, generics, extends)
+- Type aliases (with definitions)
+- Enums (including const enums)
+- Functions (with parameters, return types)
+- Classes (with methods, properties, inheritance)
+- Arrow functions (exported const)
+- Full JSDoc parsing (@param, @returns, @example, etc.)
 
 ### Adding Custom Extractors
 
@@ -267,6 +317,8 @@ Ensure the documentation file exists. The system won't create new files.
 
 ## Future Enhancements
 
+- [x] TypeScript AST parser for accurate type extraction
+- [x] Full JSDoc parsing with @param, @returns, @example support
 - [ ] Watch mode for development (`npm run docs:watch`)
 - [ ] SQL parser for RLS policy counting
 - [ ] Automatic changelog generation

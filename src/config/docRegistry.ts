@@ -18,12 +18,15 @@ export type ExtractorType =
   | 'generateTOC'
   | 'listExports'
   | 'extractInterfaces'
+  | 'extractInterfacesAST'
   | 'parseJSDoc'
+  | 'parseJSDocAST'
   | 'generateTree'
   | 'countRLSPolicies'
   | 'listEdgeFunctions'
   | 'countTestFiles'
-  | 'extractEnums';
+  | 'extractEnums'
+  | 'jsDocCoverage';
 
 export interface DocMapping {
   /** Documentation file path relative to project root */
