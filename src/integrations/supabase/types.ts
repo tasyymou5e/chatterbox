@@ -469,6 +469,59 @@ export type Database = {
           },
         ]
       }
+      child_content_preferences: {
+        Row: {
+          best_score: number | null
+          child_id: string
+          content_id: string
+          content_type: string
+          created_at: string | null
+          difficulty_preference: string | null
+          id: string
+          is_favorite: boolean | null
+          last_played_at: string | null
+          play_count: number | null
+          total_time_spent: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          best_score?: number | null
+          child_id: string
+          content_id: string
+          content_type: string
+          created_at?: string | null
+          difficulty_preference?: string | null
+          id?: string
+          is_favorite?: boolean | null
+          last_played_at?: string | null
+          play_count?: number | null
+          total_time_spent?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          best_score?: number | null
+          child_id?: string
+          content_id?: string
+          content_type?: string
+          created_at?: string | null
+          difficulty_preference?: string | null
+          id?: string
+          is_favorite?: boolean | null
+          last_played_at?: string | null
+          play_count?: number | null
+          total_time_spent?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "child_content_preferences_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chore_assignments: {
         Row: {
           assigned_at: string
@@ -1470,6 +1523,7 @@ export type Database = {
           access_type: string | null
           added_by: string | null
           content_item_id: string
+          content_type: string | null
           created_at: string | null
           family_id: string
           id: string
@@ -1479,6 +1533,7 @@ export type Database = {
           access_type?: string | null
           added_by?: string | null
           content_item_id: string
+          content_type?: string | null
           created_at?: string | null
           family_id: string
           id?: string
@@ -1488,6 +1543,7 @@ export type Database = {
           access_type?: string | null
           added_by?: string | null
           content_item_id?: string
+          content_type?: string | null
           created_at?: string | null
           family_id?: string
           id?: string

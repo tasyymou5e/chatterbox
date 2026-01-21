@@ -50,6 +50,7 @@ const ParentReportsLazy = React.lazy(() => import("./pages/parent/ParentReports"
 
 // Lazy loaded pages - Children routes
 const ChildrenTasksDashboardLazy = React.lazy(() => import("./pages/children/ChildrenTasksDashboard"));
+const KidsPortalLazy = React.lazy(() => import("./pages/kids/KidsPortal"));
 
 // Lazy loaded pages - Reports
 const ReportsLazy = React.lazy(() => import("./pages/Reports"));
@@ -165,6 +166,11 @@ const App = () => {
                 } />
                 
                 {/* Children routes - lazy loaded */}
+                <Route path="/kids" element={
+                  <LazyRoute variant="game">
+                    <KidsPortalLazy />
+                  </LazyRoute>
+                } />
                 <Route path="/children/tasks" element={
                   <LazyRoute variant="dashboard">
                     <ChildrenTasksDashboardLazy />

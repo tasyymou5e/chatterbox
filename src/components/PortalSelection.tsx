@@ -62,8 +62,10 @@ export const PortalSelection = () => {
         navigate("/admin/login");
         break;
       case "parent":
-      case "child":
         navigate("/auth");
+        break;
+      case "child":
+        navigate("/kids");
         break;
       default:
         navigate("/auth");
