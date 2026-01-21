@@ -3383,65 +3383,6 @@ export type Database = {
       }
     }
     Views: {
-      child_accounts_safe: {
-        Row: {
-          completed_at: string | null
-          created_at: string | null
-          created_by: string | null
-          creation_attempt_count: number | null
-          expires_at: string | null
-          family_code: string | null
-          family_id: string | null
-          first_name: string | null
-          generated_email: string | null
-          id: string | null
-          last_name: string | null
-          metadata: Json | null
-          status: string | null
-          user_id: string | null
-        }
-        Insert: {
-          completed_at?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          creation_attempt_count?: number | null
-          expires_at?: string | null
-          family_code?: string | null
-          family_id?: string | null
-          first_name?: string | null
-          generated_email?: never
-          id?: string | null
-          last_name?: string | null
-          metadata?: Json | null
-          status?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          completed_at?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          creation_attempt_count?: number | null
-          expires_at?: string | null
-          family_code?: string | null
-          family_id?: string | null
-          first_name?: string | null
-          generated_email?: never
-          id?: string | null
-          last_name?: string | null
-          metadata?: Json | null
-          status?: string | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "child_accounts_family_id_fkey"
-            columns: ["family_id"]
-            isOneToOne: false
-            referencedRelation: "families"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       daily_analytics: {
         Row: {
           active_users: number | null
