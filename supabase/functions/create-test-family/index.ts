@@ -1,66 +1,47 @@
 // Edge function: create-test-family
-// Last deployment trigger: 2026-01-01T19:30:00Z
 // Creates test families for development and testing purposes
-// Enhanced with detailed phase logging and child_accounts integration
+// Uses JWT Signing Keys for fast local token verification
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { getCorsHeaders } from '../_shared/cors.ts'
+import { cleanupLimiter, RateLimiter } from '../_shared/rate-limiter.ts'
+import { 
+  validateAdminJWT, 
+  getServiceClient, 
+  createUnauthorizedResponse,
+  createForbiddenResponse
+} from '../_shared/auth-validator.ts'
 
-// Import password validator for secure password generation
-interface PasswordValidationResult {
-  isValid: boolean;
-  score: number;
-  feedback: string[];
-  requirements: {
-    minLength: boolean;
-    hasUppercase: boolean;
-    hasLowercase: boolean;
-    hasNumbers: boolean;
-    hasSpecialChars: boolean;
-    noCommonPatterns: boolean;
-    notCompromised: boolean;
-  };
-}
-
+// Password validation
 class PasswordValidator {
-  static validate(password: string): PasswordValidationResult {
-    const feedback: string[] = [];
+  static validate(password: string) {
     const requirements = {
       minLength: password.length >= 8,
       hasUppercase: /[A-Z]/.test(password),
       hasLowercase: /[a-z]/.test(password),
       hasNumbers: /\d/.test(password),
       hasSpecialChars: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password),
-      noCommonPatterns: true, // Simple check for generated passwords
-      notCompromised: true    // Simple check for generated passwords
+      noCommonPatterns: true,
+      notCompromised: true
     };
 
     const isValid = requirements.minLength && requirements.hasUppercase && 
                     requirements.hasLowercase && requirements.hasNumbers && 
                     requirements.hasSpecialChars;
 
-    return {
-      isValid,
-      score: isValid ? 5 : 2,
-      feedback,
-      requirements
-    };
+    return { isValid, score: isValid ? 5 : 2, feedback: [], requirements };
   }
 }
 
-// Generate a strong password that meets validation requirements
+// Generate a strong password
 function generateStrongPassword(): string {
-  const timestamp = Date.now().toString().slice(-6); // Last 6 digits
-  const randomChars = Math.random().toString(36).substring(2, 6).toUpperCase(); // Uppercase letters
+  const timestamp = Date.now().toString().slice(-6);
+  const randomChars = Math.random().toString(36).substring(2, 6).toUpperCase();
   const specialChars = ['!', '@', '#', '$', '%', '^', '&', '*'];
   const specialChar = specialChars[Math.floor(Math.random() * specialChars.length)];
-  
-  // Format: TempPass + timestamp + uppercase letters + special char
   return `TempPass${timestamp}${randomChars}${specialChar}`;
 }
 
-import { getCorsHeaders } from '../_shared/cors.ts'
-import { cleanupLimiter, RateLimiter } from '../_shared/rate-limiter.ts'
 interface Parent {
   firstName: string;
   lastName: string;
@@ -78,35 +59,11 @@ interface CreateFamilyRequest {
   parent1: Parent;
   parent2: Parent | null;
   children: Child[];
-  createdBy: string; // Admin user ID passed from frontend
-  cleanupFirst?: boolean; // Whether to cleanup existing test data first
-  forceUniqueEmails?: boolean; // Whether to auto-generate unique emails for conflicts
-  emailSuffix?: string; // Custom suffix for email generation
-  customPassword?: string; // Custom password to use instead of auto-generated
-}
-
-interface CreateFamilyResponse {
-  success: boolean;
-  familyCode?: string;
-  familyId?: string;
-  displayName?: string;
-  internalName?: string;
-  membersCreated: number;
-  members: Array<{
-    name: string;
-    email: string;
-    role: string;
-    tempPassword?: string;
-    success: boolean;
-    error?: string;
-  }>;
-  tempPassword?: string;
-  cleanupResults?: {
-    familiesDeleted: number;
-    usersDeleted: number;
-  };
-  error?: string;
-  requestId?: string; // For tracing
+  createdBy: string;
+  cleanupFirst?: boolean;
+  forceUniqueEmails?: boolean;
+  emailSuffix?: string;
+  customPassword?: string;
 }
 
 // Helper function to generate unique email
@@ -125,7 +82,7 @@ async function checkEmailExists(supabase: any, email: string): Promise<boolean> 
     return users?.users?.some((user: any) => user.email === email) || false;
   } catch (error) {
     console.error('Error checking email existence:', error);
-    return false; // Assume email doesn't exist if we can't check
+    return false;
   }
 }
 
@@ -149,16 +106,13 @@ async function getUniqueEmail(supabase: any, baseEmail: string, forceUnique: boo
     attempts++;
   }
   
-  // Final attempt with timestamp
   return generateUniqueEmail(baseEmail, customSuffix);
 }
 
 serve(async (req) => {
-  // Generate request ID for tracing
   const requestId = crypto.randomUUID().slice(0, 8);
   const startTime = Date.now();
   
-  // Structured logging helpers
   const log = (phase: string, message: string, data?: any) => {
     const elapsed = Date.now() - startTime;
     console.log(`[${requestId}] [${elapsed}ms] [${phase}] ${message}`, data ? JSON.stringify(data, null, 2) : '');
@@ -169,24 +123,19 @@ serve(async (req) => {
     console.error(`[${requestId}] [${elapsed}ms] [${phase}] ERROR: ${message}`, {
       error: error?.message || String(error),
       code: error?.code,
-      details: error?.details,
-      hint: error?.hint,
-      stack: error?.stack?.split('\n').slice(0, 3).join('\n')
+      details: error?.details
     });
   };
 
   log('INIT', 'Request received', { method: req.method });
 
-  // Get dynamic CORS headers based on origin
   const corsHeaders = getCorsHeaders(req.headers.get('origin'));
 
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    log('INIT', 'CORS preflight request handled');
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Apply rate limiting for test family creation
+  // Apply rate limiting
   const rateCheck = cleanupLimiter.check(req);
   if (!rateCheck.allowed) {
     log('RATE_LIMIT', 'Rate limit exceeded');
@@ -194,21 +143,23 @@ serve(async (req) => {
   }
 
   try {
-    // Validate required environment variables
-    log('INIT', 'Validating environment variables');
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    // Validate admin JWT using getClaims() for fast local verification
+    log('AUTH', 'Validating admin JWT');
+    const auth = await validateAdminJWT(req);
     
-    if (!supabaseUrl || !serviceRoleKey) {
-      logError('INIT', 'Missing required environment variables', { 
-        supabaseUrl: !!supabaseUrl, 
-        serviceRoleKey: !!serviceRoleKey 
-      });
-      throw new Error('Missing required Supabase configuration');
+    if (!auth.success) {
+      logError('AUTH', 'Authentication failed', auth.error);
+      return createUnauthorizedResponse(auth.error || 'Unauthorized', corsHeaders);
+    }
+    
+    if (!auth.isAdmin) {
+      logError('AUTH', 'Admin access required', { userId: auth.userId });
+      return createForbiddenResponse('Admin access required', corsHeaders);
     }
 
-    log('INIT', 'Environment validated, creating Supabase client');
-    const supabase = createClient(supabaseUrl, serviceRoleKey);
+    log('AUTH', 'Admin authentication successful', { userId: auth.userId });
+
+    const supabase = getServiceClient();
 
     log('INIT', 'Parsing request body');
     const { 
@@ -223,13 +174,8 @@ serve(async (req) => {
       customPassword
     }: CreateFamilyRequest = await req.json();
     
-    // Validate required fields
     if (!displayName || !parent1 || !createdBy) {
-      logError('INIT', 'Missing required fields', { 
-        displayName: !!displayName, 
-        parent1: !!parent1, 
-        createdBy: !!createdBy 
-      });
+      logError('INIT', 'Missing required fields', { displayName: !!displayName, parent1: !!parent1, createdBy: !!createdBy });
       throw new Error('Missing required fields: displayName, parent1, or createdBy');
     }
 
@@ -262,7 +208,6 @@ serve(async (req) => {
           };
           log('CLEANUP', 'Database cleanup completed', cleanupResults);
 
-          // Delete auth users (cleanup function can't do this directly)
           const cleanupDetails = cleanupData[0].cleanup_details;
           const userIds = cleanupDetails.test_user_ids || [];
           
@@ -273,12 +218,8 @@ serve(async (req) => {
               log('CLEANUP', `Deleted auth user: ${userId}`);
             } catch (authError) {
               logError('CLEANUP', `Failed to delete auth user ${userId}`, authError);
-              // Continue with other deletions
             }
           }
-          log('CLEANUP', 'Auth user cleanup completed');
-        } else {
-          log('CLEANUP', 'No test data found to cleanup');
         }
       } catch (cleanupError) {
         logError('CLEANUP', 'Cleanup process failed', cleanupError);
@@ -288,8 +229,7 @@ serve(async (req) => {
 
     // Generate family code
     log('FAMILY_CODE', 'Generating family code');
-    const { data: familyCodeData, error: familyCodeError } = await supabase
-      .rpc('generate_family_code');
+    const { data: familyCodeData, error: familyCodeError } = await supabase.rpc('generate_family_code');
 
     if (familyCodeError) {
       logError('FAMILY_CODE', 'Failed to generate family code', familyCodeError);
@@ -300,7 +240,7 @@ serve(async (req) => {
     const internalName = `${displayName} (${familyCode})`;
     log('FAMILY_CODE', 'Family code generated', { familyCode, internalName });
 
-    // Create family record with test metadata
+    // Create family record
     log('FAMILY_CREATE', 'Creating family record');
     const { data: familyData, error: familyError } = await supabase
       .from('families')
@@ -324,13 +264,9 @@ serve(async (req) => {
       throw new Error('Failed to create family record');
     }
 
-    log('FAMILY_CREATE', 'Family record created', { 
-      familyId: familyData.id, 
-      familyCode: familyData.family_code 
-    });
+    log('FAMILY_CREATE', 'Family record created', { familyId: familyData.id, familyCode: familyData.family_code });
 
     // Prepare all family members
-    log('MEMBER_PREP', 'Preparing family members list');
     const familyMembers: Array<{
       firstName: string;
       lastName: string;
@@ -338,7 +274,6 @@ serve(async (req) => {
       role: 'parent' | 'child';
     }> = [];
 
-    // Add parent 1
     familyMembers.push({
       firstName: parent1.firstName,
       lastName: parent1.lastName,
@@ -346,7 +281,6 @@ serve(async (req) => {
       role: 'parent'
     });
 
-    // Add parent 2 if provided
     if (parent2) {
       familyMembers.push({
         firstName: parent2.firstName,
@@ -356,7 +290,6 @@ serve(async (req) => {
       });
     }
 
-    // Add children
     children.forEach(child => {
       familyMembers.push({
         firstName: child.firstName,
@@ -372,51 +305,35 @@ serve(async (req) => {
       children: familyMembers.filter(m => m.role === 'child').length
     });
 
-    // Create auth users and profiles for all family members with enhanced error handling
-    const createdMembers = [];
-    const failedMembers = [];
-    
-    // Generate strong password that meets validation requirements
-    log('PASSWORD', 'Preparing password');
+    // Generate password
     let tempPassword = customPassword;
     if (!tempPassword) {
       tempPassword = generateStrongPassword();
-      log('PASSWORD', 'Generated strong password for test family');
-      
-      // Validate the generated password
       const validation = PasswordValidator.validate(tempPassword);
       if (!validation.isValid) {
-        logError('PASSWORD', 'Generated password failed validation', validation.feedback);
         throw new Error('Failed to generate valid password');
       }
-      log('PASSWORD', 'Password validated successfully');
-    } else {
-      log('PASSWORD', 'Using custom password provided');
     }
+
+    const createdMembers = [];
+    const failedMembers = [];
 
     for (let i = 0; i < familyMembers.length; i++) {
       const member = familyMembers[i];
-      const memberIndex = i + 1;
       
-      log('MEMBER_CREATE', `Processing member ${memberIndex}/${familyMembers.length}`, {
+      log('MEMBER_CREATE', `Processing member ${i + 1}/${familyMembers.length}`, {
         role: member.role,
         email: member.email,
         name: `${member.firstName} ${member.lastName}`
       });
       
       try {
-        // Get unique email if requested
-        log('EMAIL', `Getting unique email for ${member.email}`);
         const finalEmail = await getUniqueEmail(supabase, member.email, forceUniqueEmails, emailSuffix);
         
         if (finalEmail !== member.email) {
           log('EMAIL', `Email transformed: ${member.email} -> ${finalEmail}`);
-        } else {
-          log('EMAIL', `Using original email: ${finalEmail}`);
         }
         
-        // Create auth user
-        log('AUTH_CREATE', `Creating auth user: ${finalEmail}`);
         const { data: authData, error: authError } = await supabase.auth.admin.createUser({
           email: finalEmail,
           password: tempPassword,
@@ -438,196 +355,114 @@ serve(async (req) => {
             success: false,
             error: `Auth creation failed: ${authError.message}`
           });
-          continue; // Continue with next member instead of failing entire operation
+          continue;
         }
 
-        log('AUTH_CREATE', `Auth user created successfully`, { 
-          userId: authData.user.id, 
-          email: finalEmail 
-        });
+        log('AUTH_CREATE', `Auth user created successfully`, { userId: authData.user.id, email: finalEmail });
 
-        try {
-          // The handle_new_user() trigger will automatically create the profile and assign parent role
-          // We need to update the role if it's a child
-          if (member.role === 'child') {
-            log('ROLE_ASSIGN', `Updating role to child for ${finalEmail}`);
-            
-            // Remove default parent role
-            const { error: deleteRoleError } = await supabase
-              .from('user_roles')
-              .delete()
-              .eq('user_id', authData.user.id)
-              .eq('role', 'parent');
-            
-            if (deleteRoleError) {
-              log('ROLE_ASSIGN', `Note: Could not remove parent role (may not exist): ${deleteRoleError.message}`);
-            }
+        // Handle role assignment
+        if (member.role === 'child') {
+          const { error: deleteRoleError } = await supabase
+            .from('user_roles')
+            .delete()
+            .eq('user_id', authData.user.id)
+            .eq('role', 'parent');
 
-            // Add child role
-            const { error: insertRoleError } = await supabase
-              .from('user_roles')
-              .insert({
-                user_id: authData.user.id,
-                role: 'child'
-              });
-            
-            if (insertRoleError) {
-              logError('ROLE_ASSIGN', `Failed to assign child role`, insertRoleError);
-              throw new Error(`Failed to assign child role: ${insertRoleError.message}`);
-            }
-            
-            log('ROLE_ASSIGN', `Child role assigned successfully`);
-          } else {
-            log('ROLE_ASSIGN', `Parent role (auto-assigned by trigger)`);
+          const { error: insertRoleError } = await supabase
+            .from('user_roles')
+            .insert({ user_id: authData.user.id, role: 'child' });
+
+          if (insertRoleError) {
+            logError('ROLE_ASSIGN', `Failed to assign child role`, insertRoleError);
           }
+        }
 
-          // Add to family_members table
-          log('FAMILY_MEMBER', `Adding ${finalEmail} to family_members`);
-          const { error: familyMemberError } = await supabase
-            .from('family_members')
+        // Add to family_members table
+        const { error: familyMemberError } = await supabase
+          .from('family_members')
+          .insert({
+            family_id: familyData.id,
+            user_id: authData.user.id,
+            role: member.role,
+            invited_by: createdBy
+          });
+
+        if (familyMemberError) {
+          logError('FAMILY_MEMBER', `Failed to add to family_members`, familyMemberError);
+        }
+
+        // Create child_accounts record for children
+        if (member.role === 'child') {
+          const { error: childAccountError } = await supabase
+            .from('child_accounts')
             .insert({
               family_id: familyData.id,
+              created_by: createdBy,
               user_id: authData.user.id,
-              role: member.role,
-              invited_by: createdBy
+              first_name: member.firstName,
+              last_name: member.lastName,
+              generated_email: finalEmail,
+              family_code: familyCode,
+              status: 'completed',
+              completed_at: new Date().toISOString(),
+              metadata: {
+                created_via: 'test_family_creation',
+                is_test_account: true
+              }
             });
 
-          if (familyMemberError) {
-            logError('FAMILY_MEMBER', `Failed to add to family_members`, familyMemberError);
-            throw new Error(`Failed to add ${finalEmail} to family: ${familyMemberError.message}`);
+          if (childAccountError) {
+            logError('CHILD_ACCOUNT', `Failed to create child_account record`, childAccountError);
           }
-
-          log('FAMILY_MEMBER', `Added to family_members successfully`);
-
-          // Create child_accounts record for children
-          if (member.role === 'child') {
-            log('CHILD_ACCOUNT', `Creating child_accounts record for ${finalEmail}`);
-            
-            const { data: childAccountData, error: childAccountError } = await supabase
-              .from('child_accounts')
-              .insert({
-                family_id: familyData.id,
-                created_by: createdBy,
-                user_id: authData.user.id,
-                first_name: member.firstName,
-                last_name: member.lastName,
-                generated_email: finalEmail,
-                family_code: familyCode,
-                status: 'completed',
-                completed_at: new Date().toISOString(),
-                metadata: {
-                  creator_role: 'admin',
-                  family_name: displayName,
-                  created_via: 'test_family_creation',
-                  is_test_account: true,
-                  password_set_by_admin: true,
-                  request_id: requestId
-                }
-              })
-              .select()
-              .single();
-
-            if (childAccountError) {
-              logError('CHILD_ACCOUNT', `Failed to create child_accounts record`, childAccountError);
-              // Non-fatal - log but continue
-              log('CHILD_ACCOUNT', `Warning: child_accounts record not created, but user was created successfully`);
-            } else {
-              log('CHILD_ACCOUNT', `child_accounts record created`, { 
-                childAccountId: childAccountData?.id 
-              });
-            }
-          }
-
-          createdMembers.push({
-            name: `${member.firstName} ${member.lastName}`,
-            email: finalEmail,
-            role: member.role,
-            tempPassword: tempPassword,
-            success: true
-          });
-
-          log('MEMBER_CREATE', `Member ${memberIndex}/${familyMembers.length} completed successfully`, {
-            email: finalEmail,
-            role: member.role
-          });
-          
-        } catch (memberError) {
-          // If family member creation fails, try to clean up the auth user
-          logError('MEMBER_CREATE', `Member creation failed, cleaning up auth user`, memberError);
-          try {
-            await supabase.auth.admin.deleteUser(authData.user.id);
-            log('MEMBER_CREATE', `Cleaned up auth user after failure: ${finalEmail}`);
-          } catch (cleanupError) {
-            logError('MEMBER_CREATE', `Failed to cleanup auth user ${finalEmail}`, cleanupError);
-          }
-          
-          failedMembers.push({
-            name: `${member.firstName} ${member.lastName}`,
-            email: finalEmail,
-            role: member.role,
-            success: false,
-            error: `Family member creation failed: ${memberError instanceof Error ? memberError.message : 'Unknown error'}`
-          });
         }
-        
+
+        createdMembers.push({
+          name: `${member.firstName} ${member.lastName}`,
+          email: finalEmail,
+          role: member.role,
+          tempPassword,
+          success: true
+        });
+
       } catch (error) {
-        logError('MEMBER_CREATE', `Failed to process member ${member.email}`, error);
+        logError('MEMBER_CREATE', `Failed to create member`, error);
         failedMembers.push({
           name: `${member.firstName} ${member.lastName}`,
           email: member.email,
           role: member.role,
           success: false,
-          error: `Processing failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+          error: error instanceof Error ? error.message : 'Unknown error'
         });
       }
     }
 
-    // Combine successful and failed members
-    const allMembers = [...createdMembers, ...failedMembers];
-    const hasFailures = failedMembers.length > 0;
-    const hasSuccesses = createdMembers.length > 0;
-
     log('COMPLETE', 'Test family creation completed', {
-      requestId,
-      familyCode,
-      displayName,
+      familyId: familyData.id,
       membersCreated: createdMembers.length,
-      membersFailed: failedMembers.length,
-      cleanupPerformed: cleanupResults !== null,
-      totalDuration: `${Date.now() - startTime}ms`,
-      success: hasSuccesses
+      membersFailed: failedMembers.length
     });
 
-    const response: CreateFamilyResponse = {
-      success: hasSuccesses, // Consider successful if at least one member was created
-      familyCode: hasSuccesses ? familyCode : undefined,
-      familyId: hasSuccesses ? familyData.id : undefined,
-      displayName: hasSuccesses ? displayName : undefined,
-      internalName: hasSuccesses ? internalName : undefined,
-      membersCreated: createdMembers.length,
-      members: allMembers,
-      tempPassword: hasSuccesses ? tempPassword : undefined,
-      cleanupResults: cleanupResults || undefined,
-      requestId
-    };
-
-    // If we have failures but some successes, return 207 (Multi-Status)
-    // If complete failure, return 500
-    // If complete success, return 200
-    const statusCode = hasFailures ? (hasSuccesses ? 207 : 500) : 200;
-
-    log('COMPLETE', `Returning response with status ${statusCode}`);
-
     return new Response(
-      JSON.stringify(response),
+      JSON.stringify({
+        success: true,
+        familyCode: familyData.family_code,
+        familyId: familyData.id,
+        displayName: displayName,
+        internalName: internalName,
+        membersCreated: createdMembers.length,
+        members: [...createdMembers, ...failedMembers],
+        tempPassword,
+        cleanupResults,
+        requestId
+      }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: statusCode,
+        status: 200,
       }
     );
 
   } catch (error) {
-    logError('FATAL', 'Unhandled error in create-test-family function', error);
+    logError('ERROR', 'Test family creation failed', error);
     
     return new Response(
       JSON.stringify({
