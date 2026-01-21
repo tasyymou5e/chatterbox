@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-
+import { getErrorMessage } from '@/utils/getErrorMessage';
 interface RoleConflict {
   user_id: string;
   email: string | null;
@@ -38,12 +38,12 @@ export const RoleConflictPanel: React.FC = () => {
       if (error) throw error;
       
       setConflicts(data || []);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error fetching role conflicts:', error);
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to fetch role conflicts'
+        description: getErrorMessage(error)
       });
     } finally {
       setLoading(false);
@@ -95,12 +95,12 @@ export const RoleConflictPanel: React.FC = () => {
       // Refresh conflicts
       fetchConflicts();
 
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error resolving conflict:', error);
       toast({
         variant: 'destructive',
         title: 'Resolution Failed',
-        description: error instanceof Error ? error.message : 'Failed to resolve role conflict'
+        description: getErrorMessage(error)
       });
     } finally {
       setResolving(prev => {

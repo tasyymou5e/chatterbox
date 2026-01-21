@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Shield, AlertTriangle, Clock } from 'lucide-react';
-
+import { getErrorMessage } from '@/utils/getErrorMessage';
 export default function AdminLogin() {
   const { signIn, loading, user, isAdmin } = useAdminAuth();
   const { toast } = useToast();
@@ -113,11 +113,11 @@ export default function AdminLogin() {
         });
         setIsSigningIn(false);
       }
-    } catch (error) {
-      console.error('💥 Unexpected login error:', error);
+    } catch (error: unknown) {
+      console.error('💥 Unexpected login error:', getErrorMessage(error));
       toast({
         title: "Connection Error", 
-        description: "An unexpected error occurred. Please try again.",
+        description: getErrorMessage(error),
         variant: "destructive",
       });
       setIsSigningIn(false);

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { getErrorMessage } from '@/utils/getErrorMessage';
 
 export const useAdminDebug = () => {
   const [debugInfo, setDebugInfo] = useState<string>('');
@@ -22,8 +23,8 @@ export const useAdminDebug = () => {
         } else {
           logs.push('✅ Supabase Connection OK');
         }
-      } catch (err) {
-        logs.push(`❌ Supabase Connection Failed: ${err}`);
+      } catch (err: unknown) {
+        logs.push(`❌ Supabase Connection Failed: ${getErrorMessage(err)}`);
       }
       
       // Test 2: Auth Session
@@ -37,8 +38,8 @@ export const useAdminDebug = () => {
         } else {
           logs.push('⚠️ No Active Session');
         }
-      } catch (err) {
-        logs.push(`❌ Auth Session Check Failed: ${err}`);
+      } catch (err: unknown) {
+        logs.push(`❌ Auth Session Check Failed: ${getErrorMessage(err)}`);
       }
       
       // Test 3: User Roles Table
@@ -53,8 +54,8 @@ export const useAdminDebug = () => {
         } else {
           logs.push(`✅ User Roles Table OK (${data?.length || 0} records checked)`);
         }
-      } catch (err) {
-        logs.push(`❌ User Roles Check Failed: ${err}`);
+      } catch (err: unknown) {
+        logs.push(`❌ User Roles Check Failed: ${getErrorMessage(err)}`);
       }
       
       // Test 4: Admin Users Check
@@ -72,14 +73,14 @@ export const useAdminDebug = () => {
             logs.push('⚠️ WARNING: No admin users found in the system!');
           }
         }
-      } catch (err) {
-        logs.push(`❌ Admin Check Failed: ${err}`);
+      } catch (err: unknown) {
+        logs.push(`❌ Admin Check Failed: ${getErrorMessage(err)}`);
       }
       
       logs.push('\n🔍 Diagnostics Complete!\n');
       
-    } catch (error) {
-      logs.push(`❌ Diagnostics Failed: ${error}`);
+    } catch (error: unknown) {
+      logs.push(`❌ Diagnostics Failed: ${getErrorMessage(error)}`);
     }
     
     setDebugInfo(logs.join('\n'));
@@ -137,10 +138,11 @@ export const useAdminDebug = () => {
       setDebugInfo(logs.join('\n'));
       return { success: true };
       
-    } catch (error) {
-      logs.push(`❌ Unexpected Error: ${error}`);
+    } catch (error: unknown) {
+      const msg = getErrorMessage(error);
+      logs.push(`❌ Unexpected Error: ${msg}`);
       setDebugInfo(logs.join('\n'));
-      return { success: false, error: String(error) };
+      return { success: false, error: msg };
     }
   };
 

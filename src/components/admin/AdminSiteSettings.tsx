@@ -6,7 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Settings, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
-
+import { getErrorMessage } from '@/utils/getErrorMessage';
 export default function AdminSiteSettings() {
   const { toast } = useToast();
   const [showSettings, setShowSettings] = useState(false);
@@ -51,8 +51,8 @@ export default function AdminSiteSettings() {
         setSiteMaintenanceMode(settingsMap.site_maintenance_mode ?? false);
         setMaxFamiliesPerParent(settingsMap.max_families_per_parent ?? 5);
       }
-    } catch (error) {
-      console.error('Error loading site settings:', error);
+    } catch (error: unknown) {
+      console.error('Error loading site settings:', getErrorMessage(error));
     } finally {
       setLoadingSettings(false);
     }
@@ -85,8 +85,8 @@ export default function AdminSiteSettings() {
         title: "Setting Updated",
         description: `${settingKey.replace(/_/g, ' ')} has been ${typeof settingValue === 'boolean' ? (settingValue ? 'enabled' : 'disabled') : 'updated'}`,
       });
-    } catch (error) {
-      console.error('Error updating site setting:', error);
+    } catch (error: unknown) {
+      console.error('Error updating site setting:', getErrorMessage(error));
       toast({
         title: "Update Failed",
         description: "Failed to update site setting. Please try again.",

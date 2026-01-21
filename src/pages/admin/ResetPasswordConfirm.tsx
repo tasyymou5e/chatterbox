@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Shield, CheckCircle } from 'lucide-react';
-
+import { getErrorMessage } from '@/utils/getErrorMessage';
 export default function ResetPasswordConfirm() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -114,11 +114,11 @@ export default function ResetPasswordConfirm() {
           navigate('/admin/login');
         }, 3000);
       }
-    } catch (error) {
-      console.error('Unexpected password update error:', error);
+    } catch (error: unknown) {
+      console.error('Unexpected password update error:', getErrorMessage(error));
       toast({
         title: "Error",
-        description: "An unexpected error occurred. Please try again.",
+        description: getErrorMessage(error),
         variant: "destructive",
       });
     } finally {

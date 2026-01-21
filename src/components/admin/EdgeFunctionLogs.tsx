@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { EdgeFunctionLog } from '@/types/logs';
+import { getErrorMessage } from '@/utils/getErrorMessage';
 
 export const EdgeFunctionLogs = () => {
   const [logs, setLogs] = useState<EdgeFunctionLog[]>([]);
@@ -63,8 +64,8 @@ export const EdgeFunctionLogs = () => {
       ];
       
       setLogs(sampleLogs);
-    } catch (error) {
-      console.error('Failed to fetch edge function logs:', error);
+    } catch (error: unknown) {
+      console.error('Failed to fetch edge function logs:', getErrorMessage(error));
       setLogs([]);
     } finally {
       setLoading(false);

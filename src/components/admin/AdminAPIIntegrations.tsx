@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-
+import { getErrorMessage } from '@/utils/getErrorMessage';
 interface IntegrationStatus {
   provider: string;
   displayName: string;
@@ -72,8 +72,8 @@ export default function AdminAPIIntegrations() {
       }
 
       setIntegrations(data?.integrations || defaultIntegrations);
-    } catch (error) {
-      console.error('Failed to fetch integration status:', error);
+    } catch (error: unknown) {
+      console.error('Failed to fetch integration status:', getErrorMessage(error));
       setIntegrations(defaultIntegrations);
     } finally {
       setLoading(false);
@@ -97,8 +97,8 @@ export default function AdminAPIIntegrations() {
 
       // Refresh status after test
       await fetchIntegrationStatus();
-    } catch (error) {
-      console.error('Integration test failed:', error);
+    } catch (error: unknown) {
+      console.error('Integration test failed:', getErrorMessage(error));
       toast.error(`Failed to test ${provider} integration`);
     } finally {
       setTesting(null);

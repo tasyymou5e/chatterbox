@@ -15,7 +15,7 @@ import FamilyNameSuggestions from './FamilyNameSuggestions';
 import { useUIStore } from '@/stores/uiStore';
 import TestFamilyResultsDialog from './TestFamilyResultsDialog';
 import { PasswordStrengthIndicator } from '../auth/PasswordStrengthIndicator';
-
+import { getErrorMessage } from '@/utils/getErrorMessage';
 interface Child {
   firstName: string;
   lastName: string;
@@ -126,12 +126,12 @@ export default function CreateTestFamilyDialog({ open, onOpenChange, onSuccess }
       } else {
         throw new Error(data?.error || 'Cleanup failed');
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Cleanup error:', error);
       toast({ 
         variant: "destructive", 
         title: "Cleanup failed", 
-        description: error instanceof Error ? error.message : 'An unexpected error occurred'
+        description: getErrorMessage(error)
       });
     } finally {
       setCleanupLoading(false);
@@ -306,12 +306,12 @@ export default function CreateTestFamilyDialog({ open, onOpenChange, onSuccess }
       } else {
         throw new Error(data?.error || 'All family members failed to create');
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error creating test family:', error);
       toast({
         variant: "destructive",
         title: "Failed to create test family",
-        description: error instanceof Error ? error.message : "Unknown error occurred"
+        description: getErrorMessage(error)
       });
     } finally {
       setLoading('createTestFamily', false);
