@@ -2,7 +2,7 @@
  * KidsPortal - Main unified portal page for children
  */
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -30,11 +30,11 @@ export default function KidsPortal() {
       }
 
       try {
-        // Get profile
+        // Get profile (only existing columns)
         const { data: profile } = await supabase
           .from('profiles')
-          .select('id, first_name, last_name, avatar_url, role')
-          .eq('id', user.id)
+          .select('user_id, first_name, last_name')
+          .eq('user_id', user.id)
           .single();
 
         // Get family membership
@@ -47,11 +47,11 @@ export default function KidsPortal() {
 
         if (profile) {
           setChildProfile({
-            id: profile.id,
+            id: profile.user_id,
             firstName: profile.first_name || 'Friend',
             lastName: profile.last_name || undefined,
-            ageGroup: '6-8', // Default, could be from metadata
-            avatarUrl: profile.avatar_url || undefined,
+            ageGroup: '6-8',
+            avatarUrl: undefined,
             totalStars: 0,
             totalMoons: 0,
           });
@@ -92,7 +92,7 @@ export default function KidsPortal() {
 
   if (isLoadingProfile) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-sky-100 to-purple-100">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted">
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
           <p className="text-lg font-medium text-foreground">Loading your portal...</p>

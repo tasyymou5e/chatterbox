@@ -1,7 +1,7 @@
 import React from 'react';
 import { PageSkeleton } from '@/components/skeletons/PageSkeleton';
 
-const KidsPortal = React.lazy(() => import('./KidsPortal'));
+const KidsPortal = React.lazy(() => import('@/pages/kids/KidsPortal'));
 
 export default function KidsPortalLazy() {
   return (
