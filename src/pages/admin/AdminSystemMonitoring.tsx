@@ -1,544 +1,58 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+/**
+ * AdminSystemMonitoring Page
+ * 
+ * @description Refactored system monitoring dashboard using modular components
+ * and a custom hook for state management. Displays error statistics, recent
+ * errors, system alerts, and logs with real-time updates.
+ */
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
-  AlertTriangle, 
-  Bug, 
-  CheckCircle, 
-  Clock, 
   RefreshCw, 
-  TrendingUp, 
-  TrendingDown,
-  Eye,
-  XCircle,
-  Activity,
-  BarChart3,
   Wifi,
   WifiOff,
   User,
-  FileText
+  FileText,
+  AlertTriangle,
+  BarChart3
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useAdminAuth } from '@/hooks/useAdminAuth';
-import { debugLog } from '@/utils/debugLogger';
-import type { SystemError, SystemAlert, ErrorStatistics } from '@/types/systemHealth';
-import { LogsTabContent } from '@/components/admin/monitoring/LogsTabContent';
-
-// Debounce utility function with proper typing
-const debounce = <T extends (...args: unknown[]) => void>(func: T, wait: number) => {
-  let timeout: NodeJS.Timeout;
-  return function executedFunction(...args: Parameters<T>) {
-    const later = () => {
-      clearTimeout(timeout);
-      func(...args);
-    };
-    clearTimeout(timeout);
-    timeout = setTimeout(later, wait);
-  };
-};
+import { useSystemMonitoring } from '@/hooks/useSystemMonitoring';
+import { 
+  ErrorStatisticsCards,
+  SystemErrorsPanel,
+  SystemAlertsPanel,
+  ErrorDetailModal,
+  CircuitBreakerAlert,
+  LogsTabContent
+} from '@/components/admin/monitoring';
+import type { SystemError } from '@/types/systemHealth';
 
 const AdminSystemMonitoring = () => {
-  const [errors, setErrors] = useState<SystemError[]>([]);
-  const [statistics, setStatistics] = useState<ErrorStatistics | null>(null);
-  const [alerts, setAlerts] = useState<SystemAlert[]>([]);
-  const [loading, setLoading] = useState(true);
   const [selectedError, setSelectedError] = useState<SystemError | null>(null);
-  const [authDebugInfo, setAuthDebugInfo] = useState<any>(null);
-  const [_connected, _setConnected] = useState(true);
-  void _connected;
-  
-  // Circuit breaker state with enhanced tracking
-  const circuitBreakerRef = useRef({
-    consecutiveFailures: 0,
-    lastFailureTime: 0,
-    isCircuitOpen: false,
-    nextRetryTime: 0,
-    backoffMultiplier: 1
-  });
-  
-  // Request deduplication tracking
-  const activeRequestsRef = useRef(new Set<string>());
-  
-  // Loop detection tracking
-  const callFrequencyRef = useRef({
-    lastRefresh: 0,
-    refreshCount: 0,
-    windowStart: Date.now()
-  });
-  
-  // Last refresh cooldown tracking
-  const lastRefreshTimeRef = useRef(0);
-  
   const { toast } = useToast();
-  const { user, session, isAdmin, loading: isAuthenticating } = useAdminAuth();
-  const isAuthenticated = !!user && isAdmin;
-
-  // Enhanced circuit breaker configuration
-  const CIRCUIT_BREAKER_THRESHOLD = 3;
-  const CIRCUIT_BREAKER_BASE_TIMEOUT = 30000; // 30 seconds base
-  const MAX_REFRESH_FREQUENCY = 5; // max 5 refreshes per minute
-  const REFRESH_COOLDOWN = 10000; // 10 second cooldown between refreshes
-  const DEBOUNCE_TIME = 5000; // 5 second debounce for real-time updates
-  // Auth validation handled by useAdminAuth hook - kept for potential future use
-  // @ts-expect-error Reserved for future use
-  const _validateAuthAndConnection = useCallback(async () => {
-    try {
-      // Check Supabase connection
-      const { data: { session }, error } = await supabase.auth.getSession();
-      if (error) return { isValid: false, error: `Session error: ${error.message}` };
-      
-      // Test database connectivity
-      const { error: testError } = await supabase
-        .from('system_errors')
-        .select('count')
-        .limit(1);
-      
-      if (testError && testError.code === 'PGRST116') {
-        setAuthDebugInfo({
-          hasUser: !!user,
-          hasSession: !!session,
-          userId: user?.id,
-          userEmail: user?.email,
-          isAdmin,
-          authUid: session?.user?.id || 'null',
-          error: 'Database authentication failed - auth.uid() is null'
-        });
-        return { isValid: false, error: 'Database authentication failed' };
-      } else if (testError) {
-        return { isValid: false, error: testError.message };
-      }
-      
-      setAuthDebugInfo({
-        hasUser: !!user,
-        hasSession: !!session,
-        userId: user?.id,
-        userEmail: user?.email,
-        isAdmin,
-        authUid: session?.user?.id,
-        status: 'connected'
-      });
-      return { isValid: true };
-      
-    } catch (error) {
-      console.error('Auth/Connection validation failed:', error);
-      return { 
-        isValid: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
-      };
-    }
-  }, [user, session, isAdmin]);
-
-  // Enhanced circuit breaker with exponential backoff
-  const isCircuitBreakerOpen = useCallback(() => {
-    const state = circuitBreakerRef.current;
-    if (!state.isCircuitOpen) return false;
-    
-    const now = Date.now();
-    // @ts-expect-error Reserved for future logging
-    const _timeout = CIRCUIT_BREAKER_BASE_TIMEOUT * state.backoffMultiplier;
-    
-    if (now > state.nextRetryTime) {
-      // Reset circuit breaker with logging
-      debugLog.info('AdminSystemMonitoring', 'Circuit breaker reset after timeout');
-      circuitBreakerRef.current = {
-        consecutiveFailures: 0,
-        lastFailureTime: 0,
-        isCircuitOpen: false,
-        nextRetryTime: 0,
-        backoffMultiplier: 1
-      };
-      return false;
-    }
-    return true;
-  }, []);
-
-  const recordFailure = useCallback(() => {
-    const now = Date.now();
-    const state = circuitBreakerRef.current;
-    const newFailureCount = state.consecutiveFailures + 1;
-    const newBackoffMultiplier = Math.min(state.backoffMultiplier * 2, 8); // Max 8x backoff
-    const timeout = CIRCUIT_BREAKER_BASE_TIMEOUT * newBackoffMultiplier;
-    
-    circuitBreakerRef.current = {
-      consecutiveFailures: newFailureCount,
-      lastFailureTime: now,
-      isCircuitOpen: newFailureCount >= CIRCUIT_BREAKER_THRESHOLD,
-      nextRetryTime: now + timeout,
-      backoffMultiplier: newBackoffMultiplier
-    };
-    
-    debugLog.warn('AdminSystemMonitoring', `Circuit breaker failure ${newFailureCount}/${CIRCUIT_BREAKER_THRESHOLD}`, { backoff: newBackoffMultiplier });
-    
-    if (newFailureCount >= CIRCUIT_BREAKER_THRESHOLD) {
-      debugLog.warn('AdminSystemMonitoring', `Circuit breaker opened, next retry in ${timeout / 1000} seconds`);
-      toast({
-        title: 'System Monitoring Disabled',
-        description: `Too many consecutive failures. Monitoring will resume in ${timeout / 1000} seconds.`,
-        variant: 'destructive',
-      });
-    }
-  }, [toast]);
-
-  const recordSuccess = useCallback(() => {
-    const wasOpen = circuitBreakerRef.current.isCircuitOpen;
-    circuitBreakerRef.current = {
-      consecutiveFailures: 0,
-      lastFailureTime: 0,
-      isCircuitOpen: false,
-      nextRetryTime: 0,
-      backoffMultiplier: 1
-    };
-    if (wasOpen) {
-      debugLog.info('AdminSystemMonitoring', 'Circuit breaker closed - system recovered');
-    }
-  }, []);
-
-  const fetchErrorStatistics = useCallback(async () => {
-    const requestId = 'error-statistics';
-    
-    if (isCircuitBreakerOpen()) {
-      debugLog.debug('AdminSystemMonitoring', 'Circuit breaker open, skipping error statistics fetch');
-      return;
-    }
-
-    // Request deduplication
-    if (activeRequestsRef.current.has(requestId)) {
-      debugLog.debug('AdminSystemMonitoring', 'Error statistics fetch already in progress');
-      return;
-    }
-
-    try {
-      activeRequestsRef.current.add(requestId);
-      debugLog.debug('AdminSystemMonitoring', 'Fetching error statistics');
-      
-      const { data, error } = await supabase.rpc('get_error_statistics', { days_back: 7 });
-      if (error) {
-        if (error.message?.includes('ungrouped column')) {
-          toast({
-            title: 'SQL Function Error',
-            description: 'Database function error detected. Please refresh the page.',
-            variant: 'destructive',
-          });
-          return;
-        }
-        throw error;
-      }
-      setStatistics(data[0] || null);
-      recordSuccess();
-      debugLog.debug('AdminSystemMonitoring', 'Error statistics fetched successfully');
-    } catch (error) {
-      debugLog.error('AdminSystemMonitoring', 'Error fetching statistics', error);
-      recordFailure();
-    } finally {
-      activeRequestsRef.current.delete(requestId);
-    }
-  }, [isCircuitBreakerOpen, toast, recordSuccess, recordFailure]);
-
-  const fetchRecentErrors = useCallback(async () => {
-    const requestId = 'recent-errors';
-    
-    if (isCircuitBreakerOpen()) {
-      debugLog.debug('AdminSystemMonitoring', 'Circuit breaker open, skipping recent errors fetch');
-      return;
-    }
-
-    // Request deduplication
-    if (activeRequestsRef.current.has(requestId)) {
-      debugLog.debug('AdminSystemMonitoring', 'Recent errors fetch already in progress');
-      return;
-    }
-
-    try {
-      activeRequestsRef.current.add(requestId);
-      debugLog.debug('AdminSystemMonitoring', 'Fetching recent errors');
-      
-      const { data, error } = await supabase
-        .from('system_errors')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(50);
-      
-      if (error) throw error;
-      setErrors((data || []).map(err => ({
-        ...err,
-        severity: err.severity as 'critical' | 'high' | 'medium' | 'low',
-        browser_info: err.browser_info && typeof err.browser_info === 'object' 
-          ? err.browser_info as Record<string, unknown>
-          : undefined,
-        device_info: err.device_info && typeof err.device_info === 'object' 
-          ? err.device_info as Record<string, unknown>
-          : undefined,
-        metadata: err.metadata && typeof err.metadata === 'object' 
-          ? err.metadata as Record<string, unknown>
-          : undefined,
-      })));
-      recordSuccess();
-      debugLog.debug('AdminSystemMonitoring', 'Recent errors fetched successfully');
-    } catch (error) {
-      debugLog.error('AdminSystemMonitoring', 'Error fetching recent errors', error);
-      recordFailure();
-    } finally {
-      activeRequestsRef.current.delete(requestId);
-    }
-  }, [isCircuitBreakerOpen, recordSuccess, recordFailure]);
-
-  const fetchSystemAlerts = useCallback(async () => {
-    const requestId = 'system-alerts';
-    
-    if (isCircuitBreakerOpen()) {
-      debugLog.debug('AdminSystemMonitoring', 'Circuit breaker open, skipping alerts');
-      return;
-    }
-
-    if (activeRequestsRef.current.has(requestId)) {
-      debugLog.debug('AdminSystemMonitoring', 'Alerts fetch in progress');
-      return;
-    }
-
-    try {
-      activeRequestsRef.current.add(requestId);
-      debugLog.debug('AdminSystemMonitoring', 'Fetching system alerts');
-      
-      const { data, error } = await supabase
-        .from('system_alerts')
-        .select('*')
-        .eq('resolved', false)
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      setAlerts((data || []).map(alert => ({
-        ...alert,
-        severity: alert.severity as 'critical' | 'high' | 'medium' | 'low',
-        metadata: (typeof alert.metadata === 'object' && alert.metadata !== null) 
-          ? alert.metadata as Record<string, unknown>
-          : {}
-      })));
-      recordSuccess();
-    } catch (error) {
-      debugLog.error('AdminSystemMonitoring', 'Error fetching alerts', error);
-      recordFailure();
-    } finally {
-      activeRequestsRef.current.delete(requestId);
-    }
-  }, [isCircuitBreakerOpen, recordSuccess, recordFailure]);
-
-  // Stable refs for preventing useEffect loops
-  const refreshDataRef = useRef<() => Promise<void>>();
   
-  // Enhanced refresh with loop detection and cooldown
-  const stableRefreshData = useCallback(async () => {
-    if (isCircuitBreakerOpen() || !isAuthenticated) return;
-    
-    const now = Date.now();
-    if (now - lastRefreshTimeRef.current < REFRESH_COOLDOWN) {
-      debugLog.debug('AdminSystemMonitoring', 'Refresh blocked by cooldown');
-      return;
-    }
-    
-    const timeWindow = 60000;
-    const callTracker = callFrequencyRef.current;
-    
-    if (now - callTracker.windowStart > timeWindow) {
-      callTracker.windowStart = now;
-      callTracker.refreshCount = 0;
-    }
-    
-    callTracker.refreshCount++;
-    if (callTracker.refreshCount > MAX_REFRESH_FREQUENCY) {
-      debugLog.warn('AdminSystemMonitoring', 'Excessive refresh frequency detected');
-      toast({
-        title: 'System Protection',
-        description: 'Too many refresh attempts. Please wait a moment.',
-        variant: 'destructive',
-      });
-      return;
-    }
-    
-    lastRefreshTimeRef.current = now;
-    
-    try {
-      debugLog.debug('AdminSystemMonitoring', 'Starting data refresh');
-      setLoading(true);
-      await Promise.all([
-        fetchErrorStatistics(),
-        fetchRecentErrors(),
-        fetchSystemAlerts()
-      ]);
-    } catch (error) {
-      debugLog.error('AdminSystemMonitoring', 'Error refreshing data', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [isAuthenticated, fetchErrorStatistics, fetchRecentErrors, fetchSystemAlerts, isCircuitBreakerOpen, toast]);
+  const {
+    errors,
+    statistics,
+    alerts,
+    loading,
+    authDebugInfo,
+    isAuthenticated,
+    isAuthenticating,
+    isCircuitBreakerOpen,
+    refreshData,
+    resolveError,
+    acknowledgeAlert,
+    resetCircuitBreaker,
+    circuitBreakerState
+  } = useSystemMonitoring();
 
-  refreshDataRef.current = stableRefreshData;
-
-  // Effect for initial data loading and real-time subscriptions with enhanced loop prevention
-  useEffect(() => {
-    let mounted = true;
-    let periodicRefreshInterval: NodeJS.Timeout;
-    let errorStatsChannel: any;
-    let alertsChannel: any;
-
-    const initializeData = async () => {
-      if (!mounted || isAuthenticating || !isAuthenticated) return;
-      
-      debugLog.info('AdminSystemMonitoring', 'Initializing system monitoring data');
-      await refreshDataRef.current?.();
-    };
-
-    const setupRealtimeSubscriptions = () => {
-      if (!isAuthenticated) return;
-
-      // Enhanced debounced refresh with cooldown check
-      const debouncedRefresh = debounce(() => {
-        if (!mounted || isCircuitBreakerOpen()) return;
-        
-        const now = Date.now();
-        if (now - lastRefreshTimeRef.current < REFRESH_COOLDOWN) {
-          debugLog.debug('AdminSystemMonitoring', 'Real-time refresh blocked by cooldown');
-          return;
-        }
-        
-        debugLog.debug('AdminSystemMonitoring', 'Real-time update triggered');
-        refreshDataRef.current?.();
-      }, DEBOUNCE_TIME);
-
-      debugLog.info('AdminSystemMonitoring', 'Setting up real-time subscriptions');
-
-      // Subscribe to system_errors changes
-      errorStatsChannel = supabase
-        .channel('system_errors_monitoring')
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'system_errors'
-          },
-          debouncedRefresh
-        )
-        .subscribe();
-
-      // Subscribe to system_alerts changes  
-      alertsChannel = supabase
-        .channel('system_alerts_monitoring')
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'system_alerts'
-          },
-          debouncedRefresh
-        )
-        .subscribe();
-    };
-
-    initializeData();
-    setupRealtimeSubscriptions();
-
-    // Replace recursive setTimeout with setInterval for periodic refresh
-    debugLog.info('AdminSystemMonitoring', 'Setting up periodic refresh every 2 minutes');
-    periodicRefreshInterval = setInterval(() => {
-      if (mounted && !isCircuitBreakerOpen()) {
-        debugLog.debug('AdminSystemMonitoring', 'Periodic refresh triggered');
-        refreshDataRef.current?.();
-      }
-    }, 120000); // 2 minutes instead of 1 minute
-
-    return () => {
-      debugLog.debug('AdminSystemMonitoring', 'Cleaning up system monitoring');
-      mounted = false;
-      
-      if (periodicRefreshInterval) {
-        clearInterval(periodicRefreshInterval);
-      }
-      if (errorStatsChannel) {
-        supabase.removeChannel(errorStatsChannel);
-      }
-      if (alertsChannel) {
-        supabase.removeChannel(alertsChannel);
-      }
-      
-      // Clear active requests on unmount
-      activeRequestsRef.current.clear();
-    };
-  }, [isAuthenticating, isAuthenticated]); // Properly stable dependencies
-
-  const resolveError = async (errorId: string) => {
-    try {
-      const { error } = await supabase.rpc('resolve_system_error', { error_id: errorId });
-      if (error) throw error;
-      
-      toast({
-        title: 'Success',
-        description: 'Error marked as resolved',
-      });
-      
-      await stableRefreshData();
-    } catch (error) {
-      console.error('Failed to resolve error:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to resolve error',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const acknowledgeAlert = async (alertId: string) => {
-    try {
-      const { error } = await supabase
-        .from('system_alerts')
-        .update({ 
-          acknowledged: true, 
-          acknowledged_at: new Date().toISOString() 
-        })
-        .eq('id', alertId);
-      
-      if (error) throw error;
-      
-      toast({
-        title: 'Success',
-        description: 'Alert acknowledged',
-      });
-      
-      await stableRefreshData();
-    } catch (error) {
-      console.error('Failed to acknowledge alert:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to acknowledge alert',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const getSeverityColor = (severity: string) => {
-    switch (severity) {
-      case 'critical': return 'bg-destructive text-destructive-foreground';
-      case 'high': return 'bg-orange-500 text-white';
-      case 'medium': return 'bg-yellow-500 text-black';
-      case 'low': return 'bg-blue-500 text-white';
-      default: return 'bg-secondary text-secondary-foreground';
-    }
-  };
-
-  const getSeverityIcon = (severity: string) => {
-    switch (severity) {
-      case 'critical': return <AlertTriangle className="h-4 w-4" />;
-      case 'high': return <XCircle className="h-4 w-4" />;
-      case 'medium': return <Bug className="h-4 w-4" />;
-      case 'low': return <Activity className="h-4 w-4" />;
-      default: return <Eye className="h-4 w-4" />;
-    }
-  };
+  const connected = isAuthenticated;
 
   if (loading || isAuthenticating) {
     return (
@@ -553,24 +67,59 @@ const AdminSystemMonitoring = () => {
     );
   }
 
+  const handleCreateTestError = async () => {
+    try {
+      await supabase.functions.invoke('error-collector', {
+        body: {
+          errorType: 'test_error',
+          severity: 'low',
+          message: 'Test error for monitoring dashboard',
+          componentName: 'AdminSystemMonitoring',
+          metadata: {
+            source: 'manual_test',
+            timestamp: new Date().toISOString()
+          }
+        }
+      });
+      toast({
+        title: 'Test Error Created',
+        description: 'A test error has been logged to the system',
+      });
+    } catch (error) {
+      console.error('Failed to create test error:', error);
+    }
+  };
+
+  const handleForceReset = () => {
+    resetCircuitBreaker();
+    refreshData();
+  };
+
   return (
     <div className="space-y-6 p-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">System Monitoring</h1>
           <div className="flex items-center space-x-4 mt-1">
             <p className="text-muted-foreground">Error tracking and system health monitoring</p>
             <div className="flex items-center space-x-2">
-              {_connected ? (
-                <><Wifi className="h-4 w-4 text-green-500" /><span className="text-xs text-green-500">Connected</span></>
+              {connected ? (
+                <>
+                  <Wifi className="h-4 w-4 text-green-500" />
+                  <span className="text-xs text-green-500">Connected</span>
+                </>
               ) : (
-                <><WifiOff className="h-4 w-4 text-destructive" /><span className="text-xs text-destructive">Disconnected</span></>
+                <>
+                  <WifiOff className="h-4 w-4 text-destructive" />
+                  <span className="text-xs text-destructive">Disconnected</span>
+                </>
               )}
             </div>
           </div>
         </div>
         <div className="flex items-center space-x-2">
-          <Button onClick={stableRefreshData} variant="outline" disabled={isCircuitBreakerOpen()}>
+          <Button onClick={refreshData} variant="outline" disabled={isCircuitBreakerOpen()}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
@@ -593,7 +142,7 @@ const AdminSystemMonitoring = () => {
       </div>
 
       {/* Connection Error Alert */}
-      {!_connected && (
+      {!connected && (
         <Alert variant="destructive">
           <WifiOff className="h-4 w-4" />
           <AlertDescription>
@@ -606,7 +155,7 @@ const AdminSystemMonitoring = () => {
                   <p>Error: {authDebugInfo.error}</p>
                 </div>
               )}
-              <Button onClick={stableRefreshData} size="sm" variant="outline">
+              <Button onClick={refreshData} size="sm" variant="outline">
                 Retry Connection
               </Button>
             </div>
@@ -616,33 +165,10 @@ const AdminSystemMonitoring = () => {
 
       {/* Circuit Breaker Alert */}
       {isCircuitBreakerOpen() && (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            <div className="space-y-2">
-              <p>System monitoring temporarily disabled due to repeated failures.</p>
-              <p className="text-xs text-muted-foreground">
-                Monitoring will resume automatically in {Math.ceil((circuitBreakerRef.current.nextRetryTime - Date.now()) / 1000)} seconds.
-              </p>
-              <Button 
-                onClick={() => {
-                  circuitBreakerRef.current = {
-                    consecutiveFailures: 0,
-                    lastFailureTime: 0,
-                    isCircuitOpen: false,
-                    nextRetryTime: 0,
-                    backoffMultiplier: 1
-                  };
-                  stableRefreshData();
-                }} 
-                size="sm" 
-                variant="outline"
-              >
-                Force Reset
-              </Button>
-            </div>
-          </AlertDescription>
-        </Alert>
+        <CircuitBreakerAlert 
+          nextRetryTime={circuitBreakerState.nextRetryTime} 
+          onForceReset={handleForceReset}
+        />
       )}
 
       {/* System Alerts */}
@@ -656,64 +182,7 @@ const AdminSystemMonitoring = () => {
       )}
 
       {/* Statistics Overview */}
-      {statistics && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Errors</CardTitle>
-              <Bug className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{statistics.total_errors}</div>
-              <p className="text-xs text-muted-foreground">Last 7 days</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Critical Errors</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-destructive" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-destructive">{statistics.critical_errors}</div>
-              <p className="text-xs text-muted-foreground">Require immediate attention</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Resolution Rate</CardTitle>
-              <CheckCircle className="h-4 w-4 text-green-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-500">
-                {statistics.total_errors > 0 
-                  ? Math.round((statistics.resolved_errors / statistics.total_errors) * 100)
-                  : 0}%
-              </div>
-              <p className="text-xs text-muted-foreground">{statistics.resolved_errors} resolved</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Error Trend</CardTitle>
-              {(statistics.error_rate_trend?.[statistics.error_rate_trend.length - 1] || 0) > 
-               (statistics.error_rate_trend?.[statistics.error_rate_trend.length - 2] || 0) ? (
-                <TrendingUp className="h-4 w-4 text-destructive" />
-              ) : (
-                <TrendingDown className="h-4 w-4 text-green-500" />
-              )}
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {statistics.error_rate_trend?.[statistics.error_rate_trend.length - 1] || 0}
-              </div>
-              <p className="text-xs text-muted-foreground">Errors today</p>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      {statistics && <ErrorStatisticsCards statistics={statistics} />}
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="errors" className="w-full">
@@ -728,147 +197,18 @@ const AdminSystemMonitoring = () => {
         </TabsList>
 
         <TabsContent value="errors">
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent System Errors</CardTitle>
-              <CardDescription>
-                Latest errors and exceptions from the application
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-[600px]">
-                <div className="space-y-4">
-                  {errors.length === 0 ? (
-                    <div className="text-center py-8">
-                      <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                      <p className="text-muted-foreground">No recent errors found</p>
-                    </div>
-                  ) : (
-                    errors.map((error) => (
-                      <Card key={error.id} className="p-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <Badge className={getSeverityColor(error.severity)}>
-                                {getSeverityIcon(error.severity)}
-                                <span className="ml-1">{error.severity.toUpperCase()}</span>
-                              </Badge>
-                              <Badge variant="outline">{error.error_type}</Badge>
-                              {error.component_name && (
-                                <Badge variant="secondary">{error.component_name}</Badge>
-                              )}
-                            </div>
-                            <h4 className="font-medium mb-1">{error.message}</h4>
-                            <div className="text-sm text-muted-foreground space-y-1">
-                              <p>
-                                <Clock className="h-3 w-3 inline mr-1" />
-                                {new Date(error.created_at).toLocaleString()}
-                              </p>
-                              {error.route_path && (
-                                <p>Route: {error.route_path}</p>
-                              )}
-                              {error.user_id && (
-                                <p>User: {error.user_id}</p>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex space-x-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setSelectedError(error)}
-                            >
-                              <Eye className="h-4 w-4 mr-1" />
-                              View
-                            </Button>
-                            {!error.resolved && (
-                              <Button
-                                variant="default"
-                                size="sm"
-                                onClick={() => resolveError(error.id)}
-                              >
-                                <CheckCircle className="h-4 w-4 mr-1" />
-                                Resolve
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      </Card>
-                    ))
-                  )}
-                </div>
-              </ScrollArea>
-            </CardContent>
-          </Card>
+          <SystemErrorsPanel 
+            errors={errors}
+            onViewError={setSelectedError}
+            onResolveError={resolveError}
+          />
         </TabsContent>
 
         <TabsContent value="alerts">
-          <Card>
-            <CardHeader>
-              <CardTitle>System Alerts</CardTitle>
-              <CardDescription>
-                Active system alerts and notifications
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-[600px]">
-                <div className="space-y-4">
-                  {alerts.length === 0 ? (
-                    <div className="text-center py-8">
-                      <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                      <p className="text-muted-foreground">No active alerts</p>
-                    </div>
-                  ) : (
-                    alerts.map((alert) => (
-                      <Card key={alert.id} className="p-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <Badge className={getSeverityColor(alert.severity)}>
-                                {getSeverityIcon(alert.severity)}
-                                <span className="ml-1">{alert.severity.toUpperCase()}</span>
-                              </Badge>
-                              <Badge variant="outline">{alert.alert_type}</Badge>
-                              {alert.acknowledged && (
-                                <Badge variant="secondary">Acknowledged</Badge>
-                              )}
-                            </div>
-                            <h4 className="font-medium mb-1">{alert.title}</h4>
-                            {alert.description && (
-                              <p className="text-sm text-muted-foreground mb-2">
-                                {alert.description}
-                              </p>
-                            )}
-                            <div className="text-sm text-muted-foreground space-y-1">
-                              <p>
-                                <Clock className="h-3 w-3 inline mr-1" />
-                                {new Date(alert.created_at).toLocaleString()}
-                              </p>
-                              {alert.triggered_by && (
-                                <p>Triggered by: {alert.triggered_by}</p>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex space-x-2">
-                            {!alert.acknowledged && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => acknowledgeAlert(alert.id)}
-                              >
-                                <CheckCircle className="h-4 w-4 mr-1" />
-                                Acknowledge
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      </Card>
-                    ))
-                  )}
-                </div>
-              </ScrollArea>
-            </CardContent>
-          </Card>
+          <SystemAlertsPanel 
+            alerts={alerts}
+            onAcknowledgeAlert={acknowledgeAlert}
+          />
         </TabsContent>
 
         <TabsContent value="patterns">
@@ -886,26 +226,7 @@ const AdminSystemMonitoring = () => {
                 <Button 
                   variant="outline" 
                   className="mt-4"
-                  onClick={() => {
-                    // Create a test error for demonstration
-                    supabase.functions.invoke('error-collector', {
-                      body: {
-                        errorType: 'test_error',
-                        severity: 'low',
-                        message: 'Test error for monitoring dashboard',
-                        componentName: 'AdminSystemMonitoring',
-                        metadata: {
-                          source: 'manual_test',
-                          timestamp: new Date().toISOString()
-                        }
-                      }
-                    }).then(() => {
-                      toast({
-                        title: 'Test Error Created',
-                        description: 'A test error has been logged to the system',
-                      });
-                    });
-                  }}
+                  onClick={handleCreateTestError}
                 >
                   Create Test Error
                 </Button>
@@ -921,88 +242,10 @@ const AdminSystemMonitoring = () => {
 
       {/* Error Detail Modal */}
       {selectedError && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <Card className="w-full max-w-4xl max-h-[80vh] overflow-hidden">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Error Details</CardTitle>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSelectedError(null)}
-                >
-                  <XCircle className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-[60vh]">
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <h4 className="font-medium mb-2">Basic Information</h4>
-                      <div className="space-y-2 text-sm">
-                        <p><strong>ID:</strong> {selectedError.id}</p>
-                        <p><strong>Type:</strong> {selectedError.error_type}</p>
-                        <p><strong>Severity:</strong> {selectedError.severity}</p>
-                        <p><strong>Component:</strong> {selectedError.component_name || 'Unknown'}</p>
-                        <p><strong>Route:</strong> {selectedError.route_path || 'Unknown'}</p>
-                        <p><strong>User:</strong> {selectedError.user_id || 'Anonymous'}</p>
-                        <p><strong>Session:</strong> {selectedError.session_id || 'Unknown'}</p>
-                        <p><strong>Created:</strong> {new Date(selectedError.created_at).toLocaleString()}</p>
-                        <p><strong>Resolved:</strong> {selectedError.resolved ? 'Yes' : 'No'}</p>
-                      </div>
-                    </div>
-                    <div>
-                      <h4 className="font-medium mb-2">Device Information</h4>
-                      <div className="space-y-2 text-sm">
-                        {selectedError.browser_info && (
-                          <>
-                            <p><strong>User Agent:</strong> {String((selectedError.browser_info as Record<string, unknown>).userAgent ?? '')}</p>
-                            <p><strong>Language:</strong> {String((selectedError.browser_info as Record<string, unknown>).language ?? '')}</p>
-                            <p><strong>Platform:</strong> {String((selectedError.browser_info as Record<string, unknown>).platform ?? '')}</p>
-                          </>
-                        )}
-                        {selectedError.device_info && (
-                          <>
-                            <p><strong>Screen:</strong> {String((selectedError.device_info as Record<string, unknown>).screenWidth ?? '')}x{String((selectedError.device_info as Record<string, unknown>).screenHeight ?? '')}</p>
-                            <p><strong>Window:</strong> {String((selectedError.device_info as Record<string, unknown>).windowWidth ?? '')}x{String((selectedError.device_info as Record<string, unknown>).windowHeight ?? '')}</p>
-                            <p><strong>Timezone:</strong> {String((selectedError.device_info as Record<string, unknown>).timezone ?? '')}</p>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h4 className="font-medium mb-2">Error Message</h4>
-                    <pre className="bg-muted p-3 rounded text-sm overflow-auto">
-                      {selectedError.message}
-                    </pre>
-                  </div>
-
-                  {selectedError.stack_trace && (
-                    <div>
-                      <h4 className="font-medium mb-2">Stack Trace</h4>
-                      <pre className="bg-muted p-3 rounded text-xs overflow-auto max-h-60">
-                        {selectedError.stack_trace}
-                      </pre>
-                    </div>
-                  )}
-
-                  {selectedError.metadata && Object.keys(selectedError.metadata).length > 0 && (
-                    <div>
-                      <h4 className="font-medium mb-2">Metadata</h4>
-                      <pre className="bg-muted p-3 rounded text-xs overflow-auto">
-                        {JSON.stringify(selectedError.metadata, null, 2)}
-                      </pre>
-                    </div>
-                  )}
-                </div>
-              </ScrollArea>
-            </CardContent>
-          </Card>
-        </div>
+        <ErrorDetailModal 
+          error={selectedError} 
+          onClose={() => setSelectedError(null)} 
+        />
       )}
     </div>
   );
