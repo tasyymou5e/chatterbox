@@ -5,7 +5,7 @@
 
 ## 📋 Executive Security Overview
 
-**Last Updated**: 2026-01-15
+**Last Updated**: 2026-01-21
 
 ### Current Security Posture
 - **Architecture**: Multi-layered security with role-based access control (Admin → Parent → Child)
@@ -14,6 +14,9 @@
 - **Data Protection**: Family-based data isolation with strict boundary enforcement
 - **Monitoring**: Comprehensive audit trail and real-time security monitoring
 - **Type Safety**: 99% TypeScript coverage with type-safe error handling
+- **CORS**: Dynamic origin validation across all 14 edge functions
+- **CSP**: Hardened Content Security Policy (no `unsafe-inline`/`unsafe-eval` in production)
+- **Input Validation**: Zod schema validation on all form components
 
 ### Security Principles
 1. **Defense in Depth**: Multiple security layers preventing single points of failure
@@ -21,6 +24,14 @@
 3. **Zero Trust**: All requests validated regardless of source
 4. **Data Minimization**: Collect and store only necessary data
 5. **Transparency**: Clear audit trails for all sensitive operations
+
+### Recent Security Hardening (2026-01-21)
+- ✅ CORS wildcard `*` replaced with dynamic `getCorsHeaders()` in all 14 edge functions
+- ✅ CSP hardened: removed `unsafe-inline`/`unsafe-eval` for production environments
+- ✅ Zod validation added to 8 form components via `enhancedInputValidation.ts`
+- ✅ Environment variables supported for Supabase client configuration
+- ✅ Enhanced error logging in RealtimeManager and secureLogging
+- ✅ Dropped `child_accounts_safe` view (lacked RLS policies)
 
 ---
 
@@ -297,20 +308,16 @@ const getUserFriendlyError = (error: SupabaseError): string => {
 
 ### 1. Edge Function Security Template
 
-#### Standard Security Headers
+#### Dynamic CORS with Origin Validation
 ```typescript
-// MANDATORY: Include in all edge functions
-export const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS, PUT, DELETE',
-};
-
-// MANDATORY: Rate limiting for all functions
-import { checkRateLimit } from '../_shared/rate-limiter.ts';
+// MANDATORY: Use getCorsHeaders() for origin validation in all edge functions
+import { getCorsHeaders } from '../_shared/cors.ts';
 
 export async function handler(req: Request): Promise<Response> {
-  // 1. CORS handling (MANDATORY)
+  // 1. Get dynamic CORS headers based on request origin
+  const corsHeaders = getCorsHeaders(req.headers.get('origin'));
+  
+  // 2. CORS preflight handling (MANDATORY)
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }

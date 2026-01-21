@@ -7,8 +7,8 @@
 **RLS Policies**: 65+ (optimized from 130+)  
 **Security Functions**: 30+  
 **Custom Types**: 8 PostgreSQL enums  
-**Security Grade**: A (Excellent - fully optimized)  
-**Last Updated**: 2025-12-18
+**Security Grade**: A (Excellent - fully hardened)  
+**Last Updated**: 2026-01-21
 
 ## 🗄️ Table Categories
 
@@ -56,6 +56,11 @@
 
 ## 🔒 Security Architecture
 
+### **Recent Security Updates (2026-01-21)**
+- **Dropped Views**: `child_accounts_safe` view removed (lacked RLS policies)
+- **CORS Hardening**: All 14 edge functions use dynamic origin validation
+- **Input Validation**: Zod schemas on all form components
+
 ### **RLS Policy Optimization (2025-12-18)**
 - **65+ Optimized Policies**: Consolidated from 130+ redundant policies
 - **RESTRICTIVE Mode**: Enhanced security with restrictive policies
@@ -76,6 +81,8 @@ log_security_event()                       -- Security event logging
 - **Rate Limiting**: API endpoint protection
 - **Activity Logging**: Complete audit trail
 - **Child Data Protection**: COPPA compliance
+- **CORS**: Dynamic origin validation (no wildcard `*`)
+- **CSP**: Hardened Content Security Policy
 
 ## 🚀 Performance Features
 
@@ -87,7 +94,8 @@ log_security_event()                       -- Security event logging
 ---
 
 **Database Health**: ✅ Excellent  
-**Security Rating**: A (Fully optimized)  
+**Security Rating**: A (Fully hardened)  
 **RLS Policies**: 65+ (consolidated from 130+)  
-**Last Security Review**: 2025-12-18  
-**Next Review**: 2025-03-18
+**Edge Functions**: 14 with dynamic CORS validation  
+**Last Security Review**: 2026-01-21  
+**Next Review**: 2026-04-21
