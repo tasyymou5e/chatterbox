@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders } from '../_shared/cors.ts';
 import { llmLimiter, RateLimiter } from '../_shared/rate-limiter.ts';
+import { validateJWT, getServiceClient } from '../_shared/auth-validator.ts';
 
 interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
@@ -40,16 +41,11 @@ serve(async (req) => {
       throw new Error('GROK_API_KEY is not configured');
     }
 
-    // Get user from auth header (optional for this function)
-    const authHeader = req.headers.get('Authorization');
-    if (authHeader) {
-      const supabaseClient = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-        { global: { headers: { Authorization: authHeader } } }
-      );
-      const { data: { user } } = await supabaseClient.auth.getUser();
-      userId = user?.id ?? null;
+    // Try to get user from auth header (optional for this function)
+    // Using getClaims() for local verification with asymmetric keys
+    const auth = await validateJWT(req);
+    if (auth.success && auth.userId) {
+      userId = auth.userId;
     }
 
     const { 
@@ -174,10 +170,7 @@ async function logApiCall(params: {
   userId?: string | null;
 }) {
   try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    const supabase = getServiceClient();
 
     // Estimate cost (Grok pricing approximation)
     let costUsd = 0;

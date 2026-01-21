@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.0'
 import { analyticsQueryLimiter, RateLimiter } from '../_shared/rate-limiter.ts'
 import { getCorsHeaders } from '../_shared/cors.ts'
+import { getServiceClient } from '../_shared/auth-validator.ts'
 
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req.headers.get('origin'));
@@ -33,13 +34,8 @@ serve(async (req) => {
 
     console.log('Executing analytics query:', query, 'with filters:', filters)
 
-    // Initialize Supabase client for analytics queries
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    
-    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: { persistSession: false }
-    })
+    // Use service client for analytics queries
+    const supabase = getServiceClient();
 
     let result = []
 

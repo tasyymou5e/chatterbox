@@ -1,7 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.0'
 import { getCorsHeaders } from '../_shared/cors.ts'
 import { adminActionLimiter, RateLimiter } from '../_shared/rate-limiter.ts'
+import { validateJWT, getServiceClient, createUnauthorizedResponse } from '../_shared/auth-validator.ts'
 
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req.headers.get('origin'));
@@ -19,38 +20,17 @@ serve(async (req) => {
   }
 
   try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
-        }
-      }
-    )
+    // Get service client for admin operations
+    const supabase = getServiceClient();
 
-    // Get the current user from the JWT
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      console.error('No authorization header')
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+    // Validate JWT using getClaims() - local verification with asymmetric keys
+    const auth = await validateJWT(req);
+    if (!auth.success || !auth.userId) {
+      console.error('JWT validation failed:', auth.error)
+      return createUnauthorizedResponse(auth.error || 'Unauthorized', corsHeaders);
     }
 
-    // Verify JWT and get user
-    const jwt = authHeader.replace('Bearer ', '')
-    const { data: { user }, error: authError } = await supabase.auth.getUser(jwt)
-    
-    if (authError || !user) {
-      console.error('Auth error:', authError)
-      return new Response(
-        JSON.stringify({ error: 'Invalid token' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
+    const user = { id: auth.userId, email: auth.email };
 
     // Verify admin role using security definer function
     const { data: isAdmin, error: roleError } = await supabase

@@ -2,6 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.0'
 import { getCorsHeaders } from '../_shared/cors.ts'
 import { adminActionLimiter, passwordResetLimiter } from '../_shared/rate-limiter.ts'
 import { PasswordValidator } from '../_shared/password-validator.ts'
+import { validateJWT, getServiceClient, createUnauthorizedResponse } from '../_shared/auth-validator.ts'
 
 console.log('Admin update user function initialized')
 
@@ -61,34 +62,20 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Get the authorization header
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      console.error('Missing authorization header')
-      return new Response(
-        JSON.stringify({ error: 'Missing authorization header' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Vary': 'Origin' } }
-      )
-    }
-
-    // Create Supabase client with anon key for user verification
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      auth: { persistSession: false }
-    })
-
-    // Set the auth token for the current user
-    const token = authHeader.replace('Bearer ', '')
-    const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser(token)
-    
-    if (userError || !currentUser) {
-      console.error('Invalid user token:', userError)
+    // Validate JWT using getClaims() - local verification with asymmetric keys
+    const auth = await validateJWT(req);
+    if (!auth.success || !auth.userId) {
+      console.error('JWT validation failed:', auth.error)
       return new Response(
         JSON.stringify({ error: 'Invalid user token' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Vary': 'Origin' } }
       )
     }
+
+    const currentUser = { id: auth.userId, email: auth.email };
+
+    // Get service client for admin operations
+    const supabase = getServiceClient();
 
     // Verify admin role using security definer function
     const { data: isAdmin, error: roleError } = await supabase
@@ -134,11 +121,8 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Create admin client with service role key
-    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const adminClient = createClient(supabaseUrl, serviceRoleKey, {
-      auth: { persistSession: false }
-    })
+    // Use the already-created service client for admin operations
+    const adminClient = supabase;
 
     console.log('Attempting to update password for user:', userId)
 

@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { getCorsHeaders } from "../_shared/cors.ts";
+import { validateJWT, getUserClient, getServiceClient, createUnauthorizedResponse, createForbiddenResponse } from '../_shared/auth-validator.ts';
 
 // Rate limiting for bulk emails (in-memory, resets on function restart)
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
@@ -42,32 +43,19 @@ serve(async (req) => {
   }
 
   try {
-    // Verify authorization header exists
-    const authHeader = req.headers.get('authorization');
-    if (!authHeader) {
-      console.error('No authorization header provided');
-      return new Response(
-        JSON.stringify({ error: 'Authorization required' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Validate JWT using getClaims() - local verification with asymmetric keys
+    const auth = await validateJWT(req);
+    if (!auth.success || !auth.userId) {
+      console.error('JWT validation failed:', auth.error);
+      return createUnauthorizedResponse(auth.error || 'Authorization required', corsHeaders);
     }
 
-    // Create Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } }
-    });
+    const user = { id: auth.userId, email: auth.email };
+    console.log('User authenticated:', user.id);
 
-    // Get user from JWT
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) {
-      console.error('Failed to get user:', userError);
-      return new Response(
-        JSON.stringify({ error: 'Invalid authorization token' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    // Create user-scoped client for RLS-respecting operations
+    const authHeader = req.headers.get('authorization')!;
+    const supabase = getUserClient(authHeader);
 
     console.log('User authenticated:', user.id);
 

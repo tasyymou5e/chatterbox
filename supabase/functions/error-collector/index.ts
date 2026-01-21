@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.0'
 import { errorCollectionLimiter, RateLimiter } from '../_shared/rate-limiter.ts'
 import { getCorsHeaders } from '../_shared/cors.ts'
+import { getServiceClient } from '../_shared/auth-validator.ts'
 
 interface ErrorReport {
   errorType: string;
@@ -34,10 +34,8 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    // Use service client for error logging (no auth required for error collection)
+    const supabase = getServiceClient();
 
     const errorReport: ErrorReport = await req.json();
     
