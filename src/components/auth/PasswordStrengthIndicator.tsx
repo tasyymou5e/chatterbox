@@ -56,7 +56,7 @@ const validatePassword = (password: string): PasswordValidationResult => {
     hasUppercase: /[A-Z]/.test(password),
     hasLowercase: /[a-z]/.test(password),
     hasNumbers: /\d/.test(password),
-    hasSpecialChars: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password),
+    hasSpecialChars: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password),
     noCommonPatterns: !hasCommonPatterns(password),
     notCompromised: !isCommonPassword(password)
   };

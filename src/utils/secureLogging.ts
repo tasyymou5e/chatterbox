@@ -168,7 +168,7 @@ export const initSecureLogging = () => {
     // Override console methods to prevent accidental logging of sensitive data
     const originalConsole = { ...console };
     
-    console.log = (message?: any, ...optionalParams: any[]) => {
+    console.log = (message?: unknown, ...optionalParams: unknown[]) => {
       // Only allow explicitly marked safe logs in production
       if (typeof message === 'string' && message.startsWith('[SAFE]')) {
         originalConsole.log(message.replace('[SAFE]', ''), ...optionalParams.map(sanitizeObject));

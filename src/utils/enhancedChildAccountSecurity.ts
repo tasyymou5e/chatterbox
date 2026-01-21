@@ -78,7 +78,7 @@ export const validateChildAccountSecurity = async (
     }
 
     // Check for suspicious patterns in names
-    const suspiciousPatterns = /[<>{}[\]\\\/\+\*\?\.]/;
+    const suspiciousPatterns = /[<>{}[\]\\/+*?.]/;
     if (suspiciousPatterns.test(firstName) || suspiciousPatterns.test(lastName)) {
       validation.errors.push('Invalid characters in name fields');
       validation.isValid = false;

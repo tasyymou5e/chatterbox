@@ -10,30 +10,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Shield, AlertTriangle, Activity, Lock, Users, Database } from 'lucide-react';
-
-interface SecurityMetrics {
-  total_alerts: number;
-  rls_violations: number;
-  failed_activities: number;
-  system_errors: number;
-  severity_breakdown: {
-    critical: number;
-    high: number;
-    medium: number;
-    low: number;
-  };
-  top_threat_indicators: any[];
-}
-
-interface SecurityTest {
-  name: string;
-  description: string;
-  test_type: string;
-  severity: string;
-  passed: boolean;
-  error_message?: string;
-  execution_time_ms: number;
-}
+import type { SecurityMetrics, SecurityTest } from '@/types/security';
 
 export const SecurityDashboard: React.FC = () => {
   const [metrics, setMetrics] = useState<SecurityMetrics | null>(null);

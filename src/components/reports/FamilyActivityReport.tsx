@@ -7,6 +7,17 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Users, Activity, Clock, Download } from 'lucide-react';
 import { format, subDays } from 'date-fns';
+import type { FamilyMemberProfile } from '@/types/security';
+
+interface FamilyMemberActivity {
+  user_id: string;
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  role: string;
+  activity_count: number;
+  last_login?: string;
+}
 
 interface FamilyActivitySummary {
   family_id: string;
@@ -16,15 +27,7 @@ interface FamilyActivitySummary {
   login_count: number;
   failed_login_count: number;
   last_activity: string;
-  members: {
-    user_id: string;
-    first_name?: string;
-    last_name?: string;
-    email?: string;
-    role: string;
-    activity_count: number;
-    last_login?: string;
-  }[];
+  members: FamilyMemberActivity[];
 }
 
 const FamilyActivityReport = () => {
@@ -99,7 +102,7 @@ const FamilyActivityReport = () => {
             .filter(a => a.activity_type === 'login' && a.success)
             .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
 
-          const profile = member.profiles as any;
+          const profile = member.profiles as FamilyMemberProfile | null;
           return {
             user_id: member.user_id,
             first_name: profile?.first_name,
