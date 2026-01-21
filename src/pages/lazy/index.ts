@@ -12,6 +12,9 @@ export { default as AdminSecurityCenterLazy } from './AdminSecurityCenterLazy';
 export { default as ParentDashboardLazy } from './ParentDashboardLazy';
 export { default as ParentReportsLazy } from './ParentReportsLazy';
 
+// Kids lazy routes
+export { default as KidsPortalLazy } from './KidsPortalLazy';
+
 // Demo lazy routes
 export { default as AACDemoLazy } from './AACDemoLazy';
 export { default as SubtractionGameDemoLazy } from './SubtractionGameDemoLazy';
