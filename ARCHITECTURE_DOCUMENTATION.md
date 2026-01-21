@@ -44,6 +44,7 @@ src/
 │   ├── chores/          # Chore management components
 │   ├── connections/     # Family connection components
 │   ├── games/           # Educational content components
+│   ├── kids/            # Kids Portal components ✨ NEW
 │   ├── parent/          # Parent-specific components
 │   ├── privacy/         # Privacy and compliance components
 │   ├── reports/         # Reporting components
@@ -52,7 +53,8 @@ src/
 ├── hooks/               # Custom React hooks (25+ hooks)
 ├── pages/               # Route components
 │   ├── admin/           # Admin dashboard pages
-│   ├── children/        # Child-specific pages
+│   ├── children/        # Child-specific pages (legacy)
+│   ├── kids/            # Kids Portal pages ✨ NEW
 │   └── parent/          # Parent dashboard pages
 ├── stores/              # Zustand state management (12 stores)
 ├── lib/                 # Utility functions

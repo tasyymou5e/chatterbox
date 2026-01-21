@@ -165,17 +165,80 @@ Chatterbox features a comprehensive component architecture built with React, Typ
 - **Route**: `/parent/connections`
 - **Security**: Permission-based access control with activity logging
 
-### Child Pages (`src/pages/children/`)
+### Kids Portal Pages (`src/pages/kids/`) ✨ NEW
+
+#### **KidsPortal.tsx**
+- **Purpose**: Unified portal for children consolidating games, chores, and activities
+- **Features**: 
+  - Age-appropriate UI with colorful design
+  - Tab navigation: Games | My Tasks | Activities
+  - Real-time progress tracking (stars, moons, levels)
+  - Integration with lessonProgressStore for accurate data
+- **Key Components**: `KidsPortalLayout`, `KidsContentCard`, `KidsProgressHeader`, `AgeGroupMenu`, `KidsGameLauncher`
+- **Hooks**: `useChildProfile`, `useKidsContentLoader`
+- **Route**: `/kids`
+- **Accessibility**: Large touch targets, break reminders, autism-friendly design
+
+### Kids Portal Components (`src/components/kids/`) ✨ NEW
+
+#### **KidsPortalLayout.tsx**
+- **Purpose**: Age-appropriate layout wrapper with colorful header and navigation
+- **Props**: `childProfile`, `activeTab`, `onTabChange`, `onLogout`, `children`
+- **Features**: 
+  - Gradient header with avatar and welcome message
+  - Tab navigation with large icons
+  - Stars and moons progress counters
+  - Child-friendly logout button
+
+#### **KidsContentCard.tsx**
+- **Purpose**: Unified card for games, chores, and tasks with progress indicators
+- **Props**: `item: KidContentItem`, `onLaunch`, `onFavoriteToggle`
+- **Features**: 
+  - Visual progress ring showing completion percentage
+  - Favorite toggle with heart icon
+  - Autism-friendly feature badges
+  - Play statistics (count, best score, last played)
+  - Large touch targets for children
+
+#### **KidsGameLauncher.tsx**
+- **Purpose**: Dialog wrapper for launching games with autism-friendly features
+- **Props**: `game`, `childProfile`, `familyId`, `onClose`, `onComplete`
+- **Features**: 
+  - Integration with `useGameSession` for progress tracking
+  - Break reminders at configurable intervals
+  - Session statistics display (stars, streak, accuracy)
+  - `CelebrationEffect` for achievements
+  - PostMessage listener for iframe game events
+- **Integration**: `useGameSession`, `lessonProgressStore`, `CelebrationEffect`
+
+#### **KidsProgressHeader.tsx**
+- **Purpose**: Visual display of stars, moons, and skill level
+- **Props**: `profile`, `starsToNextMoon`, `className`
+- **Features**: 
+  - Animated star counter
+  - Moon progress bar with fill animation
+  - Skill level badge with trophy icon
+  - Optional daily streak display
+
+#### **AgeGroupMenu.tsx**
+- **Purpose**: Collapsible filter panel for age groups
+- **Props**: `selectedAgeGroup`, `onAgeGroupChange`, `contentCounts`
+- **Features**: 
+  - Age group filter buttons (3-5, 6-8, 9-12, 13+, All)
+  - Content count badges per age group
+  - Visual icons for each age group
+
+### Child Pages (`src/pages/children/`) (Legacy)
 
 #### **ChildrenTasksDashboard.tsx**
-- **Purpose**: Child-friendly task and activity interface with gamification
+- **Purpose**: Child-friendly task and activity interface with gamification (redirects to /kids)
 - **Features**: 
   - Assigned task list with visual progress indicators
   - Interactive task completion with photo verification
   - Achievement tracking and celebration animations
   - Family recognition and peer appreciation system
 - **Key Components**: `ChildrenChoresDashboard` with gamified interface
-- **Route**: `/children/tasks`
+- **Route**: `/children/tasks` → Redirects to `/kids`
 - **Accessibility**: High contrast, reduced motion, clear instructions
 
 ### General Pages (`src/pages/`)
