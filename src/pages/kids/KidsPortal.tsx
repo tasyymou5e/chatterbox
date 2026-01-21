@@ -1,74 +1,66 @@
 /**
  * KidsPortal - Main unified portal page for children
+ * Integrates games, chores, and tasks with progress tracking
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
 import { KidsPortalLayout, KidsContentCard, AgeGroupMenu, KidsProgressHeader, KidsGameLauncher } from '@/components/kids';
 import { useKidsContentLoader } from '@/hooks/useKidsContentLoader';
+import { useChildProfile } from '@/hooks/useChildProfile';
+import { useLessonProgressStore } from '@/stores/lessonProgressStore';
 import type { KidContentItem, ContentType, AgeGroup, ChildProfile } from '@/types/kidsPortal';
 import { Loader2 } from 'lucide-react';
 
 export default function KidsPortal() {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const [childProfile, setChildProfile] = useState<ChildProfile | null>(null);
-  const [familyId, setFamilyId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ContentType>('game');
   const [selectedAgeGroup, setSelectedAgeGroup] = useState<AgeGroup | 'all'>('all');
   const [activeGame, setActiveGame] = useState<KidContentItem | null>(null);
-  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
 
-  // Load child profile and family
+  // Use the new reusable hook for profile loading
+  const { profile: baseProfile, familyId, isLoading: isLoadingProfile } = useChildProfile(user?.id);
+
+  // Progress store for real stars/moons
+  const { progressByCategory, fetchAllProgress, setUser } = useLessonProgressStore();
+
+  // Initialize progress store when user and family are available
   useEffect(() => {
-    async function loadProfile() {
-      if (!user?.id) {
-        navigate('/auth');
-        return;
-      }
-
-      try {
-        // Get profile (only existing columns)
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('user_id, first_name, last_name')
-          .eq('user_id', user.id)
-          .single();
-
-        // Get family membership
-        const { data: membership } = await supabase
-          .from('family_members')
-          .select('family_id')
-          .eq('user_id', user.id)
-          .limit(1)
-          .single();
-
-        if (profile) {
-          setChildProfile({
-            id: profile.user_id,
-            firstName: profile.first_name || 'Friend',
-            lastName: profile.last_name || undefined,
-            ageGroup: '6-8',
-            avatarUrl: undefined,
-            totalStars: 0,
-            totalMoons: 0,
-          });
-        }
-
-        if (membership) {
-          setFamilyId(membership.family_id);
-        }
-      } catch (error) {
-        console.error('Error loading profile:', error);
-      } finally {
-        setIsLoadingProfile(false);
-      }
+    if (user?.id && familyId) {
+      setUser(user.id, familyId);
+      fetchAllProgress();
     }
+  }, [user?.id, familyId, setUser, fetchAllProgress]);
 
-    loadProfile();
-  }, [user?.id, navigate]);
+  // Calculate total stars and moons from progress store
+  const { totalStars, totalMoons } = useMemo(() => {
+    let stars = 0;
+    let moons = 0;
+    progressByCategory.forEach((progress) => {
+      stars += progress.current_stars || 0;
+      moons += progress.moons_earned || 0;
+    });
+    return { totalStars: stars, totalMoons: moons };
+  }, [progressByCategory]);
+
+  // Merge real progress data into profile
+  const childProfile: ChildProfile | null = useMemo(() => {
+    if (!baseProfile) return null;
+    return {
+      ...baseProfile,
+      totalStars,
+      totalMoons,
+    };
+  }, [baseProfile, totalStars, totalMoons]);
+
+  // Redirect if not logged in
+  useEffect(() => {
+    if (!user?.id && !isLoadingProfile) {
+      navigate('/auth');
+    }
+  }, [user?.id, isLoadingProfile, navigate]);
 
   // Load content
   const { content, isLoading, toggleFavorite, recordLaunch, contentCounts } = useKidsContentLoader({
@@ -83,6 +75,11 @@ export default function KidsPortal() {
     if (item.type === 'game' && item.launchUrl) {
       setActiveGame(item);
     }
+  };
+
+  const handleGameComplete = (results: { score: number; duration: number; completed: boolean }) => {
+    console.log('Game completed:', results);
+    // Could show a completion summary or trigger additional rewards
   };
 
   const handleLogout = async () => {
@@ -147,7 +144,9 @@ export default function KidsPortal() {
       <KidsGameLauncher
         game={activeGame}
         childProfile={childProfile}
+        familyId={familyId || undefined}
         onClose={() => setActiveGame(null)}
+        onComplete={handleGameComplete}
       />
     </>
   );

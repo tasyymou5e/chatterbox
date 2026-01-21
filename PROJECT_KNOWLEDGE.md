@@ -47,6 +47,7 @@ Comprehensive TypeScript type definitions across 8 files:
 - `src/types/content.ts` - Content management types ✨ NEW
 - `src/types/logs.ts` - System logs with type guards ✨ NEW
 - `src/types/privacy.ts` - Privacy compliance types ✨ NEW
+- `src/types/kidsPortal.ts` - Kids Portal types: AgeGroup, ContentType, KidContentItem, ChildProfile ✨ NEW
 - `src/types/interfaces.ts` - Shared application interfaces
 - `src/types/common.ts` - Common utility types
 
@@ -138,10 +139,10 @@ const portalRouting = {
     features: ['child_accounts', 'chore_assignments', 'progress_reports', 'family_settings']
   },
   child: {
-    path: '/games',
+    path: '/kids',
     capabilities: ['educational_content', 'task_completion', 'progress_viewing'],
     security: 'supervised',
-    features: ['games_access', 'task_interface', 'achievements', 'safe_communication']
+    features: ['unified_portal', 'games_access', 'task_interface', 'achievements', 'progress_tracking']
   }
 };
 ```
