@@ -21,7 +21,7 @@ class AuthLoggingService {
     activityType: 'login' | 'logout' | 'signup' | 'failed_login' | 'password_reset' | 'session_expired',
     success: boolean = true,
     failureReason?: string,
-    metadata: any = {}
+    metadata: Record<string, unknown> = {}
   ): Promise<string | null> {
     try {
       const deviceInfo = this.getDeviceInfo();
@@ -53,7 +53,7 @@ class AuthLoggingService {
     }
   }
 
-  async createSession(userId: string, familyId?: string): Promise<any | null> {
+  async createSession(userId: string, familyId?: string): Promise<{ id: string; session_id: string; user_id: string } | null> {
     try {
       const deviceInfo = this.getDeviceInfo();
       const sessionId = crypto.randomUUID();
@@ -92,7 +92,7 @@ class AuthLoggingService {
     memberRole: 'admin' | 'parent' | 'child',
     activityType: string,
     parentUserId?: string,
-    activityDetails: any = {}
+    activityDetails: Record<string, unknown> = {}
   ): Promise<void> {
     try {
       await supabase.rpc('log_family_activity', {

@@ -200,11 +200,18 @@ export const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
 
     try {
       const userRoles = [formData.adminRole, formData.familyRole].filter(Boolean);
-      const requestBody: any = {
+      interface CreateUserRequest {
+        email: string;
+        firstName: string;
+        lastName: string;
+        roles: string[];
+        customPassword?: string;
+      }
+      const requestBody: CreateUserRequest = {
         email: formData.email,
         firstName: formData.firstName,
         lastName: formData.lastName,
-        roles: userRoles
+        roles: userRoles as string[]
       };
 
       if (formData.useCustomPassword && formData.customPassword) {
@@ -235,17 +242,18 @@ export const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
 
       onSuccess();
 
-    } catch (error: any) {
+    } catch (error) {
       console.error('Create user error:', error);
-      let errorMessage = error.message || "Failed to create user. Please try again.";
+      const errorMsg = error instanceof Error ? error.message : "Failed to create user. Please try again.";
+      let errorMessage = errorMsg;
       
       // Handle specific error codes from the edge function
-      if (error.message?.includes('EMAIL_EXISTS')) {
+      if (errorMsg.includes('EMAIL_EXISTS')) {
         errorMessage = "This email address is already registered. Please use a different email.";
-      } else if (error.message?.includes('WEAK_PASSWORD')) {
+      } else if (errorMsg.includes('WEAK_PASSWORD')) {
         errorMessage = "Password does not meet security requirements. Please use a stronger password.";
-      } else if (error.message?.includes('Role conflict')) {
-        errorMessage = "Role assignment error: " + error.message;
+      } else if (errorMsg.includes('Role conflict')) {
+        errorMessage = "Role assignment error: " + errorMsg;
       }
       
       toast({

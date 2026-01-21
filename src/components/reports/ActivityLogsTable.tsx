@@ -17,6 +17,27 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { format } from 'date-fns';
 
+interface DeviceInfo {
+  platform?: string;
+  screenResolution?: string;
+  userAgent?: string;
+  timezone?: string;
+  language?: string;
+}
+
+interface LogMetadata {
+  loginTime?: string;
+  action?: string;
+  target?: string;
+  [key: string]: unknown;
+}
+
+interface ProfileInfo {
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+}
+
 interface ActivityLog {
   id: string;
   user_id: string;
@@ -24,12 +45,12 @@ interface ActivityLog {
   timestamp: string;
   ip_address?: unknown;
   user_agent?: string | null;
-  device_info: any;
+  device_info: DeviceInfo | Record<string, unknown> | null;
   session_id?: string | null;
   success: boolean;
   failure_reason?: string | null;
-  metadata: any;
-  profiles?: any;
+  metadata: LogMetadata | Record<string, unknown> | null;
+  profiles?: ProfileInfo | null;
 }
 
 const ActivityLogsTable = () => {
@@ -111,14 +132,17 @@ const ActivityLogsTable = () => {
           setError(`Failed to fetch activity logs: ${error.message}`);
         }
       } else {
-        let filteredData = data || [];
+        let filteredData = (data || []) as ActivityLog[];
         
         if (searchTerm) {
           filteredData = filteredData.filter(log => {
-            const profile = log.profiles as any;
-            return profile?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-              profile?.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-              profile?.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            const profile = log.profiles;
+            const profileEmail = profile && 'email' in profile ? profile.email : undefined;
+            const profileFirstName = profile && 'first_name' in profile ? profile.first_name : undefined;
+            const profileLastName = profile && 'last_name' in profile ? profile.last_name : undefined;
+            return profileEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              profileFirstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              profileLastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
               log.ip_address?.toString().includes(searchTerm) ||
               log.session_id?.includes(searchTerm);
           });
@@ -176,7 +200,7 @@ const ActivityLogsTable = () => {
   };
 
   const getUserName = (log: ActivityLog) => {
-    const profile = log.profiles as any;
+    const profile = log.profiles;
     if (profile?.first_name || profile?.last_name) {
       return `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
     }
@@ -350,9 +374,9 @@ const ActivityLogsTable = () => {
                       {getActivityBadge(log.activity_type, log.success)}
                     </TableCell>
                     <TableCell className="text-sm">
-                      <div>{log.device_info?.platform || 'Unknown'}</div>
+                      <div>{(log.device_info as DeviceInfo | null)?.platform || 'Unknown'}</div>
                       <div className="text-xs text-muted-foreground">
-                        {log.device_info?.screenResolution}
+                        {(log.device_info as DeviceInfo | null)?.screenResolution || ''}
                       </div>
                     </TableCell>
                     <TableCell className="font-mono text-sm">
@@ -366,7 +390,10 @@ const ActivityLogsTable = () => {
                         <div className="text-destructive">{log.failure_reason}</div>
                       ) : (
                         <div className="text-muted-foreground">
-                          {log.metadata?.loginTime && format(new Date(log.metadata.loginTime), 'HH:mm:ss')}
+                          {(() => {
+                            const meta = log.metadata as LogMetadata | null;
+                            return meta?.loginTime ? format(new Date(meta.loginTime), 'HH:mm:ss') : '';
+                          })()}
                         </div>
                       )}
                     </TableCell>

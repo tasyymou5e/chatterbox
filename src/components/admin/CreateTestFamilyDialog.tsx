@@ -62,7 +62,27 @@ export default function CreateTestFamilyDialog({ open, onOpenChange, onSuccess }
   
   // Results dialog state
   const [showResults, setShowResults] = useState(false);
-  const [creationResults, setCreationResults] = useState<any>(null);
+  interface CreatedMember {
+    name: string;
+    email: string;
+    role: string;
+    tempPassword?: string;
+    success: boolean;
+    error?: string;
+  }
+  interface TestFamilyCreationResult {
+    success: boolean;
+    familyCode?: string;
+    displayName?: string;
+    membersCreated: number;
+    members: CreatedMember[];
+    tempPassword?: string;
+    cleanupResults?: {
+      familiesDeleted: number;
+      usersDeleted: number;
+    };
+  }
+  const [creationResults, setCreationResults] = useState<TestFamilyCreationResult | null>(null);
 
   // Load test family count when dialog opens
   useEffect(() => {
@@ -106,12 +126,12 @@ export default function CreateTestFamilyDialog({ open, onOpenChange, onSuccess }
       } else {
         throw new Error(data?.error || 'Cleanup failed');
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Cleanup error:', error);
       toast({ 
         variant: "destructive", 
         title: "Cleanup failed", 
-        description: error.message 
+        description: error instanceof Error ? error.message : 'An unexpected error occurred'
       });
     } finally {
       setCleanupLoading(false);

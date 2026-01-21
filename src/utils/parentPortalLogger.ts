@@ -9,10 +9,17 @@ interface QueryContext {
   metadata?: Record<string, unknown>;
 }
 
+interface SupabaseError {
+  message: string;
+  code?: string;
+  details?: string;
+  hint?: string;
+}
+
 interface QueryResult {
   success: boolean;
   rowCount?: number;
-  error?: Error | { message: string; code?: string; details?: string; hint?: string } | null | undefined;
+  error?: Error | SupabaseError | null | undefined;
   duration?: number;
 }
 
@@ -43,6 +50,7 @@ export const logSupabaseQuery = (
       ? result.error 
       : new Error(result.error?.message || 'Unknown error');
     
+    const supabaseError = result.error as SupabaseError | undefined;
     logger.error(
       `Query failed: ${context.operation}`,
       errorDetails,
@@ -50,9 +58,9 @@ export const logSupabaseQuery = (
         ...logContext,
         metadata: {
           ...logContext.metadata,
-          errorCode: (result.error as any)?.code,
-          errorDetails: (result.error as any)?.details,
-          errorHint: (result.error as any)?.hint
+          errorCode: supabaseError?.code,
+          errorDetails: supabaseError?.details,
+          errorHint: supabaseError?.hint
         }
       }
     );

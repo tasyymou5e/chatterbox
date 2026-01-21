@@ -48,7 +48,7 @@ interface Family {
   member_count: number;
   members?: FamilyMember[];
   expanded?: boolean;
-  metadata?: any; // Supabase Json type - contains is_test_family boolean
+  metadata?: { is_test_family?: boolean; [key: string]: unknown } | null;
 }
 
 export default function AdminFamilies() {
@@ -168,9 +168,9 @@ export default function AdminFamilies() {
 
       setFamilies(familiesWithMembers as Family[]);
       console.log('Successfully loaded families with member details');
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error fetching families:', error);
-      const errorMessage = error?.message || 'Failed to load families';
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load families';
       setError(errorMessage);
       toast({
         variant: 'destructive',
