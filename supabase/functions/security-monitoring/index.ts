@@ -1,11 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders } from "../_shared/cors.ts";
 import { adminActionLimiter, RateLimiter } from '../_shared/rate-limiter.ts';
-
-const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+import { 
+  validateAdminJWT, 
+  getServiceClient, 
+  createUnauthorizedResponse,
+  createForbiddenResponse
+} from '../_shared/auth-validator.ts';
 
 interface SecurityAlert {
   type: 'suspicious_access' | 'rls_violation' | 'brute_force' | 'data_exfiltration' | 'policy_bypass';
@@ -41,21 +42,35 @@ serve(async (req) => {
   }
 
   try {
+    // Validate admin JWT using getClaims() for fast local verification
+    const auth = await validateAdminJWT(req);
+    
+    if (!auth.success) {
+      console.error('Authentication failed:', auth.error);
+      return createUnauthorizedResponse(auth.error || 'Unauthorized', corsHeaders);
+    }
+    
+    if (!auth.isAdmin) {
+      console.error('Admin access required for security monitoring');
+      return createForbiddenResponse('Admin access required', corsHeaders);
+    }
+
+    const supabase = getServiceClient();
     const { action, data } = await req.json();
     console.log(`[security-monitoring] action=${action}`);
 
     switch (action) {
       case 'analyze_access_patterns':
-        return await analyzeAccessPatterns(corsHeaders);
+        return await analyzeAccessPatterns(supabase, corsHeaders);
       
       case 'detect_rls_violations':
-        return await detectRLSViolations(corsHeaders);
+        return await detectRLSViolations(supabase, corsHeaders);
       
       case 'check_suspicious_activity':
-        return await checkSuspiciousActivity(data, corsHeaders);
+        return await checkSuspiciousActivity(supabase, data, corsHeaders);
       
       case 'generate_security_report':
-        return await generateSecurityReport(corsHeaders);
+        return await generateSecurityReport(supabase, corsHeaders);
       
       default:
         return new Response(JSON.stringify({ error: 'Invalid action' }), {
@@ -72,7 +87,7 @@ serve(async (req) => {
   }
 });
 
-async function analyzeAccessPatterns(corsHeaders: Record<string, string>): Promise<Response> {
+async function analyzeAccessPatterns(supabase: any, corsHeaders: Record<string, string>): Promise<Response> {
   // Analyze user activity patterns for the last hour
   const { data: activities, error } = await supabase
     .from('user_activity_logs')
@@ -118,7 +133,7 @@ async function analyzeAccessPatterns(corsHeaders: Record<string, string>): Promi
 
   // Generate alerts for suspicious patterns
   for (const pattern of suspiciousPatterns) {
-    await createSecurityAlert({
+    await createSecurityAlert(supabase, {
       type: 'suspicious_access',
       severity: pattern.frequency > 100 ? 'critical' : 'high',
       userId: pattern.userId,
@@ -144,7 +159,7 @@ async function analyzeAccessPatterns(corsHeaders: Record<string, string>): Promi
   });
 }
 
-async function detectRLSViolations(corsHeaders: Record<string, string>): Promise<Response> {
+async function detectRLSViolations(supabase: any, corsHeaders: Record<string, string>): Promise<Response> {
   // Check for potential RLS policy violations in security audit logs
   const { data: violations, error } = await supabase
     .from('security_audit_logs')
@@ -160,7 +175,7 @@ async function detectRLSViolations(corsHeaders: Record<string, string>): Promise
 
   // Generate alerts for critical violations
   for (const violation of criticalViolations) {
-    await createSecurityAlert({
+    await createSecurityAlert(supabase, {
       type: 'rls_violation',
       severity: 'critical',
       userId: violation.user_id,
@@ -184,7 +199,7 @@ async function detectRLSViolations(corsHeaders: Record<string, string>): Promise
   });
 }
 
-async function checkSuspiciousActivity(data: any, corsHeaders: Record<string, string>): Promise<Response> {
+async function checkSuspiciousActivity(supabase: any, data: any, corsHeaders: Record<string, string>): Promise<Response> {
   const { userId, activityType, metadata } = data;
   
   // Check for rapid repeated actions
@@ -200,7 +215,7 @@ async function checkSuspiciousActivity(data: any, corsHeaders: Record<string, st
   const isSuspicious = (recentActivity?.length || 0) > 10;
 
   if (isSuspicious) {
-    await createSecurityAlert({
+    await createSecurityAlert(supabase, {
       type: 'suspicious_access',
       severity: 'high',
       userId,
@@ -225,7 +240,7 @@ async function checkSuspiciousActivity(data: any, corsHeaders: Record<string, st
   });
 }
 
-async function generateSecurityReport(corsHeaders: Record<string, string>): Promise<Response> {
+async function generateSecurityReport(supabase: any, corsHeaders: Record<string, string>): Promise<Response> {
   const now = new Date();
   const last24Hours = new Date(now.getTime() - 24 * 3600000);
   
@@ -267,7 +282,7 @@ async function generateSecurityReport(corsHeaders: Record<string, string>): Prom
   });
 }
 
-async function createSecurityAlert(alert: SecurityAlert) {
+async function createSecurityAlert(supabase: any, alert: SecurityAlert) {
   const { error } = await supabase
     .from('security_audit_logs')
     .insert({

@@ -1,6 +1,6 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.0';
 import { getCorsHeaders } from '../_shared/cors.ts';
 import { generalApiLimiter, RateLimiter } from '../_shared/rate-limiter.ts';
+import { getServiceClient } from '../_shared/auth-validator.ts';
 
 interface RecurrencePattern {
   frequency: 'daily' | 'weekly' | 'custom';
@@ -11,6 +11,8 @@ interface RecurrencePattern {
   currentOccurrence?: number;
 }
 
+// This is a cron/internal function - no user authentication required
+// It runs on a schedule to process recurring chore assignments
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req.headers.get('origin'));
   
@@ -27,14 +29,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-
-    if (!supabaseUrl || !supabaseServiceKey) {
-      throw new Error('Missing Supabase environment variables');
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    // Use service client for cron/internal operations
+    const supabase = getServiceClient();
 
     console.log('Starting recurring chores processing...');
 

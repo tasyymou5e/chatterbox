@@ -1,7 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { getCorsHeaders } from '../_shared/cors.ts'
 import { cleanupLimiter, RateLimiter } from '../_shared/rate-limiter.ts'
+import { 
+  validateAdminJWT, 
+  getServiceClient, 
+  createUnauthorizedResponse,
+  createForbiddenResponse
+} from '../_shared/auth-validator.ts'
 
 interface DeleteFamilyRequest {
   familyId: string;
@@ -31,14 +36,20 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    // Validate admin JWT using getClaims() for fast local verification
+    const auth = await validateAdminJWT(req);
     
-    if (!supabaseUrl || !serviceRoleKey) {
-      throw new Error('Missing required Supabase configuration');
+    if (!auth.success) {
+      console.error('Authentication failed:', auth.error);
+      return createUnauthorizedResponse(auth.error || 'Unauthorized', corsHeaders);
+    }
+    
+    if (!auth.isAdmin) {
+      console.error('Admin access required for family deletion');
+      return createForbiddenResponse('Admin access required', corsHeaders);
     }
 
-    const supabase = createClient(supabaseUrl, serviceRoleKey);
+    const supabase = getServiceClient();
     const { familyId }: DeleteFamilyRequest = await req.json();
 
     if (!familyId) {
