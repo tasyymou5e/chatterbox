@@ -8,6 +8,8 @@ import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
 import { Loader2, ArrowLeft, UserPlus } from 'lucide-react';
 import { PasswordStrengthIndicator } from '@/components/auth/PasswordStrengthIndicator';
+import { validateAndSanitizeFormData } from '@/utils/enhancedInputValidation';
+import { z } from 'zod';
 
 interface ChildSignupFormProps {
   initialCode?: string;
@@ -23,19 +25,36 @@ export const ChildSignupForm = ({ initialCode = '', onBackToSignIn }: ChildSignu
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
 
+  // Zod schema for child signup
+  const childSignupSchema = z.object({
+    code: z.string().min(1, 'Account code is required'),
+    password: z.string()
+      .min(8, 'Password must be at least 8 characters')
+      .max(128, 'Password too long'),
+    confirmPassword: z.string(),
+  }).refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
 
-    const formData = new FormData(e.currentTarget);
-    const code = formData.get('account-code') as string;
-    const childPassword = formData.get('child-password') as string;
-    const confirmPassword = formData.get('child-confirm-password') as string;
+    const formDataObj = new FormData(e.currentTarget);
+    const code = formDataObj.get('account-code') as string;
+    const childPassword = formDataObj.get('child-password') as string;
+    const confirmPassword = formDataObj.get('child-confirm-password') as string;
 
-    if (childPassword !== confirmPassword) {
+    const validation = validateAndSanitizeFormData(
+      { code, password: childPassword, confirmPassword },
+      childSignupSchema
+    );
+
+    if (!validation.success) {
       toast({
-        title: 'Passwords do not match',
-        description: 'Please ensure both passwords are identical.',
+        title: 'Validation Error',
+        description: validation.errors.join(', '),
         variant: 'destructive',
       });
       setIsLoading(false);

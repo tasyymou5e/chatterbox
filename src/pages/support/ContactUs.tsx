@@ -8,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Mail, Phone, MessageCircle, Clock } from "lucide-react";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
+import { validateAndSanitizeFormData, commonSchemas } from "@/utils/enhancedInputValidation";
+import { z } from "zod";
 
 export default function ContactUs() {
   const [formData, setFormData] = useState({
@@ -19,14 +21,24 @@ export default function ContactUs() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Zod schema for contact form
+  const contactSchema = z.object({
+    name: commonSchemas.name,
+    email: commonSchemas.email,
+    subject: z.string().min(1, 'Subject is required').max(200, 'Subject too long'),
+    message: z.string().min(10, 'Message must be at least 10 characters').max(2000, 'Message too long'),
+    category: z.string().optional(),
+  });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.email || !formData.subject || !formData.message) {
+    const validation = validateAndSanitizeFormData(formData, contactSchema);
+    if (!validation.success) {
       toast({
         variant: "destructive",
-        title: "Missing fields",
-        description: "Please fill in all required fields."
+        title: "Validation Error",
+        description: validation.errors.join(', ')
       });
       return;
     }

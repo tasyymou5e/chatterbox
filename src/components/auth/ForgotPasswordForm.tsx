@@ -6,6 +6,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
 import { Loader2, Mail, ArrowLeft } from 'lucide-react';
 import { getAuthErrorMessage } from './authErrorUtils';
+import { validateAndSanitizeFormData, commonSchemas } from '@/utils/enhancedInputValidation';
+import { z } from 'zod';
 
 interface ForgotPasswordFormProps {
   onBackToSignIn: () => void;
@@ -20,8 +22,24 @@ export const ForgotPasswordForm = ({ onBackToSignIn }: ForgotPasswordFormProps) 
   const [isEmailSent, setIsEmailSent] = useState(false);
   const { resetPassword } = useAuth();
 
+  // Zod schema for forgot password
+  const forgotPasswordSchema = z.object({
+    email: commonSchemas.email,
+  });
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    
+    const validation = validateAndSanitizeFormData({ email }, forgotPasswordSchema);
+    if (!validation.success) {
+      toast({
+        title: 'Validation Error',
+        description: validation.errors.join(', '),
+        variant: 'destructive',
+      });
+      return;
+    }
+    
     setIsLoading(true);
 
     try {

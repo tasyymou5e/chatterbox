@@ -10,6 +10,8 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { UserPlus, Shield, Eye, Users, Baby, Loader2, Copy, Check, AlertTriangle, Key, Mail } from 'lucide-react';
+import { validateAndSanitizeFormData, commonSchemas } from '@/utils/enhancedInputValidation';
+import { z } from 'zod';
 
 interface UserCreateDialogProps {
   open: boolean;
@@ -147,12 +149,30 @@ export const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
     }
   };
 
+  // Zod schema for admin user creation
+  const adminUserSchema = z.object({
+    email: commonSchemas.email,
+    firstName: commonSchemas.name,
+    lastName: commonSchemas.name,
+    customPassword: z.string().min(8, 'Password must be at least 8 characters').max(128).optional(),
+  });
+
   const handleCreate = async () => {
-    // Validation
-    if (!formData.email || !formData.firstName || !formData.lastName) {
+    // Validate with Zod schema
+    const validation = validateAndSanitizeFormData(
+      { 
+        email: formData.email, 
+        firstName: formData.firstName, 
+        lastName: formData.lastName,
+        customPassword: formData.useCustomPassword ? formData.customPassword : undefined
+      },
+      adminUserSchema
+    );
+
+    if (!validation.success) {
       toast({
         title: "Validation Error",
-        description: "Please fill in all required fields.",
+        description: validation.errors.join(', '),
         variant: "destructive",
       });
       return;
@@ -180,17 +200,6 @@ export const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
       toast({
         title: "Validation Error",
         description: "Please select either an Admin role or a Family role for the user.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      toast({
-        title: "Validation Error",
-        description: "Please enter a valid email address.",
         variant: "destructive",
       });
       return;

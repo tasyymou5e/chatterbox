@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
 import { Loader2, Shield, CheckCircle } from 'lucide-react';
+import { validateAndSanitizeFormData } from '@/utils/enhancedInputValidation';
+import { z } from 'zod';
 
 interface ResetPasswordConfirmFormProps {
   onBackToSignIn: () => void;
@@ -47,38 +49,34 @@ export const ResetPasswordConfirmForm = ({ onBackToSignIn }: ResetPasswordConfir
     }
   }, [searchParams]);
 
+  // Zod schema for password reset
+  const resetPasswordSchema = z.object({
+    password: z.string()
+      .min(8, 'Password must be at least 8 characters')
+      .max(128, 'Password too long'),
+    confirmPassword: z.string(),
+  }).refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
     
-    const formData = new FormData(e.currentTarget);
-    const password = formData.get('new-password') as string;
-    const confirmPassword = formData.get('confirm-password') as string;
+    const formDataObj = new FormData(e.currentTarget);
+    const password = formDataObj.get('new-password') as string;
+    const confirmPassword = formDataObj.get('confirm-password') as string;
     
-    if (!password || !confirmPassword) {
-      toast({
-        title: "Fields Required",
-        description: "Please fill in all fields",
-        variant: "destructive",
-      });
-      setIsLoading(false);
-      return;
-    }
+    const validation = validateAndSanitizeFormData(
+      { password, confirmPassword },
+      resetPasswordSchema
+    );
 
-    if (password !== confirmPassword) {
+    if (!validation.success) {
       toast({
-        title: "Passwords Don't Match",
-        description: "Please ensure both passwords are identical",
-        variant: "destructive",
-      });
-      setIsLoading(false);
-      return;
-    }
-
-    if (password.length < 8) {
-      toast({
-        title: "Password Too Short",
-        description: "Password must be at least 8 characters long",
+        title: "Validation Error",
+        description: validation.errors.join(', '),
         variant: "destructive",
       });
       setIsLoading(false);
