@@ -5,7 +5,7 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist", "node_modules"] },
+  { ignores: ["dist", "node_modules", "*.config.js", "*.config.ts"] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],
@@ -18,6 +18,7 @@ export default tseslint.config(
       "react-refresh": reactRefresh,
     },
     rules: {
+      // React rules
       ...reactHooks.configs.recommended.rules,
       "react-refresh/only-export-components": [
         "warn",
@@ -34,24 +35,72 @@ export default tseslint.config(
           ]
         },
       ],
-      "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
-      "react-hooks/exhaustive-deps": "warn",
+      "react-hooks/exhaustive-deps": "error",
+      "react-hooks/rules-of-hooks": "error",
+
+      // TypeScript strict rules
+      "@typescript-eslint/no-explicit-any": "error",
+      "@typescript-eslint/no-unused-vars": ["error", { 
+        argsIgnorePattern: "^_",
+        varsIgnorePattern: "^_"
+      }],
+      "@typescript-eslint/no-non-null-assertion": "warn",
+      "@typescript-eslint/prefer-optional-chain": "warn",
+
+      // Console enforcement (use conditionalLogger instead)
+      "no-console": ["error", { allow: ["warn", "error"] }],
+
+      // Code quality
+      "eqeqeq": ["error", "always"],
+      "no-var": "error",
+      "prefer-const": "error",
+      "no-duplicate-imports": "error",
+      "curly": ["error", "all"],
       "no-useless-escape": "error",
+      "no-template-curly-in-string": "warn",
+      "default-case": "warn",
+
+      // Complexity guards
+      "complexity": ["warn", { max: 15 }],
+      "max-depth": ["warn", { max: 4 }],
+      "max-lines-per-function": ["warn", { 
+        max: 150, 
+        skipBlankLines: true, 
+        skipComments: true 
+      }],
     },
   },
-  // Exclude E2E tests from React hook rules
+  // E2E tests - disable React rules
   {
     files: ["tests-e2e/**/*.ts"],
     rules: {
       "react-hooks/rules-of-hooks": "off",
       "react-hooks/exhaustive-deps": "off",
+      "no-console": "off",
     },
   },
-  // Relax rules for test files
+  // Unit/Component tests - relaxed rules
   {
     files: ["tests/**/*.{ts,tsx}", "**/*.test.{ts,tsx}", "**/*.spec.{ts,tsx}"],
     rules: {
       "@typescript-eslint/no-explicit-any": "warn",
+      "no-console": "off",
+      "max-lines-per-function": "off",
+    },
+  },
+  // Storybook files
+  {
+    files: ["**/*.stories.{ts,tsx}", ".storybook/**/*.{ts,tsx}"],
+    rules: {
+      "no-console": "off",
+      "max-lines-per-function": "off",
+    },
+  },
+  // Edge functions (Deno)
+  {
+    files: ["supabase/functions/**/*.ts"],
+    rules: {
+      "no-console": "off", // Edge functions use console for logging
     },
   }
 );
