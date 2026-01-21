@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthStore } from '@/stores/authStore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,6 +33,8 @@ import { UserDeleteDialog } from '@/components/admin/UserDeleteDialog';
 import { UserPasswordResetDialog } from '@/components/admin/UserPasswordResetDialog';
 import { UserCreateDialog } from '@/components/admin/UserCreateDialog';
 import { getErrorMessage } from '@/utils/getErrorMessage';
+import { cLog, cError } from '@/utils/conditionalLogger';
+
 interface User {
   id: string;
   email: string;
@@ -57,9 +59,126 @@ export default function AdminUsers() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const { toast } = useToast();
 
+  const processUsers = useCallback(async (usersData: { user_id: string; email: string; first_name: string; last_name: string; created_at: string }[]) => {
+    // Get user roles
+    const { data: userRoles, error: rolesError } = await supabase
+      .from('user_roles')
+      .select('user_id, role');
+
+    if (rolesError) {
+      cError('Roles error:', rolesError);
+      throw rolesError;
+    }
+    cLog('Fetched roles for', userRoles?.length || 0, 'users');
+
+    // Get family memberships with explicit join
+    const { data: familyMembers, error: familiesError } = await supabase
+      .from('family_members')
+      .select(`
+        user_id,
+        family_id,
+        families:family_id (
+          family_code,
+          display_name
+        )
+      `);
+
+    if (familiesError) {
+      cError('Families error:', familiesError);
+      throw familiesError;
+    }
+    cLog('Fetched family memberships:', familyMembers?.length || 0, 'memberships');
+
+    // Combine the data
+    const usersWithRolesAndFamilies: User[] = usersData.map(userData => {
+      if (!userData.user_id) {
+        console.warn('User missing user_id:', userData);
+        return null;
+      }
+
+      const userRoleEntries = userRoles?.filter(ur => ur.user_id === userData.user_id) || [];
+      const userFamilyEntries = familyMembers?.filter(fm => fm.user_id === userData.user_id) || [];
+      
+      const families = userFamilyEntries
+        .map(fm => {
+          const familyData = fm.families;
+          if (familyData && typeof familyData === 'object') {
+            const typedFamily = familyData as { family_code?: string; display_name?: string };
+            return {
+              family_code: typedFamily.family_code || '',
+              display_name: typedFamily.display_name || ''
+            };
+          }
+          return null;
+        })
+        .filter(Boolean) as { family_code: string; display_name: string }[];
+
+      return {
+        id: userData.user_id,
+        email: userData.email || '',
+        first_name: userData.first_name || '',
+        last_name: userData.last_name || '',
+        created_at: userData.created_at,
+        roles: userRoleEntries.map(ur => ur.role),
+        families: families
+      };
+    }).filter(Boolean) as User[];
+
+    cLog('Processed users:', usersWithRolesAndFamilies.length);
+    setUsers(usersWithRolesAndFamilies);
+  }, []);
+
+  const fetchUsers = useCallback(async () => {
+    try {
+      setLoading(true);
+      cLog('Starting to fetch users...');
+
+      // Get users with emails using secure admin function
+      const { data: usersWithEmails, error: usersError } = await supabase
+        .rpc('get_users_with_emails');
+
+      if (usersError) {
+        cError('Users with emails error:', usersError);
+        // Fall back to profiles if RPC fails (e.g., non-admin user)
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (profilesError) {
+          throw profilesError;
+        }
+        
+        // Process without emails for non-admin fallback
+        const usersWithoutEmails = (profiles || []).map(profile => ({
+          user_id: profile.user_id,
+          email: '',
+          first_name: profile.first_name || '',
+          last_name: profile.last_name || '',
+          created_at: profile.created_at
+        }));
+        
+        await processUsers(usersWithoutEmails);
+        return;
+      }
+      
+      cLog('Fetched users with emails:', usersWithEmails?.length || 0);
+      await processUsers(usersWithEmails || []);
+    } catch (error: unknown) {
+      cError('Error fetching users:', getErrorMessage(error));
+      toast({
+        variant: 'destructive',
+        title: 'Error Loading Users',
+        description: getErrorMessage(error)
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [processUsers, toast]);
+
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [fetchUsers]);
 
   const fetchUsers = async () => {
     try {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +11,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { cError } from '@/utils/conditionalLogger';
 
 interface SystemHealthMetric {
   metric_name: string;
@@ -24,28 +25,30 @@ export const SystemHealthMonitor = () => {
   const [loading, setLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState(new Date());
 
-  useEffect(() => {
-    fetchSystemHealth();
-    // Refresh every 30 seconds
-    const interval = setInterval(fetchSystemHealth, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const fetchSystemHealth = async () => {
+  const fetchSystemHealth = useCallback(async () => {
     try {
       const { data, error } = await supabase.rpc('get_system_health_metrics');
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
       setMetrics((data || []).map(item => ({
         ...item,
         status: item.status as 'healthy' | 'warning' | 'critical'
       })));
       setLastRefresh(new Date());
     } catch (error) {
-      console.error('Error fetching system health:', error);
+      cError('Error fetching system health:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchSystemHealth();
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchSystemHealth, 30000);
+    return () => clearInterval(interval);
+  }, [fetchSystemHealth]);
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {

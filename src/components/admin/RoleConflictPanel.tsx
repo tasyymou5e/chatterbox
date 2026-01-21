@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +15,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/utils/getErrorMessage';
+
 interface RoleConflict {
   user_id: string;
   email: string | null;
@@ -30,12 +31,14 @@ export const RoleConflictPanel: React.FC = () => {
   const [resolving, setResolving] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
-  const fetchConflicts = async () => {
+  const fetchConflicts = useCallback(async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase.rpc('detect_role_conflicts');
       
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
       
       setConflicts(data || []);
     } catch (error: unknown) {
@@ -48,11 +51,11 @@ export const RoleConflictPanel: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     fetchConflicts();
-  }, []);
+  }, [fetchConflicts]);
 
   const resolveConflict = async (conflict: RoleConflict, keepRole: 'admin' | 'family') => {
     setResolving(prev => new Set(prev).add(conflict.user_id));

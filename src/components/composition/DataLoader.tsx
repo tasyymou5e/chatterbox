@@ -52,8 +52,8 @@ export function DataLoader<T>({
 
   useEffect(() => {
     fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [...deps, enabled]);
+    // Dependencies are spread from deps prop - this is intentional for dynamic dependency support
+  }, [fetchData, ...deps]);
 
   return <>{children({ data, loading, error, refetch: fetchData })}</>;
 }

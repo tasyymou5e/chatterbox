@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus, Search, Edit, Trash2, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ContentItemDialog } from '@/components/admin/ContentItemDialog';
+import { cError } from '@/utils/conditionalLogger';
 
 interface ContentItem {
   id: string;
@@ -48,11 +49,7 @@ export default function AdminContent() {
   const [selectedItem, setSelectedItem] = useState<ContentItem | null>(null);
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const [itemsResult, categoriesResult] = await Promise.all([
         supabase
@@ -69,13 +66,17 @@ export default function AdminContent() {
           .order('sort_order')
       ]);
 
-      if (itemsResult.error) throw itemsResult.error;
-      if (categoriesResult.error) throw categoriesResult.error;
+      if (itemsResult.error) {
+        throw itemsResult.error;
+      }
+      if (categoriesResult.error) {
+        throw categoriesResult.error;
+      }
 
       setContentItems((itemsResult.data || []) as ContentItem[]);
       setCategories(categoriesResult.data || []);
     } catch (error) {
-      console.error('Error fetching data:', error);
+      cError('Error fetching data:', error);
       toast({
         title: "Error",
         description: "Failed to load content items",
@@ -84,7 +85,11 @@ export default function AdminContent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this content item?')) return;

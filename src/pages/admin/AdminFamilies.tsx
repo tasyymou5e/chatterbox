@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,6 +28,8 @@ import BulkEmailDialog from '@/components/admin/BulkEmailDialog';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { useAuthStore } from '@/stores/authStore';
 import { getErrorMessage } from '@/utils/getErrorMessage';
+import { cLog, cError } from '@/utils/conditionalLogger';
+
 interface FamilyMember {
   id: string;
   user_id: string;
@@ -66,11 +68,121 @@ export default function AdminFamilies() {
   const [bulkEmailDialogOpen, setBulkEmailDialogOpen] = useState(false);
   const { toast } = useToast();
 
+  const fetchFamilies = useCallback(async () => {
+    try {
+      setError(null);
+      cLog('Fetching families as admin user...');
+      
+      // Get families with their members first
+      const { data: familiesData, error: familiesError } = await supabase
+        .from('families')
+        .select(`
+          *,
+          family_members (
+            id,
+            user_id,
+            role,
+            joined_at
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (familiesError) {
+        cError('Error fetching families:', familiesError);
+        setError(`Failed to load families: ${familiesError.message}`);
+        throw familiesError;
+      }
+
+      cLog(`Found ${familiesData?.length || 0} families`);
+
+      // Get all unique user IDs from family members
+      const allUserIds = [...new Set(
+        (familiesData || [])
+          .flatMap(family => family.family_members || [])
+          .map(member => member.user_id)
+      )];
+
+      // Fetch profiles for all users at once
+      cLog('Fetching profiles for user IDs:', allUserIds);
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, first_name, last_name')
+        .in('user_id', allUserIds);
+
+      if (profilesError) {
+        cError('Error fetching profiles:', profilesError);
+      } else {
+        cLog('Profile data fetched:', profilesData);
+      }
+
+      // Create a map of user profiles for quick lookup
+      const profilesMap = new Map(
+        (profilesData || []).map(profile => [profile.user_id, profile])
+      );
+      cLog('Profiles map created:', profilesMap);
+
+      // Fetch emails using secure admin function
+      const { data: emailsData, error: emailsError } = await supabase.rpc('get_users_with_emails');
+      
+      if (emailsError) {
+        cError('Error fetching user emails:', emailsError);
+        // Continue without emails rather than failing completely
+      }
+
+      // Create email lookup map
+      const emailsMap = new Map(
+        (emailsData || []).map((user: { user_id: string; email: string }) => [user.user_id, user.email])
+      );
+      cLog('Emails map created:', emailsMap.size, 'entries');
+
+      // Transform the data to include member details and count
+      const familiesWithMembers = (familiesData || []).map(family => {
+        const members = (family.family_members || [])
+          .filter((member: { role: string }) => member.role !== 'read_only') // Filter out read_only roles
+          .map((member: { id: string; user_id: string; role: string; joined_at: string }) => {
+            const profile = profilesMap.get(member.user_id);
+            const email = emailsMap.get(member.user_id);
+            cLog(`Member ${member.user_id}:`, { member, profile, email });
+            return {
+              id: member.id,
+              user_id: member.user_id,
+              role: member.role as 'parent' | 'child' | 'admin' | 'therapist' | 'teacher' | 'grandparent' | 'family_friend',
+              joined_at: member.joined_at,
+              first_name: profile?.first_name,
+              last_name: profile?.last_name,
+              email: email
+            };
+          });
+
+        return {
+          ...family,
+          member_count: (family.family_members?.filter((m: { role: string }) => m.role !== 'read_only')?.length || 0),
+          members,
+          expanded: false
+        };
+      });
+
+      setFamilies(familiesWithMembers as Family[]);
+      cLog('Successfully loaded families with member details');
+    } catch (error: unknown) {
+      cError('Error fetching families:', getErrorMessage(error));
+      const errorMessage = getErrorMessage(error);
+      setError(errorMessage);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: errorMessage
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
+
   useEffect(() => {
     if (sessionReady) {
       fetchFamilies();
     }
-  }, [sessionReady]);
+  }, [sessionReady, fetchFamilies]);
 
   const fetchFamilies = async () => {
     try {

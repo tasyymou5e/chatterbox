@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,7 +30,7 @@ export const SystemHealthLogs = () => {
   const [refreshing, setRefreshing] = useState(false);
   const { toast } = useToast();
 
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
     try {
       setRefreshing(true);
       
@@ -54,11 +54,13 @@ export const SystemHealthLogs = () => {
 
       const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
       setLogs((data || []).map(log => ({
         ...log,
-        metadata: (log.metadata as any) || {}
+        metadata: (log.metadata as PerformanceMetadata) || {}
       })));
     } catch (error: unknown) {
       cError('Error fetching performance metrics', error);
@@ -71,7 +73,7 @@ export const SystemHealthLogs = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [searchTerm, metricTypeFilter, thresholdFilter, toast]);
 
   useEffect(() => {
     fetchLogs();
@@ -94,7 +96,7 @@ export const SystemHealthLogs = () => {
       supabase.removeChannel(channel);
       clearInterval(interval);
     };
-  }, [searchTerm, metricTypeFilter, thresholdFilter]);
+  }, [fetchLogs]);
 
   const getMetricIcon = (metricType: string) => {
     switch (metricType) {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,7 @@ import { RetentionChart } from './RetentionChart';
 import { FamilyGrowthChart } from './FamilyGrowthChart';
 import { SystemHealthMonitor } from './SystemHealthMonitor';
 import { supabase } from '@/integrations/supabase/client';
+import { cError } from '@/utils/conditionalLogger';
 
 interface FamilyGrowthData {
   date: string;
@@ -34,19 +35,15 @@ export const AdvancedAnalyticsDashboard = () => {
   const [familyGrowthData, setFamilyGrowthData] = useState<FamilyGrowthData[]>([]);
   const [loadingFamilyData, setLoadingFamilyData] = useState(true);
 
-  useEffect(() => {
-    if (analytics.sessionReady && analytics.isAdmin) {
-      fetchFamilyGrowthData();
-    }
-  }, [analytics.sessionReady, analytics.isAdmin, timeRange]);
-
-  const fetchFamilyGrowthData = async () => {
+  const fetchFamilyGrowthData = useCallback(async () => {
     try {
       setLoadingFamilyData(true);
       const { data, error } = await supabase.rpc('get_family_growth_metrics', { 
         days_back: parseInt(timeRange) 
       });
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
       
       const transformedData = (data || []).map(item => ({
         ...item,
@@ -55,11 +52,17 @@ export const AdvancedAnalyticsDashboard = () => {
       
       setFamilyGrowthData(transformedData);
     } catch (error) {
-      console.error('Error fetching family growth data:', error);
+      cError('Error fetching family growth data:', error);
     } finally {
       setLoadingFamilyData(false);
     }
-  };
+  }, [timeRange]);
+
+  useEffect(() => {
+    if (analytics.sessionReady && analytics.isAdmin) {
+      fetchFamilyGrowthData();
+    }
+  }, [analytics.sessionReady, analytics.isAdmin, fetchFamilyGrowthData]);
 
   const refreshAllData = async () => {
     await Promise.all([
