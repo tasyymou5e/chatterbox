@@ -1,6 +1,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.0';
 import { getCorsHeaders } from '../_shared/cors.ts';
+import { validateJWT, getServiceClient, createUnauthorizedResponse } from '../_shared/auth-validator.ts';
 
 interface CreateUserRequest {
   email: string;
@@ -50,31 +51,16 @@ serve(async (req) => {
   }
 
   try {
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    // Initialize Supabase service client for admin operations
+    const supabase = getServiceClient();
 
-    // Get the authorization header
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'No authorization header' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    // Validate JWT using getClaims() - local verification with asymmetric keys
+    const auth = await validateJWT(req);
+    if (!auth.success || !auth.userId) {
+      return createUnauthorizedResponse(auth.error || 'Invalid authentication', corsHeaders);
     }
 
-    // Verify the user is authenticated and get their session
-    const { data: { user }, error: authError } = await supabase.auth.getUser(
-      authHeader.replace('Bearer ', '')
-    );
-
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: 'Invalid authentication' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    const user = { id: auth.userId, email: auth.email };
 
     // Check if user is admin
     const { data: isAdmin, error: roleError } = await supabase

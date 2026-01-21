@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders } from '../_shared/cors.ts';
 import { ttsLimiter, RateLimiter } from '../_shared/rate-limiter.ts';
+import { validateJWT, getServiceClient } from '../_shared/auth-validator.ts';
 
 interface TTSRequest {
   text: string;
@@ -44,20 +45,11 @@ serve(async (req) => {
       throw new Error('GROK_API_KEY is not configured');
     }
 
-    // Try to get user from auth header
-    const authHeader = req.headers.get('Authorization');
-    if (authHeader) {
-      try {
-        const supabaseClient = createClient(
-          Deno.env.get('SUPABASE_URL') ?? '',
-          Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-          { global: { headers: { Authorization: authHeader } } }
-        );
-        const { data: { user } } = await supabaseClient.auth.getUser();
-        userId = user?.id ?? null;
-      } catch {
-        // Ignore auth errors for public TTS
-      }
+    // Try to get user from auth header (optional for public TTS)
+    // Using getClaims() for local verification with asymmetric keys
+    const auth = await validateJWT(req);
+    if (auth.success && auth.userId) {
+      userId = auth.userId;
     }
 
     // Validate voice parameter
@@ -146,10 +138,7 @@ async function logTTSCall(params: {
   userId?: string | null;
 }) {
   try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    const supabase = getServiceClient();
 
     // Estimate tokens from text length (rough approximation: 4 chars per token)
     const estimatedTokens = Math.ceil(params.textLength / 4);

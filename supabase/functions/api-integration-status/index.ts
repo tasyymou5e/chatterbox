@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders } from '../_shared/cors.ts';
 import { adminActionLimiter, RateLimiter } from '../_shared/rate-limiter.ts';
+import { validateJWT, getServiceClient } from '../_shared/auth-validator.ts';
 
 interface IntegrationStatus {
   provider: string;
@@ -34,32 +35,16 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
 
-    // Verify authenticated user
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return json({ error: 'Authorization required' }, 401);
-    }
-
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: authHeader } } }
-    );
-
-    const {
-      data: { user },
-      error: authError,
-    } = await supabaseClient.auth.getUser();
-
-    if (authError || !user) {
+    // Validate JWT using getClaims() - local verification with asymmetric keys
+    const auth = await validateJWT(req);
+    if (!auth.success || !auth.userId) {
       return json({ error: 'Unauthorized' }, 401);
     }
 
+    const user = { id: auth.userId, email: auth.email };
+
     // Verify admin role using service role (avoids any RLS/RPC edge-cases)
-    const adminClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    const adminClient = getServiceClient();
 
     const { data: roles, error: rolesError } = await adminClient
       .from('user_roles')

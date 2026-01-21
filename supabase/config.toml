@@ -1,34 +1,59 @@
 project_id = "lxuqfgbukrrickanmmic"
 
+# JWT Signing Keys Migration: All functions now use verify_jwt = false
+# Authentication is handled in code using getClaims() for local JWT verification
+# This enables asymmetric key verification without network calls to auth server
+
 [functions.create-test-family]
-verify_jwt = true
+verify_jwt = false
 
 [functions.create-child-account]
-verify_jwt = true
+verify_jwt = false
 
 [functions.admin-update-user]
-verify_jwt = true
+verify_jwt = false
 
 [functions.delete-family-comprehensive]
-verify_jwt = true
+verify_jwt = false
 
 [functions.security-testing]
-verify_jwt = true
+verify_jwt = false
 
 [functions.security-monitoring]
-verify_jwt = true
+verify_jwt = false
 
 [functions.text-to-speech]
 verify_jwt = false
 
 [functions.api-integration-status]
-verify_jwt = true
+verify_jwt = false
 
 [functions.grok-chat]
 verify_jwt = false
 
 [functions.send-family-email]
-verify_jwt = true
+verify_jwt = false
 
 [functions.process-recurring-chores]
+verify_jwt = false
+
+[functions.admin-create-user]
+verify_jwt = false
+
+[functions.admin-add-family-member]
+verify_jwt = false
+
+[functions.admin-remove-family-member]
+verify_jwt = false
+
+[functions.cleanup-test-families]
+verify_jwt = false
+
+[functions.error-collector]
+verify_jwt = false
+
+[functions.supabase-analytics-query]
+verify_jwt = false
+
+[functions.update-site-settings]
 verify_jwt = false
