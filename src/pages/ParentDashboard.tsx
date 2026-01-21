@@ -7,8 +7,9 @@ import { useParentPortalGuard } from '@/hooks/useParentPortalGuard';
 import { supabase } from '@/integrations/supabase/client';
 import { getCurrentUserFamilies, getSecureFamilyMembers, FamilyMemberInfo } from '@/utils/secureFamilyAccess';
 import { toast } from '@/hooks/use-toast';
-import { Heart, Users, Plus, Target, User } from 'lucide-react';
+import { Heart, Users, Plus, Target, User, Gamepad2 } from 'lucide-react';
 import CreateChildAccountDialog from '@/components/parent/CreateChildAccountDialog';
+import { ChildGameAssignmentDialog } from '@/components/parent/ChildGameAssignmentDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
@@ -39,6 +40,7 @@ const ParentDashboard = () => {
   const [profileLoading, setProfileLoading] = useState(true);
   const [showCreateChildDialog, setShowCreateChildDialog] = useState(false);
   const [showFamilyDialog, setShowFamilyDialog] = useState(false);
+  const [showGameAssignmentDialog, setShowGameAssignmentDialog] = useState(false);
   const [familyData, setFamilyData] = useState<FamilyData[]>([]);
   const [familyMembers, setFamilyMembers] = useState<FamilyMemberInfo[]>([]);
   const [familyLoading, setFamilyLoading] = useState(false);
@@ -307,6 +309,38 @@ const ParentDashboard = () => {
             </CardContent>
           </Card>
 
+          {/* Game Assignment Card */}
+          <Card className="bg-gradient-card shadow-soft hover:shadow-medium transition-shadow">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Gamepad2 className="h-5 w-5 text-primary" />
+                Game Assignments
+              </CardTitle>
+              <CardDescription>
+                Assign educational games to your children
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">
+                  Choose specific games for each child with custom difficulty settings and due dates.
+                </p>
+                <Button 
+                  className="w-full mt-4"
+                  onClick={() => setShowGameAssignmentDialog(true)}
+                  disabled={familyMembers.filter(m => m.role === 'child').length === 0}
+                >
+                  Assign Games
+                </Button>
+                {familyMembers.filter(m => m.role === 'child').length === 0 && (
+                  <p className="text-xs text-muted-foreground text-center">
+                    Create a child account first to assign games
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Quick Actions Card */}
           <Card className="bg-gradient-card shadow-soft hover:shadow-medium transition-shadow">
             <CardHeader>
@@ -379,6 +413,14 @@ const ParentDashboard = () => {
             description: "The child can now complete their account setup with the provided code.",
           });
         }}
+      />
+
+      {/* Game Assignment Dialog */}
+      <ChildGameAssignmentDialog
+        isOpen={showGameAssignmentDialog}
+        onClose={() => setShowGameAssignmentDialog(false)}
+        familyId={familyData[0]?.id || ''}
+        parentId={user?.id || ''}
       />
 
       {/* Family Members Dialog */}
