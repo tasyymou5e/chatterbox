@@ -95,12 +95,12 @@ export default function AdminUsers() {
       
       console.log('Fetched users with emails:', usersWithEmails?.length || 0);
       await processUsers(usersWithEmails || []);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error fetching users:', error);
       toast({
         variant: 'destructive',
         title: 'Error Loading Users',
-        description: error?.message || 'Failed to load users. Please try again.'
+        description: error instanceof Error ? error.message : 'Failed to load users. Please try again.'
       });
     } finally {
       setLoading(false);

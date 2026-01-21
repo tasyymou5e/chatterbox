@@ -46,7 +46,7 @@ export default function AdminMemberManagementDialog({
   const [loading, setLoading] = useState(false);
   const [searchEmail, setSearchEmail] = useState('');
   const [selectedRole, setSelectedRole] = useState<string>('child');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<Array<{ user_id: string; first_name?: string; last_name?: string }>>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [selectedMemberToRemove, setSelectedMemberToRemove] = useState<FamilyMember | null>(null);
   const [passwordResetDialogOpen, setPasswordResetDialogOpen] = useState(false);
@@ -103,7 +103,13 @@ export default function AdminMemberManagementDialog({
 
       // Filter out users who are already family members
       const existingUserIds = family.members?.map(m => m.user_id) || [];
-      const filteredResults = (data || []).filter(user => !existingUserIds.includes(user.user_id));
+      const filteredResults = (data || [])
+        .filter(user => !existingUserIds.includes(user.user_id))
+        .map(user => ({
+          user_id: user.user_id,
+          first_name: user.first_name ?? undefined,
+          last_name: user.last_name ?? undefined
+        }));
       
       setSearchResults(filteredResults);
       
@@ -114,11 +120,11 @@ export default function AdminMemberManagementDialog({
           variant: 'default',
         });
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Search error:', error);
       toast({
         title: 'Search failed',
-        description: error.message,
+        description: error instanceof Error ? error.message : 'An unexpected error occurred',
         variant: 'destructive',
       });
     } finally {
@@ -153,11 +159,11 @@ export default function AdminMemberManagementDialog({
       setSelectedRole('child');
       
       onSuccess();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Add member error:', error);
       toast({
         title: 'Failed to add member',
-        description: error.message || 'An unexpected error occurred.',
+        description: error instanceof Error ? error.message : 'An unexpected error occurred.',
         variant: 'destructive',
       });
     } finally {
@@ -189,11 +195,11 @@ export default function AdminMemberManagementDialog({
 
       setSelectedMemberToRemove(null);
       onSuccess();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Remove member error:', error);
       toast({
         title: 'Failed to remove member',
-        description: error.message || 'An unexpected error occurred.',
+        description: error instanceof Error ? error.message : 'An unexpected error occurred.',
         variant: 'destructive',
       });
     } finally {

@@ -26,7 +26,7 @@ interface ContentItem {
   is_free: boolean | null;
   content_rating: string | null;
   tags: string[] | null;
-  autism_features: any;
+  autism_features: Record<string, boolean> | null;
   content_categories?: {
     name: string;
   } | null;

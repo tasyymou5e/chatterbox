@@ -122,9 +122,9 @@ const AdminLLMMonitoring = () => {
       
       setRecentCalls(callsData || []);
 
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error fetching LLM stats:', err);
-      const errorMessage = err.message || 'Failed to fetch LLM monitoring data';
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch LLM monitoring data';
       setError(errorMessage);
       toast({
         title: "Error",

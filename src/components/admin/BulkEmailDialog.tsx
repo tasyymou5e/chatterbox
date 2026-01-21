@@ -81,8 +81,9 @@ export default function BulkEmailDialog({
         return;
       }
 
-      const successCount = data?.results?.filter((r: any) => r.success).length || 0;
-      const failCount = data?.results?.filter((r: any) => !r.success).length || 0;
+      const results = data?.results as Array<{ success: boolean }> | undefined;
+      const successCount = results?.filter((r) => r.success).length || 0;
+      const failCount = results?.filter((r) => !r.success).length || 0;
 
       if (failCount > 0) {
         toast({
@@ -102,12 +103,12 @@ export default function BulkEmailDialog({
       setMessage('');
       onOpenChange(false);
 
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error sending bulk email:', error);
       toast({
         variant: 'destructive',
         title: 'Failed to send emails',
-        description: error.message || 'An unexpected error occurred.'
+        description: error instanceof Error ? error.message : 'An unexpected error occurred.'
       });
     } finally {
       setSending(false);

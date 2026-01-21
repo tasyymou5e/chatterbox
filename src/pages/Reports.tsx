@@ -30,7 +30,7 @@ const Reports = () => {
     title: string;
     value: string | number;
     description: string;
-    icon: any;
+    icon: React.ComponentType<{ className?: string }>;
     variant?: 'default' | 'success' | 'warning' | 'destructive';
   }) => {
     const variants = {

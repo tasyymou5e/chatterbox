@@ -38,12 +38,12 @@ export const RoleConflictPanel: React.FC = () => {
       if (error) throw error;
       
       setConflicts(data || []);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error fetching role conflicts:', error);
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: error.message || 'Failed to fetch role conflicts'
+        description: error instanceof Error ? error.message : 'Failed to fetch role conflicts'
       });
     } finally {
       setLoading(false);
@@ -77,11 +77,12 @@ export const RoleConflictPanel: React.FC = () => {
       }
 
       // Insert the resolved role
+      type UserRole = 'admin' | 'read_only' | 'parent' | 'child';
       const { error: insertError } = await supabase
         .from('user_roles')
         .insert({
           user_id: conflict.user_id,
-          role: roleToKeep as any
+          role: roleToKeep as UserRole
         });
 
       if (insertError) throw insertError;
@@ -94,12 +95,12 @@ export const RoleConflictPanel: React.FC = () => {
       // Refresh conflicts
       fetchConflicts();
 
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error resolving conflict:', error);
       toast({
         variant: 'destructive',
         title: 'Resolution Failed',
-        description: error.message || 'Failed to resolve role conflict'
+        description: error instanceof Error ? error.message : 'Failed to resolve role conflict'
       });
     } finally {
       setResolving(prev => {
