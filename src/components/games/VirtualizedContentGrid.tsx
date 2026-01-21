@@ -3,33 +3,15 @@ import React, { useMemo, useCallback } from 'react';
 import { useVirtualScrolling } from '@/hooks/useVirtualScrolling';
 import { useWindowSize } from '@/hooks/useWindowSize';
 import { ContentCard } from './ContentCard';
-
-interface ContentItem {
-  id: string;
-  title: string;
-  description: string;
-  content_type: string;
-  category_id: string;
-  url: string;
-  thumbnail_url: string;
-  age_min: number;
-  age_max: number;
-  autism_features: any;
-  tags: string[];
-  is_free: boolean;
-  content_categories?: {
-    name: string;
-    icon: string;
-  };
-}
+import type { CatalogContentItem, CurationAccessType } from './types/catalog';
 
 interface VirtualizedContentGridProps {
-  items: ContentItem[];
+  items: CatalogContentItem[];
   favorites: string[];
   onFavorite: (contentId: string) => void;
-  onContentClick: (item: ContentItem) => void;
+  onContentClick: (item: CatalogContentItem) => void;
   showCurationControls?: boolean;
-  onContentCuration?: (contentId: string, accessType: 'allowed' | 'blocked' | 'featured') => void;
+  onContentCuration?: (contentId: string, accessType: CurationAccessType) => void;
   containerHeight?: number;
 }
 
@@ -85,11 +67,11 @@ function VirtualizedContentGridComponent({
     onFavorite(contentId);
   }, [onFavorite]);
 
-  const handleContentClick = useCallback((item: ContentItem) => {
+  const handleContentClick = useCallback((item: CatalogContentItem) => {
     onContentClick(item);
   }, [onContentClick]);
 
-  const handleContentCuration = useCallback((contentId: string, accessType: 'allowed' | 'blocked' | 'featured') => {
+  const handleContentCuration = useCallback((contentId: string, accessType: CurationAccessType) => {
     if (onContentCuration) {
       onContentCuration(contentId, accessType);
     }

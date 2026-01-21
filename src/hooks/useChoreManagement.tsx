@@ -1,6 +1,7 @@
 // Bridge adapter - migrated to use Zustand store internally
 import { useEffect } from 'react';
 import { useChoreStore } from '@/stores/choreStore';
+import type { RecurrencePattern } from '@/types/chore';
 
 // Re-export interfaces for backward compatibility
 export interface ChoreCategory {
@@ -40,7 +41,7 @@ export interface Chore {
   points: number;
   instructions?: string;
   recurring: boolean;
-  recurrence_pattern?: any;
+  recurrence_pattern?: RecurrencePattern;
   is_template: boolean;
   template_id?: string;
   created_at: string;
@@ -62,7 +63,7 @@ export interface ChoreAssignment {
   streak_bonus?: number;
   completion_notes?: string;
   parent_feedback?: string;
-  recurrence_pattern?: any;
+  recurrence_pattern?: RecurrencePattern;
   next_due_date?: string;
   created_at: string;
   updated_at: string;

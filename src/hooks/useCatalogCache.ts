@@ -2,44 +2,19 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { cacheManager } from '@/utils/CacheManager';
 import { useAuth } from './useAuth';
-
-interface ContentItem {
-  id: string;
-  title: string;
-  description: string | null;
-  content_type: string;
-  category_id: string | null;
-  url: string;
-  thumbnail_url: string | null;
-  age_min: number | null;
-  age_max: number | null;
-  autism_features: any;
-  tags: string[] | null;
-  is_free: boolean | null;
-  content_categories?: {
-    name: string;
-    icon: string | null;
-  } | null;
-}
-
-interface Category {
-  id: string;
-  name: string;
-  icon: string | null;
-  description: string | null;
-}
+import type { CatalogContentItem, CatalogCategory } from '@/components/games/types/catalog';
 
 export const useCatalogCache = (userFamily?: string) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
   // Fetch family content with optimized caching and error handling
-  const fetchFamilyContent = async (familyId?: string): Promise<ContentItem[]> => {
-    try {
+  const fetchFamilyContent = async (familyId?: string): Promise<CatalogContentItem[]> => {
+  try {
       const cacheKey = `content_items_family_${familyId || 'global'}`;
       
       // Try cache first
-      const cached = cacheManager.get<ContentItem[]>(cacheKey);
+      const cached = cacheManager.get<CatalogContentItem[]>(cacheKey);
       if (cached) {
         return cached;
       }
@@ -67,7 +42,8 @@ export const useCatalogCache = (userFamily?: string) => {
         return []; // Return empty array instead of throwing
       }
 
-      const contentItems = data || [];
+      // Cast to our type - autism_features from DB is JSON which we map to AutismFeatures
+      const contentItems = (data || []) as unknown as CatalogContentItem[];
       
       // Cache the results with 5 minute TTL
       cacheManager.set(cacheKey, contentItems, { ttl: 5 * 60 * 1000 });
@@ -80,14 +56,14 @@ export const useCatalogCache = (userFamily?: string) => {
   };
 
   // Cache categories with longer TTL (they rarely change)
-  const { data: categories } = useQuery<Category[]>({
+  const { data: categories } = useQuery<CatalogCategory[]>({
     queryKey: ['content_categories'],
     queryFn: async () => {
       try {
         const cacheKey = 'content_categories';
         
         // Try cache first
-        const cached = cacheManager.get<Category[]>(cacheKey);
+        const cached = cacheManager.get<CatalogCategory[]>(cacheKey);
         if (cached) {
           return cached;
         }
@@ -103,7 +79,8 @@ export const useCatalogCache = (userFamily?: string) => {
           return []; // Return empty array instead of throwing
         }
 
-        const categoryData = data || [];
+        // Cast to our category type
+        const categoryData = (data || []) as unknown as CatalogCategory[];
         
         // Cache categories for 30 minutes (they change rarely)
         cacheManager.set(cacheKey, categoryData, { ttl: 30 * 60 * 1000 });
@@ -120,7 +97,7 @@ export const useCatalogCache = (userFamily?: string) => {
   });
 
   // Cache content items with shorter TTL and family awareness
-  const { data: contentItems, isLoading: contentLoading, refetch: refetchContent } = useQuery<ContentItem[]>({
+  const { data: contentItems, isLoading: contentLoading, refetch: refetchContent } = useQuery<CatalogContentItem[]>({
     queryKey: ['content_items', userFamily || 'global'],
     queryFn: () => fetchFamilyContent(userFamily),
     staleTime: 2 * 60 * 1000,   // 2 minutes

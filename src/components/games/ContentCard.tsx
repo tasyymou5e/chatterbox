@@ -3,34 +3,18 @@ import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Heart, Play, Shield, ShieldX, Sparkles } from 'lucide-react';
-import type { AutismFeatures } from '@/types/autism';
-
-interface ContentItem {
-  id: string;
-  title: string;
-  description: string;
-  content_type: string;
-  url: string;
-  thumbnail_url: string;
-  age_min: number;
-  age_max: number;
-  autism_features: AutismFeatures | null;
-  tags: string[];
-  is_free: boolean;
-  content_categories?: {
-    name: string;
-    icon: string;
-  };
-}
+import type { CatalogContentItem, CurationAccessType } from './types/catalog';
 
 interface ContentCardProps {
-  item: ContentItem;
+  item: CatalogContentItem;
   isFavorited: boolean;
   onFavorite: () => void;
   onClick: () => void;
   showCurationControls?: boolean;
-  onContentCuration?: (contentId: string, accessType: 'allowed' | 'blocked' | 'featured') => void;
+  onContentCuration?: (contentId: string, accessType: CurationAccessType) => void;
 }
+
+import type { AutismFeatures } from '@/types/autism';
 
 function ContentCardComponent({ 
   item, 
@@ -120,7 +104,7 @@ function ContentCardComponent({
               {item.title}
             </h3>
             <p className="text-sm text-muted-foreground line-clamp-2">
-              {item.description}
+              {item.description || ''}
             </p>
           </div>
 
@@ -129,7 +113,7 @@ function ContentCardComponent({
               {getContentIcon(item.content_type)} {item.content_type}
             </Badge>
             <Badge variant="secondary" className="text-xs">
-              Ages {item.age_min}-{item.age_max}
+              Ages {item.age_min ?? 0}-{item.age_max ?? 18}
             </Badge>
             {item.content_categories && (
               <Badge variant="outline" className="text-xs">
