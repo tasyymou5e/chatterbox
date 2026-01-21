@@ -153,7 +153,7 @@ export function validateAndSanitizeFormData<T>(
   }
 }
 
-function sanitizeObjectInputs(obj: any): any {
+function sanitizeObjectInputs(obj: unknown): unknown {
   if (typeof obj === 'string') {
     return sanitizeInput(obj);
   }
@@ -163,7 +163,7 @@ function sanitizeObjectInputs(obj: any): any {
   }
   
   if (obj !== null && typeof obj === 'object') {
-    const sanitized: any = {};
+    const sanitized: Record<string, unknown> = {};
     Object.entries(obj).forEach(([key, value]) => {
       sanitized[key] = sanitizeObjectInputs(value);
     });

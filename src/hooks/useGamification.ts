@@ -5,8 +5,9 @@ import { useGamificationStore } from '@/stores/gamificationStore';
 import { useStoreResult } from '@/hooks/useStoreResult';
 import { useUIStore } from '@/stores/uiStore';
 import { withRetry } from '@/services/storeUtils';
+import type { AchievementCriteria } from '@/types/gamification';
 
-// Re-export interfaces for backward compatibility
+// Re-export interfaces for backward compatibility with proper types
 export interface UserLevel {
   id: string;
   user_id: string;
@@ -36,7 +37,7 @@ export interface Achievement {
   icon: string;
   category: string;
   points_reward: number;
-  requirements: any;
+  requirements: AchievementCriteria;
   is_active: boolean;
   created_at: string;
 }
@@ -148,14 +149,17 @@ export const useGamification = (familyId?: string) => {
     }
   }, [familyId, setFamilyId]);
 
-  // Enhanced wrapper functions with individual loading states and retry logic
-  const addWishlistItem = async (itemData: {
+  // Wishlist item data interface
+  interface WishlistItemInput {
     item_name: string;
     description?: string;
     point_cost: number;
     reward_type?: 'points' | 'custom' | 'privilege' | 'activity';
     image_url?: string;
-  }): Promise<any> => {
+  }
+
+  // Enhanced wrapper functions with individual loading states and retry logic
+  const addWishlistItem = async (itemData: WishlistItemInput): Promise<{ success: boolean; data?: WishlistItem }> => {
     const loadingKey = getLoadingKey('add-wishlist');
     setLoading(loadingKey, true);
     
@@ -174,7 +178,7 @@ export const useGamification = (familyId?: string) => {
     }
   };
 
-  const redeemWishlistItem = async (itemId: string): Promise<any> => {
+  const redeemWishlistItem = async (itemId: string): Promise<{ success: boolean; data?: WishlistItem }> => {
     const loadingKey = getLoadingKey('redeem-wishlist');
     setLoading(loadingKey, true);
     
@@ -211,7 +215,7 @@ export const useGamification = (familyId?: string) => {
   };
 
   // Retry functions for failed operations
-  const retryAddWishlistItem = useCallback(async (itemData: any) => {
+  const retryAddWishlistItem = useCallback(async (itemData: WishlistItemInput) => {
     return addWishlistItem(itemData);
   }, []);
 

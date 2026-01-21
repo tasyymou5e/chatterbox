@@ -62,8 +62,8 @@ export const UserActivityLogs = () => {
       setLogs((data || []).map(log => ({
         ...log,
         ip_address: log.ip_address as string | null,
-        device_info: (log.device_info as Record<string, any>) || {},
-        metadata: (log.metadata as Record<string, any>) || {}
+        device_info: (log.device_info as DeviceInfoData) || {},
+        metadata: (log.metadata as ActivityMetadata) || {}
       })));
     } catch (error: unknown) {
       cError('Error fetching user activity logs', error);
