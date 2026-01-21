@@ -8,6 +8,7 @@ import { useLoginRateLimiter } from '@/hooks/useLoginRateLimiter';
 import { toast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { getAuthErrorMessage } from './authErrorUtils';
+import { validateAndSanitizeFormData, validationSchemas } from '@/utils/enhancedInputValidation';
 
 interface SignInFormProps {
   onForgotPassword: () => void;
@@ -15,7 +16,7 @@ interface SignInFormProps {
 }
 
 /**
- * Sign in form component with rate limiting support.
+ * Sign in form component with rate limiting and input validation.
  */
 export const SignInForm = ({ onForgotPassword, onChildSignup }: SignInFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -27,8 +28,23 @@ export const SignInForm = ({ onForgotPassword, onChildSignup }: SignInFormProps)
     e.preventDefault();
 
     const formData = new FormData(e.currentTarget);
-    const email = formData.get('signin-email') as string;
-    const password = formData.get('signin-password') as string;
+    const rawData = {
+      email: formData.get('signin-email') as string,
+      password: formData.get('signin-password') as string,
+    };
+
+    // Validate and sanitize input using Zod schema
+    const validation = validateAndSanitizeFormData(rawData, validationSchemas.signIn);
+    if (!validation.success) {
+      toast({
+        title: 'Validation Error',
+        description: validation.errors.join(', '),
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const { email, password } = validation.data;
 
     // Check rate limit BEFORE attempting login
     if (!checkAttempt(email)) {

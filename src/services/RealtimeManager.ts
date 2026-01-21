@@ -1,7 +1,7 @@
 // Phase 3: Optimized Realtime with Connection Pooling
 import { supabase } from '@/integrations/supabase/client';
 import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
-
+import { cError } from '@/utils/conditionalLogger';
 
 // Typed callback for realtime subscriptions
 type RealtimeCallback = (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => void;
@@ -88,7 +88,7 @@ class RealtimeManager {
             try {
               callback(payload);
             } catch (error) {
-              // Silent error handling in production
+              cError('RealtimeManager: Callback execution failed', error);
             }
           });
         }
@@ -133,7 +133,7 @@ class RealtimeManager {
         try {
           supabase.removeChannel(existingChannel);
         } catch (error) {
-          // Silent fail in production
+          cError('RealtimeManager: Failed to remove channel during reconnect', error);
         }
         this.channels.delete(subscriptionKey);
       }
@@ -156,7 +156,7 @@ class RealtimeManager {
           try {
             supabase.removeChannel(channel);
           } catch (error) {
-            // Silent fail in production
+            cError('RealtimeManager: Failed to remove channel during unsubscribe', error);
           }
           this.channels.delete(subscriptionKey);
         }
@@ -181,7 +181,7 @@ class RealtimeManager {
       try {
         supabase.removeChannel(channel);
       } catch (error) {
-        // Silent fail in production
+        cError('RealtimeManager: Failed to remove channel during cleanup', error);
       }
     }
     

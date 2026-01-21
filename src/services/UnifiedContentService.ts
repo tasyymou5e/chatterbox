@@ -46,31 +46,36 @@ class UnifiedContentServiceClass {
     ageGroup?: AgeGroup | 'all'
   ): Promise<KidContentItem[]> {
     try {
-      const { data: contentItems, error: contentError } = await supabase
-        .from('content_items')
-        .select(`
-          id, title, description, url, thumbnail_url, content_type,
-          age_min, age_max, autism_features, category_id,
-          content_categories ( id, name )
-        `)
-        .eq('is_active', true)
-        .order('title');
+      // Fetch all data in parallel for better performance
+      const [contentResult, accessResult, prefsResult] = await Promise.all([
+        supabase
+          .from('content_items')
+          .select(`
+            id, title, description, url, thumbnail_url, content_type,
+            age_min, age_max, autism_features, category_id,
+            content_categories ( id, name )
+          `)
+          .eq('is_active', true)
+          .order('title'),
+        supabase
+          .from('family_content_access')
+          .select('content_item_id, access_type')
+          .eq('family_id', familyId),
+        supabase
+          .from('child_content_preferences')
+          .select('*')
+          .eq('child_id', childId)
+          .eq('content_type', 'game'),
+      ]);
 
-      if (contentError) throw contentError;
+      if (contentResult.error) throw contentResult.error;
 
-      const { data: accessData } = await supabase
-        .from('family_content_access')
-        .select('content_item_id, access_type')
-        .eq('family_id', familyId);
+      const contentItems = contentResult.data;
+      const accessData = accessResult.data;
+      const prefsData = prefsResult.data;
 
       const accessMap = new Map<string, AccessLevel>();
       accessData?.forEach(a => accessMap.set(a.content_item_id, a.access_type as AccessLevel));
-
-      const { data: prefsData } = await supabase
-        .from('child_content_preferences')
-        .select('*')
-        .eq('child_id', childId)
-        .eq('content_type', 'game');
 
       const prefsMap = new Map();
       prefsData?.forEach(p => prefsMap.set(p.content_id, p));

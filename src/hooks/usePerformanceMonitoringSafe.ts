@@ -36,8 +36,8 @@ export const usePerformanceMonitoringSafe = () => {
         console.log('Performance Metric:', metric);
       }
       
-      // TODO: Re-enable Supabase integration once import issues are resolved
-      // const { data: { user } } = await supabase.auth.getUser();
+      // Performance metrics are logged locally for now
+      // Supabase integration is handled separately via analytics_metrics table
       // await supabase.from('performance_metrics').insert({...});
     } catch (err) {
       console.warn('Failed to log performance metric:', err);

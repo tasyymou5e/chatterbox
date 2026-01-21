@@ -8,6 +8,7 @@ import { toast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { PasswordStrengthIndicator } from '@/components/auth/PasswordStrengthIndicator';
 import { getAuthErrorMessage } from './authErrorUtils';
+import { validateAndSanitizeFormData, validationSchemas } from '@/utils/enhancedInputValidation';
 
 interface SignUpFormProps {
   isSignupEnabled: boolean;
@@ -16,6 +17,7 @@ interface SignUpFormProps {
 
 /**
  * Sign up form component for parent account creation.
+ * Uses Zod schema validation for security.
  */
 export const SignUpForm = ({ isSignupEnabled, onSignUpSuccess }: SignUpFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -38,10 +40,26 @@ export const SignUpForm = ({ isSignupEnabled, onSignUpSuccess }: SignUpFormProps
     }
 
     const formData = new FormData(e.currentTarget);
-    const email = formData.get('signup-email') as string;
-    const password = formData.get('signup-password') as string;
-    const firstName = formData.get('first-name') as string;
-    const lastName = formData.get('last-name') as string;
+    const rawData = {
+      email: formData.get('signup-email') as string,
+      password: formData.get('signup-password') as string,
+      firstName: formData.get('first-name') as string,
+      lastName: formData.get('last-name') as string,
+    };
+
+    // Validate and sanitize input using Zod schema
+    const validation = validateAndSanitizeFormData(rawData, validationSchemas.signUp);
+    if (!validation.success) {
+      toast({
+        title: 'Validation Error',
+        description: validation.errors.join(', '),
+        variant: 'destructive',
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    const { email, password, firstName, lastName } = validation.data;
 
     try {
       const { error } = await signUp(email, password, firstName, lastName);

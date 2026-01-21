@@ -1,8 +1,9 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/integrations/supabase/types';
 
-const SUPABASE_URL = "https://lxuqfgbukrrickanmmic.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx4dXFmZ2J1a3JyaWNrYW5tbWljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYzOTQyMTgsImV4cCI6MjA3MTk3MDIxOH0.OonibLO1o5uCtVX2EHeCLCWcBbF64oYGmE4IK1ZfcQE";
+// Use environment variables with fallback for backwards compatibility
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || "https://lxuqfgbukrrickanmmic.supabase.co";
+const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx4dXFmZ2J1a3JyaWNrYW5tbWljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYzOTQyMTgsImV4cCI6MjA3MTk3MDIxOH0.OonibLO1o5uCtVX2EHeCLCWcBbF64oYGmE4IK1ZfcQE";
 
 // Service role key should be set in environment variables for tests
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';

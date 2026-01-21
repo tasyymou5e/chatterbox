@@ -88,9 +88,14 @@ export default tseslint.config(
       "max-lines-per-function": "off",
     },
   },
-  // Storybook files
+  // Storybook files - add parser options for TypeScript
   {
     files: ["**/*.stories.{ts,tsx}", ".storybook/**/*.{ts,tsx}"],
+    languageOptions: {
+      parserOptions: {
+        project: true,
+      },
+    },
     rules: {
       "no-console": "off",
       "max-lines-per-function": "off",
