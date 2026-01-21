@@ -32,7 +32,7 @@ import { UserEditDialog } from '@/components/admin/UserEditDialog';
 import { UserDeleteDialog } from '@/components/admin/UserDeleteDialog';
 import { UserPasswordResetDialog } from '@/components/admin/UserPasswordResetDialog';
 import { UserCreateDialog } from '@/components/admin/UserCreateDialog';
-
+import { getErrorMessage } from '@/utils/getErrorMessage';
 interface User {
   id: string;
   email: string;
@@ -95,12 +95,12 @@ export default function AdminUsers() {
       
       console.log('Fetched users with emails:', usersWithEmails?.length || 0);
       await processUsers(usersWithEmails || []);
-    } catch (error) {
-      console.error('Error fetching users:', error);
+    } catch (error: unknown) {
+      console.error('Error fetching users:', getErrorMessage(error));
       toast({
         variant: 'destructive',
         title: 'Error Loading Users',
-        description: error instanceof Error ? error.message : 'Failed to load users. Please try again.'
+        description: getErrorMessage(error)
       });
     } finally {
       setLoading(false);

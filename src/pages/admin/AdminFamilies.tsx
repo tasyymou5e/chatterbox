@@ -27,7 +27,7 @@ import AdminMemberManagementDialog from '@/components/admin/AdminMemberManagemen
 import BulkEmailDialog from '@/components/admin/BulkEmailDialog';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { useAuthStore } from '@/stores/authStore';
-
+import { getErrorMessage } from '@/utils/getErrorMessage';
 interface FamilyMember {
   id: string;
   user_id: string;
@@ -168,9 +168,9 @@ export default function AdminFamilies() {
 
       setFamilies(familiesWithMembers as Family[]);
       console.log('Successfully loaded families with member details');
-    } catch (error) {
-      console.error('Error fetching families:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to load families';
+    } catch (error: unknown) {
+      console.error('Error fetching families:', getErrorMessage(error));
+      const errorMessage = getErrorMessage(error);
       setError(errorMessage);
       toast({
         variant: 'destructive',

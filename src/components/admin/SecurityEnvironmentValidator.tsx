@@ -6,7 +6,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Shield, CheckCircle, AlertTriangle, XCircle, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-
+import { getErrorMessage } from '@/utils/getErrorMessage';
 interface ValidationResult {
   success: boolean;
   issues: string[];
@@ -48,11 +48,11 @@ export default function SecurityEnvironmentValidator() {
           variant: "destructive"
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Environment validation error:', error);
       toast({
         title: "Validation Error",
-        description: error.message || "Failed to validate environment",
+        description: getErrorMessage(error),
         variant: "destructive"
       });
     } finally {

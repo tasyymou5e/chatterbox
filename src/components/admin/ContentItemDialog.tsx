@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-
+import { getErrorMessage } from '@/utils/getErrorMessage';
 interface ContentItem {
   id: string;
   title: string;
@@ -165,11 +165,11 @@ export function ContentItemDialog({ open, onOpenChange, item, categories, onSucc
 
       onSuccess();
       onOpenChange(false);
-    } catch (error) {
-      console.error('Error saving content item:', error);
+    } catch (error: unknown) {
+      console.error('Error saving content item:', getErrorMessage(error));
       toast({
         title: "Error",
-        description: `Failed to ${item ? 'update' : 'create'} content item`,
+        description: `Failed to ${item ? 'update' : 'create'} content item: ${getErrorMessage(error)}`,
         variant: "destructive"
       });
     } finally {

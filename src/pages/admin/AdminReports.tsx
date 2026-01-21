@@ -25,7 +25,7 @@ import { useToast } from '@/hooks/use-toast';
 import ActivityLogsTable from '@/components/reports/ActivityLogsTable';
 import FamilyActivityReport from '@/components/reports/FamilyActivityReport';
 import { AdvancedAnalyticsDashboard } from '@/components/analytics/AdvancedAnalyticsDashboard';
-
+import { getErrorMessage } from '@/utils/getErrorMessage';
 interface SystemStats {
   totalUsers: number;
   totalFamilies: number;
@@ -135,12 +135,12 @@ export default function AdminReports() {
 
       setActivitySummary(summaryArray);
 
-    } catch (error) {
-      console.error('Error fetching reports data:', error);
+    } catch (error: unknown) {
+      console.error('Error fetching reports data:', getErrorMessage(error));
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Failed to load reports data'
+        description: getErrorMessage(error)
       });
     } finally {
       setLoading(false);

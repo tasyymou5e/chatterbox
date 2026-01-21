@@ -14,7 +14,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Trash2, AlertTriangle } from 'lucide-react';
-
+import { getErrorMessage } from '@/utils/getErrorMessage';
 interface Family {
   id: string;
   family_code: string;
@@ -90,12 +90,12 @@ export default function FamilyDeleteDialog({ family, open, onOpenChange, onSucce
 
       onOpenChange(false);
       onSuccess?.();
-    } catch (error) {
-      console.error('Error deleting family:', error);
+    } catch (error: unknown) {
+      console.error('Error deleting family:', getErrorMessage(error));
       toast({
         variant: 'destructive',
         title: 'Deletion Failed',
-        description: 'Failed to delete the family. Please try again.'
+        description: getErrorMessage(error)
       });
     } finally {
       setLoading(false);

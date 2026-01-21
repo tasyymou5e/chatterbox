@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Edit, Save, X } from 'lucide-react';
-
+import { getErrorMessage } from '@/utils/getErrorMessage';
 interface Family {
   id: string;
   family_code: string;
@@ -72,12 +72,12 @@ export default function FamilyEditDialog({ family, open, onOpenChange, onSuccess
 
       onOpenChange(false);
       onSuccess?.();
-    } catch (error) {
-      console.error('Error updating family:', error);
+    } catch (error: unknown) {
+      console.error('Error updating family:', getErrorMessage(error));
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Failed to update family details.'
+        description: getErrorMessage(error)
       });
     } finally {
       setLoading(false);
