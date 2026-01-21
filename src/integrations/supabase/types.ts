@@ -3586,6 +3586,14 @@ export type Database = {
             }
             Returns: string
           }
+      delete_child_game_assignment: {
+        Args: {
+          p_child_id: string
+          p_content_item_id: string
+          p_family_id: string
+        }
+        Returns: undefined
+      }
       detect_role_conflicts: {
         Args: never
         Returns: {
@@ -3626,6 +3634,15 @@ export type Database = {
       generate_progress_snapshot: {
         Args: { p_family_id: string; p_user_id: string }
         Returns: string
+      }
+      get_child_game_assignments: {
+        Args: { p_child_id: string; p_family_id: string }
+        Returns: {
+          content_item_id: string
+          difficulty_override: string
+          due_date: string
+          is_required: boolean
+        }[]
       }
       get_daily_analytics_for_admins: {
         Args: { days_back?: number }
@@ -3957,6 +3974,18 @@ export type Database = {
           p_points_earned: number
           p_user_id: string
           p_xp_earned?: number
+        }
+        Returns: undefined
+      }
+      upsert_child_game_assignment: {
+        Args: {
+          p_assigned_by: string
+          p_child_id: string
+          p_content_item_id: string
+          p_difficulty_override?: string
+          p_due_date?: string
+          p_family_id: string
+          p_is_required?: boolean
         }
         Returns: undefined
       }
