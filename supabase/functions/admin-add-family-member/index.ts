@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 import { getCorsHeaders } from '../_shared/cors.ts'
+import { adminActionLimiter, RateLimiter } from '../_shared/rate-limiter.ts'
 
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req.headers.get('origin'));
@@ -8,6 +9,13 @@ serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Apply rate limiting
+  const rateCheck = adminActionLimiter.check(req);
+  if (!rateCheck.allowed) {
+    console.warn('Rate limit exceeded for admin-add-family-member');
+    return RateLimiter.createRateLimitResponse(rateCheck.resetTime);
   }
 
   try {

@@ -28,7 +28,8 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
-    sourcemap: true,
+    // Disable source maps in production to prevent code exposure
+    sourcemap: mode !== 'production',
     rollupOptions: {
       output: {
         manualChunks: {

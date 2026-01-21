@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { getCorsHeaders } from '../_shared/cors.ts'
+import { cleanupLimiter, RateLimiter } from '../_shared/rate-limiter.ts'
 
 interface DeleteFamilyRequest {
   familyId: string;
@@ -20,6 +21,13 @@ serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Apply rate limiting for destructive operations
+  const rateCheck = cleanupLimiter.check(req);
+  if (!rateCheck.allowed) {
+    console.warn('Rate limit exceeded for delete-family-comprehensive');
+    return RateLimiter.createRateLimitResponse(rateCheck.resetTime);
   }
 
   try {
