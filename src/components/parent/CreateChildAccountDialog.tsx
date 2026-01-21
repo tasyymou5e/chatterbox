@@ -13,6 +13,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { createChildAccount } from '@/utils/secureChildAccountAccess';
 import { supabase } from '@/integrations/supabase/client';
 import { PasswordStrengthIndicator } from '@/components/auth/PasswordStrengthIndicator';
+import { validateAndSanitizeFormData, commonSchemas } from '@/utils/enhancedInputValidation';
+import { z } from 'zod';
 
 interface CreateChildAccountDialogProps {
   open: boolean;
@@ -106,24 +108,25 @@ export default function CreateChildAccountDialog({ open, onOpenChange, onSuccess
     }
   };
 
+  // Zod schema for child account creation with password
+  const childAccountWithPasswordSchema = z.object({
+    firstName: commonSchemas.name,
+    lastName: commonSchemas.name,
+    password: z.string().min(8, 'Password must be at least 8 characters').max(128, 'Password too long'),
+  });
+
   const validateForm = () => {
-    if (!firstName.trim()) {
-      toast({ variant: "destructive", title: "First name is required" });
-      return false;
-    }
-    
-    if (!lastName.trim()) {
-      toast({ variant: "destructive", title: "Last name is required" });
-      return false;
-    }
+    const validation = validateAndSanitizeFormData(
+      { firstName, lastName, password },
+      childAccountWithPasswordSchema
+    );
 
-    if (!password.trim()) {
-      toast({ variant: "destructive", title: "Password is required" });
-      return false;
-    }
-
-    if (password.length < 8) {
-      toast({ variant: "destructive", title: "Password must be at least 8 characters" });
+    if (!validation.success) {
+      toast({ 
+        variant: "destructive", 
+        title: "Validation Error",
+        description: validation.errors.join(', ')
+      });
       return false;
     }
 

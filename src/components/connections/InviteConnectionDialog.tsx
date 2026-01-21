@@ -17,6 +17,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useConnectionStore } from '@/stores/connectionStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useToast } from '@/hooks/use-toast';
+import { validateAndSanitizeFormData, commonSchemas } from '@/utils/enhancedInputValidation';
+import { z } from 'zod';
 
 interface InviteConnectionDialogProps {
   open: boolean;
@@ -47,22 +49,46 @@ export function InviteConnectionDialog({ open, onOpenChange, familyId }: InviteC
     }
   });
 
+  // Zod schema for connection invitation
+  const invitationSchema = z.object({
+    email: commonSchemas.email,
+    role: z.enum(['therapist', 'teacher', 'grandparent', 'family_friend']),
+    message: z.string().max(500, 'Message too long').optional(),
+  });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.email || !formData.role || !user?.id) {
+    if (!user?.id) {
       toast({
         title: 'Error',
-        description: 'Please fill in all required fields',
+        description: 'You must be logged in to send invitations',
         variant: 'destructive',
       });
       return;
     }
 
+    const validation = validateAndSanitizeFormData(
+      { email: formData.email, role: formData.role, message: formData.message },
+      invitationSchema
+    );
+
+    if (!validation.success) {
+      toast({
+        title: 'Validation Error',
+        description: validation.errors.join(', '),
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Use validated role from Zod schema
+    const validatedRole = formData.role as 'therapist' | 'teacher' | 'grandparent' | 'family_friend';
+    
     const { error } = await sendInvitation({
       family_id: familyId,
       invited_email: formData.email,
-      connection_role: formData.role,
+      connection_role: validatedRole,
       invited_by: user.id,
       invitation_message: formData.message || '',
       permissions: formData.permissions,
