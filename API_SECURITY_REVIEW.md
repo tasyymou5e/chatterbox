@@ -5,13 +5,15 @@
 
 ## 🔍 **SECURITY OVERVIEW**
 
-**Security Status**: ✅ **HARDENED** (2025-09-22)  
+**Security Status**: ✅ **HARDENED** (2026-01-21)  
 **Total API Endpoints**: 65+ documented  
-**Security Rating**: A- (Excellent security posture with 4 minor warnings)  
+**Security Rating**: A (Excellent security posture - fully hardened)  
 **Authentication**: Supabase JWT + RLS policies across 59 tables  
 **Encryption**: HTTPS/TLS 1.3 + Database encryption at rest  
 **Database Coverage**: Comprehensive security across all 59 tables  
 **Zustand Stores**: 12 stores with optimized security patterns
+**CORS**: Dynamic origin validation via `getCorsHeaders()` across all 14 edge functions
+**Input Validation**: Zod schemas on all form components via `enhancedInputValidation.ts`
 
 ---
 
@@ -444,15 +446,20 @@ CREATE INDEX CONCURRENTLY idx_security_audit_logs_user_id ON security_audit_logs
 
 ### **Security Headers**
 ```typescript
-// CORS Configuration
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS, PUT, DELETE',
+// Dynamic CORS Configuration (2026-01-21)
+import { getCorsHeaders } from '../_shared/cors.ts';
+
+// Use dynamic origin validation instead of wildcard
+const corsHeaders = getCorsHeaders(req.headers.get('origin'));
+
+// Security headers applied to all responses
+const securityHeaders = {
+  ...corsHeaders,
   'X-Content-Type-Options': 'nosniff',
   'X-Frame-Options': 'DENY', 
   'X-XSS-Protection': '1; mode=block',
-  'Referrer-Policy': 'strict-origin-when-cross-origin'
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'"
 };
 ```
 

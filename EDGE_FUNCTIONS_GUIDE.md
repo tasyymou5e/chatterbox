@@ -103,7 +103,7 @@ Client Request
 
 ### `cors.ts`
 
-CORS configuration with origin validation.
+CORS configuration with **dynamic origin validation** (hardened 2026-01-21).
 
 ```typescript
 // Allowed production origins
@@ -112,9 +112,10 @@ const ALLOWED_ORIGINS = [
   'https://*.lovable.dev',
   'https://*.lovableproject.com',
   'https://lxuqfgbukrrickanmmic.supabase.co',
+  'https://chatterboxlife.lovable.app',
 ];
 
-// Development origins
+// Development origins (only in development mode)
 const DEV_ORIGINS = [
   'http://localhost:3000',
   'http://localhost:5173',
@@ -123,20 +124,20 @@ const DEV_ORIGINS = [
 
 /**
  * Get CORS headers with validated origin
+ * CRITICAL: Always use this instead of hardcoded '*' wildcard
  */
 export function getCorsHeaders(requestOrigin?: string | null): Record<string, string>;
-
-// Legacy export (deprecated)
-export const corsHeaders: Record<string, string>;
 ```
 
-**Usage:**
+**Usage (MANDATORY for all edge functions):**
 ```typescript
 import { getCorsHeaders } from '../_shared/cors.ts';
 
 Deno.serve(async (req) => {
+  // ALWAYS get dynamic CORS headers based on request origin
   const corsHeaders = getCorsHeaders(req.headers.get('origin'));
   
+  // Handle preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -148,6 +149,8 @@ Deno.serve(async (req) => {
   });
 });
 ```
+
+**IMPORTANT**: Never use `'Access-Control-Allow-Origin': '*'` directly. Always use `getCorsHeaders()`.
 
 ---
 
