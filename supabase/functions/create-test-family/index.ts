@@ -177,6 +177,9 @@ serve(async (req) => {
 
   log('INIT', 'Request received', { method: req.method });
 
+  // Get dynamic CORS headers based on origin
+  const corsHeaders = getCorsHeaders(req.headers.get('origin'));
+
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     log('INIT', 'CORS preflight request handled');
