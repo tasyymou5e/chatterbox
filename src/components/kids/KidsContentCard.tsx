@@ -34,7 +34,7 @@ const typeIcons: Record<string, string> = {
   activity: '✨',
 };
 
-export const KidsContentCard: React.FC<KidsContentCardProps> = ({
+const KidsContentCardComponent: React.FC<KidsContentCardProps> = ({
   item,
   onLaunch,
   onFavoriteToggle
@@ -230,5 +230,18 @@ export const KidsContentCard: React.FC<KidsContentCardProps> = ({
     </Card>
   );
 };
+
+// Memoized component to prevent unnecessary re-renders
+export const KidsContentCard = React.memo(KidsContentCardComponent, (prevProps, nextProps) => {
+  return (
+    prevProps.item.id === nextProps.item.id &&
+    prevProps.item.title === nextProps.item.title &&
+    prevProps.item.isFavorite === nextProps.item.isFavorite &&
+    prevProps.item.completionPercentage === nextProps.item.completionPercentage &&
+    prevProps.item.playCount === nextProps.item.playCount &&
+    prevProps.item.lastPlayedAt === nextProps.item.lastPlayedAt &&
+    prevProps.item.familyAccess === nextProps.item.familyAccess
+  );
+});
 
 export default KidsContentCard;
