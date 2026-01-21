@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,7 +30,7 @@ export function LLMCostThresholdSettings() {
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       // Fetch thresholds
       const { data: thresholdData, error: thresholdError } = await supabase
@@ -38,7 +38,9 @@ export function LLMCostThresholdSettings() {
         .select("*")
         .order("threshold_type");
 
-      if (thresholdError) throw thresholdError;
+      if (thresholdError) {
+        throw thresholdError;
+      }
       setThresholds(thresholdData || []);
 
       // Fetch current costs
@@ -46,7 +48,9 @@ export function LLMCostThresholdSettings() {
         .from("llm_api_calls")
         .select("cost_usd, created_at");
 
-      if (costError) throw costError;
+      if (costError) {
+        throw costError;
+      }
 
       const now = new Date();
       const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -58,9 +62,15 @@ export function LLMCostThresholdSettings() {
           const callDate = new Date(call.created_at);
           const cost = Number(call.cost_usd) || 0;
 
-          if (callDate >= todayStart) acc.daily += cost;
-          if (callDate >= weekAgo) acc.weekly += cost;
-          if (callDate >= monthStart) acc.monthly += cost;
+          if (callDate >= todayStart) {
+            acc.daily += cost;
+          }
+          if (callDate >= weekAgo) {
+            acc.weekly += cost;
+          }
+          if (callDate >= monthStart) {
+            acc.monthly += cost;
+          }
 
           return acc;
         },
@@ -74,11 +84,11 @@ export function LLMCostThresholdSettings() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   const updateThreshold = (id: string, field: keyof CostThreshold, value: unknown) => {
     setThresholds((prev) =>

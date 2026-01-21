@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { BarChart3, TrendingUp, Users, Activity } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -26,14 +26,10 @@ export default function ParentReports() {
   });
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (user) {
-      fetchStats();
+  const fetchStats = useCallback(async () => {
+    if (!user?.id) {
+      return;
     }
-  }, [user]);
-
-  const fetchStats = async () => {
-    if (!user?.id) return;
     const timer = createQueryTimer();
     
     try {
@@ -158,9 +154,13 @@ export default function ParentReports() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
-  return (
+  useEffect(() => {
+    if (user) {
+      fetchStats();
+    }
+  }, [user, fetchStats]);
     <div className="min-h-screen bg-background">
       <ParentNavigation />
       

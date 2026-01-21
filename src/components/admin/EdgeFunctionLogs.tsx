@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { EdgeFunctionLog } from '@/types/logs';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 
@@ -10,13 +10,13 @@ export const EdgeFunctionLogs = () => {
   const [functionFilter, setFunctionFilter] = useState<string>('all');
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
     try {
       setRefreshing(true);
       
       // Use sample data based on real edge function logs structure
       // This matches the actual logs from the Supabase analytics
-      const sampleLogs = [
+      const sampleLogs: EdgeFunctionLog[] = [
         {
           id: crypto.randomUUID(),
           timestamp: 1757360318172000,
@@ -71,13 +71,13 @@ export const EdgeFunctionLogs = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchLogs();
     const interval = setInterval(fetchLogs, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchLogs]);
 
   const filteredLogs = logs.filter(log => {
     const matchesSearch = !searchTerm || 

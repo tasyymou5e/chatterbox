@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Shield, ShieldX, Sparkles, Eye } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { cError } from '@/utils/conditionalLogger';
 
 interface ContentAccess {
   id: string;
@@ -32,11 +33,7 @@ export function FamilyContentManager({ familyId, onClose }: FamilyContentManager
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchContentAccess();
-  }, [familyId]);
-
-  const fetchContentAccess = async () => {
+  const fetchContentAccess = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('family_content_access')
@@ -54,10 +51,12 @@ export function FamilyContentManager({ familyId, onClose }: FamilyContentManager
         .eq('family_id', familyId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
       setContentAccess((data as ContentAccess[]) || []);
     } catch (error) {
-      console.error('Error fetching content access:', error);
+      cError('Error fetching content access:', error);
       toast({
         title: "Error",
         description: "Failed to load content management settings",
@@ -66,7 +65,11 @@ export function FamilyContentManager({ familyId, onClose }: FamilyContentManager
     } finally {
       setLoading(false);
     }
-  };
+  }, [familyId, toast]);
+
+  useEffect(() => {
+    fetchContentAccess();
+  }, [fetchContentAccess]);
 
   const updateContentAccess = async (contentId: string, newAccessType: 'allowed' | 'blocked' | 'featured') => {
     try {

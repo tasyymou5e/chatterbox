@@ -74,104 +74,124 @@ export function ChildGameAssignmentDialog({
   const { toast } = useToast();
 
   // Fetch children and games
-  useEffect(() => {
-    if (!isOpen || !familyId) return;
+  const fetchChildrenAndGames = useCallback(async () => {
+    if (!familyId) {
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      // Fetch children in family
+      const { data: familyMembers, error: membersError } = await supabase
+        .from('family_members')
+        .select('user_id, profiles!inner(id, first_name, last_name)')
+        .eq('family_id', familyId)
+        .eq('role', 'child');
 
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        // Fetch children in family
-        const { data: familyMembers, error: membersError } = await supabase
-          .from('family_members')
-          .select('user_id, profiles!inner(id, first_name, last_name)')
-          .eq('family_id', familyId)
-          .eq('role', 'child');
-
-        if (membersError) throw membersError;
-
-        const childProfiles: ChildProfile[] = (familyMembers || []).map(fm => {
-          const profile = fm.profiles as unknown as { id: string; first_name: string; last_name?: string };
-          return {
-            id: profile.id,
-            first_name: profile.first_name,
-            last_name: profile.last_name,
-          };
-        });
-        setChildren(childProfiles);
-
-        // Fetch available games (autism-friendly games for ages 6-12)
-        const { data: gamesData, error: gamesError } = await supabase
-          .from('content_items')
-          .select('id, title, description, thumbnail_url, skill_levels')
-          .eq('is_active', true)
-          .eq('content_type', 'game')
-          .gte('age_max', 6)
-          .lte('age_min', 12)
-          .order('title');
-
-        if (gamesError) throw gamesError;
-        setGames(gamesData || []);
-
-        // Select first child by default
-        if (childProfiles.length > 0) {
-          setSelectedChild(childProfiles[0].id);
-        }
-      } catch (error) {
-        console.error('Error fetching data:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to load children and games',
-          variant: 'destructive',
-        });
-      } finally {
-        setLoading(false);
+      if (membersError) {
+        throw membersError;
       }
-    };
 
-    fetchData();
-  }, [isOpen, familyId, toast]);
+      const childProfiles: ChildProfile[] = (familyMembers || []).map(fm => {
+        const profile = fm.profiles as unknown as { id: string; first_name: string; last_name?: string };
+        return {
+          id: profile.id,
+          first_name: profile.first_name,
+          last_name: profile.last_name,
+        };
+      });
+      setChildren(childProfiles);
+
+      // Fetch available games (autism-friendly games for ages 6-12)
+      const { data: gamesData, error: gamesError } = await supabase
+        .from('content_items')
+        .select('id, title, description, thumbnail_url, skill_levels')
+        .eq('is_active', true)
+        .eq('content_type', 'game')
+        .gte('age_max', 6)
+        .lte('age_min', 12)
+        .order('title');
+
+      if (gamesError) {
+        throw gamesError;
+      }
+      setGames(gamesData || []);
+
+      // Select first child by default
+      if (childProfiles.length > 0) {
+        setSelectedChild(childProfiles[0].id);
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load children and games',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [familyId, toast]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+    fetchChildrenAndGames();
+  }, [isOpen, fetchChildrenAndGames]);
 
   // Fetch existing assignments when child changes
-  useEffect(() => {
-    if (!selectedChild) return;
+  const fetchAssignments = useCallback(async () => {
+    if (!selectedChild || !familyId) {
+      return;
+    }
+    
+    try {
+      // Use RPC - need to handle type casting carefully
+      const rpcResult = await supabase.rpc('get_child_game_assignments', { 
+        p_child_id: selectedChild, 
+        p_family_id: familyId 
+      });
+      
+      const { data, error } = rpcResult as { 
+        data: { content_item_id: string; is_required: boolean; difficulty_override: string | null; due_date: string | null }[] | null; 
+        error: { code?: string; message?: string } | null 
+      };
 
-    const fetchAssignments = async () => {
-      try {
-        // Use RPC or raw query since types may not be updated yet
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data, error } = await (supabase.rpc as any)('get_child_game_assignments', { p_child_id: selectedChild, p_family_id: familyId }) as { data: { content_item_id: string; is_required: boolean; difficulty_override: string | null; due_date: string | null }[] | null; error: { code?: string; message?: string } | null };
-
-        // Fallback to direct query if RPC doesn't exist
-        if (error?.code === 'PGRST202') {
-          // RPC doesn't exist, the table might be new - just skip for now
-          console.log('Assignments table may not be ready yet');
-          return;
-        }
-
-        if (error) throw error;
-
-        const assignmentMap = new Map<string, Assignment>();
-        const existingSet = new Set<string>();
-
-        (data || []).forEach((a: { content_item_id: string; is_required: boolean; difficulty_override: string | null; due_date: string | null }) => {
-          existingSet.add(a.content_item_id);
-          assignmentMap.set(a.content_item_id, {
-            content_item_id: a.content_item_id,
-            is_required: a.is_required,
-            difficulty_override: a.difficulty_override || undefined,
-            due_date: a.due_date ? new Date(a.due_date) : undefined,
-          });
-        });
-
-        setExistingAssignments(existingSet);
-        setAssignments(assignmentMap);
-      } catch (error) {
-        console.error('Error fetching assignments:', error);
+      // Fallback to direct query if RPC doesn't exist
+      if (error?.code === 'PGRST202') {
+        // RPC doesn't exist, the table might be new - just skip for now
+        console.warn('Assignments table may not be ready yet');
+        return;
       }
-    };
 
-    fetchAssignments();
+      if (error) {
+        throw error;
+      }
+
+      const assignmentMap = new Map<string, Assignment>();
+      const existingSet = new Set<string>();
+
+      (data || []).forEach((a) => {
+        existingSet.add(a.content_item_id);
+        assignmentMap.set(a.content_item_id, {
+          content_item_id: a.content_item_id,
+          is_required: a.is_required,
+          difficulty_override: a.difficulty_override || undefined,
+          due_date: a.due_date ? new Date(a.due_date) : undefined,
+        });
+      });
+
+      setExistingAssignments(existingSet);
+      setAssignments(assignmentMap);
+    } catch (error) {
+      console.error('Error fetching assignments:', error);
+    }
   }, [selectedChild, familyId]);
+
+  useEffect(() => {
+    fetchAssignments();
+  }, [fetchAssignments]);
 
   const toggleAssignment = useCallback((gameId: string) => {
     setAssignments(prev => {
