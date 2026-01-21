@@ -161,6 +161,8 @@ export default function ParentReports() {
       fetchStats();
     }
   }, [user, fetchStats]);
+
+  return (
     <div className="min-h-screen bg-background">
       <ParentNavigation />
       
