@@ -60,7 +60,7 @@ function generateStrongPassword(): string {
 }
 
 import { getCorsHeaders } from '../_shared/cors.ts'
-
+import { cleanupLimiter, RateLimiter } from '../_shared/rate-limiter.ts'
 interface Parent {
   firstName: string;
   lastName: string;
@@ -184,6 +184,13 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') {
     log('INIT', 'CORS preflight request handled');
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Apply rate limiting for test family creation
+  const rateCheck = cleanupLimiter.check(req);
+  if (!rateCheck.allowed) {
+    log('RATE_LIMIT', 'Rate limit exceeded');
+    return RateLimiter.createRateLimitResponse(rateCheck.resetTime);
   }
 
   try {

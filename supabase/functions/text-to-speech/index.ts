@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders } from '../_shared/cors.ts';
+import { ttsLimiter, RateLimiter } from '../_shared/rate-limiter.ts';
 
 interface TTSRequest {
   text: string;
@@ -19,6 +20,13 @@ serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Apply rate limiting for TTS requests
+  const rateCheck = ttsLimiter.check(req);
+  if (!rateCheck.allowed) {
+    console.warn('Rate limit exceeded for text-to-speech');
+    return RateLimiter.createRateLimitResponse(rateCheck.resetTime);
   }
 
   const startTime = Date.now();

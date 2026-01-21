@@ -141,3 +141,39 @@ export const analyticsQueryLimiter = new RateLimiter({
     return `analytics:${auth}`;
   }
 });
+
+// LLM/AI operation limiter (expensive operations)
+export const llmLimiter = new RateLimiter({
+  windowMs: 60 * 1000, // 1 minute window
+  maxRequests: 5, // Max 5 LLM calls per minute per user
+  keyGenerator: (req) => {
+    const auth = req.headers.get('authorization') || 'anonymous';
+    return `llm:${auth}`;
+  }
+});
+
+// Text-to-speech limiter
+export const ttsLimiter = new RateLimiter({
+  windowMs: 60 * 1000, // 1 minute window
+  maxRequests: 10, // Max 10 TTS requests per minute per user
+  keyGenerator: (req) => {
+    const auth = req.headers.get('authorization') || 'anonymous';
+    return `tts:${auth}`;
+  }
+});
+
+// General API limiter (for misc endpoints)
+export const generalApiLimiter = new RateLimiter({
+  windowMs: 60 * 1000, // 1 minute window
+  maxRequests: 30, // Max 30 requests per minute per client
+});
+
+// Cleanup test data limiter (destructive operations)
+export const cleanupLimiter = new RateLimiter({
+  windowMs: 60 * 1000, // 1 minute window
+  maxRequests: 5, // Max 5 cleanup operations per minute
+  keyGenerator: (req) => {
+    const auth = req.headers.get('authorization') || 'anonymous';
+    return `cleanup:${auth}`;
+  }
+});

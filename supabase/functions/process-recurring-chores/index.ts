@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.0';
 import { getCorsHeaders } from '../_shared/cors.ts';
+import { generalApiLimiter, RateLimiter } from '../_shared/rate-limiter.ts';
 
 interface RecurrencePattern {
   frequency: 'daily' | 'weekly' | 'custom';
@@ -16,6 +17,13 @@ Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Apply rate limiting
+  const rateCheck = generalApiLimiter.check(req);
+  if (!rateCheck.allowed) {
+    console.warn('Rate limit exceeded for process-recurring-chores');
+    return RateLimiter.createRateLimitResponse(rateCheck.resetTime);
   }
 
   try {

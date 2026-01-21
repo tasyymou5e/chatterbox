@@ -73,6 +73,8 @@ const KidsContentCardComponent: React.FC<KidsContentCardProps> = ({
           <img 
             src={item.thumbnailUrl} 
             alt={item.title}
+            loading="lazy"
+            decoding="async"
             className="w-full h-full object-cover"
           />
         ) : (
