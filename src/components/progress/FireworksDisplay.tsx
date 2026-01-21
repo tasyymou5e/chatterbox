@@ -196,7 +196,9 @@ export function FireworksDisplay({
 
 function playFanfareSound() {
   try {
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const audioContext = new AudioContextClass();
     
     // Triumphant fanfare notes
     const notes = [

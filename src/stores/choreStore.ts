@@ -368,8 +368,9 @@ export const useChoreStore = create<ChoreState>()(
           return { success: true, result: createStoreSuccess(data, 'Chore created successfully') };
         } catch (error: unknown) {
           console.error('Error creating chore:', error);
-          const storeError = (error as any)?.name === 'ZodError' 
-            ? createStoreError('validation', 'Invalid input data', undefined, { validation: (error as any).errors })
+          const isZodError = error instanceof Error && error.name === 'ZodError';
+          const storeError = isZodError
+            ? createStoreError('validation', 'Invalid input data', undefined, { validation: (error as Error & { errors?: unknown[] }).errors })
             : createStoreError('network', error instanceof Error ? error.message : 'Failed to create chore');
           set({ error: storeError });
           return { success: false, error: storeError };
@@ -424,8 +425,9 @@ export const useChoreStore = create<ChoreState>()(
           return { success: true, result: createStoreSuccess(data, 'Custom chore created successfully') };
         } catch (error: unknown) {
           console.error('Error creating custom chore:', error);
-          const storeError = (error as any)?.name === 'ZodError' 
-            ? createStoreError('validation', 'Invalid input data', undefined, { validation: (error as any).errors })
+          const isZodError = error instanceof Error && error.name === 'ZodError';
+          const storeError = isZodError
+            ? createStoreError('validation', 'Invalid input data', undefined, { validation: (error as Error & { errors?: unknown[] }).errors })
             : createStoreError('network', error instanceof Error ? error.message : 'Failed to create chore');
           set({ error: storeError });
           return { success: false, error: storeError };

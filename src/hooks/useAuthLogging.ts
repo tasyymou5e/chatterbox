@@ -132,11 +132,18 @@ export const useAuthLogging = () => {
         return null;
       }
 
+      const getDevicePlatform = (deviceInfo: unknown): string => {
+        if (deviceInfo && typeof deviceInfo === 'object' && 'platform' in deviceInfo) {
+          return String((deviceInfo as { platform: unknown }).platform);
+        }
+        return 'Unknown';
+      };
+
       const summary = {
         totalActivities: activities?.length || 0,
         successfulLogins: activities?.filter(a => a.activity_type === 'login' && a.success).length || 0,
         failedLogins: activities?.filter(a => a.activity_type === 'failed_login').length || 0,
-        uniqueDevices: new Set(activities?.map(a => (a.device_info as any)?.platform || 'Unknown')).size,
+        uniqueDevices: new Set(activities?.map(a => getDevicePlatform(a.device_info))).size,
         lastActivity: activities?.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0],
         securityAlerts: activities?.filter(a => !a.success).length || 0
       };

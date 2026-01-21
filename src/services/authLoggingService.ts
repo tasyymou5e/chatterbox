@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { getNavigatorVendor } from '@/types/security';
 
 // Non-hook auth logging service for use in Zustand stores
 class AuthLoggingService {
@@ -38,10 +39,10 @@ class AuthLoggingService {
           ...metadata,
           timestamp: new Date().toISOString(),
           browserInfo: {
-            vendor: (navigator as any).vendor,
-            product: navigator.product,
-            appName: navigator.appName,
-            appVersion: navigator.appVersion
+            vendor: getNavigatorVendor(),
+            product: navigator.product || '',
+            appName: navigator.appName || '',
+            appVersion: navigator.appVersion || ''
           }
         }
       });

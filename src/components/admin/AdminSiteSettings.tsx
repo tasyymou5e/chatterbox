@@ -7,6 +7,8 @@ import { Loader2, Settings, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { getErrorMessage } from '@/utils/getErrorMessage';
+
+
 export default function AdminSiteSettings() {
   const { toast } = useToast();
   const [showSettings, setShowSettings] = useState(false);
@@ -30,26 +32,37 @@ export default function AdminSiteSettings() {
       if (error) {
         console.error('Error loading site settings:', error);
       } else {
-        const settingsMap: Record<string, any> = {};
+        const parsedSettings: {
+          parent_signup_enabled?: boolean;
+          site_maintenance_mode?: boolean;
+          max_families_per_parent?: number;
+        } = {};
+        
         data?.forEach((setting) => {
           const key = setting.setting_key;
-          let value = setting.setting_value;
+          const rawValue = setting.setting_value;
           
-          // Handle different data types
-          if (typeof value === 'string') {
-            if (value === 'true' || value === 'false') {
-              value = value === 'true';
-            } else if (!isNaN(Number(value))) {
-              value = Number(value);
+          if (rawValue === null) return;
+          
+          // Parse based on known setting types
+          if (key === 'parent_signup_enabled' || key === 'site_maintenance_mode') {
+            if (typeof rawValue === 'boolean') {
+              parsedSettings[key] = rawValue;
+            } else if (rawValue === 'true' || rawValue === 'false') {
+              parsedSettings[key] = rawValue === 'true';
+            }
+          } else if (key === 'max_families_per_parent') {
+            if (typeof rawValue === 'number') {
+              parsedSettings[key] = rawValue;
+            } else if (typeof rawValue === 'string' && !isNaN(Number(rawValue))) {
+              parsedSettings[key] = Number(rawValue);
             }
           }
-          
-          settingsMap[key] = value;
         });
 
-        setParentSignupEnabled(settingsMap.parent_signup_enabled ?? true);
-        setSiteMaintenanceMode(settingsMap.site_maintenance_mode ?? false);
-        setMaxFamiliesPerParent(settingsMap.max_families_per_parent ?? 5);
+        setParentSignupEnabled(parsedSettings.parent_signup_enabled ?? true);
+        setSiteMaintenanceMode(parsedSettings.site_maintenance_mode ?? false);
+        setMaxFamiliesPerParent(parsedSettings.max_families_per_parent ?? 5);
       }
     } catch (error: unknown) {
       console.error('Error loading site settings:', getErrorMessage(error));

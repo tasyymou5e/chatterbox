@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
+
 // Typed callback for realtime subscriptions
 type RealtimeCallback = (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => void;
 
@@ -72,18 +73,15 @@ class RealtimeManager {
     try {
       const channel = supabase.channel(channelName);
       
-      // Configure postgres changes listener
-      const config: any = {
-        event: '*',
-        schema: 'public',
-        table: table
+      // Configure postgres changes listener using the Supabase SDK pattern
+      const config = {
+        event: '*' as const,
+        schema: 'public' as const,
+        table: table,
+        ...(filter && { filter })
       };
-      
-      if (filter) {
-        config.filter = filter;
-      }
 
-      channel.on('postgres_changes', config, (payload) => {
+      channel.on('postgres_changes', config, (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
         const callbacks = this.subscribers.get(subscriptionKey);
         if (callbacks) {
           callbacks.forEach(callback => {
