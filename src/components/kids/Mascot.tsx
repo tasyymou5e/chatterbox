@@ -256,6 +256,7 @@ function MascotCharacter({
       className={cn('w-full h-full', className)}
       fill="none" 
       xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
     >
       {/* Body/Head - Cute round blob shape */}
       <ellipse 
