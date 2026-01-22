@@ -1,14 +1,16 @@
 /**
  * KidsPortalLayout - Age-appropriate colorful layout for children
- * Features: gradient header, star counter, tab navigation
+ * Features: gradient header, star counter, tab navigation, customizable avatar
  */
 
-import React from 'react';
-import { Star, Moon, Gamepad2, CheckSquare, Sparkles, LogOut } from 'lucide-react';
+import React, { useState } from 'react';
+import { Star, Moon, Gamepad2, CheckSquare, Sparkles, LogOut, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { ChildProfile, ContentType } from '@/types/kidsPortal';
+import type { AvatarConfig, AvatarCustomization } from '@/types/avatar';
 import { cn } from '@/lib/utils';
+import { AvatarDisplay, AvatarBuilder } from '@/components/avatar';
 
 interface KidsPortalLayoutProps {
   childProfile: ChildProfile | null;
@@ -16,6 +18,14 @@ interface KidsPortalLayoutProps {
   onTabChange: (tab: ContentType) => void;
   onLogout?: () => void;
   children: React.ReactNode;
+  /** Avatar configuration for the child */
+  avatar?: AvatarConfig | null;
+  /** Callback when avatar is saved */
+  onAvatarSave?: (customization: AvatarCustomization) => Promise<void>;
+  /** Callback for avatar upload */
+  onAvatarUpload?: (file: File) => Promise<string>;
+  /** Whether avatar is being saved */
+  isAvatarSaving?: boolean;
 }
 
 export const KidsPortalLayout: React.FC<KidsPortalLayoutProps> = ({
@@ -23,8 +33,14 @@ export const KidsPortalLayout: React.FC<KidsPortalLayoutProps> = ({
   activeTab,
   onTabChange,
   onLogout,
-  children
+  children,
+  avatar,
+  onAvatarSave,
+  onAvatarUpload,
+  isAvatarSaving = false,
 }) => {
+  const [isAvatarBuilderOpen, setIsAvatarBuilderOpen] = useState(false);
+  
   const tabs: { value: ContentType; label: string; icon: React.ReactNode }[] = [
     { value: 'game', label: 'Games', icon: <Gamepad2 className="h-5 w-5" /> },
     { value: 'chore', label: 'My Tasks', icon: <CheckSquare className="h-5 w-5" /> },
@@ -37,19 +53,27 @@ export const KidsPortalLayout: React.FC<KidsPortalLayoutProps> = ({
       <header className="bg-gradient-to-r from-violet-500 via-purple-500 to-pink-500 text-white shadow-lg">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            {/* Left: Welcome message */}
+            {/* Left: Avatar and Welcome message */}
             <div className="flex items-center gap-4">
-              {childProfile?.avatarUrl ? (
-                <img 
-                  src={childProfile.avatarUrl} 
-                  alt={childProfile.firstName}
-                  className="w-12 h-12 rounded-full border-2 border-white/50 shadow-md"
+              <div className="relative group">
+                <AvatarDisplay
+                  avatar={avatar}
+                  name={childProfile?.firstName}
+                  size="md"
+                  onClick={onAvatarSave ? () => setIsAvatarBuilderOpen(true) : undefined}
+                  editable={!!onAvatarSave}
+                  className="border-2 border-white/50 shadow-md"
                 />
-              ) : (
-                <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-2xl font-bold">
-                  {childProfile?.firstName?.charAt(0) || '?'}
-                </div>
-              )}
+                {onAvatarSave && (
+                  <button
+                    onClick={() => setIsAvatarBuilderOpen(true)}
+                    className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-full shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    aria-label="Edit avatar"
+                  >
+                    <Pencil className="w-3 h-3 text-primary" />
+                  </button>
+                )}
+              </div>
               <div>
                 <h1 className="text-xl font-bold">
                   Hi, {childProfile?.firstName || 'Friend'}! 👋
@@ -133,6 +157,27 @@ export const KidsPortalLayout: React.FC<KidsPortalLayoutProps> = ({
       <main className="container mx-auto px-4 py-6">
         {children}
       </main>
+
+      {/* Avatar Builder Dialog */}
+      {onAvatarSave && (
+        <AvatarBuilder
+          open={isAvatarBuilderOpen}
+          onOpenChange={setIsAvatarBuilderOpen}
+          initialCustomization={avatar ? {
+            baseCharacter: avatar.baseCharacter,
+            skinTone: avatar.skinTone,
+            hairColor: avatar.hairColor,
+            hairStyle: avatar.hairStyle,
+            eyeColor: avatar.eyeColor,
+            accessory: avatar.accessory,
+            outfitColor: avatar.outfitColor,
+          } : undefined}
+          onSave={onAvatarSave}
+          onUpload={onAvatarUpload}
+          isSaving={isAvatarSaving}
+          allowUpload={!!onAvatarUpload}
+        />
+      )}
     </div>
   );
 };
