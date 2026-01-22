@@ -125,13 +125,10 @@ describe('CRITICAL: Generated Email Protection Tests', () => {
         .select('*')
         .eq('user_id', childUser1.id);
       
-      // If data is returned, it must NOT contain generated_email
-      if (data && data.length > 0) {
-        expectNoGeneratedEmail(data);
-      } else {
-        // Blocked entirely - also acceptable
-        expectRLSBlock(error, data);
-      }
+      // RLS policy child_accounts_secure_select updated 2026-01-22:
+      // Children are now completely blocked from direct table access
+      // They must use get_my_child_account_safe() RPC instead
+      expectRLSBlock(error, data);
     });
 
     it('should BLOCK children from filtering by generated_email value', async () => {
@@ -408,20 +405,18 @@ describe('CRITICAL: Generated Email Protection Tests', () => {
   // ============================================================
   describe('Column-level security verification', () => {
     
-    it('child should receive empty array when querying child_accounts table', async () => {
+    it('child should be RLS-blocked when querying child_accounts table directly', async () => {
       const { client } = await signInTestUser(childUser1.email, childUser1.password);
       
-      // Even with all non-sensitive columns, child shouldn't see the table
+      // RLS policy updated 2026-01-22: Children completely blocked from direct table access
+      // They must use get_my_child_account_safe() RPC or child_accounts_self_view
       const { data, error } = await client
         .from('child_accounts')
         .select('id, first_name, last_name, family_code, status')
         .eq('user_id', childUser1.id);
       
-      // Best case: blocked entirely
-      // Acceptable: empty array (view-based protection)
-      if (!error) {
-        expect(data).toEqual([]);
-      }
+      // Children are now blocked at the RLS level (empty result or error)
+      expectRLSBlock(error, data);
     });
 
     it('should verify verification_pin is never exposed to children', async () => {

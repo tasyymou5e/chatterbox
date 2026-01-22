@@ -5,11 +5,11 @@
 This document provides a comprehensive review of all Row Level Security (RLS) policies implemented in the Chatterbox Platform. RLS policies ensure data isolation and access control at the database level, providing defense-in-depth security.
 
 **Security Status**: ✅ **SECURE** - All critical tables have proper RLS policies
-**Last Review**: 2025-12-18
+**Last Review**: 2026-01-22
 **Total Tables**: 59
 **Tables with RLS**: 59 (100% coverage)
 **Policy Count**: 65+ (consolidated from 130+ redundant policies)
-**Security Grade**: A (Excellent - optimized with RESTRICTIVE policies)
+**Security Grade**: A+ (Excellent - child email protection hardened)
 
 ## Security Architecture
 
@@ -113,12 +113,18 @@ USING (
 ### 3. Child Account Management
 
 #### **child_accounts**
-- **`child_accounts_secure_access`** - Multi-layered security:
+- **`child_accounts_secure_select`** - UPDATED 2026-01-22:
   - Admins: Full access
-  - Parents: Access to accounts they created in their families
-  - Children: Access to their own completed accounts
+  - Parents: Access only to accounts they created (`created_by = auth.uid()`)
+  - **Children: BLOCKED from direct table access** (must use RPC/view)
+  - Uses secure RPCs: `get_my_child_account_safe()`, `get_pending_child_account_for_completion()`
 
-**Security Level**: ✅ **CRITICAL** - Child safety compliance (COPPA)
+#### **child_accounts_self_view** (NEW 2026-01-22)
+- Safe view for child self-access with SECURITY INVOKER
+- Excludes: `generated_email`, `verification_pin`, `pin_attempts`, `locked_until`
+- Children can access their non-sensitive account data
+
+**Security Level**: ✅ **CRITICAL** - Child safety compliance (COPPA) - Email protection hardened
 
 ### 4. Content Management Tables
 

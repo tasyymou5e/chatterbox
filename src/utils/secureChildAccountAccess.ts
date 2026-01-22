@@ -324,25 +324,35 @@ export const completeChildAccount = async (
 
 /**
  * Get current user's child account (for authenticated children)
+ * SECURITY: Uses get_my_child_account_safe() RPC instead of direct table access
+ * to prevent generated_email exposure.
  */
 export const getCurrentChildAccount = async (): Promise<SafeChildAccountInfo | null> => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
 
-    // RLS policies ensure children can only see their own account
-    const { data, error } = await supabase
-      .from('child_accounts')
-      .select('id, first_name, last_name, status, created_at')
-      .eq('user_id', user.id)
-      .single();
+    // SECURITY: Use secure RPC that excludes generated_email
+    // Direct table access is blocked by RLS for child users
+    const { data, error } = await supabase.rpc('get_my_child_account_safe');
 
     if (error) {
       console.error('Error fetching current child account:', error);
       return null;
     }
 
-    return data;
+    if (!data || data.length === 0) {
+      return null;
+    }
+
+    const account = data[0];
+    return {
+      id: account.id,
+      first_name: account.first_name,
+      last_name: account.last_name,
+      status: account.status,
+      created_at: account.created_at
+    };
   } catch (error) {
     console.error('Error in getCurrentChildAccount:', error);
     return null;
