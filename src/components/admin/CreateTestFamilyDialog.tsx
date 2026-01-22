@@ -15,6 +15,8 @@ import { useUIStore } from '@/stores/uiStore';
 import TestFamilyResultsDialog from './TestFamilyResultsDialog';
 import { PasswordStrengthIndicator } from '../auth/PasswordStrengthIndicator';
 import { getErrorMessage } from '@/utils/getErrorMessage';
+import { cLog, cError, cWarn } from '@/utils/conditionalLogger';
+import { secureLog } from '@/utils/secureLogging';
 
 interface Child {
   firstName: string;
@@ -91,6 +93,7 @@ export default function CreateTestFamilyDialog({ open, onOpenChange, onSuccess }
   }, [open]);
 
   const loadTestFamilyCount = async () => {
+    cLog('[CreateTestFamily] Loading test family count...');
     try {
       const { data: families, error } = await supabase
         .from('families')
@@ -98,19 +101,22 @@ export default function CreateTestFamilyDialog({ open, onOpenChange, onSuccess }
         .eq('metadata->>is_test_family', 'true');
 
       if (error) {
-        console.error('Error loading test family count:', error);
+        cError('[CreateTestFamily] Error loading test family count:', error);
       } else {
+        cLog('[CreateTestFamily] Test family count:', families?.length || 0);
         setTestFamilyCount(families?.length || 0);
       }
     } catch (error) {
-      console.error('Error loading test family count:', error);
+      cError('[CreateTestFamily] Exception loading test family count:', error);
     }
   };
 
   const handleCleanup = async () => {
+    cLog('[CreateTestFamily] Starting cleanup...');
     setCleanupLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('cleanup-test-families');
+      cLog('[CreateTestFamily] Cleanup response:', { data, error });
 
       if (error) {
         throw error;
@@ -126,7 +132,7 @@ export default function CreateTestFamilyDialog({ open, onOpenChange, onSuccess }
         throw new Error(data?.error || 'Cleanup failed');
       }
     } catch (error: unknown) {
-      console.error('Cleanup error:', error);
+      cError('[CreateTestFamily] Cleanup error:', error);
       toast({ 
         variant: "destructive", 
         title: "Cleanup failed", 
@@ -251,18 +257,49 @@ export default function CreateTestFamilyDialog({ open, onOpenChange, onSuccess }
   };
 
   const handleSubmit = async () => {
-    if (!validateForm()) return;
+    const submitStartTime = Date.now();
+    cLog('[CreateTestFamily] ========== SUBMIT START ==========');
+    cLog('[CreateTestFamily] Timestamp:', new Date().toISOString());
+    
+    if (!validateForm()) {
+      cWarn('[CreateTestFamily] Form validation failed');
+      return;
+    }
+    
+    // Detailed session diagnostics
+    cLog('[CreateTestFamily] Session diagnostics:', {
+      hasUser: !!user,
+      userId: user?.id || 'MISSING',
+      userEmail: user?.email || 'MISSING',
+      hasSession: !!session,
+      sessionExpiry: session?.expires_at || 'MISSING',
+      sessionAccessToken: session?.access_token ? `${session.access_token.substring(0, 20)}...` : 'MISSING'
+    });
     
     // Verify we have a valid session
     if (!user?.id || !session) {
+      cError('[CreateTestFamily] Session validation failed', { hasUser: !!user, hasSession: !!session });
+      secureLog.warn('Test family creation blocked - no valid session', { userId: user?.id });
       toast({ variant: "destructive", title: "Session expired", description: "Please log in again" });
       return;
+    }
+
+    // Verify session is not expired
+    if (session.expires_at) {
+      const expiresAt = new Date(session.expires_at * 1000);
+      const now = new Date();
+      if (expiresAt < now) {
+        cError('[CreateTestFamily] Session expired', { expiresAt: expiresAt.toISOString(), now: now.toISOString() });
+        toast({ variant: "destructive", title: "Session expired", description: "Your session has expired. Please log in again." });
+        return;
+      }
+      cLog('[CreateTestFamily] Session valid until:', expiresAt.toISOString());
     }
 
     setLoading('createTestFamily', true);
     
     try {
-      console.log('[CreateTestFamily] Starting family creation...', { userId: user.id });
+      cLog('[CreateTestFamily] Preparing family data...');
       
       const familyData = {
         displayName: displayName.trim(),
@@ -287,18 +324,70 @@ export default function CreateTestFamilyDialog({ open, onOpenChange, onSuccess }
         customPassword: useCustomPassword ? customPassword : undefined
       };
 
-      console.log('[CreateTestFamily] Invoking edge function...');
+      cLog('[CreateTestFamily] Family data prepared:', {
+        displayName: familyData.displayName,
+        parent1Email: familyData.parent1.email,
+        parent2Email: familyData.parent2?.email || null,
+        childrenCount: familyData.children.length,
+        cleanupFirst: familyData.cleanupFirst,
+        forceUniqueEmails: familyData.forceUniqueEmails,
+        hasCustomPassword: !!familyData.customPassword
+      });
+
+      // Check Supabase client state
+      cLog('[CreateTestFamily] Checking Supabase client state...');
+      const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        cError('[CreateTestFamily] Failed to get current session:', sessionError);
+        throw new Error(`Session error: ${sessionError.message}`);
+      }
+      
+      cLog('[CreateTestFamily] Current session check:', {
+        hasSession: !!currentSession,
+        userId: currentSession?.user?.id || 'NONE',
+        tokenPreview: currentSession?.access_token ? `${currentSession.access_token.substring(0, 20)}...` : 'NONE'
+      });
+
+      if (!currentSession) {
+        cError('[CreateTestFamily] No active session found before edge function call');
+        throw new Error('No active session. Please log in again.');
+      }
+
+      cLog('[CreateTestFamily] Invoking edge function...');
+      const invokeStartTime = Date.now();
       
       const { data, error } = await supabase.functions.invoke('create-test-family', {
         body: familyData
       });
 
-      console.log('[CreateTestFamily] Response:', { data, error });
+      const invokeDuration = Date.now() - invokeStartTime;
+      cLog('[CreateTestFamily] Edge function response received:', {
+        duration: `${invokeDuration}ms`,
+        hasData: !!data,
+        hasError: !!error,
+        dataKeys: data ? Object.keys(data) : [],
+        success: data?.success
+      });
 
       if (error) {
-        console.error('[CreateTestFamily] Edge function error:', error);
+        cError('[CreateTestFamily] Edge function error:', {
+          message: error.message,
+          name: error.name,
+          context: error.context,
+          status: error.status
+        });
+        secureLog.error('Edge function create-test-family failed', error, 'CreateTestFamily');
         throw error;
       }
+
+      cLog('[CreateTestFamily] Response data:', {
+        success: data?.success,
+        familyId: data?.familyId,
+        familyCode: data?.familyCode,
+        membersCreated: data?.membersCreated,
+        requestId: data?.requestId
+      });
 
       if (data?.success || data?.members?.some((m: CreatedMember) => m.success)) {
         setCreationResults(data);
@@ -307,15 +396,22 @@ export default function CreateTestFamilyDialog({ open, onOpenChange, onSuccess }
         onOpenChange(false);
         onSuccess?.();
         
+        const totalDuration = Date.now() - submitStartTime;
+        cLog('[CreateTestFamily] SUCCESS - Total duration:', `${totalDuration}ms`);
+        secureLog.info('Test family created successfully', { familyId: data.familyId, membersCreated: data.membersCreated });
+        
         toast({
           title: "Test family created",
           description: `Family "${data.displayName}" created with ${data.membersCreated} members`
         });
       } else {
+        cError('[CreateTestFamily] Creation failed - no successful members:', data);
         throw new Error(data?.error || 'All family members failed to create');
       }
     } catch (error: unknown) {
-      console.error('[CreateTestFamily] Error:', error);
+      const totalDuration = Date.now() - submitStartTime;
+      cError('[CreateTestFamily] ERROR after', `${totalDuration}ms:`, error);
+      secureLog.error('Test family creation failed', error, 'CreateTestFamily');
       toast({
         variant: "destructive",
         title: "Failed to create test family",
@@ -323,6 +419,7 @@ export default function CreateTestFamilyDialog({ open, onOpenChange, onSuccess }
       });
     } finally {
       setLoading('createTestFamily', false);
+      cLog('[CreateTestFamily] ========== SUBMIT END ==========');
     }
   };
 

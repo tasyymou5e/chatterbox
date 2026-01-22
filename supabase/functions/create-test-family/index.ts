@@ -113,34 +113,51 @@ serve(async (req) => {
   const requestId = crypto.randomUUID().slice(0, 8);
   const startTime = Date.now();
   
-  const log = (phase: string, message: string, data?: any) => {
+  // Enhanced structured logging
+  const log = (phase: string, message: string, data?: unknown) => {
     const elapsed = Date.now() - startTime;
-    console.log(`[${requestId}] [${elapsed}ms] [${phase}] ${message}`, data ? JSON.stringify(data, null, 2) : '');
+    const timestamp = new Date().toISOString();
+    console.log(`[${timestamp}] [${requestId}] [${elapsed}ms] [${phase}] ${message}`, data ? JSON.stringify(data, null, 2) : '');
   };
   
-  const logError = (phase: string, message: string, error: any) => {
+  const logError = (phase: string, message: string, error: unknown) => {
     const elapsed = Date.now() - startTime;
-    console.error(`[${requestId}] [${elapsed}ms] [${phase}] ERROR: ${message}`, {
-      error: error?.message || String(error),
-      code: error?.code,
-      details: error?.details
-    });
+    const timestamp = new Date().toISOString();
+    const errorDetails = error instanceof Error ? {
+      name: error.name,
+      message: error.message,
+      stack: error.stack?.split('\n').slice(0, 3).join('\n')
+    } : { raw: String(error) };
+    console.error(`[${timestamp}] [${requestId}] [${elapsed}ms] [${phase}] ERROR: ${message}`, JSON.stringify(errorDetails, null, 2));
   };
 
-  log('INIT', 'Request received', { method: req.method });
+  // Log request details for debugging
+  log('INIT', '========== REQUEST RECEIVED ==========');
+  log('INIT', 'Request details', { 
+    method: req.method,
+    url: req.url,
+    hasAuthHeader: !!req.headers.get('authorization'),
+    authHeaderPreview: req.headers.get('authorization')?.substring(0, 30) + '...',
+    origin: req.headers.get('origin'),
+    contentType: req.headers.get('content-type')
+  });
 
   const corsHeaders = getCorsHeaders(req.headers.get('origin'));
+  log('CORS', 'CORS headers generated', { origin: req.headers.get('origin') });
 
   if (req.method === 'OPTIONS') {
+    log('CORS', 'Handling OPTIONS preflight request');
     return new Response(null, { headers: corsHeaders });
   }
 
   // Apply rate limiting
+  log('RATE_LIMIT', 'Checking rate limit');
   const rateCheck = cleanupLimiter.check(req);
   if (!rateCheck.allowed) {
-    log('RATE_LIMIT', 'Rate limit exceeded');
+    log('RATE_LIMIT', 'Rate limit exceeded', { resetTime: rateCheck.resetTime });
     return RateLimiter.createRateLimitResponse(rateCheck.resetTime);
   }
+  log('RATE_LIMIT', 'Rate limit check passed');
 
   try {
     // Validate admin JWT using getClaims() for fast local verification
@@ -463,13 +480,20 @@ serve(async (req) => {
 
   } catch (error) {
     logError('ERROR', 'Test family creation failed', error);
+    log('ERROR', '========== REQUEST FAILED ==========');
+    
+    const errorResponse = {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
+      errorType: error instanceof Error ? error.name : 'UnknownError',
+      requestId,
+      timestamp: new Date().toISOString()
+    };
+    
+    log('ERROR', 'Returning error response', errorResponse);
     
     return new Response(
-      JSON.stringify({
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
-        requestId
-      }),
+      JSON.stringify(errorResponse),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,
