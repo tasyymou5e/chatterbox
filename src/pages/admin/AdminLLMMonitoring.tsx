@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuthStore } from "@/stores/authStore";
 import { AlertCircle, AlertTriangle, Brain, DollarSign, Clock, TrendingUp, Zap, RefreshCw, Bell } from "lucide-react";
 import { AdminRoute } from "@/components/admin/AdminRoute";
-import { LLMUsageTrendsChart } from "@/components/admin/LLMUsageTrendsChart";
+import { LazyLLMUsageTrendsChart } from "@/components/admin/lazy";
 import { LLMCostAlerts } from "@/components/admin/LLMCostAlerts";
 import { LLMCostThresholdSettings } from "@/components/admin/LLMCostThresholdSettings";
 
@@ -400,7 +400,7 @@ const AdminLLMMonitoring = () => {
           </TabsContent>
 
           <TabsContent value="trends" className="space-y-4">
-            <LLMUsageTrendsChart 
+            <LazyLLMUsageTrendsChart 
               dailyUsage={stats?.daily_usage || {}} 
               isLoading={loading} 
             />

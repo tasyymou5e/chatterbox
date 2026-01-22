@@ -14,8 +14,7 @@ import {
 } from 'lucide-react';
 import CreateTestFamilyButton from '@/components/admin/CreateTestFamilyButton';
 import { AnalyticsKPICard } from '@/components/analytics/AnalyticsKPICard';
-import { EngagementChart } from '@/components/analytics/EngagementChart';
-import { RetentionChart } from '@/components/analytics/RetentionChart';
+import { LazyEngagementChart, LazyRetentionChart } from '@/components/analytics/lazy';
 import { SystemHealthWidget } from '@/components/analytics/SystemHealthWidget';
 import { useAnalyticsWithSession } from '@/hooks/useAnalyticsWithSession';
 import { useUIStore } from '@/stores/uiStore';
@@ -212,10 +211,10 @@ export default function AdminDashboard() {
         />
       </div>
 
-      {/* Analytics Charts Section */}
+      {/* Analytics Charts Section - Lazy loaded */}
       <div className="grid gap-6 lg:grid-cols-2">
-        <EngagementChart data={dailyAnalytics} loading={analyticsLoading} />
-        <RetentionChart data={retentionData} loading={analyticsLoading} />
+        <LazyEngagementChart data={dailyAnalytics} loading={analyticsLoading} />
+        <LazyRetentionChart data={retentionData} loading={analyticsLoading} />
       </div>
 
       {/* System Health, Settings, API Integrations, and Quick Actions */}

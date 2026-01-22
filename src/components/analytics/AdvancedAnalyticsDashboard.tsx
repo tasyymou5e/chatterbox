@@ -14,9 +14,7 @@ import {
 } from 'lucide-react';
 import { useAnalyticsWithSession } from '@/hooks/useAnalyticsWithSession';
 import { AnalyticsKPICard } from './AnalyticsKPICard';
-import { EngagementChart } from './EngagementChart';
-import { RetentionChart } from './RetentionChart';
-import { FamilyGrowthChart } from './FamilyGrowthChart';
+import { LazyEngagementChart, LazyRetentionChart, LazyFamilyGrowthChart } from './lazy';
 import { SystemHealthMonitor } from './SystemHealthMonitor';
 import { supabase } from '@/integrations/supabase/client';
 import { cError } from '@/utils/conditionalLogger';
@@ -165,7 +163,7 @@ export const AdvancedAnalyticsDashboard = () => {
 
         <TabsContent value="engagement" className="space-y-6">
           <div className="grid gap-6 lg:grid-cols-2">
-            <EngagementChart 
+            <LazyEngagementChart 
               data={analytics.dailyAnalytics} 
               loading={analytics.loading} 
             />
@@ -203,7 +201,7 @@ export const AdvancedAnalyticsDashboard = () => {
         <TabsContent value="families" className="space-y-6">
           <div className="grid gap-6 lg:grid-cols-3">
             <div className="lg:col-span-2">
-              <FamilyGrowthChart 
+              <LazyFamilyGrowthChart 
                 data={familyGrowthData} 
                 loading={loadingFamilyData} 
               />
@@ -243,7 +241,7 @@ export const AdvancedAnalyticsDashboard = () => {
         </TabsContent>
 
         <TabsContent value="retention" className="space-y-6">
-          <RetentionChart 
+          <LazyRetentionChart 
             data={analytics.retentionData} 
             loading={analytics.loading} 
           />

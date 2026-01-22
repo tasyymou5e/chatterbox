@@ -41,20 +41,23 @@ The build is split into logical chunks for optimal caching and loading performan
 | **supabase** | Supabase JS Client | Backend integration | ~25KB |
 | **utils** | lucide-react, date-fns, clsx, tailwind-merge, CVA | Shared utilities, very stable, long-term caching | ~52KB |
 
-### Charts Lazy-Loading Strategy (2026-01-22 Optimization)
+### Charts Dynamic Imports (2026-01-22 Optimization)
 
-The `recharts` library (~50KB) is isolated in its own chunk because it's **only used in 6 files**:
+The `recharts` library (~50KB) uses **true dynamic imports** with `React.lazy()` and `Suspense`:
 
-| Component | Location | Route |
-|-----------|----------|-------|
-| `chart.tsx` | `src/components/ui/` | Shared foundation |
-| `LLMUsageTrendsChart` | `src/components/admin/` | `/admin/system-monitoring` |
-| `EngagementChart` | `src/components/analytics/` | `/admin/reports` |
-| `FamilyGrowthChart` | `src/components/analytics/` | `/admin/reports` |
-| `RetentionChart` | `src/components/analytics/` | `/admin/reports` |
-| `FamilyProgressDashboard` | `src/components/analytics/` | Parent dashboard |
+| Lazy Component | Original | Loaded When |
+|----------------|----------|-------------|
+| `LazyEngagementChart` | `EngagementChart` | Admin dashboard renders |
+| `LazyRetentionChart` | `RetentionChart` | Admin dashboard renders |
+| `LazyFamilyGrowthChart` | `FamilyGrowthChart` | Reports tab clicked |
+| `LazyLLMUsageTrendsChart` | `LLMUsageTrendsChart` | LLM monitoring page |
 
-**Result**: Regular users (kids portal, basic parent views) never load the ~50KB recharts bundle.
+**Implementation**: 
+- Lazy wrappers at `src/components/analytics/lazy/` and `src/components/admin/lazy/`
+- Each wrapper includes `Suspense` with `ChartSkeleton` fallback
+- Type-safe using `ComponentProps<>` inference
+
+**Result**: The recharts chunk is only downloaded when a chart component actually mounts, not when the page loads.
 
 ---
 
@@ -194,6 +197,7 @@ If `depcheck` reports false positives:
 
 | Date | Change | Impact |
 |------|--------|--------|
+| 2026-01-22 | Implemented React.lazy() for charts | True runtime lazy-loading for recharts |
 | 2026-01-22 | Added utils chunk for shared libraries | Better cache granularity, ~52KB isolated |
 | 2026-01-22 | Split features into charts/forms chunks | ~50KB reduction for non-admin users |
 | 2026-01-22 | Consolidated to 6-chunk strategy | Simplified, better caching |
