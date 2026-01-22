@@ -1,11 +1,11 @@
 # Zustand State Management Design - Chatterbox
 **Complete State Architecture Documentation**
 
-**Last Updated**: 2026-01-15
+**Last Updated**: 2026-01-22
 
 ## 🏗️ Architecture Overview
 
-Chatterbox uses Zustand for centralized state management with 12 operational stores, bridge adapters for backward compatibility, and performance optimization through selective subscriptions.
+Chatterbox uses Zustand for centralized state management with 15 operational stores, bridge adapters for backward compatibility, and performance optimization through selective subscriptions.
 
 | Metric | Value |
 |--------|-------|
@@ -17,10 +17,90 @@ Chatterbox uses Zustand for centralized state management with 12 operational sto
 
 ## 📚 Store Catalog
 
-### **authStore.ts** - Authentication & Security
-- **Purpose**: Centralized authentication with enhanced error diagnostics
-- **Features**: Atomic state updates, race condition prevention, activity logging
-- **Performance**: Session persistence, optimized role checking
+### 🔐 Auth Store Architecture (Split Pattern)
+
+The authentication system uses a **facade + specialized stores** pattern for maintainability and security:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      authStore.ts (Facade)                  │
+│  Composes and exposes unified API from specialized stores   │
+└─────────────────────────────────────────────────────────────┘
+                              │
+        ┌─────────────────────┼─────────────────────┐
+        ▼                     ▼                     ▼
+┌───────────────┐    ┌───────────────┐    ┌───────────────┐
+│authSessionStore│   │ authRoleStore │    │authActionsStore│
+│  (Session)    │    │   (Roles)     │    │  (Actions)    │
+└───────────────┘    └───────────────┘    └───────────────┘
+```
+
+#### **authStore.ts** - Authentication Facade
+- **Purpose**: Unified API for authentication, composes specialized stores
+- **Pattern**: Subscribes to child stores and delegates actions
+- **Usage**: `useAuthStore` for components needing full auth state
+
+#### **authSessionStore.ts** - Session Management
+- **Purpose**: Core session state (user, session, loading, hydration)
+- **Features**: 
+  - Persist middleware for session recovery
+  - Auth state change listener (`onAuthStateChange`)
+  - Automatic role fetching on session restore
+- **Middleware**: `devtools` + `persist` (selective partialize)
+- **Security**: Never persists `isAdmin` - always re-validated server-side
+
+```typescript
+interface AuthSessionState {
+  user: User | null;
+  session: Session | null;
+  loading: boolean;
+  sessionReady: boolean;
+  isHydrated: boolean;
+  initialize: () => (() => void) | void;
+  clearSession: () => void;
+}
+```
+
+#### **authRoleStore.ts** - Role Management
+- **Purpose**: User role state and role-checking operations
+- **Features**:
+  - Single RPC call via `get_primary_role` for efficiency
+  - Role priority: admin > read_only > parent > child
+  - `isAdmin` computed from role check
+- **Middleware**: `devtools` only (no persistence for security)
+- **Security**: Role state cleared on logout, never trusted from localStorage
+
+```typescript
+interface AuthRoleState {
+  userRole: string | null;
+  isAdmin: boolean;
+  isCheckingRole: boolean;
+  fetchUserRole: (userId: string) => Promise<string | null>;
+  checkAdminRole: (userId: string) => Promise<boolean>;
+  clearRoles: () => void;
+}
+```
+
+#### **authActionsStore.ts** - Authentication Actions
+- **Purpose**: Auth flow actions (signIn, signUp, signOut, resetPassword)
+- **Features**:
+  - Comprehensive activity logging via `authLoggingService`
+  - Race condition prevention for signOut
+  - Emergency logout for force-clear scenarios
+  - Timeout protection on API calls
+- **Middleware**: `devtools` only
+- **Integration**: Coordinates with session and role stores atomically
+
+```typescript
+interface AuthActionsState {
+  signingOut: boolean;
+  signUp: (email, password, firstName?, lastName?) => Promise<AuthResult>;
+  signIn: (email, password) => Promise<AuthResult>;
+  signOut: () => Promise<AuthResult>;
+  resetPassword: (email, userType?) => Promise<AuthResult>;
+  emergencyLogout: () => void;
+}
+```
 
 ### **uiStore.ts** - Global UI State  
 - **Purpose**: Loading states, errors, modals, notifications
@@ -57,7 +137,7 @@ Chatterbox uses Zustand for centralized state management with 12 operational sto
 - **Features**: Category-based progress, celebration events, accuracy tracking
 - **Middleware**: devtools enabled
 
-### **gameSessionStore.ts** - Active Game Sessions (NEW)
+### **gameSessionStore.ts** - Active Game Sessions
 - **Purpose**: Track active gameplay sessions in memory
 - **Features**: Answer tracking, streak management, response time collection
 - **Integration**: Works with lessonProgressStore for persistence
@@ -80,10 +160,10 @@ Chatterbox uses Zustand for centralized state management with 12 operational sto
 All legacy components maintain 100% compatibility through bridge adapters that internally use Zustand stores while preserving original APIs.
 
 ### Active Bridge Adapters:
-- `useAuth.tsx` → authStore
+- `useAuth.tsx` → authStore (facade)
 - `useChoreManagement.tsx` → choreStore
 - `useGamification.ts` → gamificationStore
-- `useProgress.ts` → lessonProgressStore + gameSessionStore (NEW)
+- `useProgress.ts` → lessonProgressStore + gameSessionStore
 
 ## 📐 Standard Store Pattern
 
