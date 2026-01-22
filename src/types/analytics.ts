@@ -84,8 +84,8 @@ export interface BehavioralInsightRow {
 export interface ChildGameAssignmentRow {
   content_item_id: string;
   is_required: boolean;
-  difficulty_override: string | null;
-  due_date: string | null;
+  difficulty_override?: string | null;
+  due_date?: string | null;
 }
 
 // ============================================
@@ -122,6 +122,10 @@ export interface AuditEventDetails {
   result?: string;
   ip_address?: string;
   user_agent?: string;
+  alert_type?: string;
+  table?: string;
+  operation?: string;
+  activity_type?: string;
   [key: string]: unknown;
 }
 
