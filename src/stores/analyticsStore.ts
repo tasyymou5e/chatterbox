@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthStore } from './authStore';
+import type { SupabaseRPCResult, EngagementAnalyticsRow, DailyAnalyticsRow, RetentionAnalyticsRow } from '@/types/analytics';
 
 interface EngagementMetric {
   metric: string;
@@ -139,7 +140,7 @@ export const useAnalyticsStore = create<AnalyticsState>()(
           );
           
           const queryPromise = supabase.rpc('get_engagement_analytics', { days_back: 30 });
-          const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as { data: any, error: any };
+          const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as SupabaseRPCResult<EngagementAnalyticsRow[]>;
           
           if (error) {
             console.error('📊 Engagement metrics RPC error:', error);
@@ -197,7 +198,7 @@ export const useAnalyticsStore = create<AnalyticsState>()(
           );
           
           const queryPromise = supabase.rpc('get_daily_analytics_for_admins', { days_back: 30 });
-          const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as { data: any, error: any };
+          const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as SupabaseRPCResult<DailyAnalyticsRow[]>;
           
           if (error) {
             console.error('❌ Daily analytics RPC error:', error);
@@ -227,14 +228,18 @@ export const useAnalyticsStore = create<AnalyticsState>()(
           }
           
           // Transform and reverse data for chronological order in charts
-          const transformedData = (data || [])
+          const transformedData: DailyAnalytics[] = (data || [])
             .reverse()
-            .map((item: { date: string; [key: string]: unknown }) => ({
-              ...item,
+            .map((item) => ({
               date: new Date(item.date).toLocaleDateString('en-US', { 
                 month: 'short', 
                 day: 'numeric' 
-              })
+              }),
+              total_users: item.total_users,
+              active_users: item.active_users,
+              new_signups: item.new_signups,
+              total_families: item.total_families,
+              engagement_score: item.engagement_score,
             }));
           
           console.log('✅ Daily analytics fetched successfully:', transformedData.length, 'records');
@@ -298,7 +303,7 @@ export const useAnalyticsStore = create<AnalyticsState>()(
           );
           
           const queryPromise = supabase.rpc('calculate_user_retention', { days_back: 30 });
-          const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as { data: any, error: any };
+          const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as SupabaseRPCResult<RetentionAnalyticsRow[]>;
           
           if (error) throw error;
           set({ retentionData: data || [] });

@@ -24,7 +24,6 @@ function AdminErrorFallback({ error, resetErrorBoundary, componentName }: {
       componentName || 'AdminErrorBoundary',
       error,
       {
-        errorBoundary: true,
         timestamp: new Date().toISOString(),
         route: window.location.pathname,
       }

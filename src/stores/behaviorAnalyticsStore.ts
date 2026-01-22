@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { supabase } from '@/integrations/supabase/client';
+import type { Json } from '@/integrations/supabase/types';
 
 interface BehavioralEvent {
   id: string;
@@ -8,7 +9,7 @@ interface BehavioralEvent {
   family_id: string | null;
   event_type: string;
   event_category: string;
-  event_data: Record<string, any>;
+  event_data: Json;
   session_id: string | null;
   page_path: string | null;
   interaction_element: string | null;
@@ -29,8 +30,8 @@ interface GamificationEffectiveness {
   session_length_minutes: number | null;
   engagement_score: number | null;
   motivation_level: number | null;
-  feature_usage: Record<string, any>;
-  effectiveness_metrics: Record<string, any>;
+  feature_usage: Json;
+  effectiveness_metrics: Json;
   created_at: string;
 }
 
@@ -152,6 +153,7 @@ export const useBehaviorAnalyticsStore = create<BehaviorAnalyticsState>()(
             .from('behavioral_events')
             .insert({
               ...event,
+              event_data: event.event_data as Json,
               device_type: getDeviceType()
             });
 
@@ -184,7 +186,7 @@ export const useBehaviorAnalyticsStore = create<BehaviorAnalyticsState>()(
           // Type cast the event_data field
           const typedData = (data || []).map(item => ({
             ...item,
-            event_data: item.event_data as Record<string, any>
+            event_data: item.event_data as Json
           }));
           
           set({ behavioralEvents: typedData });
@@ -218,8 +220,8 @@ export const useBehaviorAnalyticsStore = create<BehaviorAnalyticsState>()(
           // Type cast the feature_usage and effectiveness_metrics fields
           const typedData = (data || []).map(item => ({
             ...item,
-            feature_usage: item.feature_usage as Record<string, any>,
-            effectiveness_metrics: item.effectiveness_metrics as Record<string, any>
+            feature_usage: item.feature_usage as Json,
+            effectiveness_metrics: item.effectiveness_metrics as Json
           }));
           
           set({ gamificationEffectiveness: typedData });

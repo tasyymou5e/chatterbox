@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { supabase } from '@/integrations/supabase/client';
+import type { Json } from '@/integrations/supabase/types';
 
 interface TaskPerformanceMetric {
   id: string;
@@ -20,7 +21,7 @@ interface TaskPerformanceMetric {
   day_of_week: number | null;
   seasonal_period: string | null;
   performance_category: string | null;
-  metadata: Record<string, any>;
+  metadata: Json;
   created_at: string;
 }
 
@@ -118,7 +119,7 @@ export const usePerformanceAnalyticsStore = create<PerformanceAnalyticsState>()(
           // Type cast the metadata field
           const typedData = (data || []).map(item => ({
             ...item,
-            metadata: item.metadata as Record<string, any>
+            metadata: item.metadata as Json
           }));
           
           set({ performanceMetrics: typedData });
@@ -141,13 +142,15 @@ export const usePerformanceAnalyticsStore = create<PerformanceAnalyticsState>()(
 
           if (error) throw error;
           
-          const insights: PerformanceInsight[] = data?.map((insight: any) => ({
+          const insights: PerformanceInsight[] = data?.map((insight) => ({
             insight_type: insight.insight_type,
             title: insight.title,
             description: insight.description,
             metric_value: insight.metric_value,
             trend: insight.trend,
-            recommendations: insight.recommendations || []
+            recommendations: Array.isArray(insight.recommendations) 
+              ? (insight.recommendations as string[]) 
+              : []
           })) || [];
 
           set({ performanceInsights: insights });
@@ -255,7 +258,7 @@ export const usePerformanceAnalyticsStore = create<PerformanceAnalyticsState>()(
         try {
           const { error } = await supabase
             .from('task_performance_metrics')
-            .insert({
+            .insert([{
               user_id: metric.user_id,
               family_id: metric.family_id,
               chore_id: metric.chore_id || null,
@@ -272,8 +275,8 @@ export const usePerformanceAnalyticsStore = create<PerformanceAnalyticsState>()(
               day_of_week: new Date(metric.completion_date).getDay(),
               seasonal_period: getCurrentSeason(),
               performance_category: calculatePerformanceCategory(metric.efficiency_score),
-              metadata: metric.metadata || {}
-            });
+              metadata: (metric.metadata || {}) as Json
+            }]);
 
           if (error) throw error;
         } catch (err) {

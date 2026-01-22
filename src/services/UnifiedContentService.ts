@@ -5,6 +5,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { KidContentItem, ContentType, AgeGroup, ContentQueryOptions, AccessLevel } from '@/types/kidsPortal';
 import type { AutismFeatures } from '@/types/autism';
+import type { ChildGameAssignmentRow, SupabaseRPCResult } from '@/types/analytics';
 
 class UnifiedContentServiceClass {
   async getAllContentForChild(
@@ -157,11 +158,10 @@ class UnifiedContentServiceClass {
    */
   async getAssignedGamesForChild(childId: string, familyId: string): Promise<KidContentItem[]> {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: assignments, error } = await (supabase.rpc as any)('get_child_game_assignments', {
+      const { data: assignments, error } = await supabase.rpc('get_child_game_assignments', {
         p_child_id: childId,
         p_family_id: familyId,
-      }) as { data: { content_item_id: string; is_required: boolean; difficulty_override: string | null; due_date: string | null }[] | null; error: { code?: string; message?: string } | null };
+      }) as SupabaseRPCResult<ChildGameAssignmentRow[]>;
 
       if (error) {
         console.error('Error fetching assigned games:', error);

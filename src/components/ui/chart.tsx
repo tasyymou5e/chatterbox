@@ -150,24 +150,13 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
 
 const ChartTooltip = RechartsPrimitive.Tooltip
 
-// Extended tooltip payload type for recharts
-interface TooltipPayloadItem {
-  dataKey?: string;
-  name?: string;
-  value?: number;
-  color?: string;
-  fill?: string;
-  payload?: Record<string, unknown>;
-  // Required by recharts Payload type
-  graphicalItemId?: string;
-}
-
 const ChartTooltipContent = React.forwardRef<
   HTMLDivElement,
   Omit<React.ComponentProps<typeof RechartsPrimitive.Tooltip>, 'payload' | 'label'> &
     React.ComponentProps<"div"> & {
       active?: boolean
-      payload?: TooltipPayloadItem[]
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      payload?: any[]
       label?: string
       hideLabel?: boolean
       hideIndicator?: boolean
@@ -212,7 +201,7 @@ const ChartTooltipContent = React.forwardRef<
       if (labelFormatter) {
         return (
           <div className={cn("font-medium", labelClassName)}>
-            {labelFormatter(value, payload as any)}
+            {labelFormatter(value, payload)}
           </div>
         )
       }
@@ -248,7 +237,8 @@ const ChartTooltipContent = React.forwardRef<
       >
         {!nestLabel ? tooltipLabel : null}
         <div className="grid gap-1.5">
-          {payload.map((item: TooltipPayloadItem, index: number) => {
+          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+          {payload.map((item: any, index: number) => {
             const key = `${nameKey || item.name || item.dataKey || "value"}`
             const itemConfig = getPayloadConfigFromPayload(config, item, key)
             const itemPayload = item.payload as Record<string, unknown> | undefined
@@ -263,7 +253,7 @@ const ChartTooltipContent = React.forwardRef<
                 )}
               >
               {formatter && item?.value !== undefined && item.name ? (
-                  formatter(item.value, item.name, item as any, index, itemPayload as any)
+                  formatter(item.value, item.name, item, index, item.payload)
                 ) : (
                   <>
                     {itemConfig?.icon ? (

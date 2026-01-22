@@ -219,7 +219,7 @@ export const useCatalogCache = (userFamily?: string) => {
         return cacheManager.getStats();
       } catch (error) {
         console.error('Error getting cache stats:', error);
-        return { size: 0, hits: 0, misses: 0 };
+        return { memoryItems: 0, totalSize: 0, size: 0, hits: 0, misses: 0 };
       }
     })()
   };
