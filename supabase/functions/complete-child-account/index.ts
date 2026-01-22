@@ -263,7 +263,31 @@ serve(async (req) => {
 
     console.log('Child account completed successfully:', account.id);
 
-    // Return success WITHOUT the generated_email
+    // Step 8: Sign in the user server-side to create session tokens
+    // This way the generated_email NEVER leaves the server
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+      email: accountData.generated_email,
+      password: password.trim()
+    });
+
+    if (signInError || !signInData.session) {
+      console.error('Error creating session:', signInError);
+      // Account was created but session failed - user can sign in manually
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'Account setup complete! Please sign in with your family code.',
+          child: {
+            firstName: accountData.first_name,
+            lastName: accountData.last_name
+          },
+          session: null
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
+    }
+
+    // Return success with session tokens - email NEVER exposed
     return new Response(
       JSON.stringify({
         success: true,
@@ -272,10 +296,11 @@ serve(async (req) => {
           firstName: accountData.first_name,
           lastName: accountData.last_name
         },
-        // Provide credentials for auto-login
-        credentials: {
-          email: accountData.generated_email,
-          // Password is not returned - user already knows it
+        session: {
+          access_token: signInData.session.access_token,
+          refresh_token: signInData.session.refresh_token,
+          expires_in: signInData.session.expires_in,
+          expires_at: signInData.session.expires_at
         }
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }

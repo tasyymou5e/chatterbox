@@ -128,15 +128,15 @@ export const ChildSignupForm = ({ initialCode = '', onBackToSignIn }: ChildSignu
         return;
       }
 
-      // Success! Auto-login with the returned credentials
-      if (data.credentials?.email) {
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email: data.credentials.email,
-          password: childPassword
+      // Success! Use session tokens returned from edge function (email NEVER exposed)
+      if (data.session?.access_token) {
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token
         });
 
-        if (signInError) {
-          console.error('Auto-login failed:', signInError);
+        if (sessionError) {
+          console.error('Session setup failed:', sessionError);
           // Account was created, user just needs to sign in manually
           toast({
             title: "Account Created!",
@@ -146,9 +146,18 @@ export const ChildSignupForm = ({ initialCode = '', onBackToSignIn }: ChildSignu
           setIsLoading(false);
           return;
         }
-      }
 
-      navigate('/children/tasks');
+        navigate('/children/tasks');
+      } else {
+        // No session returned - account created but user needs to sign in manually
+        toast({
+          title: "Account Created!",
+          description: `Welcome ${data.child?.firstName}! Please sign in with your new account.`,
+        });
+        onBackToSignIn();
+        setIsLoading(false);
+        return;
+      }
       
       toast({
         title: "Account setup complete!",
