@@ -34,6 +34,87 @@ interface AuthSessionState {
   clearSession: () => void;
 }
 
+/**
+ * Session validation result
+ */
+interface SessionValidationResult {
+  isValid: boolean;
+  reason?: string;
+  warning?: string;
+  expiresAt?: string;
+  minutesRemaining?: number;
+}
+
+/**
+ * Validates a persisted session for integrity and expiration.
+ * 
+ * @description Performs comprehensive validation including:
+ * - Session expiration check
+ * - Access token presence
+ * - User/session ID consistency
+ * - Refresh token presence (warning only)
+ */
+function validatePersistedSession(
+  session: Session | null, 
+  user: User | null
+): SessionValidationResult {
+  // No session is valid (user just hasn't logged in)
+  if (!session && !user) {
+    return { isValid: true };
+  }
+
+  // Mismatched session/user state is corrupted
+  if ((session && !user) || (!session && user)) {
+    return { isValid: false, reason: 'Session/user state mismatch' };
+  }
+
+  // Session exists - validate it
+  if (session) {
+    // Check for required session properties
+    if (!session.access_token) {
+      return { isValid: false, reason: 'Session missing access token' };
+    }
+
+    // Check user ID consistency
+    if (user && session.user?.id !== user.id) {
+      return { isValid: false, reason: 'Session user ID mismatch' };
+    }
+
+    // Check expiration
+    if (!session.expires_at) {
+      return { isValid: false, reason: 'Session missing expiry timestamp' };
+    }
+
+    const expiresAt = new Date(session.expires_at * 1000);
+    const now = new Date();
+    
+    if (expiresAt < now) {
+      return { isValid: false, reason: 'Session expired' };
+    }
+
+    const minutesRemaining = Math.round((expiresAt.getTime() - now.getTime()) / 60000);
+    
+    // Warn if session is close to expiring (< 5 minutes)
+    const warning = minutesRemaining < 5 
+      ? `Session expiring soon (${minutesRemaining} minutes remaining)` 
+      : undefined;
+
+    // Warn if no refresh token (session can't be renewed)
+    const refreshWarning = !session.refresh_token 
+      ? 'Session missing refresh token - cannot auto-renew' 
+      : warning;
+
+    return { 
+      isValid: true, 
+      warning: refreshWarning,
+      expiresAt: expiresAt.toISOString(),
+      minutesRemaining
+    };
+  }
+
+  return { isValid: true };
+}
+
 export const useAuthSessionStore = create<AuthSessionState>()(
   subscribeWithSelector(
     devtools(
@@ -148,37 +229,50 @@ export const useAuthSessionStore = create<AuthSessionState>()(
           user: state.user,
           session: state.session,
         }),
-        onRehydrateStorage: () => (state) => {
-          if (state) {
-            state.isHydrated = true;
-            
-            // Validate persisted session is still valid
-            if (state.session?.expires_at) {
-              const expiresAt = new Date(state.session.expires_at * 1000);
-              const now = new Date();
-              const isExpired = expiresAt < now;
-              
-              if (isExpired) {
-                secureLog.dev('Auth session store: Persisted session expired, clearing');
-                // Clear expired session data
-                state.user = null;
-                state.session = null;
-                state.sessionReady = false;
-              } else {
-                secureLog.dev('Auth session store rehydrated with valid session', {
-                  expiresAt: expiresAt.toISOString(),
-                  minutesRemaining: Math.round((expiresAt.getTime() - now.getTime()) / 60000)
-                });
-              }
-            } else if (state.session) {
-              // Session exists but no expiry - treat as invalid
-              secureLog.dev('Auth session store: Session missing expiry, clearing');
-              state.user = null;
-              state.session = null;
-              state.sessionReady = false;
-            } else {
-              secureLog.dev('Auth session store rehydrated (no session)');
+        onRehydrateStorage: () => (state, error) => {
+          // Handle hydration errors
+          if (error) {
+            secureLog.error('Auth session store hydration failed', error, 'AuthSessionStore');
+            try {
+              localStorage.removeItem('auth-session-store');
+            } catch {
+              // Silent fail
             }
+            return;
+          }
+
+          if (!state) {
+            secureLog.dev('Auth session store: No state to rehydrate');
+            return;
+          }
+
+          state.isHydrated = true;
+
+          // Comprehensive session validation
+          const validationResult = validatePersistedSession(state.session, state.user);
+          
+          if (!validationResult.isValid) {
+            secureLog.dev(`Auth session store: ${validationResult.reason}, clearing`);
+            
+            // Clear corrupted/expired session data
+            state.user = null;
+            state.session = null;
+            state.sessionReady = false;
+            
+            // Also clear localStorage to prevent stale data issues
+            try {
+              localStorage.removeItem('auth-session-store');
+            } catch {
+              // Silent fail - storage may be unavailable
+            }
+          } else if (validationResult.warning) {
+            secureLog.dev(`Auth session store: ${validationResult.warning}`);
+            secureLog.dev('Auth session store rehydrated with valid session', {
+              expiresAt: validationResult.expiresAt,
+              minutesRemaining: validationResult.minutesRemaining
+            });
+          } else {
+            secureLog.dev('Auth session store rehydrated (no session)');
           }
         },
       }
