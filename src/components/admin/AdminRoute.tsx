@@ -1,79 +1,169 @@
-import React from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
-import { RefreshCw, AlertCircle } from 'lucide-react';
+import { useAuthSessionStore } from '@/stores/authSessionStore';
+import { useAuthRoleStore } from '@/stores/authRoleStore';
+import { RefreshCw, AlertCircle, Shield } from 'lucide-react';
 import { cLog, cWarn, cInfo } from '@/utils/conditionalLogger';
 
 interface AdminRouteProps {
   children: React.ReactNode;
 }
 
+// Maximum time to wait for auth checks before showing timeout UI
+const LOADING_TIMEOUT_MS = 10000; // 10 seconds
+const ROLE_CHECK_TIMEOUT_MS = 5000; // 5 seconds for role check
+const SIGNOUT_TIMEOUT_MS = 5000; // 5 seconds for sign out
+
 export const AdminRoute = ({ children }: AdminRouteProps) => {
-  // Use store directly to also get isCheckingRole
-  const { loading, user, isAdmin, signingOut, isCheckingRole } = useAuthStore();
+  // Read directly from source stores for most accurate state
+  const sessionStore = useAuthSessionStore();
+  const roleStore = useAuthRoleStore();
+  const { signingOut } = useAuthStore();
   
-  // Emergency timeouts to prevent infinite loading states - increased timeouts to allow for slower auth
-  const [emergencyLoadingTimeout, setEmergencyLoadingTimeout] = React.useState(false);
-  const [emergencySignOutTimeout, setEmergencySignOutTimeout] = React.useState(false);
-  const [authDebugInfo, setAuthDebugInfo] = React.useState<string>('');
+  // Derived state from source stores
+  const { loading: sessionLoading, user, sessionReady } = sessionStore;
+  const { isAdmin, isCheckingRole } = roleStore;
+  
+  // Combined loading state
+  const loading = sessionLoading || (!sessionReady && !user);
 
-  // Debug auth state changes
-  React.useEffect(() => {
-    const debugInfo = `Loading: ${loading}, CheckingRole: ${isCheckingRole}, User: ${user ? 'present' : 'null'}, IsAdmin: ${isAdmin}, SigningOut: ${signingOut}`;
-    setAuthDebugInfo(debugInfo);
-    cLog('AdminRoute auth state', debugInfo);
-  }, [loading, isCheckingRole, user, isAdmin, signingOut]);
+  // Timeout states
+  const [loadingTimeout, setLoadingTimeout] = useState(false);
+  const [roleCheckTimeout, setRoleCheckTimeout] = useState(false);
+  const [signOutTimeout, setSignOutTimeout] = useState(false);
+  
+  // Track mount state to prevent state updates after unmount
+  const mountedRef = useRef(true);
+  
+  // Debug info for troubleshooting
+  const authDebugInfo = `Session: ${sessionReady ? 'ready' : 'pending'}, User: ${user ? 'present' : 'null'}, Admin: ${isAdmin}, Loading: ${loading}, RoleCheck: ${isCheckingRole}`;
 
-  React.useEffect(() => {
-    if (loading) {
-      cInfo('Starting loading timeout (15s)');
-      const timeout = setTimeout(() => {
-        cWarn('Loading timeout exceeded - providing recovery options');
-        setEmergencyLoadingTimeout(true);
-      }, 15000); // Reduced to 15 seconds with better UX
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
-      return () => clearTimeout(timeout);
+  // Log state changes for debugging
+  useEffect(() => {
+    cLog('AdminRoute state', {
+      sessionReady,
+      hasUser: !!user,
+      isAdmin,
+      loading,
+      isCheckingRole,
+      signingOut
+    });
+  }, [sessionReady, user, isAdmin, loading, isCheckingRole, signingOut]);
+
+  // Initialize auth on mount if not already initialized
+  useEffect(() => {
+    if (!sessionReady && !loading) {
+      cInfo('AdminRoute: Initializing auth session');
+      sessionStore.initialize();
     }
-    setEmergencyLoadingTimeout(false);
-    return undefined;
-  }, [loading]);
+  }, [sessionReady, loading]);
 
-  React.useEffect(() => {
-    if (signingOut) {
-      cInfo('Starting sign out timeout (8s)');
-      const timeout = setTimeout(() => {
-        cWarn('Sign out timeout exceeded - providing recovery options');
-        setEmergencySignOutTimeout(true);
-      }, 8000); // Reduced to 8 seconds with better UX
-
-      return () => clearTimeout(timeout);
+  // Trigger role check when user is present but role not checked
+  useEffect(() => {
+    if (user && !isAdmin && !isCheckingRole && sessionReady) {
+      cInfo('AdminRoute: Triggering role check for user', user.id);
+      roleStore.fetchUserRole(user.id);
     }
-    setEmergencySignOutTimeout(false);
-    return undefined;
-  }, [signingOut]);
+  }, [user, isAdmin, isCheckingRole, sessionReady]);
 
-  // Show enhanced loading state with progress indicators
-  // CRITICAL: Also block while role is being checked to prevent stale isAdmin access
-  if ((loading || isCheckingRole) && !emergencyLoadingTimeout) {
+  // Loading timeout handler
+  useEffect(() => {
+    if (loading && !loadingTimeout) {
+      const timeout = setTimeout(() => {
+        if (mountedRef.current) {
+          cWarn('AdminRoute: Loading timeout exceeded');
+          setLoadingTimeout(true);
+        }
+      }, LOADING_TIMEOUT_MS);
+      return () => { clearTimeout(timeout); };
+    }
+    if (!loading) {
+      setLoadingTimeout(false);
+    }
+    return undefined;
+  }, [loading, loadingTimeout]);
+
+  // Role check timeout handler
+  useEffect(() => {
+    if (isCheckingRole && !roleCheckTimeout) {
+      const timeout = setTimeout(() => {
+        if (mountedRef.current) {
+          cWarn('AdminRoute: Role check timeout exceeded');
+          setRoleCheckTimeout(true);
+        }
+      }, ROLE_CHECK_TIMEOUT_MS);
+      return () => { clearTimeout(timeout); };
+    }
+    if (!isCheckingRole) {
+      setRoleCheckTimeout(false);
+    }
+    return undefined;
+  }, [isCheckingRole, roleCheckTimeout]);
+
+  // Sign out timeout handler
+  useEffect(() => {
+    if (signingOut && !signOutTimeout) {
+      const timeout = setTimeout(() => {
+        if (mountedRef.current) {
+          cWarn('AdminRoute: Sign out timeout exceeded');
+          setSignOutTimeout(true);
+        }
+      }, SIGNOUT_TIMEOUT_MS);
+      return () => { clearTimeout(timeout); };
+    }
+    if (!signingOut) {
+      setSignOutTimeout(false);
+    }
+    return undefined;
+  }, [signingOut, signOutTimeout]);
+
+  // Emergency reset handler
+  const handleEmergencyReset = useCallback(() => {
+    cInfo('AdminRoute: Emergency reset triggered');
+    localStorage.clear();
+    sessionStorage.clear();
+    window.location.href = '/admin/login';
+  }, []);
+
+  // Refresh handler
+  const handleRefresh = useCallback(() => {
+    window.location.reload();
+  }, []);
+
+  // Show loading state - but not if we've timed out or have a role check timeout
+  const showLoadingState = (loading || isCheckingRole) && !loadingTimeout && !roleCheckTimeout;
+  
+  if (showLoadingState) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-center max-w-md">
-          <div className="animate-spin rounded-full h-20 w-20 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="mt-6 text-gray-300 text-lg font-medium">Loading Admin Panel</p>
-          <p className="mt-2 text-sm text-gray-400">
-            {isCheckingRole ? 'Verifying admin permissions...' : 'Authenticating and loading dashboard...'}
-          </p>
-          <div className="mt-4 px-4 py-2 bg-gray-800 rounded-lg">
-            <p className="text-xs text-gray-500">{authDebugInfo}</p>
+        <div className="text-center max-w-md px-4">
+          <div className="relative">
+            <Shield className="h-16 w-16 text-blue-500 mx-auto opacity-20" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+            </div>
           </div>
+          <p className="mt-6 text-gray-300 text-lg font-medium">
+            {isCheckingRole ? 'Verifying permissions...' : 'Loading Admin Panel'}
+          </p>
+          <p className="mt-2 text-sm text-gray-500">
+            {isCheckingRole ? 'Checking admin access' : 'Authenticating...'}
+          </p>
           <div className="mt-6">
-            <p className="text-xs text-gray-600">Taking longer than expected?</p>
             <button 
-              onClick={() => window.location.reload()}
-              className="mt-2 text-blue-400 hover:text-blue-300 text-sm underline flex items-center gap-1 mx-auto"
+              onClick={handleRefresh}
+              className="text-blue-400 hover:text-blue-300 text-sm underline flex items-center gap-1 mx-auto"
             >
               <RefreshCw className="h-3 w-3" />
-              Refresh Page
+              Taking too long? Refresh
             </button>
           </div>
         </div>
@@ -81,53 +171,42 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
     );
   }
 
-  // Show sign out state
-  if (signingOut && !emergencySignOutTimeout) {
+  // Show signing out state
+  if (signingOut && !signOutTimeout) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-red-500 mx-auto"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-red-500 mx-auto"></div>
           <p className="mt-4 text-gray-300">Signing out...</p>
         </div>
       </div>
     );
   }
 
-  // Enhanced emergency fallback UI with better guidance
-  if (emergencyLoadingTimeout || emergencySignOutTimeout) {
-    const handleEmergencyReset = () => {
-      cInfo('Emergency reset triggered by user');
-      // Clear all auth state and redirect to login
-      localStorage.clear();
-      sessionStorage.clear();
-      window.location.href = '/admin/login';
-    };
-
-    const isSignOutIssue = emergencySignOutTimeout;
-
+  // Show timeout/error state
+  if (loadingTimeout || roleCheckTimeout || signOutTimeout) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
-        <div className="bg-gray-800 border border-amber-500 rounded-lg p-8 max-w-lg text-center">
-          <div className="flex justify-center mb-4">
-            <AlertCircle className="h-12 w-12 text-amber-500" />
-          </div>
+        <div className="bg-gray-800 border border-amber-500/50 rounded-lg p-8 max-w-md text-center">
+          <AlertCircle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
           <h2 className="text-amber-400 font-semibold text-xl mb-3">
-            {isSignOutIssue ? 'Sign Out Timeout' : 'Authentication Timeout'}
+            {signOutTimeout ? 'Sign Out Issue' : roleCheckTimeout ? 'Permission Check Failed' : 'Connection Timeout'}
           </h2>
-          <p className="text-gray-300 mb-3 text-sm leading-relaxed">
-            {isSignOutIssue 
-              ? 'The sign out process is taking longer than expected. This might be due to network issues.'
-              : 'The authentication process is taking longer than expected. This could be due to network connectivity or server response issues.'
-            }
+          <p className="text-gray-400 mb-4 text-sm">
+            {signOutTimeout 
+              ? 'The sign out process encountered an issue.'
+              : roleCheckTimeout
+              ? 'Unable to verify your admin permissions.'
+              : 'Authentication is taking longer than expected.'}
           </p>
           
-          <div className="bg-gray-700 rounded-lg p-3 mb-6">
-            <p className="text-xs text-gray-400 font-mono">{authDebugInfo}</p>
+          <div className="bg-gray-900/50 rounded p-3 mb-6">
+            <p className="text-xs text-gray-500 font-mono">{authDebugInfo}</p>
           </div>
 
           <div className="space-y-3">
             <button
-              onClick={() => window.location.reload()}
+              onClick={handleRefresh}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors"
             >
               <RefreshCw className="h-4 w-4" />
@@ -135,27 +214,23 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
             </button>
             <button
               onClick={handleEmergencyReset}
-              className="w-full bg-amber-600 hover:bg-amber-700 text-white px-4 py-3 rounded-lg text-sm font-medium transition-colors"
+              className="w-full bg-gray-700 hover:bg-gray-600 text-gray-200 px-4 py-3 rounded-lg text-sm font-medium transition-colors"
             >
-              Clear Cache & Return to Login
+              Clear Session & Login Again
             </button>
           </div>
-          
-          <p className="mt-4 text-xs text-gray-500">
-            If this issue persists, please check your network connection or contact support.
-          </p>
         </div>
       </div>
     );
   }
 
-  // Improved session validation - ensure we have both user and session
+  // Redirect if not authenticated or not admin
   if (!user || !isAdmin) {
-    cInfo('Redirecting to login', { hasUser: !!user, isAdmin });
+    cInfo('AdminRoute: Redirecting to login', { hasUser: !!user, isAdmin });
     return <Navigate to="/admin/login" replace />;
   }
 
-  // Additional validation: ensure we have a complete auth state
-  cInfo('Auth validated, rendering protected content');
+  // All checks passed - render protected content
+  cInfo('AdminRoute: Rendering protected content');
   return <>{children}</>;
 };

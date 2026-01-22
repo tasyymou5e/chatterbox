@@ -36,6 +36,25 @@ This guide provides comprehensive troubleshooting information for the Chatterbox
 3. Clear browser cache and cookies
 4. Check console for JavaScript errors
 
+#### Issue: Admin login page blinks or shows blank screen
+**Symptoms**: Page flashes or remains empty after login attempt
+**Status**: ✅ **FIXED** in January 2026
+**Causes**:
+- Zustand store subscription race conditions
+- Auth state not synchronizing properly between split stores
+- AdminRoute component waiting indefinitely for role check
+
+**Solutions**:
+1. Clear browser localStorage: `localStorage.clear()`
+2. Hard refresh the page (Ctrl+Shift+R)
+3. Check if the "Clear Session & Login Again" button appears after 10 seconds
+4. Verify network connectivity to Supabase
+
+**Technical Details**:
+- The `authStore` facade now uses debounced sync instead of direct subscriptions
+- `AdminRoute` has timeout fallbacks (10s loading, 5s role check)
+- Source stores (`authSessionStore`, `authRoleStore`) are read directly for accurate state
+
 #### Issue: "Access denied. Admin role required" on analytics
 **Symptoms**: Admin users get access denied when viewing analytics dashboard
 **Causes**:
@@ -47,6 +66,48 @@ This guide provides comprehensive troubleshooting information for the Chatterbox
 2. Log out and log back in
 3. Verify admin role is correctly assigned
 4. Check browser network tab for 401/403 errors
+
+#### Issue: Dashboard shows "Loading" indefinitely
+**Symptoms**: Dashboard cards or charts remain in loading state
+**Status**: ✅ **FIXED** - Analytics store now uses fallback data
+**Causes**:
+- RPC function calls failing silently
+- Session not ready when analytics are fetched
+- Network timeouts
+
+**Solutions**:
+1. Click "Refresh" button in the dashboard header
+2. Check browser console for specific error messages
+3. Verify admin session is active (should see user info in header)
+4. Analytics will show fallback zeros if data cannot be loaded
+
+#### Issue: Security Dashboard not loading metrics
+**Symptoms**: Security metrics show zeros or "Unable to load" message
+**Status**: ✅ **FIXED** - Added robust error handling
+**Causes**:
+- `security-monitoring` edge function unavailable
+- Network timeout
+- Missing permissions
+
+**Solutions**:
+1. Click the "Retry" button in the error banner
+2. Check edge function logs in Supabase dashboard
+3. Default metrics (zeros) are shown when data is unavailable
+4. Verify edge function `security-monitoring` is deployed
+
+#### Issue: "Create Test Family" button not working
+**Symptoms**: Nothing happens when clicking the button, or error appears
+**Status**: ✅ **FIXED** - Added session validation and logging
+**Causes**:
+- Session expired
+- Edge function `create-test-family` not deployed
+- JWT validation failing
+
+**Solutions**:
+1. Check if "Session expired" toast appears - log in again
+2. Verify `create-test-family` edge function is deployed
+3. Check edge function logs for detailed error messages
+4. Console logs now show `[CreateTestFamily]` prefixed messages for debugging
 
 ### Database Connection Issues
 
