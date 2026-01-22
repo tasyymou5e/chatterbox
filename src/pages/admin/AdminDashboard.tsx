@@ -42,7 +42,7 @@ const DEFAULT_STATS: DashboardStats = DEFAULT_KPI_DATA;
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
-  const { sessionReady, isAdmin } = useAuthStore();
+  const { sessionReady, isAdmin, isHydrated } = useAuthStore();
   const { 
     getLoading, 
     setLoading
@@ -53,6 +53,9 @@ export default function AdminDashboard() {
   } = useAdminStore();
   
   const dashboardLoading = getLoading('adminDashboard');
+  
+  // Show loading state until hydration and session are ready
+  const isInitializing = !isHydrated || !sessionReady;
   const [stats, setStats] = useState<DashboardStats>({
     totalFamilies: 0,
     totalUsers: 0,
@@ -67,19 +70,22 @@ export default function AdminDashboard() {
     loading: analyticsLoading, 
     error: analyticsError, 
     refreshAnalytics,
-    waitForSessionAndRefresh 
+    waitForSessionAndRefresh
   } = useAnalyticsWithSession();
 
+  // Only fetch dashboard stats when session is ready
   useEffect(() => {
-    fetchDashboardStats();
-  }, []);
+    if (sessionReady && isAdmin && isHydrated) {
+      fetchDashboardStats();
+    }
+  }, [sessionReady, isAdmin, isHydrated]);
 
-  // Load system health data on mount
+  // Load system health data when session is ready
   useEffect(() => {
-    if (sessionReady && isAdmin) {
+    if (sessionReady && isAdmin && isHydrated) {
       fetchSystemMetrics();
     }
-  }, [sessionReady, isAdmin, fetchSystemMetrics]);
+  }, [sessionReady, isAdmin, isHydrated, fetchSystemMetrics]);
 
   // State for tracking fetch errors
   const [statsError, setStatsError] = useState<string | null>(null);
@@ -161,6 +167,20 @@ export default function AdminDashboard() {
 
   const activeUsersMetric = getEngagementMetric('Active Users');
   const totalLoginsMetric = getEngagementMetric('Total Logins');
+
+  // Show loading state while initializing
+  if (isInitializing) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">
+            {!isHydrated ? 'Restoring session...' : 'Loading dashboard...'}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <ErrorBoundary componentName="AdminDashboard">
