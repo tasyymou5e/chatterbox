@@ -65,8 +65,10 @@ export default defineConfig(({ mode }) => ({
             '@radix-ui/react-toggle-group',
             '@radix-ui/react-aspect-ratio',
           ],
-          // Feature libraries (charts, forms, state)
-          features: ['recharts', 'react-hook-form', '@hookform/resolvers', 'zod', 'zustand', '@tanstack/react-query'],
+          // Charts - only loaded for admin/analytics routes (~50KB)
+          charts: ['recharts'],
+          // Forms & State - needed globally (~35KB)
+          forms: ['react-hook-form', '@hookform/resolvers', 'zod', 'zustand', '@tanstack/react-query'],
           // Supabase (separate for auth/data isolation)
           supabase: ['@supabase/supabase-js'],
         },
