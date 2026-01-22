@@ -1,5 +1,5 @@
 /**
- * Comprehensive admin security center
+ * Comprehensive admin security center with error boundaries
  */
 import React from 'react';
 import { SecurityDashboard } from '@/components/security/SecurityDashboard';
@@ -9,6 +9,8 @@ import SecurityEnvironmentValidator from '@/components/admin/SecurityEnvironment
 import { RoleConflictPanel } from '@/components/admin/RoleConflictPanel';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Shield, Activity, FileText, AlertTriangle, Settings } from 'lucide-react';
+import { DashboardErrorBoundary } from '@/components/admin/DashboardErrorBoundary';
+import { SecurityDashboardFallback } from '@/components/admin/DashboardFallback';
 
 export const AdminSecurityCenter: React.FC = () => {
   return (
@@ -39,7 +41,12 @@ export const AdminSecurityCenter: React.FC = () => {
         </TabsList>
 
         <TabsContent value="dashboard" className="mt-6">
-          <SecurityDashboard />
+          <DashboardErrorBoundary 
+            componentName="Security Dashboard"
+            fallbackComponent={<SecurityDashboardFallback />}
+          >
+            <SecurityDashboard />
+          </DashboardErrorBoundary>
         </TabsContent>
 
         <TabsContent value="audit" className="mt-6">
@@ -57,8 +64,12 @@ export const AdminSecurityCenter: React.FC = () => {
 
         <TabsContent value="config" className="mt-6">
           <div className="space-y-6">
-            <RoleConflictPanel />
-            <SecurityEnvironmentValidator />
+            <DashboardErrorBoundary componentName="Role Conflict Panel">
+              <RoleConflictPanel />
+            </DashboardErrorBoundary>
+            <DashboardErrorBoundary componentName="Environment Validator">
+              <SecurityEnvironmentValidator />
+            </DashboardErrorBoundary>
             
             <div className="text-center py-8 text-muted-foreground border-t">
               <p>Additional security configuration options will be available here.</p>
