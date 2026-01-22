@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { visualizer } from "rollup-plugin-visualizer";
+import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -21,6 +22,129 @@ export default defineConfig(({ mode }) => ({
       brotliSize: true,
       template: 'treemap',
     }),
+    // PWA Plugin with Workbox configuration
+    VitePWA({
+      registerType: 'autoUpdate',
+      includeAssets: ['favicon.png', 'og-image.png', 'robots.txt'],
+      
+      manifest: {
+        name: 'Chatterbox',
+        short_name: 'Chatterbox',
+        description: 'Empowering children with autism through technology, education, and family connection',
+        theme_color: '#4f46e5',
+        background_color: '#ffffff',
+        display: 'standalone',
+        orientation: 'portrait-primary',
+        scope: '/',
+        start_url: '/',
+        categories: ['education', 'kids', 'family'],
+        icons: [
+          {
+            src: '/pwa-192x192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: '/pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: '/pwa-maskable-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable'
+          }
+        ]
+      },
+      
+      workbox: {
+        // Cache static assets
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        
+        // Runtime caching strategies
+        runtimeCaching: [
+          // Supabase REST API - NetworkFirst with fallback
+          {
+            urlPattern: /^https:\/\/lxuqfgbukrrickanmmic\.supabase\.co\/rest\/v1\/.*/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'supabase-api-cache',
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 // 1 hour
+              },
+              networkTimeoutSeconds: 10,
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          // Supabase Edge Functions - NetworkOnly (no caching for mutations)
+          {
+            urlPattern: /^https:\/\/lxuqfgbukrrickanmmic\.supabase\.co\/functions\/.*/i,
+            handler: 'NetworkOnly'
+          },
+          // Supabase Auth - NetworkOnly (critical for security)
+          {
+            urlPattern: /^https:\/\/lxuqfgbukrrickanmmic\.supabase\.co\/auth\/.*/i,
+            handler: 'NetworkOnly'
+          },
+          // Supabase Storage - CacheFirst for images
+          {
+            urlPattern: /^https:\/\/lxuqfgbukrrickanmmic\.supabase\.co\/storage\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'supabase-storage-cache',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24 * 7 // 1 week
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          // Google Fonts stylesheets
+          {
+            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'google-fonts-stylesheets',
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+              }
+            }
+          },
+          // Google Fonts webfonts
+          {
+            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'google-fonts-webfonts',
+              expiration: {
+                maxEntries: 20,
+                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          }
+        ],
+        
+        // Skip waiting and claim clients immediately
+        skipWaiting: true,
+        clientsClaim: true
+      },
+      
+      devOptions: {
+        enabled: false // Disable in dev to avoid caching issues
+      }
+    })
   ].filter(Boolean),
   resolve: {
     alias: {
