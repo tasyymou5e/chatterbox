@@ -12,7 +12,7 @@ import { useChildProfile } from '@/hooks/useChildProfile';
 import { useLessonProgressStore } from '@/stores/lessonProgressStore';
 import { cLog } from '@/utils/conditionalLogger';
 import type { KidContentItem, ContentType, AgeGroup, ChildProfile } from '@/types/kidsPortal';
-import { Loader2 } from 'lucide-react';
+import { KidsLoadingState, KidsEmptyState } from '@/components/illustrations';
 
 export default function KidsPortal() {
   const navigate = useNavigate();
@@ -91,10 +91,7 @@ export default function KidsPortal() {
   if (isLoadingProfile) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted">
-        <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-lg font-medium text-foreground">Loading your portal...</p>
-        </div>
+        <KidsLoadingState message="Loading your portal..." />
       </div>
     );
   }
@@ -112,14 +109,13 @@ export default function KidsPortal() {
             <KidsProgressHeader profile={childProfile} className="mb-6" />
 
             {isLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
+              <KidsLoadingState message="Finding fun stuff..." />
             ) : content.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-xl text-muted-foreground">No content found!</p>
-                <p className="text-sm text-muted-foreground mt-2">Try changing your filters.</p>
-              </div>
+              <KidsEmptyState
+                illustration="exploring"
+                title="No games here yet!"
+                message="Try changing your filters to discover more fun activities."
+              />
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {content.map((item) => (
