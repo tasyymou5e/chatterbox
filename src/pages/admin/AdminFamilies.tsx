@@ -26,6 +26,7 @@ import FamilyDeleteDialog from '@/components/admin/FamilyDeleteDialog';
 import AdminMemberManagementDialog from '@/components/admin/AdminMemberManagementDialog';
 import BulkEmailDialog from '@/components/admin/BulkEmailDialog';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import { AdminEmptyState } from '@/components/illustrations';
 import { useAuthStore } from '@/stores/authStore';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { cLog, cError } from '@/utils/conditionalLogger';
@@ -520,12 +521,14 @@ export default function AdminFamilies() {
           </div>
 
           {filteredFamilies.length === 0 && (
-            <div className="text-center py-8">
-              <Home className="h-12 w-12 text-gray-600 mx-auto mb-4" />
-              <p className="text-gray-400">
-                {searchTerm ? 'No families match your search.' : 'No families found.'}
-              </p>
-            </div>
+            <AdminEmptyState
+              variant={searchTerm ? 'noResults' : 'families'}
+              isFiltered={!!searchTerm}
+              searchTerm={searchTerm}
+              onPrimaryAction={userRole === 'admin' ? () => {} : undefined}
+              primaryActionLabel="Create Test Family"
+              onSecondaryAction={searchTerm ? () => setSearchTerm('') : undefined}
+            />
           )}
         </CardContent>
       </Card>
