@@ -57,11 +57,13 @@
 ## 🔒 Security Architecture
 
 ### **Recent Security Updates (2026-01-22)**
-- **Child Account Hardening**: `generated_email` never exposed to client via new secure RPCs
+- **RLS Policy Hardening**: `child_accounts_secure_select` updated to remove direct child access
+- **New Safe View**: `child_accounts_self_view` created with SECURITY INVOKER for child self-access
+- **Child Account Hardening**: `generated_email` never exposed to client via updated RLS + secure RPCs
 - **PIN Verification**: Optional 6-digit PIN for two-factor child account completion
 - **Lockout Protection**: 5 failed attempts → 30-minute lockout with rate limiting
 - **Secure Edge Function**: `complete-child-account` handles auth server-side only
-- **New Security Functions**: `get_pending_child_account_for_completion`, `complete_child_account_secure`, `get_my_child_account_safe`
+- **Security Functions**: `get_pending_child_account_for_completion`, `complete_child_account_secure`, `get_my_child_account_safe`
 
 ### **Previous Security Updates (2026-01-21)**
 - **Dropped Views**: `child_accounts_safe` view removed (lacked RLS policies)
