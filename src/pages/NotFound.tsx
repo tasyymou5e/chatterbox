@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { useErrorTracking } from "@/hooks/useErrorTracking";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
+import { secureLog } from "@/utils/secureLogging";
 
 const NotFound = () => {
   const location = useLocation();
@@ -22,10 +23,7 @@ const NotFound = () => {
       }
     });
     
-    console.error(
-      "404 Error: User attempted to access non-existent route:",
-      location.pathname
-    );
+    secureLog.warn('404 Error: User attempted to access non-existent route', { path: location.pathname }, 'NotFound');
   }, [location.pathname, logError]);
 
   return (

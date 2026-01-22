@@ -3,7 +3,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { cWarn } from '@/utils/conditionalLogger';
+import { cWarn, cLog } from '@/utils/conditionalLogger';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -129,7 +129,7 @@ export function ChildGameAssignmentDialog({
         setSelectedChild(childProfiles[0].id);
       }
     } catch (error) {
-      console.error('Error fetching data:', error);
+      cWarn('Error fetching data', error);
       toast({
         title: 'Error',
         description: 'Failed to load children and games',
@@ -183,7 +183,7 @@ export function ChildGameAssignmentDialog({
       setExistingAssignments(existingSet);
       setAssignments(assignmentMap);
     } catch (error) {
-      console.error('Error fetching assignments:', error);
+      cWarn('Error fetching assignments', error);
     }
   }, [selectedChild, familyId]);
 
@@ -238,7 +238,7 @@ export function ChildGameAssignmentDialog({
           
           // If RPC doesn't exist, the table might be new
           if (deleteError?.code === 'PGRST202') {
-            console.log('Delete RPC not available, assignments may not save correctly');
+            cLog('Delete RPC not available, assignments may not save correctly');
           }
         }
       }
@@ -257,7 +257,7 @@ export function ChildGameAssignmentDialog({
           });
 
           if (upsertError?.code === 'PGRST202') {
-            console.log('Upsert RPC not available');
+            cLog('Upsert RPC not available');
           } else if (upsertError) {
             throw upsertError;
           }
@@ -271,7 +271,7 @@ export function ChildGameAssignmentDialog({
 
       onClose();
     } catch (error) {
-      console.error('Error saving assignments:', error);
+      cWarn('Error saving assignments', error);
       toast({
         title: 'Error',
         description: 'Failed to save assignments. The database may still be updating.',

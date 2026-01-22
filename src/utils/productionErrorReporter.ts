@@ -1,5 +1,6 @@
 import { logger } from '@/utils/logger';
 import { supabase } from '@/integrations/supabase/client';
+import { secureLog } from '@/utils/secureLogging';
 
 type ErrorSeverity = 'low' | 'medium' | 'high' | 'critical';
 
@@ -63,8 +64,8 @@ export async function reportError(
         },
       });
     } catch (reportingError) {
-      // Last resort: console error (this should never fail silently)
-      console.error('[ErrorReporter] Failed to report error:', reportingError);
+      // Last resort: secure log error (this should never fail silently)
+      secureLog.error('Failed to report error', reportingError, 'ErrorReporter');
     }
   }
 }
