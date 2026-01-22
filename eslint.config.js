@@ -47,8 +47,9 @@ export default tseslint.config(
       "@typescript-eslint/no-non-null-assertion": "warn",
       "@typescript-eslint/prefer-optional-chain": "warn",
 
-      // Console enforcement (use conditionalLogger instead)
-      "no-console": ["error", { allow: ["warn", "error"] }],
+      // Console enforcement - use secureLog (errors/security) or cLog (dev-only) instead
+      // Import from '@/utils/secureLogging' or '@/utils/conditionalLogger'
+      "no-console": "error",
 
       // Code quality
       "eqeqeq": ["error", "always"],
