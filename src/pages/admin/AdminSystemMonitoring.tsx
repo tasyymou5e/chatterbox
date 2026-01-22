@@ -31,6 +31,7 @@ import {
   LogsTabContent
 } from '@/components/admin/monitoring';
 import type { SystemError } from '@/types/systemHealth';
+import { cLog, cError } from '@/utils/conditionalLogger';
 
 const AdminSystemMonitoring = () => {
   const [selectedError, setSelectedError] = useState<SystemError | null>(null);
@@ -86,7 +87,7 @@ const AdminSystemMonitoring = () => {
         description: 'A test error has been logged to the system',
       });
     } catch (error) {
-      console.error('Failed to create test error:', error);
+      cError('Failed to create test error:', error);
     }
   };
 
@@ -126,7 +127,7 @@ const AdminSystemMonitoring = () => {
           {authDebugInfo && (
             <Button 
               onClick={() => {
-                console.log('Auth Debug Info:', authDebugInfo);
+                cLog('Auth Debug Info:', authDebugInfo);
                 toast({
                   title: 'Auth Debug Info',
                   description: `User: ${authDebugInfo.userEmail || 'None'}, Admin: ${authDebugInfo.isAdmin}, Status: ${authDebugInfo.status || authDebugInfo.error}`,

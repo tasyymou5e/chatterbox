@@ -8,7 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, Copy, RefreshCw, Key, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { cError } from '@/utils/conditionalLogger';
+import { cLog, cError } from '@/utils/conditionalLogger';
 import { getErrorMessage } from '@/types/interfaces';
 
 interface User {
@@ -130,7 +130,7 @@ export const UserPasswordResetDialog: React.FC<UserPasswordResetDialogProps> = (
         throw new Error('No active session. Please log in again.');
       }
 
-      console.log('Calling admin-update-user for user:', user.id);
+      cLog('Calling admin-update-user for user:', user.id);
 
       // Call edge function - SDK handles auth automatically
       const { data, error } = await supabase.functions.invoke('admin-update-user', {
@@ -141,11 +141,11 @@ export const UserPasswordResetDialog: React.FC<UserPasswordResetDialogProps> = (
         }
       });
 
-      console.log('Edge function response:', { data, error });
+      cLog('Edge function response:', { data, error });
 
       // Check for invocation error (network/CORS/etc)
       if (error) {
-        console.error('Edge function invocation error:', error);
+        cError('Edge function invocation error:', error);
         // Detect CORS/network issues and provide clearer message
         const errorMsg = error.message || '';
         if (errorMsg.includes('Failed to send') || errorMsg.includes('fetch') || errorMsg.includes('network')) {
@@ -156,7 +156,7 @@ export const UserPasswordResetDialog: React.FC<UserPasswordResetDialogProps> = (
 
       // Check for application-level error in response data
       if (data?.error) {
-        console.error('Edge function returned error:', data.error);
+        cError('Edge function returned error:', data.error);
         throw new Error(data.error);
       }
 

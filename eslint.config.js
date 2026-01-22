@@ -108,5 +108,12 @@ export default tseslint.config(
     rules: {
       "no-console": "off", // Edge functions use console for logging
     },
+  },
+  // CLI scripts - need console for output
+  {
+    files: ["scripts/**/*.ts"],
+    rules: {
+      "no-console": "off",
+    },
   }
 );

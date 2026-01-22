@@ -33,7 +33,7 @@ import { UserDeleteDialog } from '@/components/admin/UserDeleteDialog';
 import { UserPasswordResetDialog } from '@/components/admin/UserPasswordResetDialog';
 import { UserCreateDialog } from '@/components/admin/UserCreateDialog';
 import { getErrorMessage } from '@/utils/getErrorMessage';
-import { cLog, cError } from '@/utils/conditionalLogger';
+import { cLog, cError, cWarn } from '@/utils/conditionalLogger';
 
 interface User {
   id: string;
@@ -92,7 +92,7 @@ export default function AdminUsers() {
     // Combine the data
     const usersWithRolesAndFamilies: User[] = usersData.map(userData => {
       if (!userData.user_id) {
-        console.warn('User missing user_id:', userData);
+        cWarn('User missing user_id:', userData);
         return null;
       }
 
@@ -227,7 +227,7 @@ export default function AdminUsers() {
   };
 
   const handleEditUser = (user: User) => {
-    console.log('Opening edit dialog for user:', user);
+    cLog('Opening edit dialog for user:', user);
     if (!user.id) {
       toast({
         variant: 'destructive',
@@ -254,7 +254,7 @@ export default function AdminUsers() {
   };
 
   const handlePasswordReset = (user: User) => {
-    console.log('Opening password reset dialog for user:', user);
+    cLog('Opening password reset dialog for user:', user);
     if (!user.id) {
       toast({
         variant: 'destructive',

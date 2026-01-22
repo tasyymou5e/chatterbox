@@ -13,6 +13,7 @@ import {
 // @ts-expect-error Types are used in the codebase but appear unused to the compiler
 import type { AchievementCriteria, UserProgress, UserMetadata, AchievementMetadata } from '@/types/gamification';
 import { type Json } from '@/integrations/supabase/types';
+import { cLog, cError } from '@/utils/conditionalLogger';
 
 interface UserLevel {
   id: string;
@@ -187,13 +188,13 @@ export const useGamificationStore = create<GamificationState>()(
             .maybeSingle();
 
           if (error) {
-            console.error('Error fetching user level:', error);
+            cError('Error fetching user level:', error);
             return;
           }
 
           set({ userLevel: data });
         } catch (error) {
-          console.error('Error fetching user level:', error);
+          cError('Error fetching user level:', error);
         }
       },
 
@@ -210,13 +211,13 @@ export const useGamificationStore = create<GamificationState>()(
             .maybeSingle();
 
           if (error) {
-            console.error('Error fetching user points:', error);
+            cError('Error fetching user points:', error);
             return;
           }
 
           set({ userPoints: data });
         } catch (error) {
-          console.error('Error fetching user points:', error);
+          cError('Error fetching user points:', error);
         }
       },
 
@@ -229,13 +230,13 @@ export const useGamificationStore = create<GamificationState>()(
             .order('rarity', { ascending: false });
 
           if (error) {
-            console.error('Error fetching achievements:', error);
+            cError('Error fetching achievements:', error);
             return;
           }
 
           set({ achievements: data || [] });
         } catch (error) {
-          console.error('Error fetching achievements:', error);
+          cError('Error fetching achievements:', error);
         }
       },
 
@@ -267,13 +268,13 @@ export const useGamificationStore = create<GamificationState>()(
             .order('unlocked_at', { ascending: false });
 
           if (error) {
-            console.error('Error fetching user achievements:', error);
+            cError('Error fetching user achievements:', error);
             return;
           }
 
           set({ userAchievements: (data as unknown as UserAchievement[]) || [] });
         } catch (error) {
-          console.error('Error fetching user achievements:', error);
+          cError('Error fetching user achievements:', error);
         }
       },
 
@@ -290,13 +291,13 @@ export const useGamificationStore = create<GamificationState>()(
             .order('created_at', { ascending: false });
 
           if (error) {
-            console.error('Error fetching wishlist items:', error);
+            cError('Error fetching wishlist items:', error);
             return;
           }
 
           set({ wishlistItems: data || [] });
         } catch (error) {
-          console.error('Error fetching wishlist items:', error);
+          cError('Error fetching wishlist items:', error);
         }
       },
 
@@ -313,13 +314,13 @@ export const useGamificationStore = create<GamificationState>()(
             .order('current_streak', { ascending: false });
 
           if (error) {
-            console.error('Error fetching daily streaks:', error);
+            cError('Error fetching daily streaks:', error);
             return;
           }
 
           set({ dailyStreaks: data || [] });
         } catch (error) {
-          console.error('Error fetching daily streaks:', error);
+          cError('Error fetching daily streaks:', error);
         }
       },
 
@@ -343,13 +344,13 @@ export const useGamificationStore = create<GamificationState>()(
             .order('rank');
 
           if (error) {
-            console.error('Error fetching leaderboard:', error);
+            cError('Error fetching leaderboard:', error);
             return;
           }
 
           set({ leaderboard: (data as unknown as FamilyLeaderboard[]) || [] });
         } catch (error) {
-          console.error('Error fetching leaderboard:', error);
+          cError('Error fetching leaderboard:', error);
         }
       },
 
@@ -381,7 +382,7 @@ export const useGamificationStore = create<GamificationState>()(
             .single();
 
           if (error) {
-            console.error('Error adding wishlist item:', error);
+            cError('Error adding wishlist item:', error);
             const storeError = createStoreError('network', 'Failed to add wishlist item', error.code, { error });
             set({ error: storeError });
             return { success: false, error: storeError };
@@ -390,7 +391,7 @@ export const useGamificationStore = create<GamificationState>()(
           await fetchWishlistItems();
           return { success: true, result: createStoreSuccess(data, 'Wishlist item added successfully') };
         } catch (error: unknown) {
-          console.error('Error adding wishlist item:', error);
+          cError('Error adding wishlist item:', error);
           const isZodError = error instanceof Error && error.name === 'ZodError';
           const storeError = isZodError
             ? createStoreError('validation', 'Invalid input data', undefined, { validation: (error as Error & { errors?: unknown[] }).errors })
@@ -441,7 +442,7 @@ export const useGamificationStore = create<GamificationState>()(
             .single();
 
           if (redemptionError) {
-            console.error('Error creating redemption:', redemptionError);
+            cError('Error creating redemption:', redemptionError);
             const error = createStoreError('network', 'Failed to redeem item', redemptionError.code, { error: redemptionError });
             set({ error });
             return { success: false, error };
@@ -457,7 +458,7 @@ export const useGamificationStore = create<GamificationState>()(
             .eq('id', itemId);
 
           if (updateError) {
-            console.error('Error updating wishlist item:', updateError);
+            cError('Error updating wishlist item:', updateError);
           }
 
           // Update user points
@@ -471,7 +472,7 @@ export const useGamificationStore = create<GamificationState>()(
             .eq('family_id', familyId);
 
           if (pointsError) {
-            console.error('Error updating points:', pointsError);
+            cError('Error updating points:', pointsError);
           }
 
           // Refresh data
@@ -485,7 +486,7 @@ export const useGamificationStore = create<GamificationState>()(
             result: createStoreSuccess(redemptionData, `Redeemed "${item.item_name}" for ${item.point_cost ?? 0} points`)
           };
         } catch (error: unknown) {
-          console.error('Error redeeming wishlist item:', error);
+          cError('Error redeeming wishlist item:', error);
           const storeError = createStoreError('network', error instanceof Error ? error.message : 'Failed to redeem item');
           set({ error: storeError });
           return { success: false, error: storeError };
@@ -503,7 +504,7 @@ export const useGamificationStore = create<GamificationState>()(
           });
 
           if (error) {
-            console.error('Error checking achievements:', error);
+            cError('Error checking achievements:', error);
             const storeError = createStoreError('network', 'Failed to check achievements', error.code, { error });
             set({ error: storeError });
             return;
@@ -511,13 +512,13 @@ export const useGamificationStore = create<GamificationState>()(
 
           if (data && data.length > 0) {
             // Log achievements earned - UI layer will handle notifications
-            console.log('🏆 Achievements earned:', data.map((a: { achievement_id: string }) => a.achievement_id));
+            cLog('🏆 Achievements earned:', data.map((a: { achievement_id: string }) => a.achievement_id));
 
             // Refresh achievements
             await fetchUserAchievements();
           }
         } catch (error: unknown) {
-          console.error('Error checking achievements:', error);
+          cError('Error checking achievements:', error);
           const storeError = createStoreError('network', error instanceof Error ? error.message : 'Failed to check achievements');
           set({ error: storeError });
         }

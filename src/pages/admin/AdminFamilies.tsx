@@ -187,8 +187,8 @@ export default function AdminFamilies() {
 
   const handleViewFamily = (family: Family, e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log('Opening view dialog for family:', family);
-    console.log('Family members data:', family.members);
+    cLog('Opening view dialog for family:', family);
+    cLog('Family members data:', family.members);
     setSelectedFamily(family);
     setViewDialogOpen(true);
   };

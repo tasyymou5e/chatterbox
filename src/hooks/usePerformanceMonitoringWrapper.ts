@@ -1,11 +1,12 @@
 import { useCallback, useRef } from 'react';
+import { secureLog } from '@/utils/secureLogging';
 
 interface PerformanceMetric {
   metricType: string;
   value: number;
   thresholdExceeded?: boolean;
   componentName?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 // Cache-safe performance monitoring wrapper with feature flags
@@ -16,8 +17,8 @@ export const usePerformanceMonitoringWrapper = (enabled: boolean = false) => {
     if (!enabled) return;
     
     try {
-      // Safe console logging only - no external dependencies
-      console.log('Performance Metric:', metric);
+      // Safe performance logging
+      secureLog.performance(metric.metricType, metric.value, metric.componentName);
     } catch (err) {
       // Silently fail - don't break the app
     }

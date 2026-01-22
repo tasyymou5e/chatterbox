@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { supabase } from '@/integrations/supabase/client';
 import type { Json } from '@/integrations/supabase/types';
+import { cLog, cError } from '@/utils/conditionalLogger';
 
 interface BehavioralEvent {
   id: string;
@@ -140,12 +141,12 @@ export const useBehaviorAnalyticsStore = create<BehaviorAnalyticsState>()(
           );
 
           if (consentError) {
-            console.error('Error checking tracking consent:', consentError);
+            cError('Error checking tracking consent:', consentError);
             return;
           }
 
           if (!hasConsent) {
-            console.log('Behavioral tracking skipped - user has not given consent');
+            cLog('Behavioral tracking skipped - user has not given consent');
             return;
           }
 
@@ -159,7 +160,7 @@ export const useBehaviorAnalyticsStore = create<BehaviorAnalyticsState>()(
 
           if (error) throw error;
         } catch (err) {
-          console.error('Error tracking behavioral event:', err);
+          cError('Error tracking behavioral event:', err);
           set({ error: 'Failed to track behavioral event' });
         }
       },
@@ -191,7 +192,7 @@ export const useBehaviorAnalyticsStore = create<BehaviorAnalyticsState>()(
           
           set({ behavioralEvents: typedData });
         } catch (err) {
-          console.error('Error fetching behavioral events:', err);
+          cError('Error fetching behavioral events:', err);
           set({ error: 'Failed to fetch behavioral events' });
         } finally {
           set({ loading: false });
@@ -226,7 +227,7 @@ export const useBehaviorAnalyticsStore = create<BehaviorAnalyticsState>()(
           
           set({ gamificationEffectiveness: typedData });
         } catch (err) {
-          console.error('Error fetching gamification effectiveness:', err);
+          cError('Error fetching gamification effectiveness:', err);
           set({ error: 'Failed to fetch gamification effectiveness' });
         } finally {
           set({ loading: false });
@@ -264,7 +265,7 @@ export const useBehaviorAnalyticsStore = create<BehaviorAnalyticsState>()(
             });
           }
         } catch (err) {
-          console.error('Error generating behavioral insights:', err);
+          cError('Error generating behavioral insights:', err);
           set({ error: 'Failed to generate behavioral insights' });
         } finally {
           set({ loading: false });
@@ -322,7 +323,7 @@ export const useBehaviorAnalyticsStore = create<BehaviorAnalyticsState>()(
 
           set({ engagementTrends: trends });
         } catch (err) {
-          console.error('Error analyzing engagement trends:', err);
+          cError('Error analyzing engagement trends:', err);
           set({ error: 'Failed to analyze engagement trends' });
         } finally {
           set({ loading: false });
@@ -361,7 +362,7 @@ export const useBehaviorAnalyticsStore = create<BehaviorAnalyticsState>()(
 
           set({ featureUsageAnalysis: analysis });
         } catch (err) {
-          console.error('Error analyzing feature usage:', err);
+          cError('Error analyzing feature usage:', err);
           set({ error: 'Failed to analyze feature usage' });
         } finally {
           set({ loading: false });
@@ -415,7 +416,7 @@ export const useBehaviorAnalyticsStore = create<BehaviorAnalyticsState>()(
 
           set({ userJourney: stepAnalysis });
         } catch (err) {
-          console.error('Error tracking user journey:', err);
+          cError('Error tracking user journey:', err);
           set({ error: 'Failed to track user journey' });
         } finally {
           set({ loading: false });
@@ -453,7 +454,7 @@ export const useBehaviorAnalyticsStore = create<BehaviorAnalyticsState>()(
 
           set({ sessionAnalytics });
         } catch (err) {
-          console.error('Error analyzing session patterns:', err);
+          cError('Error analyzing session patterns:', err);
           set({ error: 'Failed to analyze session patterns' });
         } finally {
           set({ loading: false });
@@ -487,7 +488,7 @@ export const useBehaviorAnalyticsStore = create<BehaviorAnalyticsState>()(
           
           set({ churnRiskScore: Math.min(riskScore, 1) });
         } catch (err) {
-          console.error('Error calculating churn risk:', err);
+          cError('Error calculating churn risk:', err);
           set({ error: 'Failed to calculate churn risk' });
         }
       },
@@ -520,7 +521,7 @@ export const useBehaviorAnalyticsStore = create<BehaviorAnalyticsState>()(
             personalizedInsights: insights
           });
         } catch (err) {
-          console.error('Error generating recommendations:', err);
+          cError('Error generating recommendations:', err);
           set({ error: 'Failed to generate recommendations' });
         }
       },
@@ -535,7 +536,7 @@ export const useBehaviorAnalyticsStore = create<BehaviorAnalyticsState>()(
 
           if (error) throw error;
         } catch (err) {
-          console.error('Error updating gamification effectiveness:', err);
+          cError('Error updating gamification effectiveness:', err);
           set({ error: 'Failed to update gamification effectiveness' });
         }
       }

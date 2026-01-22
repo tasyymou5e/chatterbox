@@ -3,6 +3,7 @@
  */
 
 import type { SkillLevel } from '@/types/kidsPortal';
+import { cDebug } from '@/utils/conditionalLogger';
 
 // Game difficulty configurations
 export const DIFFICULTY_CONFIG = {
@@ -170,7 +171,7 @@ export function playSound(type: 'correct' | 'incorrect' | 'complete' | 'click') 
     oscillator.stop(audioContext.currentTime + duration * freq.length);
   } catch (e) {
     // Audio not supported or blocked
-    console.debug('Audio playback not available');
+    cDebug('Audio playback not available');
   }
 }
 
@@ -212,7 +213,7 @@ export function playSynthesizedSound(soundId: string) {
     oscillator.start();
     oscillator.stop(audioContext.currentTime + config.duration);
   } catch (e) {
-    console.debug('Audio playback not available');
+    cDebug('Audio playback not available');
   }
 }
 
