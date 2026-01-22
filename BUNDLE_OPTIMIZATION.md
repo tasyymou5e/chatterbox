@@ -58,7 +58,22 @@ The `recharts` library (~50KB) uses **true dynamic imports** with `React.lazy()`
 - Each wrapper includes `Suspense` with `ChartSkeleton` fallback
 - Type-safe using `ComponentProps<>` inference
 
-**Result**: The recharts chunk is only downloaded when a chart component actually mounts, not when the page loads.
+### Chart Preloading (2026-01-22)
+
+Charts are preloaded when users enter any admin route via `src/utils/chartPreloader.ts`:
+
+```typescript
+// In AdminLayout.tsx
+useEffect(() => {
+  preloadCharts(); // Triggers background fetch of chart chunks
+}, []);
+```
+
+- Uses `requestIdleCallback` for non-blocking preload
+- Only runs once per session (memoized)
+- Reduces perceived latency by ~200-500ms when charts render
+
+**Result**: The recharts chunk is downloaded proactively after admin route entry, ready before charts mount.
 
 ---
 
