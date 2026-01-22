@@ -1,7 +1,7 @@
 /**
- * Comprehensive security monitoring dashboard
+ * Comprehensive security monitoring dashboard with robust error handling
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,47 +9,41 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Shield, AlertTriangle, Activity, Lock, Users, Database } from 'lucide-react';
+import { Shield, AlertTriangle, Activity, Lock, Users, Database, RefreshCw } from 'lucide-react';
 import type { SecurityMetrics, SecurityTest } from '@/types/security';
 
+// Default metrics when API fails
+const DEFAULT_METRICS: SecurityMetrics = {
+  total_alerts: 0,
+  rls_violations: 0,
+  failed_activities: 0,
+  system_errors: 0,
+  severity_breakdown: { critical: 0, high: 0, medium: 0, low: 0 },
+  top_threat_indicators: []
+};
+
 export const SecurityDashboard: React.FC = () => {
-  const [metrics, setMetrics] = useState<SecurityMetrics | null>(null);
+  const [metrics, setMetrics] = useState<SecurityMetrics>(DEFAULT_METRICS);
   const [tests, setTests] = useState<SecurityTest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isRunningTests, setIsRunningTests] = useState(false);
   const { toast } = useToast();
 
-  useEffect(() => {
-    loadSecurityMetrics();
-    
-    // Set up real-time monitoring
-    const channel = supabase
-      .channel('security_alerts')
-      .on('broadcast', { event: 'new_alert' }, (payload) => {
-        toast({
-          title: "Security Alert",
-          description: `New ${payload.payload.severity} security event detected`,
-          variant: payload.payload.severity === 'critical' ? 'destructive' : 'default'
-        });
-        loadSecurityMetrics(); // Refresh metrics
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
-  const loadSecurityMetrics = async () => {
+  const loadSecurityMetrics = useCallback(async (showToast = false) => {
     try {
-      const { data, error } = await supabase.functions.invoke('security-monitoring', {
+      setError(null);
+      
+      const { data, error: fetchError } = await supabase.functions.invoke('security-monitoring', {
         body: { action: 'generate_security_report' }
       });
 
-      if (error) throw error;
+      if (fetchError) {
+        throw fetchError;
+      }
       
       // Handle the nested response structure from the edge function
-      const metrics: SecurityMetrics = {
+      const newMetrics: SecurityMetrics = {
         total_alerts: data?.summary?.total_alerts ?? 0,
         rls_violations: data?.summary?.rls_violations ?? 0,
         failed_activities: data?.summary?.failed_activities ?? 0,
@@ -63,48 +57,82 @@ export const SecurityDashboard: React.FC = () => {
         top_threat_indicators: data?.top_threat_indicators ?? []
       };
       
-      setMetrics(metrics);
-    } catch (error) {
-      console.error('Failed to load security metrics:', error);
-      // Set default metrics on error to still render the UI
-      setMetrics({
-        total_alerts: 0,
-        rls_violations: 0,
-        failed_activities: 0,
-        system_errors: 0,
-        severity_breakdown: { critical: 0, high: 0, medium: 0, low: 0 },
-        top_threat_indicators: []
-      });
-      toast({
-        title: "Error",
-        description: "Failed to load security metrics",
-        variant: "destructive"
-      });
+      setMetrics(newMetrics);
+      
+      if (showToast) {
+        toast({
+          title: "Metrics Refreshed",
+          description: "Security metrics updated successfully"
+        });
+      }
+    } catch (err) {
+      console.error('Failed to load security metrics:', err);
+      // Use default metrics on error, don't block UI
+      setMetrics(DEFAULT_METRICS);
+      setError('Unable to load live metrics. Showing defaults.');
+      
+      // Only show toast on manual retry
+      if (showToast) {
+        toast({
+          title: "Metrics Unavailable",
+          description: "Using default values. Try again later.",
+          variant: "destructive"
+        });
+      }
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    loadSecurityMetrics();
+    
+    // Set up real-time monitoring with error handling
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    
+    try {
+      channel = supabase
+        .channel('security_alerts')
+        .on('broadcast', { event: 'new_alert' }, (payload) => {
+          toast({
+            title: "Security Alert",
+            description: `New ${payload.payload?.severity || 'unknown'} security event detected`,
+            variant: payload.payload?.severity === 'critical' ? 'destructive' : 'default'
+          });
+          loadSecurityMetrics();
+        })
+        .subscribe();
+    } catch (err) {
+      console.warn('Failed to set up real-time monitoring:', err);
+    }
+
+    return () => {
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
+  }, [loadSecurityMetrics, toast]);
 
   const runSecurityTests = async () => {
     setIsRunningTests(true);
     try {
-      const { data, error } = await supabase.functions.invoke('security-testing', {
+      const { data, error: testError } = await supabase.functions.invoke('security-testing', {
         body: { action: 'run_security_tests' }
       });
 
-      if (error) throw error;
+      if (testError) throw testError;
       
-      setTests(data.tests);
+      setTests(data?.tests || []);
       toast({
         title: "Security Tests Complete",
-        description: `${data.summary.passed}/${data.summary.total_tests} tests passed`,
-        variant: data.summary.critical_failures > 0 ? 'destructive' : 'default'
+        description: `${data?.summary?.passed || 0}/${data?.summary?.total_tests || 0} tests passed`,
+        variant: (data?.summary?.critical_failures || 0) > 0 ? 'destructive' : 'default'
       });
-    } catch (error) {
-      console.error('Failed to run security tests:', error);
+    } catch (err) {
+      console.error('Failed to run security tests:', err);
       toast({
-        title: "Error",
-        description: "Failed to run security tests",
+        title: "Tests Unavailable",
+        description: "Security testing service is currently unavailable",
         variant: "destructive"
       });
     } finally {
@@ -114,43 +142,60 @@ export const SecurityDashboard: React.FC = () => {
 
   const analyzeAccessPatterns = async () => {
     try {
-      const { data, error } = await supabase.functions.invoke('security-monitoring', {
+      const { data, error: analysisError } = await supabase.functions.invoke('security-monitoring', {
         body: { action: 'analyze_access_patterns' }
       });
 
-      if (error) throw error;
+      if (analysisError) throw analysisError;
       
       toast({
         title: "Pattern Analysis Complete",
-        description: `${data.suspicious_patterns} suspicious patterns detected`,
-        variant: data.suspicious_patterns > 0 ? 'destructive' : 'default'
+        description: `${data?.suspicious_patterns || 0} suspicious patterns detected`,
+        variant: (data?.suspicious_patterns || 0) > 0 ? 'destructive' : 'default'
       });
       
-      loadSecurityMetrics(); // Refresh metrics
-    } catch (error) {
-      console.error('Failed to analyze patterns:', error);
+      loadSecurityMetrics();
+    } catch (err) {
+      console.error('Failed to analyze patterns:', err);
       toast({
-        title: "Error",
-        description: "Failed to analyze access patterns",
+        title: "Analysis Unavailable",
+        description: "Pattern analysis service is currently unavailable",
         variant: "destructive"
       });
     }
   };
 
-  const getSeverityColor = (severity: string) => {
+  const getSeverityColor = (severity: string): "destructive" | "default" | "secondary" => {
     switch (severity) {
-      case 'critical': return 'destructive';
-      case 'high': return 'destructive';
-      case 'medium': return 'default';
-      case 'low': return 'secondary';
-      default: return 'secondary';
+      case 'critical': 
+      case 'high': 
+        return 'destructive';
+      case 'medium': 
+        return 'default';
+      default: 
+        return 'secondary';
     }
   };
 
+  // Show skeleton loading state
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Shield className="h-8 w-8 text-primary animate-pulse" />
+            <div className="h-8 w-64 bg-muted rounded animate-pulse" />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i}>
+              <CardContent className="p-6">
+                <div className="h-16 bg-muted rounded animate-pulse" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     );
   }
@@ -163,6 +208,10 @@ export const SecurityDashboard: React.FC = () => {
           <h1 className="text-3xl font-bold">Security Operations Center</h1>
         </div>
         <div className="flex space-x-2">
+          <Button onClick={() => loadSecurityMetrics(true)} variant="outline" size="sm">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
           <Button onClick={analyzeAccessPatterns} variant="outline">
             <Activity className="h-4 w-4 mr-2" />
             Analyze Patterns
@@ -173,10 +222,28 @@ export const SecurityDashboard: React.FC = () => {
             variant="outline"
           >
             <Lock className="h-4 w-4 mr-2" />
-            {isRunningTests ? 'Running Tests...' : 'Run Security Tests'}
+            {isRunningTests ? 'Running...' : 'Run Tests'}
           </Button>
         </div>
       </div>
+
+      {/* Error Banner */}
+      {error && (
+        <Alert>
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Limited Data</AlertTitle>
+          <AlertDescription className="flex items-center justify-between">
+            <span>{error}</span>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={() => loadSecurityMetrics(true)}
+            >
+              Retry
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Security Metrics Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -186,7 +253,7 @@ export const SecurityDashboard: React.FC = () => {
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{metrics?.total_alerts || 0}</div>
+            <div className="text-2xl font-bold">{metrics.total_alerts}</div>
             <p className="text-xs text-muted-foreground">Last 24 hours</p>
           </CardContent>
         </Card>
@@ -197,7 +264,7 @@ export const SecurityDashboard: React.FC = () => {
             <Database className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{metrics?.rls_violations || 0}</div>
+            <div className="text-2xl font-bold">{metrics.rls_violations}</div>
             <p className="text-xs text-muted-foreground">Policy bypasses</p>
           </CardContent>
         </Card>
@@ -208,8 +275,8 @@ export const SecurityDashboard: React.FC = () => {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{metrics?.failed_activities || 0}</div>
-            <p className="text-xs text-muted-foreground">Authentication failures</p>
+            <div className="text-2xl font-bold">{metrics.failed_activities}</div>
+            <p className="text-xs text-muted-foreground">Auth failures</p>
           </CardContent>
         </Card>
 
@@ -219,7 +286,7 @@ export const SecurityDashboard: React.FC = () => {
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{metrics?.system_errors || 0}</div>
+            <div className="text-2xl font-bold">{metrics.system_errors}</div>
             <p className="text-xs text-muted-foreground">Technical issues</p>
           </CardContent>
         </Card>
@@ -231,22 +298,22 @@ export const SecurityDashboard: React.FC = () => {
           <CardTitle>Threat Severity Breakdown</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex space-x-4">
+          <div className="flex flex-wrap gap-4">
             <div className="flex items-center space-x-2">
               <Badge variant="destructive">Critical</Badge>
-              <span className="text-2xl font-bold">{metrics?.severity_breakdown?.critical || 0}</span>
+              <span className="text-2xl font-bold">{metrics.severity_breakdown?.critical || 0}</span>
             </div>
             <div className="flex items-center space-x-2">
               <Badge variant="destructive">High</Badge>
-              <span className="text-2xl font-bold">{metrics?.severity_breakdown?.high || 0}</span>
+              <span className="text-2xl font-bold">{metrics.severity_breakdown?.high || 0}</span>
             </div>
             <div className="flex items-center space-x-2">
               <Badge variant="default">Medium</Badge>
-              <span className="text-2xl font-bold">{metrics?.severity_breakdown?.medium || 0}</span>
+              <span className="text-2xl font-bold">{metrics.severity_breakdown?.medium || 0}</span>
             </div>
             <div className="flex items-center space-x-2">
               <Badge variant="secondary">Low</Badge>
-              <span className="text-2xl font-bold">{metrics?.severity_breakdown?.low || 0}</span>
+              <span className="text-2xl font-bold">{metrics.severity_breakdown?.low || 0}</span>
             </div>
           </div>
         </CardContent>
@@ -266,11 +333,15 @@ export const SecurityDashboard: React.FC = () => {
               <CardTitle>Recent Security Alerts</CardTitle>
             </CardHeader>
             <CardContent>
-              {metrics?.top_threat_indicators?.length === 0 ? (
-                <p className="text-muted-foreground">No recent alerts</p>
+              {!metrics.top_threat_indicators || metrics.top_threat_indicators.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Shield className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p>No recent alerts</p>
+                  <p className="text-sm mt-1">Security monitoring is active</p>
+                </div>
               ) : (
                 <div className="space-y-2">
-                  {metrics?.top_threat_indicators?.map((alert, index) => (
+                  {metrics.top_threat_indicators.map((alert, index) => (
                     <Alert key={index}>
                       <AlertTriangle className="h-4 w-4" />
                       <AlertTitle className="flex items-center justify-between">
@@ -280,7 +351,9 @@ export const SecurityDashboard: React.FC = () => {
                         </Badge>
                       </AlertTitle>
                       <AlertDescription>
-                        {JSON.stringify(alert.event_details)}
+                        {typeof alert.event_details === 'object' 
+                          ? JSON.stringify(alert.event_details, null, 2)
+                          : String(alert.event_details)}
                       </AlertDescription>
                     </Alert>
                   ))}
@@ -297,7 +370,11 @@ export const SecurityDashboard: React.FC = () => {
             </CardHeader>
             <CardContent>
               {tests.length === 0 ? (
-                <p className="text-muted-foreground">No tests run yet. Click "Run Security Tests" to start.</p>
+                <div className="text-center py-8 text-muted-foreground">
+                  <Lock className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p>No tests run yet</p>
+                  <p className="text-sm mt-1">Click "Run Tests" to start security testing</p>
+                </div>
               ) : (
                 <div className="space-y-2">
                   {tests.map((test, index) => (

@@ -1,18 +1,13 @@
 /**
- * Authentication Store (Facade)
+ * Authentication Store (Unified Facade)
  * 
  * @description Unified facade that composes from the split auth stores.
- * This maintains backward compatibility while the underlying implementation
- * uses focused, single-responsibility stores.
+ * Uses useSyncExternalStore pattern for proper React synchronization.
  * 
  * @module authStore
  * 
  * @example
- * // Access auth state
  * const { user, isAdmin, loading } = useAuthStore();
- * 
- * // Perform auth actions
- * const { signIn, signOut } = useAuthStore();
  * await signIn('user@example.com', 'password');
  */
 import { create } from 'zustand';
@@ -60,57 +55,56 @@ interface AuthState {
 }
 
 /**
- * Unified auth store facade.
+ * Unified auth store facade using proper Zustand composition.
  * 
- * This store subscribes to the split stores and provides a unified interface
- * for components that expect the legacy auth store shape.
+ * This store synchronously reads from source stores on each access,
+ * avoiding race conditions from async subscriptions.
  */
 export const useAuthStore = create<AuthState>()(
   devtools(
     (set) => {
-      // Subscribe to session store changes
-      useAuthSessionStore.subscribe((sessionState) => {
-        set({
+      // Helper to get current composed state from all stores
+      const getComposedState = () => {
+        const sessionState = useAuthSessionStore.getState();
+        const roleState = useAuthRoleStore.getState();
+        const actionsState = useAuthActionsStore.getState();
+        
+        return {
           user: sessionState.user,
           session: sessionState.session,
           loading: sessionState.loading,
           sessionReady: sessionState.sessionReady,
           isHydrated: sessionState.isHydrated,
-        });
-      });
-
-      // Subscribe to role store changes
-      useAuthRoleStore.subscribe((roleState) => {
-        set({
           userRole: roleState.userRole,
           isAdmin: roleState.isAdmin,
           isCheckingRole: roleState.isCheckingRole,
-        });
-      });
-
-      // Subscribe to actions store changes
-      useAuthActionsStore.subscribe((actionsState) => {
-        set({
           signingOut: actionsState.signingOut,
-        });
-      });
+        };
+      };
 
-      // Get initial state from split stores
-      const sessionState = useAuthSessionStore.getState();
-      const roleState = useAuthRoleStore.getState();
-      const actionsState = useAuthActionsStore.getState();
+      // Debounce sync to prevent rapid updates
+      let syncTimeout: ReturnType<typeof setTimeout> | null = null;
+      const syncState = () => {
+        if (syncTimeout) clearTimeout(syncTimeout);
+        syncTimeout = setTimeout(() => {
+          const composed = getComposedState();
+          set(composed);
+        }, 10);
+      };
+
+      // Initialize subscriptions immediately
+      if (typeof window !== 'undefined') {
+        useAuthSessionStore.subscribe(syncState);
+        useAuthRoleStore.subscribe(syncState);
+        useAuthActionsStore.subscribe(syncState);
+      }
+
+      // Get initial state synchronously
+      const initialState = getComposedState();
 
       return {
-        // Initial state from split stores
-        user: sessionState.user,
-        session: sessionState.session,
-        loading: sessionState.loading,
-        sessionReady: sessionState.sessionReady,
-        isHydrated: sessionState.isHydrated,
-        userRole: roleState.userRole,
-        isAdmin: roleState.isAdmin,
-        isCheckingRole: roleState.isCheckingRole,
-        signingOut: actionsState.signingOut,
+        // Initial state from split stores (synchronous)
+        ...initialState,
 
         // Delegate to session store
         initialize: () => useAuthSessionStore.getState().initialize(),
@@ -144,3 +138,13 @@ export const useAuthStore = create<AuthState>()(
     { name: 'AuthStore' }
   )
 );
+
+/**
+ * Selector hooks for optimized component subscriptions.
+ * Use these instead of accessing the full store when you only need specific values.
+ */
+export const useAuthUser = () => useAuthStore((state) => state.user);
+export const useAuthSession = () => useAuthStore((state) => state.session);
+export const useAuthLoading = () => useAuthStore((state) => state.loading);
+export const useIsAdmin = () => useAuthStore((state) => state.isAdmin);
+export const useSessionReady = () => useAuthStore((state) => state.sessionReady);
