@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { Heart, Star, Users, Brain, Gamepad2, Award } from "lucide-react";
+import { WaveBackground, WaveDivider } from "@/components/illustrations";
 
 interface HeroProps {
   onChoosePortal?: () => void;
@@ -49,9 +50,10 @@ export const Hero = ({ onChoosePortal, settings, loading = false }: HeroProps) =
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-hero">
-      {/* Hero Section */}
-      <div className="container mx-auto px-4 py-16">
+    <div className="min-h-screen bg-gradient-hero relative overflow-hidden">
+      {/* Hero Section with Wave Background */}
+      <WaveBackground variant="hero" position="bottom">
+        <div className="container mx-auto px-4 py-16 relative z-10">
         <div className="text-center mb-16">
           <h1 className="text-5xl md:text-6xl font-bold text-white mb-6 drop-shadow-lg">
             Empowering Children with Autism
@@ -113,8 +115,11 @@ export const Hero = ({ onChoosePortal, settings, loading = false }: HeroProps) =
           ))}
         </div>
 
+        {/* Wave Divider */}
+        <WaveDivider variant="soft" className="my-8" />
+
         {/* Stats Section */}
-        <div className="mt-16 bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20">
+        <div className="mt-8 bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center text-white">
             <div>
               <div className="text-4xl font-bold mb-2">1000+</div>
@@ -130,7 +135,8 @@ export const Hero = ({ onChoosePortal, settings, loading = false }: HeroProps) =
             </div>
           </div>
         </div>
-      </div>
+        </div>
+      </WaveBackground>
     </div>
   );
 };
