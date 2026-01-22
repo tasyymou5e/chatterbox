@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 import { useErrorTracking } from '@/hooks/useErrorTracking';
+import { logBoundaryErrorStatic } from '@/hooks/useErrorBoundaryLogging';
 
 interface AdminErrorBoundaryProps {
   children: ReactNode;
@@ -93,7 +94,7 @@ export function AdminErrorBoundary({ children, fallback, componentName }: AdminE
     <ErrorBoundary
       FallbackComponent={(props) => fallback || <AdminErrorFallback {...props} componentName={componentName} />}
       onError={(error, errorInfo) => {
-        console.error('AdminErrorBoundary caught an error:', error, errorInfo);
+        logBoundaryErrorStatic(error, errorInfo, componentName || 'AdminErrorBoundary', 'admin');
       }}
     >
       {children}

@@ -8,6 +8,8 @@ import { Search, ExternalLink, Home, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
+import { cLog } from '@/utils/conditionalLogger';
+import { secureLog } from '@/utils/secureLogging';
 
 interface ContentItem {
   id: string;
@@ -62,9 +64,9 @@ export const GamesCatalogSafeMode: React.FC = () => {
       }));
 
       setContentItems(processedData);
-      console.log('Safe Mode: Loaded', processedData.length, 'content items for', user ? 'authenticated' : 'anonymous', 'user');
+      cLog('Safe Mode: Loaded content items', { count: processedData.length, userType: user ? 'authenticated' : 'anonymous' });
     } catch (error) {
-      console.error('Safe Mode: Error loading content:', error);
+      secureLog.error('Safe Mode: Error loading content', error, 'GamesCatalogSafeMode');
       setError(error instanceof Error ? error.message : 'Failed to load content');
       toast({
         title: "Loading Error",

@@ -1,4 +1,5 @@
 import { useCallback, useRef } from 'react';
+import { secureLog } from '@/utils/secureLogging';
 import '@/types/navigator'; // Import type extensions for Performance.memory
 
 interface PerformanceMetric {
@@ -31,16 +32,10 @@ export const usePerformanceMonitoringSafe = () => {
       
       lastLogTime.current.set(metricKey, now);
       
-      // Log to console in development
-      if (process.env.NODE_ENV === 'development') {
-        console.log('Performance Metric:', metric);
-      }
-      
-      // Performance metrics are logged locally for now
-      // Supabase integration is handled separately via analytics_metrics table
-      // await supabase.from('performance_metrics').insert({...});
+      // Log performance metrics using secure logging
+      secureLog.performance(`${metric.metricType}`, metric.value, metric.componentName);
     } catch (err) {
-      console.warn('Failed to log performance metric:', err);
+      secureLog.warn('Failed to log performance metric', err, 'PerformanceMonitoring');
     }
   }, []);
 
@@ -95,7 +90,7 @@ export const usePerformanceMonitoringSafe = () => {
         }
       }
     } catch (error) {
-      console.warn('Failed to measure page load:', error);
+      secureLog.warn('Failed to measure page load', error, 'PerformanceMonitoring');
     }
   }, [logPerformanceMetric]);
 
@@ -128,7 +123,7 @@ export const usePerformanceMonitoringSafe = () => {
         });
       }
     } catch (error) {
-      console.warn('Failed to measure memory usage:', error);
+      secureLog.warn('Failed to measure memory usage', error, 'PerformanceMonitoring');
     }
   }, [logPerformanceMetric]);
 

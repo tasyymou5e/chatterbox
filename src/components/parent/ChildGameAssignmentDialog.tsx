@@ -158,7 +158,7 @@ export function ChildGameAssignmentDialog({
       // Fallback to direct query if RPC doesn't exist
       if (error?.code === 'PGRST202') {
         // RPC doesn't exist, the table might be new - just skip for now
-        console.warn('Assignments table may not be ready yet');
+        cWarn('Assignments table may not be ready yet');
         return;
       }
 

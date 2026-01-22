@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useLessonProgressStore } from '@/stores/lessonProgressStore';
+import { cWarn } from '@/utils/conditionalLogger';
 import type { GameSessionStats, GameIntegrationConfig } from '@/types/gameEvents';
 import type { CelebrationEvent } from '@/types/lessonProgress';
 
@@ -77,7 +78,7 @@ export function useGameSession({
     responseTimeMs?: number
   ): Promise<CelebrationEvent | null> => {
     if (!session.isActive) {
-      console.warn('Cannot record answer: no active session');
+      cWarn('Cannot record answer: no active session');
       return null;
     }
 

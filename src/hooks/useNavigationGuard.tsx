@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
+import { secureLog } from '@/utils/secureLogging';
+import { cLog } from '@/utils/conditionalLogger';
 
 interface NavigationGuardOptions {
   maxAttempts?: number;
@@ -30,23 +32,22 @@ export const useNavigationGuard = (options: NavigationGuardOptions = {}) => {
     );
 
     if (recentSamePath.length >= maxAttempts) {
-      console.warn('🚨 NavigationGuard: Rapid navigation loop detected', {
+      secureLog.security('Rapid navigation loop detected', {
         path: currentPath,
         attempts: recentSamePath.length,
-        history: navigationHistory.current
-      });
+      }, 'medium');
       isInCooldown.current = true;
       
       // Clear cooldown after specified time
       setTimeout(() => {
         isInCooldown.current = false;
         navigationHistory.current = [];
-        console.log('🔄 NavigationGuard: Cooldown cleared');
+        cLog('NavigationGuard: Cooldown cleared');
       }, cooldownMs);
     }
 
     // Log navigation for debugging
-    console.log('🔄 NavigationGuard: Navigation tracked', {
+    cLog('NavigationGuard: Navigation tracked', {
       currentPath,
       historyLength: navigationHistory.current.length,
       isInCooldown: isInCooldown.current

@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
+import { cLog } from '@/utils/conditionalLogger';
 
 interface FireworksDisplayProps {
   isActive: boolean;
@@ -227,7 +228,7 @@ function playFanfareSound() {
       oscillator.start(now + start);
       oscillator.stop(now + start + dur);
     });
-  } catch (e) {
-    console.log('Audio not supported');
+  } catch {
+    cLog('Audio not supported');
   }
 }

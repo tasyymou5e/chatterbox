@@ -72,7 +72,7 @@ export const SecurityAuditTrail: React.FC = () => {
           query = query.eq('user_id', filters.user_id.trim());
         } else {
           // Skip invalid UUID to prevent database errors
-          console.warn('Invalid UUID format for user_id filter:', filters.user_id);
+          cWarn('Invalid UUID format for user_id filter', filters.user_id);
         }
       }
       

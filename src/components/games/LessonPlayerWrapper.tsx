@@ -8,6 +8,7 @@ import { CelebrationEffect } from '@/components/aac/CelebrationEffect';
 import { StarBurstCelebration } from '@/components/progress/StarBurstCelebration';
 import { CompletionCelebrationModal } from '@/components/progress/CompletionCelebrationModal';
 import { isValidGameEvent, type GameEvent } from '@/types/gameEvents';
+import { secureLog } from '@/utils/secureLogging';
 import type { CelebrationEvent, SkillLevel, CategoryProgress } from '@/types/lessonProgress';
 
 interface ContentItem {
@@ -106,7 +107,7 @@ export function LessonPlayerWrapper({
     const handleMessage = async (event: MessageEvent) => {
       // SECURITY: Validate origin before processing any message
       if (!ALLOWED_GAME_ORIGINS.includes(event.origin)) {
-        console.warn('[SECURITY] Rejected postMessage from untrusted origin:', event.origin);
+        secureLog.security('Rejected postMessage from untrusted origin', { origin: event.origin }, 'high');
         return;
       }
 

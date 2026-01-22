@@ -5,6 +5,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { logBoundaryErrorStatic } from '@/hooks/useErrorBoundaryLogging';
 
 interface SecurityAuditTrailErrorBoundaryState {
   hasError: boolean;
@@ -29,7 +30,7 @@ export class SecurityAuditTrailErrorBoundary extends React.Component<
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('Security Audit Trail Error:', error, errorInfo);
+    logBoundaryErrorStatic(error, errorInfo, 'SecurityAuditTrail', 'security');
   }
 
   handleReset = () => {

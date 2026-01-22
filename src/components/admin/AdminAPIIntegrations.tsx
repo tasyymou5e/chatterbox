@@ -12,7 +12,8 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { getErrorMessage } from '@/utils/getErrorMessage';
+import { cWarn } from '@/utils/conditionalLogger';
+import { secureLog } from '@/utils/secureLogging';
 interface IntegrationStatus {
   provider: string;
   displayName: string;
@@ -66,14 +67,14 @@ export default function AdminAPIIntegrations() {
       });
 
       if (error) {
-        console.warn('Integration status unavailable:', error);
+        cWarn('Integration status unavailable', error);
         setIntegrations(defaultIntegrations);
         return;
       }
 
       setIntegrations(data?.integrations || defaultIntegrations);
     } catch (error: unknown) {
-      console.error('Failed to fetch integration status:', getErrorMessage(error));
+      secureLog.error('Failed to fetch integration status', error, 'AdminAPIIntegrations');
       setIntegrations(defaultIntegrations);
     } finally {
       setLoading(false);
