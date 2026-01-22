@@ -26,7 +26,7 @@
 
 ---
 
-## 📦 Manual Chunks Strategy (6 chunks)
+## 📦 Manual Chunks Strategy (7 chunks)
 
 The build is split into logical chunks for optimal caching and loading performance.
 
@@ -40,6 +40,7 @@ The build is split into logical chunks for optimal caching and loading performan
 | **forms** | React Hook Form, Zod, Zustand, React Query | Form handling, validation, and state management | ~35KB |
 | **supabase** | Supabase JS Client | Backend integration | ~25KB |
 | **utils** | lucide-react, date-fns, clsx, tailwind-merge, CVA | Shared utilities, very stable, long-term caching | ~52KB |
+| **carousel** | embla-carousel-react, react-day-picker | Calendar & carousel, only in specific components | ~25KB |
 
 ### Charts Dynamic Imports (2026-01-22 Optimization)
 
@@ -197,6 +198,7 @@ If `depcheck` reports false positives:
 
 | Date | Change | Impact |
 |------|--------|--------|
+| 2026-01-22 | Added carousel chunk for embla + day-picker | ~25KB isolated for calendar/gallery users |
 | 2026-01-22 | Implemented React.lazy() for charts | True runtime lazy-loading for recharts |
 | 2026-01-22 | Added utils chunk for shared libraries | Better cache granularity, ~52KB isolated |
 | 2026-01-22 | Split features into charts/forms chunks | ~50KB reduction for non-admin users |

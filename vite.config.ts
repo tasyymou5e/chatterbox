@@ -79,6 +79,8 @@ export default defineConfig(({ mode }) => ({
             'tailwind-merge',
             'class-variance-authority',
           ],
+          // Carousel & Calendar - only used in specific components (~25KB)
+          carousel: ['embla-carousel-react', 'react-day-picker'],
         },
       },
     },
