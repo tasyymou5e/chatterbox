@@ -2,7 +2,7 @@
  * Production security wrapper that removes development artifacts
  */
 import React, { useEffect } from 'react';
-import { initSecureLogging } from '@/utils/secureLogging';
+import { initSecureLogging, secureLog } from '@/utils/secureLogging';
 
 interface ProductionSecurityWrapperProps {
   children: React.ReactNode;
@@ -53,7 +53,7 @@ export const ProductionSecurityWrapper: React.FC<ProductionSecurityWrapperProps>
       const checkSecurityHeaders = () => {
         // Check if running over HTTPS in production
         if (window.location.protocol !== 'https:') {
-          console.warn('[SECURITY] Application should be served over HTTPS in production');
+          secureLog.security('Application should be served over HTTPS in production', { protocol: window.location.protocol }, 'low');
         }
         
         // Check for security headers (these would be set by server/CDN)
@@ -69,7 +69,7 @@ export const ProductionSecurityWrapper: React.FC<ProductionSecurityWrapperProps>
             
             securityHeaders.forEach(header => {
               if (!response.headers.get(header)) {
-                console.warn(`[SECURITY] Missing security header: ${header}`);
+                secureLog.security('Missing security header', { header }, 'low');
               }
             });
           })
@@ -97,7 +97,7 @@ export const ProductionSecurityWrapper: React.FC<ProductionSecurityWrapperProps>
       // Check if CSP meta tag exists, if not warn
       const cspMeta = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
       if (!cspMeta) {
-        console.warn('[SECURITY] Content Security Policy meta tag not found. Consider adding CSP headers.');
+        secureLog.security('Content Security Policy meta tag not found. Consider adding CSP headers.', null, 'low');
       }
     }
   }, []);

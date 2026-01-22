@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLessonProgressStore } from '@/stores/lessonProgressStore';
+import { cLog } from '@/utils/conditionalLogger';
 
 // Content IDs matching database records
 const TEST_CONTENT_ID = 'b2c3d4e5-f6a7-8901-bcde-f12345678901';
@@ -38,7 +39,7 @@ export default function SubtractionGameDemo() {
           setUser(user.id, data.family_id);
         }
       } catch (err) {
-        console.error('Error fetching family:', err);
+        cLog('Error fetching family:', err);
       } finally {
         setLoading(false);
       }
@@ -95,7 +96,7 @@ export default function SubtractionGameDemo() {
           categoryId={MATH_CATEGORY_ID}
           skillLevel="beginner"
           onComplete={(stats) => {
-            console.log('Game completed:', stats);
+            cLog('Game completed:', stats);
           }}
         />
       </main>

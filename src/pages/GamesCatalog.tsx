@@ -17,6 +17,7 @@ import {
   CurationPanel
 } from '@/components/games/catalog';
 import type { CatalogContentItem, CurationAccessType } from '@/components/games/types/catalog';
+import { cWarn, cError } from '@/utils/conditionalLogger';
 
 export default function GamesCatalog() {
   const [userFamily, setUserFamily] = useState<string | null>(null);
@@ -55,7 +56,7 @@ export default function GamesCatalog() {
   // Enhanced error handling for data loading
   useEffect(() => {
     if (!isLoading && contentItems.length === 0 && categories.length === 0) {
-      console.warn('GamesCatalog: No data loaded after loading completed');
+      cWarn('GamesCatalog: No data loaded after loading completed');
       setHasError(true);
     } else if (contentItems.length > 0 || categories.length > 0) {
       setHasError(false);
@@ -85,7 +86,7 @@ export default function GamesCatalog() {
         setUserFamily(familyResult.data?.family_id || null);
         setIsParent(!!roleResult.data);
       } catch (error) {
-        console.error('Error fetching user family/role:', error);
+        cError('Error fetching user family/role:', error);
       }
     };
     
@@ -131,7 +132,7 @@ export default function GamesCatalog() {
         invalidateFavoritesCache();
       }
     } catch (error) {
-      console.error('Error toggling favorite:', error);
+      cError('Error toggling favorite:', error);
       toast({
         title: "Error",
         description: "Failed to update favorite",
@@ -162,7 +163,7 @@ export default function GamesCatalog() {
             }
           }]);
       } catch (error) {
-        console.error('Error logging interaction:', error);
+        cError('Error logging interaction:', error);
       }
     }
 
@@ -202,7 +203,7 @@ export default function GamesCatalog() {
       // Refresh data to reflect changes
       invalidateContentCache();
     } catch (error) {
-      console.error('Error updating content access:', error);
+      cError('Error updating content access:', error);
       toast({
         title: "Error",
         description: "Failed to update content access",

@@ -1,5 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { logSupabaseQuery, logDataAccessIssue, logDataFetchSuccess } from '@/utils/parentPortalLogger';
+import { secureLog } from '@/utils/secureLogging';
+import { cLog, cWarn } from '@/utils/conditionalLogger';
 
 /**
  * Secure family access utilities
@@ -31,13 +33,13 @@ export const getSecureFamilyInfo = async (familyId: string): Promise<SecureFamil
     });
 
     if (error) {
-      console.error('Error fetching secure family info:', error);
+      secureLog.error('Error fetching secure family info', error, 'SecureFamilyAccess');
       return null;
     }
 
     return data?.[0] || null;
   } catch (error) {
-    console.error('Error in getSecureFamilyInfo:', error);
+    secureLog.error('Error in getSecureFamilyInfo', error, 'SecureFamilyAccess');
     return null;
   }
 };
@@ -52,13 +54,13 @@ export const checkFamilyAccess = async (familyId: string): Promise<boolean> => {
     });
 
     if (error) {
-      console.error('Error checking family access:', error);
+      secureLog.error('Error checking family access', error, 'SecureFamilyAccess');
       return false;
     }
 
     return data || false;
   } catch (error) {
-    console.error('Error in checkFamilyAccess:', error);
+    secureLog.error('Error in checkFamilyAccess', error, 'SecureFamilyAccess');
     return false;
   }
 };
@@ -91,7 +93,7 @@ export const getSecureFamilyMembers = async (familyId: string): Promise<FamilyMe
     );
 
     if (error) {
-      console.error('Error fetching family members:', error);
+      secureLog.error('Error fetching family members', error, 'SecureFamilyAccess');
       return [];
     }
 
@@ -117,7 +119,7 @@ export const getSecureFamilyMembers = async (familyId: string): Promise<FamilyMe
     );
 
     if (profileError) {
-      console.error('Error fetching profiles for family members:', profileError);
+      secureLog.error('Error fetching profiles for family members', profileError, 'SecureFamilyAccess');
       // Still return members even if profile fetch fails
       logDataAccessIssue('secureFamilyAccess', 'Profile fetch failed, returning members without names', {
         familyId,
@@ -158,7 +160,7 @@ export const getSecureFamilyMembers = async (familyId: string): Promise<FamilyMe
 
     return result;
   } catch (error) {
-    console.error('Error in getSecureFamilyMembers:', error);
+    secureLog.error('Error in getSecureFamilyMembers', error, 'SecureFamilyAccess');
     logDataAccessIssue('secureFamilyAccess', 'Exception in getSecureFamilyMembers', {
       familyId,
       actualResult: error instanceof Error ? error.message : 'Unknown error'
@@ -178,13 +180,13 @@ export const getUserFamilyIds = async (userId: string): Promise<string[]> => {
       .eq('user_id', userId);
 
     if (error) {
-      console.error('Error fetching family memberships:', error);
+      secureLog.error('Error fetching family memberships', error, 'SecureFamilyAccess');
       return [];
     }
 
     return memberFamilies?.map(mf => mf.family_id) || [];
   } catch (error) {
-    console.error('Error in getUserFamilyIds:', error);
+    secureLog.error('Error in getUserFamilyIds', error, 'SecureFamilyAccess');
     return [];
   }
 };
@@ -196,7 +198,7 @@ export const getCurrentUserFamilies = async (): Promise<SecureFamilyInfo[]> => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      console.warn('getCurrentUserFamilies: No authenticated user');
+      cWarn('getCurrentUserFamilies: No authenticated user');
       return [];
     }
 
@@ -210,7 +212,7 @@ export const getCurrentUserFamilies = async (): Promise<SecureFamilyInfo[]> => {
       .eq('created_by', user.id);
 
     if (creatorError) {
-      console.error('Error fetching created families:', creatorError);
+      secureLog.error('Error fetching created families', creatorError, 'SecureFamilyAccess');
     }
 
     // Step 3: Get families by member IDs (if any)
@@ -222,7 +224,7 @@ export const getCurrentUserFamilies = async (): Promise<SecureFamilyInfo[]> => {
         .in('id', memberFamilyIds);
 
       if (familiesError) {
-        console.error('Error fetching member families:', familiesError);
+        secureLog.error('Error fetching member families', familiesError, 'SecureFamilyAccess');
       } else {
         memberFamiliesData = familiesById || [];
       }
@@ -234,10 +236,10 @@ export const getCurrentUserFamilies = async (): Promise<SecureFamilyInfo[]> => {
       index === self.findIndex(f => f.id === family.id)
     );
 
-    console.log('getCurrentUserFamilies: Found', uniqueFamilies.length, 'families for user');
+    cLog('getCurrentUserFamilies: Found ' + uniqueFamilies.length + ' families for user');
     return uniqueFamilies;
   } catch (error) {
-    console.error('Error in getCurrentUserFamilies:', error);
+    secureLog.error('Error in getCurrentUserFamilies', error, 'SecureFamilyAccess');
     return [];
   }
 };
@@ -276,7 +278,7 @@ export const validateFamilyOperation = async (
 
     return { allowed: true };
   } catch (error) {
-    console.error('Error validating family operation:', error);
+    secureLog.error('Error validating family operation', error, 'SecureFamilyAccess');
     return { allowed: false, reason: 'Validation failed' };
   }
 };
@@ -314,13 +316,13 @@ export const createSecureFamilyInvitation = async (
       });
 
     if (error) {
-      console.error('Error creating family invitation:', error);
+      secureLog.error('Error creating family invitation', error, 'SecureFamilyAccess');
       return { success: false, error: error.message };
     }
 
     return { success: true };
   } catch (error) {
-    console.error('Error in createSecureFamilyInvitation:', error);
+    secureLog.error('Error in createSecureFamilyInvitation', error, 'SecureFamilyAccess');
     return { success: false, error: 'An unexpected error occurred' };
   }
 };
@@ -333,7 +335,7 @@ export const getSecureFamilyInvitations = async (familyId: string) => {
     // Validate access first
     const validation = await validateFamilyOperation(familyId, 'view_invitations', true);
     if (!validation.allowed) {
-      console.warn('Access denied to family invitations:', validation.reason);
+      cWarn('Access denied to family invitations: ' + validation.reason);
       return [];
     }
 
@@ -344,13 +346,13 @@ export const getSecureFamilyInvitations = async (familyId: string) => {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching family invitations:', error);
+      secureLog.error('Error fetching family invitations', error, 'SecureFamilyAccess');
       return [];
     }
 
     return data || [];
   } catch (error) {
-    console.error('Error in getSecureFamilyInvitations:', error);
+    secureLog.error('Error in getSecureFamilyInvitations', error, 'SecureFamilyAccess');
     return [];
   }
 };
@@ -370,7 +372,7 @@ export const getSecurityAlerts = async (hoursBack: number = 24) => {
     });
 
     if (!isAdmin) {
-      console.warn('Access denied: Admin role required for security alerts');
+      cWarn('Access denied: Admin role required for security alerts');
       return [];
     }
 
@@ -383,13 +385,13 @@ export const getSecurityAlerts = async (hoursBack: number = 24) => {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching security alerts:', error);
+      secureLog.error('Error fetching security alerts', error, 'SecureFamilyAccess');
       return [];
     }
 
     return data || [];
   } catch (error) {
-    console.error('Error in getSecurityAlerts:', error);
+    secureLog.error('Error in getSecurityAlerts', error, 'SecureFamilyAccess');
     return [];
   }
 };

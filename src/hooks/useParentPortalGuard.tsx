@@ -4,6 +4,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { supabase } from '@/integrations/supabase/client';
 import { logSupabaseQuery, logDataAccessIssue } from '@/utils/parentPortalLogger';
 import { UserRoles } from '@/types/auth';
+import { cLog, cWarn } from '@/utils/conditionalLogger';
 
 interface ParentPortalGuardOptions {
   requiredFamilyAccess?: boolean;
@@ -25,7 +26,7 @@ export const useParentPortalGuard = (options: ParentPortalGuardOptions = {}) => 
     // Set up timeout protection - max 10 seconds for checking
     timeoutRef.current = setTimeout(() => {
       if (checking) {
-        console.warn('Parent portal guard timed out - allowing access');
+        cWarn('Parent portal guard timed out - allowing access');
         logDataAccessIssue('ParentPortalGuard', 'Guard check timed out after 10 seconds', {
           userId: user?.id,
         });
@@ -52,7 +53,7 @@ export const useParentPortalGuard = (options: ParentPortalGuardOptions = {}) => 
       try {
         // If user is not authenticated, redirect to auth
         if (!user) {
-          console.log('ParentPortalGuard: No user, redirecting to auth');
+          cLog('ParentPortalGuard: No user, redirecting to auth');
           setChecking(false);
           navigate('/auth');
           return;
@@ -60,7 +61,7 @@ export const useParentPortalGuard = (options: ParentPortalGuardOptions = {}) => 
 
         // For non-admin users, check they have parent role
         if (!isAdmin && userRole !== UserRoles.PARENT) {
-          console.log('ParentPortalGuard: User role is not parent:', userRole);
+          cLog('ParentPortalGuard: User role is not parent: ' + userRole);
           setChecking(false);
           navigate('/auth');
           return;
@@ -84,7 +85,7 @@ export const useParentPortalGuard = (options: ParentPortalGuardOptions = {}) => 
             );
 
             if (error) {
-              console.error('Error checking admin family access:', error);
+              cLog('Error checking admin family access:', error);
               // Allow access on error to avoid blocking legitimate users
               setIsAuthorized(true);
               setChecking(false);
@@ -106,7 +107,7 @@ export const useParentPortalGuard = (options: ParentPortalGuardOptions = {}) => 
             );
 
             if (error) {
-              console.error('Error checking family membership:', error);
+              cLog('Error checking family membership:', error);
               // Allow access on error to avoid blocking legitimate users
               setIsAuthorized(true);
               setChecking(false);
@@ -116,15 +117,13 @@ export const useParentPortalGuard = (options: ParentPortalGuardOptions = {}) => 
             hasFamily = familyMembership && familyMembership.length > 0;
             
             if (hasFamily) {
-              console.log('ParentPortalGuard: Family membership found:', familyMembership[0].family_id);
+              cLog('ParentPortalGuard: Family membership found: ' + familyMembership[0].family_id);
             }
           }
 
           // If no family found and this is a new parent, wait for auto-creation
           if (!hasFamily && userRole === UserRoles.PARENT && familyCreationAttempts < 3) {
-            console.log('ParentPortalGuard: No family found, waiting for auto-creation...', {
-              attempt: familyCreationAttempts + 1
-            });
+            cLog('ParentPortalGuard: No family found, waiting for auto-creation... Attempt: ' + (familyCreationAttempts + 1));
             
             logDataAccessIssue('ParentPortalGuard', 'No family found for parent, retrying', {
               userId: user.id,
@@ -162,11 +161,11 @@ export const useParentPortalGuard = (options: ParentPortalGuardOptions = {}) => 
           }
         }
 
-        console.log('ParentPortalGuard: Access authorized for user:', user.id);
+        cLog('ParentPortalGuard: Access authorized for user: ' + user.id);
         setIsAuthorized(true);
         setChecking(false);
       } catch (error) {
-        console.error('Error in family access check:', error);
+        cLog('Error in family access check:', error);
         logDataAccessIssue('ParentPortalGuard', 'Exception in access check', {
           userId: user?.id,
           actualResult: error instanceof Error ? error.message : 'Unknown error'
