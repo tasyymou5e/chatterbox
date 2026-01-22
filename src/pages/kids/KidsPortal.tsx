@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { KidsPortalLayout, KidsContentCard, AgeGroupMenu, KidsProgressHeader, KidsGameLauncher } from '@/components/kids';
 import { useKidsContentLoader } from '@/hooks/useKidsContentLoader';
 import { useChildProfile } from '@/hooks/useChildProfile';
+import { useChildAvatar } from '@/hooks/useChildAvatar';
 import { useLessonProgressStore } from '@/stores/lessonProgressStore';
 import { cLog } from '@/utils/conditionalLogger';
 import type { KidContentItem, ContentType, AgeGroup, ChildProfile } from '@/types/kidsPortal';
@@ -23,6 +24,9 @@ export default function KidsPortal() {
 
   // Use the new reusable hook for profile loading
   const { profile: baseProfile, familyId, isLoading: isLoadingProfile } = useChildProfile(user?.id);
+
+  // Avatar system
+  const { avatar, saveAvatar, uploadAvatar, isSaving: isAvatarSaving } = useChildAvatar(user?.id, familyId || undefined);
 
   // Progress store for real stars/moons
   const { progressByCategory, fetchAllProgress, setUser } = useLessonProgressStore();
@@ -103,6 +107,10 @@ export default function KidsPortal() {
         activeTab={activeTab}
         onTabChange={setActiveTab}
         onLogout={handleLogout}
+        avatar={avatar}
+        onAvatarSave={saveAvatar}
+        onAvatarUpload={uploadAvatar}
+        isAvatarSaving={isAvatarSaving}
       >
         <div className="flex gap-6">
           <div className="flex-1">

@@ -469,6 +469,65 @@ export type Database = {
           },
         ]
       }
+      child_avatars: {
+        Row: {
+          accessory: string | null
+          avatar_type: string
+          base_character: string | null
+          created_at: string
+          eye_color: string | null
+          family_id: string | null
+          hair_color: string | null
+          hair_style: string | null
+          id: string
+          outfit_color: string | null
+          skin_tone: string | null
+          updated_at: string
+          uploaded_url: string | null
+          user_id: string
+        }
+        Insert: {
+          accessory?: string | null
+          avatar_type?: string
+          base_character?: string | null
+          created_at?: string
+          eye_color?: string | null
+          family_id?: string | null
+          hair_color?: string | null
+          hair_style?: string | null
+          id?: string
+          outfit_color?: string | null
+          skin_tone?: string | null
+          updated_at?: string
+          uploaded_url?: string | null
+          user_id: string
+        }
+        Update: {
+          accessory?: string | null
+          avatar_type?: string
+          base_character?: string | null
+          created_at?: string
+          eye_color?: string | null
+          family_id?: string | null
+          hair_color?: string | null
+          hair_style?: string | null
+          id?: string
+          outfit_color?: string | null
+          skin_tone?: string | null
+          updated_at?: string
+          uploaded_url?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "child_avatars_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       child_content_preferences: {
         Row: {
           best_score: number | null
