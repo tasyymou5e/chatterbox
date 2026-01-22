@@ -88,6 +88,38 @@ class AuthDebugLogger {
       }))
     };
   }
+
+  /**
+   * Export comprehensive diagnostics for debugging
+   * Includes all state transitions, environment info, and timing
+   */
+  exportDiagnostics(): string {
+    const summary = this.getSummary();
+    return JSON.stringify({
+      exportedAt: new Date().toISOString(),
+      summary: {
+        totalTimeMs: summary.totalTime,
+        transitionCount: summary.transitionCount
+      },
+      transitions: this.transitions.map(t => ({
+        event: t.event,
+        timestamp: new Date(t.timestamp).toISOString(),
+        elapsedMs: t.elapsed,
+        state: t.state
+      })),
+      environment: {
+        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'N/A',
+        screenSize: typeof window !== 'undefined' 
+          ? `${window.innerWidth}x${window.innerHeight}` 
+          : 'N/A',
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        language: typeof navigator !== 'undefined' ? navigator.language : 'N/A'
+      },
+      localStorage: typeof localStorage !== 'undefined' 
+        ? Object.keys(localStorage).filter(k => k.includes('auth'))
+        : []
+    }, null, 2);
+  }
 }
 
 export const AdminRoute = ({ children }: AdminRouteProps) => {
@@ -343,31 +375,48 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
     const summary = debugLogger.getSummary();
     const transitions = debugLogger.getTransitions();
     
+    const handleExportDiagnostics = () => {
+      const data = debugLogger.exportDiagnostics();
+      navigator.clipboard.writeText(data).then(() => {
+        // Simple feedback - could be enhanced with toast
+        cInfo('Diagnostics copied to clipboard');
+      }).catch((err) => {
+        cError('Failed to copy diagnostics', err);
+      });
+    };
+
     return (
-      <div className="fixed bottom-4 right-4 w-96 max-h-80 bg-gray-900 border border-gray-700 rounded-lg shadow-xl z-50 overflow-hidden">
-        <div className="bg-gray-800 px-3 py-2 flex items-center justify-between border-b border-gray-700">
-          <span className="text-sm font-medium text-gray-200">Auth Debug Log</span>
+      <div className="fixed bottom-4 right-4 w-96 max-h-96 bg-background border border-border rounded-lg shadow-xl z-50 overflow-hidden">
+        <div className="bg-muted px-3 py-2 flex items-center justify-between border-b border-border">
+          <span className="text-sm font-medium text-foreground">Auth Debug Log</span>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-400">{summary.totalTime}ms total</span>
+            <button
+              onClick={handleExportDiagnostics}
+              className="text-xs px-2 py-1 bg-primary/20 hover:bg-primary/30 text-primary rounded transition-colors"
+              title="Copy diagnostics to clipboard"
+            >
+              Export
+            </button>
+            <span className="text-xs text-muted-foreground">{summary.totalTime}ms</span>
             <button 
               onClick={() => setShowDebugPanel(false)}
-              className="text-gray-400 hover:text-white text-sm"
+              className="text-muted-foreground hover:text-foreground text-sm"
             >
               ✕
             </button>
           </div>
         </div>
-        <div className="p-2 overflow-y-auto max-h-60 font-mono text-xs">
+        <div className="p-2 overflow-y-auto max-h-72 font-mono text-xs">
           {transitions.length === 0 ? (
-            <p className="text-gray-500">No transitions logged yet</p>
+            <p className="text-muted-foreground">No transitions logged yet</p>
           ) : (
             transitions.map((t, i) => (
-              <div key={i} className="mb-2 pb-2 border-b border-gray-800 last:border-0">
+              <div key={i} className="mb-2 pb-2 border-b border-border last:border-0">
                 <div className="flex items-center justify-between">
-                  <span className="text-blue-400">{t.event}</span>
-                  <span className="text-gray-500">+{t.elapsed}ms</span>
+                  <span className="text-primary">{t.event}</span>
+                  <span className="text-muted-foreground">+{t.elapsed}ms</span>
                 </div>
-                <pre className="text-gray-400 mt-1 whitespace-pre-wrap break-all">
+                <pre className="text-muted-foreground mt-1 whitespace-pre-wrap break-all">
                   {JSON.stringify(t.state, null, 2)}
                 </pre>
               </div>
