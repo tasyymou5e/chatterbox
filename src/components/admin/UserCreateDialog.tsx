@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { UserPlus, Shield, Eye, Users, Baby, Loader2, Copy, Check, AlertTriangle, Key, Mail } from 'lucide-react';
 import { validateAndSanitizeFormData, commonSchemas } from '@/utils/enhancedInputValidation';
+import { useAdminRateLimiter } from '@/utils/adminRateLimiter';
 import { z } from 'zod';
 
 interface UserCreateDialogProps {
@@ -79,6 +80,16 @@ export const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
   const [emailAvailable, setEmailAvailable] = useState<boolean | null>(null);
   const [checkingEmail, setCheckingEmail] = useState(false);
   const { toast } = useToast();
+
+  // Rate limiting for user creation
+  const { status: rateLimitStatus, checkLimit, resetLimit } = useAdminRateLimiter('admin-system');
+
+  // Reset rate limit status when dialog opens
+  useEffect(() => {
+    if (open) {
+      resetLimit('userCreation');
+    }
+  }, [open, resetLimit]);
 
   const handleAdminRoleChange = (roleValue: string) => {
     setFormData(prev => ({
@@ -158,6 +169,17 @@ export const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
   });
 
   const handleCreate = async () => {
+    // Check rate limit first
+    const rateLimitResult = checkLimit('userCreation');
+    if (!rateLimitResult.allowed) {
+      toast({
+        title: "Rate Limit Exceeded",
+        description: `Too many user creation attempts. Please wait ${rateLimitResult.retryAfter} seconds before trying again.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Validate with Zod schema
     const validation = validateAndSanitizeFormData(
       { 
@@ -301,6 +323,23 @@ export const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
             Create New User
           </DialogTitle>
         </DialogHeader>
+        
+        {/* Rate Limit Alert */}
+        {rateLimitStatus.userCreation && rateLimitStatus.userCreation.remaining < 3 && (
+          <Alert className="mb-4">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              <div className="space-y-1">
+                <p className="font-medium">
+                  Rate Limit: {rateLimitStatus.userCreation.remaining} of {rateLimitStatus.userCreation.limit} creations remaining
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Resets at: {rateLimitStatus.userCreation.resetTimeFormatted}
+                </p>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
 
         <ScrollArea className="max-h-[70vh] pr-4">
           <div className="space-y-6">

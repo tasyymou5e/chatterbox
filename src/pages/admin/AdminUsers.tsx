@@ -182,9 +182,20 @@ export default function AdminUsers() {
   }, [fetchUsers]);
 
 
+  // Utility function to mask sensitive email addresses
+  const getMaskedEmail = (email: string, isRevealed: boolean = false) => {
+    if (!email || isRevealed) return email;
+    const [local, domain] = email.split('@');
+    return `${local.substring(0, 2)}***@${domain}`;
+  };
+
+  // Toggle for revealing/hiding emails (admin only)
+  const [revealEmails, setRevealEmails] = useState(false);
+
   const filteredUsers = users.filter(user => {
+    const searchEmail = revealEmails ? user.email : getMaskedEmail(user.email);
     const matchesSearch = 
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      searchEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.last_name.toLowerCase().includes(searchTerm.toLowerCase());
     
@@ -437,8 +448,21 @@ export default function AdminUsers() {
                   <TableCell className="text-white">
                     {user.first_name} {user.last_name}
                   </TableCell>
-                  <TableCell className="text-gray-300 font-mono text-sm">
-                    {user.email}
+                  <TableCell className="text-gray-300 font-mono text-sm relative group">
+                    <div className="flex items-center space-x-2">
+                      <span>{revealEmails ? user.email : getMaskedEmail(user.email)}</span>
+                      {userRole === 'admin' && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setRevealEmails(!revealEmails)}
+                          className="h-6 px-2 text-blue-400 hover:text-blue-300 hover:bg-gray-700"
+                          title={revealEmails ? "Hide emails" : "Reveal emails"}
+                        >
+                          <Eye className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
