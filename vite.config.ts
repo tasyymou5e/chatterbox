@@ -13,10 +13,10 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     mode === 'development' && componentTagger(),
-    // Bundle analyzer - generates stats.html in production builds
-    mode === 'production' && visualizer({
+    // Bundle analyzer - generates stats.html in production/analyze builds
+    (mode === 'production' || mode === 'analyze') && visualizer({
       filename: 'stats.html',
-      open: false,
+      open: mode === 'analyze', // Auto-open only in analyze mode
       gzipSize: true,
       brotliSize: true,
       template: 'treemap',
