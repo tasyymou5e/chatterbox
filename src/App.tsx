@@ -9,6 +9,7 @@ import { SecurityMonitoringProvider } from '@/components/security/SecurityMonito
 import { ProductionSecurityWrapper } from '@/components/security/ProductionSecurityWrapper';
 import { usePerformanceMonitoringSafe } from "@/hooks/usePerformanceMonitoringSafe";
 import { PWAInstallPrompt } from '@/components/pwa/PWAInstallPrompt';
+import { OfflineIndicator } from '@/components/pwa/OfflineIndicator';
 import {
   coreRoutes,
   parentRoutes,
@@ -56,6 +57,7 @@ const App = () => {
           <ErrorBoundary componentName="App">
             <Toaster />
             <Sonner />
+            <OfflineIndicator />
             <PWAInstallPrompt />
             <Routes>
               {/* Core routes */}
