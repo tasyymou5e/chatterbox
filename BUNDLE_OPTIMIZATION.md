@@ -26,7 +26,7 @@
 
 ---
 
-## 📦 Manual Chunks Strategy (5 chunks)
+## 📦 Manual Chunks Strategy (6 chunks)
 
 The build is split into logical chunks for optimal caching and loading performance.
 
@@ -39,6 +39,7 @@ The build is split into logical chunks for optimal caching and loading performan
 | **charts** | Recharts | Heavy charting library, lazy-loaded for admin/analytics only | ~50KB |
 | **forms** | React Hook Form, Zod, Zustand, React Query | Form handling, validation, and state management | ~35KB |
 | **supabase** | Supabase JS Client | Backend integration | ~25KB |
+| **utils** | lucide-react, date-fns, clsx, tailwind-merge, CVA | Shared utilities, very stable, long-term caching | ~52KB |
 
 ### Charts Lazy-Loading Strategy (2026-01-22 Optimization)
 
@@ -193,8 +194,9 @@ If `depcheck` reports false positives:
 
 | Date | Change | Impact |
 |------|--------|--------|
+| 2026-01-22 | Added utils chunk for shared libraries | Better cache granularity, ~52KB isolated |
 | 2026-01-22 | Split features into charts/forms chunks | ~50KB reduction for non-admin users |
-| 2026-01-22 | Consolidated to 5-chunk strategy | Simplified, better caching |
+| 2026-01-22 | Consolidated to 6-chunk strategy | Simplified, better caching |
 | 2025-12-18 | Added comprehensive lazy loading | ~30% initial JS reduction |
 | 2025-12-01 | Implemented manual chunks | ~25% improvement in caching |
 

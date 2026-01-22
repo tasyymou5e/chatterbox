@@ -71,6 +71,14 @@ export default defineConfig(({ mode }) => ({
           forms: ['react-hook-form', '@hookform/resolvers', 'zod', 'zustand', '@tanstack/react-query'],
           // Supabase (separate for auth/data isolation)
           supabase: ['@supabase/supabase-js'],
+          // Shared utilities - stable, cached long-term (~52KB)
+          utils: [
+            'lucide-react',
+            'date-fns',
+            'clsx',
+            'tailwind-merge',
+            'class-variance-authority',
+          ],
         },
       },
     },
