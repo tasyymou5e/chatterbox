@@ -1,0 +1,215 @@
+name: Security Tests
+
+on:
+  push:
+    paths:
+      - 'src/stores/auth*.ts'
+      - 'src/components/admin/**'
+      - 'src/hooks/useAuth*.ts'
+      - 'supabase/functions/**'
+      - 'tests/security/**'
+      - 'tests/rls/**'
+      - 'tests-e2e/admin-*.spec.ts'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/stores/auth*.ts'
+      - 'src/components/admin/**'
+      - 'src/hooks/useAuth*.ts'
+      - 'supabase/functions/**'
+      - 'tests/security/**'
+      - 'tests/rls/**'
+
+jobs:
+  security-unit-tests:
+    name: Security Unit Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+        
+      - name: Run security unit tests
+        run: npm run test -- --run tests/security/
+        
+      - name: Run auth store tests
+        run: npm run test -- --run tests/component/stores/auth
+        
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-unit-test-results
+          path: |
+            coverage/
+            test-results/
+          retention-days: 7
+
+  rls-policy-tests:
+    name: RLS Policy Tests
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+        
+      - name: Run RLS policy tests
+        run: npm run test -- --run tests/rls/
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          
+      - name: Upload RLS test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rls-test-results
+          path: test-results/
+          retention-days: 7
+
+  admin-e2e-tests:
+    name: Admin E2E Security Tests
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+        
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+        
+      - name: Build application
+        run: npm run build
+        
+      - name: Run admin E2E tests
+        run: npx playwright test tests-e2e/admin-*.spec.ts --project=chromium
+        env:
+          ADMIN_TEST_EMAIL: ${{ secrets.ADMIN_TEST_EMAIL }}
+          ADMIN_TEST_PASSWORD: ${{ secrets.ADMIN_TEST_PASSWORD }}
+          BASE_URL: ${{ secrets.BASE_URL }}
+          
+      - name: Upload E2E test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: admin-e2e-results
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+          
+      - name: Upload screenshots on failure
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: e2e-failure-screenshots
+          path: test-results/**/*.png
+          retention-days: 7
+
+  dependency-audit:
+    name: Dependency Security Audit
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+        
+      - name: Run npm audit
+        run: npm audit --audit-level=moderate
+        continue-on-error: true
+        
+      - name: Check for critical vulnerabilities
+        run: |
+          CRITICAL=$(npm audit --json | jq '.metadata.vulnerabilities.critical // 0')
+          HIGH=$(npm audit --json | jq '.metadata.vulnerabilities.high // 0')
+          if [ "$CRITICAL" -gt 0 ] || [ "$HIGH" -gt 5 ]; then
+            echo "::error::Found $CRITICAL critical and $HIGH high vulnerabilities"
+            exit 1
+          fi
+
+  code-analysis:
+    name: Security Code Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+        
+      - name: TypeScript type checking
+        run: npm run typecheck
+        
+      - name: ESLint security rules
+        run: npm run lint
+        
+      - name: Check for hardcoded secrets
+        run: |
+          # Check for common secret patterns
+          if grep -rE "(sk_live_|sk_test_|password\s*=\s*['\"][^'\"]{8,}['\"])" --include="*.ts" --include="*.tsx" --include="*.js" src/; then
+            echo "::error::Potential hardcoded secrets found"
+            exit 1
+          fi
+          echo "No hardcoded secrets detected"
+
+  security-summary:
+    name: Security Summary
+    runs-on: ubuntu-latest
+    needs: [security-unit-tests, dependency-audit, code-analysis]
+    if: always()
+    
+    steps:
+      - name: Check job results
+        run: |
+          echo "## Security Test Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Test Suite | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|------------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Unit Tests | ${{ needs.security-unit-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Dependency Audit | ${{ needs.dependency-audit.result == 'success' && '✅ Passed' || '⚠️ Issues Found' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Code Analysis | ${{ needs.code-analysis.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
