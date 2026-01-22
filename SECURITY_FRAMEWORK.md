@@ -5,18 +5,21 @@
 
 ## 📋 Executive Security Overview
 
-**Last Updated**: 2026-01-21
+**Last Updated**: 2026-01-22
 
 ### Current Security Posture
 - **Architecture**: Multi-layered security with role-based access control (Admin → Parent → Child)
 - **Database Security**: 59 tables with 65+ optimized RLS policies and 30+ security definer functions
 - **Authentication**: Supabase Auth with enhanced error handling and activity logging
 - **Data Protection**: Family-based data isolation with strict boundary enforcement
-- **Monitoring**: Comprehensive audit trail and real-time security monitoring
+- **Monitoring**: Comprehensive audit trail and real-time security monitoring with enhanced threat detection
 - **Type Safety**: 99% TypeScript coverage with type-safe error handling
 - **CORS**: Dynamic origin validation across all 14 edge functions
 - **CSP**: Hardened Content Security Policy (no `unsafe-inline`/`unsafe-eval` in production)
 - **Input Validation**: Zod schema validation on all form components
+- **Vulnerability Scanning**: Professional security scanning with Snyk integration and npm audit automation
+- **Zero Vulnerabilities**: All security dependencies patched and monitored continuously
+- **Performance Monitoring**: Core Web Vitals tracking with automated optimization recommendations
 
 ### Security Principles
 1. **Defense in Depth**: Multiple security layers preventing single points of failure
@@ -25,7 +28,15 @@
 4. **Data Minimization**: Collect and store only necessary data
 5. **Transparency**: Clear audit trails for all sensitive operations
 
-### Recent Security Hardening (2026-01-21)
+### Recent Security Hardening (2026-01-22)
+- ✅ **Cryptographically Secure Password Generation**: Replaced `Math.random()` with `crypto.getRandomValues()` in admin-create-user
+- ✅ **Enhanced CORS Security**: Fixed wildcard CORS headers in rate limiter responses
+- ✅ **Professional Security Scanning**: Integrated Snyk for continuous vulnerability monitoring
+- ✅ **Real-time Threat Detection**: Implemented comprehensive security monitoring for brute force, session anomalies, and CORS issues
+- ✅ **Zero Vulnerability Status**: Resolved all npm security vulnerabilities (glob, js-yaml, lodash)
+- ✅ **Performance Monitoring**: Added Core Web Vitals tracking with automated optimization recommendations
+- ✅ **Automated Security Workflows**: Pre-commit hooks and GitHub Actions for continuous security validation
+- ✅ **Bundle Security Analysis**: Integrated webpack-bundle-analyzer for size optimization and security monitoring
 - ✅ CORS wildcard `*` replaced with dynamic `getCorsHeaders()` in all 14 edge functions
 - ✅ CSP hardened: removed `unsafe-inline`/`unsafe-eval` for production environments
 - ✅ Zod validation added to 8 form components via `enhancedInputValidation.ts`
@@ -879,6 +890,129 @@ const secureApiCall = async <T>(
 - [ ] **Monitoring Setup**: Security alerts and logging configured
 - [ ] **Backup Strategy**: Data backup and recovery tested
 - [ ] **Incident Response**: Security incident procedures documented
+
+---
+
+## 🛡️ Advanced Security Monitoring System
+
+### Real-time Threat Detection
+The application now includes comprehensive security monitoring via `src/utils/securityEnhancedMonitoring.ts`:
+
+#### **Monitored Security Events**
+- **Brute Force Detection**: 5 failed auth attempts trigger alerts
+- **Session Anomaly Tracking**: IP/user agent changes in active sessions
+- **Password Generation Validation**: Monitors for insecure generation methods
+- **CORS Configuration Monitoring**: Detects wildcard CORS usage and origin mismatches
+
+#### **Security Event Types**
+```typescript
+interface SecurityEvent {
+  type: 'password_generation' | 'session_anomaly' | 'auth_failure_pattern' | 'cors_mismatch';
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  timestamp: number;
+  details: Record<string, any>;
+}
+```
+
+#### **Monitoring Features**
+- **Automatic Cleanup**: Prevents memory leaks with periodic entry cleanup
+- **Suspicion Levels**: Progressive threat assessment (low → medium → high → critical)
+- **Hashed Logging**: PII protection with partial hashing in logs
+- **Critical Alert System**: High-priority security event notifications
+
+### Professional Security Scanning
+
+#### **Snyk Integration**
+- **Continuous Monitoring**: Automated vulnerability scanning via `npm run security:snyk`
+- **Project Monitoring**: Continuous tracking via `npm run security:snyk:monitor`
+- **Threshold-based Alerting**: Medium and above severity triggers alerts
+- **Professional Dashboard**: Enterprise security management at https://app.snyk.io
+
+#### **Built-in Security Tools**
+```bash
+# Comprehensive security validation
+npm run security:pre-commit
+
+# Dependency vulnerability scanning
+npm run security:audit
+
+# Bundle security analysis
+npm run bundle:analyze
+```
+
+---
+
+## 📊 Performance Monitoring System
+
+### Core Web Vitals Tracking
+The application includes comprehensive performance monitoring via `src/utils/performanceMonitor.ts`:
+
+#### **Monitored Metrics**
+- **CLS (Cumulative Layout Shift)**: Layout stability (threshold: 0.1)
+- **FID (First Input Delay)**: Interactivity (threshold: 100ms)
+- **FCP (First Contentful Paint)**: Initial content load (threshold: 1800ms)
+- **LCP (Largest Contentful Paint)**: Main content visibility (threshold: 2500ms)
+- **TTFB (Time to First Byte)**: Server response time (threshold: 800ms)
+
+#### **Performance Features**
+- **Automatic Threshold Evaluation**: Alerts when metrics exceed recommended levels
+- **Performance Recommendations**: Automated optimization suggestions
+- **Component Profiling**: Development-time performance measurement
+- **Bundle Analysis**: Size optimization with webpack-bundle-analyzer
+- **Report Generation**: Comprehensive performance summaries
+
+#### **Performance Commands**
+```typescript
+// Monitor component render performance
+performanceMonitor.measureComponentRender('MyComponent', renderFn);
+
+// Measure async operation performance
+await performanceMonitor.measureAsyncOperation('API_CALL', () => fetchData());
+
+// Generate performance report
+const report = performanceMonitor.generateReport();
+```
+
+### Bundle Security Analysis
+- **webpack-bundle-analyzer**: Interactive treemap visualization of bundle contents
+- **Size Optimization**: Identifies large dependencies and optimization opportunities
+- **Security Monitoring**: Detects potentially malicious or vulnerable packages
+- **Performance Impact**: Tracks bundle size changes over time
+
+---
+
+## 🤖 Automated Security Workflows
+
+### Pre-commit Security Checks
+The `scripts/pre-commit-security-check.sh` provides comprehensive validation:
+
+#### **Security Validations**
+- ✅ Vulnerability scanning (npm audit)
+- ✅ Outdated dependency detection
+- ✅ Hardcoded secret scanning
+- ✅ Console.log statement detection
+- ✅ TypeScript compilation verification
+- ✅ Bundle size analysis
+
+#### **Performance Validations**
+- ✅ Build success verification
+- ✅ Bundle size monitoring (>1MB warning)
+- ✅ Snyk security scanning (if authenticated)
+
+### CI/CD Security Pipeline
+The `.github/workflows/security.yml` provides automated security validation:
+
+#### **Triggers**
+- **Push Events**: Security scanning on code changes
+- **Pull Requests**: Security validation before merges
+- **Scheduled**: Daily comprehensive security audit
+
+#### **Workflow Steps**
+- **Dependency Security**: npm audit + Snyk scanning
+- **Build Validation**: TypeScript compilation and build testing
+- **Code Quality**: ESLint and bundle analysis
+- **PR Comments**: Automated security and performance reports
+- **Artifact Upload**: Bundle analysis and security reports
 
 ---
 
