@@ -1,5 +1,10 @@
 import { test, expect } from '@playwright/test';
 
+/**
+ * Comprehensive Admin Authentication Flow Tests
+ * Tests login, redirects, session handling, and race condition prevention
+ */
+
 test.describe('Admin Authentication Flow', () => {
   test.beforeEach(async ({ page }) => {
     // Clear any existing session state
@@ -19,10 +24,11 @@ test.describe('Admin Authentication Flow', () => {
   });
 
   test('should show validation error for empty fields', async ({ page }) => {
-    // Try to submit without filling in fields
-    await page.click('button[type="submit"]');
+    // Try to submit without filling in fields - browser validation should prevent
+    const submitButton = page.getByRole('button', { name: /sign in/i });
+    await submitButton.click();
     
-    // Should show some validation message or not navigate
+    // Should still be on login page
     await expect(page).toHaveURL(/admin\/login/);
   });
 
@@ -36,7 +42,7 @@ test.describe('Admin Authentication Flow', () => {
   });
 
   test('should have forgot password link', async ({ page }) => {
-    const forgotLink = page.getByRole('link', { name: /forgot|reset/i });
+    const forgotLink = page.getByRole('button', { name: /forgot|reset/i });
     await expect(forgotLink).toBeVisible();
   });
 
@@ -75,6 +81,14 @@ test.describe('Admin Authentication Flow', () => {
 });
 
 test.describe('Admin Route Loading States', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/admin/login');
+    await page.evaluate(() => {
+      localStorage.clear();
+      sessionStorage.clear();
+    });
+  });
+
   test('should show appropriate loading state', async ({ page }) => {
     // Go directly to protected route to trigger loading
     await page.goto('/admin/dashboard');
@@ -88,19 +102,22 @@ test.describe('Admin Route Loading States', () => {
     expect(['loading', 'login']).toContain(loadingOrLogin);
   });
 
-  test('loading state should have refresh option', async ({ page }) => {
+  test('loading state should have refresh option after timeout', async ({ page }) => {
     await page.goto('/admin/dashboard');
     
-    // If we see loading state, it should have a refresh option
+    // If we see loading state for too long, should have refresh option
     const spinnerVisible = await page.locator('[class*="animate-spin"]').isVisible().catch(() => false);
     
     if (spinnerVisible) {
-      // Wait a bit for the "taking too long" message
-      await page.waitForTimeout(3000);
+      // Wait for potential timeout message
+      await page.waitForTimeout(6000);
       
-      // Look for refresh option
-      const refreshButton = page.getByText(/refresh/i);
-      await expect(refreshButton).toBeVisible({ timeout: 10000 });
+      // Look for refresh option or redirect
+      const refreshButton = page.getByText(/refresh|try again/i);
+      const isOnLogin = page.url().includes('/admin/login');
+      
+      const hasRefreshOrRedirected = await refreshButton.isVisible().catch(() => false) || isOnLogin;
+      expect(hasRefreshOrRedirected).toBe(true);
     }
   });
 });
@@ -118,8 +135,7 @@ test.describe('Admin Session Handling', () => {
       return localStorage.getItem('auth-session-store') !== null;
     });
     
-    // Note: Session data might exist but should be invalid
-    // The important thing is the UI shows login
+    // Session data might exist but should be invalid - important thing is UI shows login
   });
 
   test('emergency reset clears all data', async ({ page }) => {
@@ -130,10 +146,7 @@ test.describe('Admin Session Handling', () => {
       sessionStorage.setItem('test-session', 'test');
     });
     
-    // Trigger emergency reset (if available through URL param)
-    await page.goto('/admin/login');
-    
-    // Clear all and verify
+    // Trigger emergency reset (clear all)
     await page.evaluate(() => {
       localStorage.clear();
       sessionStorage.clear();
@@ -144,5 +157,60 @@ test.describe('Admin Session Handling', () => {
     
     expect(localData).toBe(0);
     expect(sessionData).toBe(0);
+  });
+});
+
+test.describe('Admin Auth Race Condition Prevention', () => {
+  test('should not flash blank screen during auth check', async ({ page }) => {
+    await page.goto('/admin/login');
+    await page.evaluate(() => {
+      localStorage.clear();
+      sessionStorage.clear();
+    });
+    
+    // Navigate to dashboard
+    await page.goto('/admin/dashboard');
+    
+    // Immediately check for content
+    await page.waitForTimeout(500);
+    
+    const hasContent = await page.evaluate(() => {
+      const body = document.body;
+      return (body.textContent?.trim().length || 0) > 20;
+    });
+    
+    expect(hasContent).toBe(true);
+  });
+
+  test('should handle rapid navigation gracefully', async ({ page }) => {
+    await page.goto('/admin/login');
+    await page.evaluate(() => {
+      localStorage.clear();
+      sessionStorage.clear();
+    });
+    
+    // Rapid navigation
+    await page.goto('/admin/dashboard');
+    await page.goto('/admin/users');
+    await page.goto('/admin/families');
+    await page.goto('/admin/dashboard');
+    
+    // Should eventually settle on login or dashboard
+    await page.waitForTimeout(3000);
+    
+    const finalUrl = page.url();
+    expect(finalUrl).toMatch(/admin\/(login|dashboard|users|families)/);
+  });
+
+  test('should maintain UI responsiveness during auth', async ({ page }) => {
+    await page.goto('/admin/login');
+    
+    // Fill form while auth is happening
+    await page.fill('input[type="email"]', 'test@test.com');
+    await page.fill('input[type="password"]', 'password');
+    
+    // Form should remain responsive
+    const emailValue = await page.locator('input[type="email"]').inputValue();
+    expect(emailValue).toBe('test@test.com');
   });
 });

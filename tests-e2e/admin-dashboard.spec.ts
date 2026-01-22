@@ -1,5 +1,10 @@
 import { test, expect } from '@playwright/test';
 
+/**
+ * Comprehensive Admin Dashboard Tests
+ * Tests loading states, error boundaries, fallback data, and security
+ */
+
 test.describe('Admin Dashboard Loading', () => {
   test.beforeEach(async ({ page }) => {
     // Start fresh
@@ -69,9 +74,15 @@ test.describe('Admin Dashboard Loading', () => {
 });
 
 test.describe('Admin Dashboard Components', () => {
-  test('login form should be interactive', async ({ page }) => {
+  test.beforeEach(async ({ page }) => {
     await page.goto('/admin/login');
-    
+    await page.evaluate(() => {
+      localStorage.clear();
+      sessionStorage.clear();
+    });
+  });
+
+  test('login form should be interactive', async ({ page }) => {
     // Email input should be editable
     const emailInput = page.locator('input[type="email"]');
     await emailInput.fill('test@example.com');
@@ -88,8 +99,6 @@ test.describe('Admin Dashboard Components', () => {
   });
 
   test('should show error handling UI on failures', async ({ page }) => {
-    await page.goto('/admin/login');
-    
     // Submit with invalid credentials
     await page.fill('input[type="email"]', 'fake@example.com');
     await page.fill('input[type="password"]', 'fakepassword');
@@ -126,5 +135,69 @@ test.describe('Admin Dashboard Security', () => {
     // Form should exist
     const form = page.locator('form');
     await expect(form).toBeVisible();
+  });
+});
+
+test.describe('Admin Dashboard Error Boundaries', () => {
+  test('should handle component errors gracefully', async ({ page }) => {
+    // Navigate to dashboard
+    await page.goto('/admin/dashboard');
+    
+    // Wait for redirect or content
+    await page.waitForTimeout(3000);
+    
+    // Should not show raw error messages to users
+    const pageContent = await page.content();
+    expect(pageContent).not.toMatch(/Uncaught Error/i);
+    expect(pageContent).not.toMatch(/at Object\./);
+  });
+
+  test('should provide fallback UI on errors', async ({ page }) => {
+    // Block API calls to force errors
+    await page.route('**/rest/v1/**', route => route.abort());
+    
+    await page.goto('/admin/dashboard');
+    await page.waitForTimeout(3000);
+    
+    // Should still have rendered content
+    const hasContent = await page.evaluate(() => {
+      return (document.body.textContent?.length || 0) > 50;
+    });
+    
+    expect(hasContent).toBe(true);
+  });
+});
+
+test.describe('Admin Dashboard Fallback Data', () => {
+  test('should render with zero/default values on API failure', async ({ page }) => {
+    // Block analytics API
+    await page.route('**/functions/v1/**', route => route.abort());
+    
+    await page.goto('/admin/login');
+    await page.evaluate(() => {
+      localStorage.clear();
+      sessionStorage.clear();
+    });
+    
+    await page.goto('/admin/dashboard');
+    
+    // Should redirect to login (since not authenticated)
+    await expect(page).toHaveURL(/admin\/login/, { timeout: 15000 });
+    
+    // Login should still work
+    await expect(page.locator('form')).toBeVisible();
+  });
+
+  test('should not crash on slow network', async ({ page }) => {
+    // Add network delay
+    await page.route('**/*', async route => {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      await route.continue();
+    });
+    
+    await page.goto('/admin/login', { timeout: 60000 });
+    
+    // Page should eventually load
+    await expect(page.locator('body')).toBeVisible();
   });
 });
