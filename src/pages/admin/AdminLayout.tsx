@@ -1,8 +1,10 @@
+import { useEffect } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { AdminErrorBoundary } from '@/components/admin/AdminErrorBoundary';
+import { preloadCharts } from '@/utils/chartPreloader';
 import { 
   Users, 
   Home, 
@@ -21,6 +23,11 @@ export default function AdminLayout() {
   const navigate = useNavigate();
   void navigate; // Available for future navigation needs
   const location = useLocation();
+
+  // Preload chart chunks when admin layout mounts
+  useEffect(() => {
+    preloadCharts();
+  }, []);
 
   const handleSignOut = async () => {
     const { error } = await signOut();
