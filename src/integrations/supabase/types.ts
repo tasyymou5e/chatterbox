@@ -423,9 +423,12 @@ export type Database = {
           generated_email: string
           id: string
           last_name: string
+          locked_until: string | null
           metadata: Json | null
+          pin_attempts: number | null
           status: string
           user_id: string | null
+          verification_pin: string | null
         }
         Insert: {
           completed_at?: string | null
@@ -439,9 +442,12 @@ export type Database = {
           generated_email: string
           id?: string
           last_name: string
+          locked_until?: string | null
           metadata?: Json | null
+          pin_attempts?: number | null
           status?: string
           user_id?: string | null
+          verification_pin?: string | null
         }
         Update: {
           completed_at?: string | null
@@ -455,9 +461,12 @@ export type Database = {
           generated_email?: string
           id?: string
           last_name?: string
+          locked_until?: string | null
           metadata?: Json | null
+          pin_attempts?: number | null
           status?: string
           user_id?: string | null
+          verification_pin?: string | null
         }
         Relationships: [
           {
@@ -3522,6 +3531,10 @@ export type Database = {
           achievement_name: string
         }[]
       }
+      check_child_account_lookup_rate_limit: {
+        Args: { p_identifier: string }
+        Returns: boolean
+      }
       check_child_account_rate_limit: {
         Args: { p_family_id: string; p_parent_id: string }
         Returns: boolean
@@ -3558,6 +3571,18 @@ export type Database = {
           cleanup_details: Json
           families_deleted: number
           users_deleted: number
+        }[]
+      }
+      complete_child_account_secure: {
+        Args: {
+          p_account_id: string
+          p_user_id: string
+          p_verification_pin?: string
+        }
+        Returns: {
+          error_message: string
+          generated_email: string
+          success: boolean
         }[]
       }
       compute_daily_analytics: {
@@ -3733,6 +3758,31 @@ export type Database = {
           total_calls: number
           total_cost_usd: number
           total_tokens: number
+        }[]
+      }
+      get_my_child_account_safe: {
+        Args: never
+        Returns: {
+          completed_at: string
+          created_at: string
+          family_code: string
+          family_id: string
+          first_name: string
+          id: string
+          last_name: string
+          status: string
+        }[]
+      }
+      get_pending_child_account_for_completion: {
+        Args: { p_family_code: string; p_verification_pin?: string }
+        Returns: {
+          expires_at: string
+          family_id: string
+          first_name: string
+          id: string
+          is_locked: boolean
+          last_name: string
+          lock_remaining_seconds: number
         }[]
       }
       get_popular_content: {

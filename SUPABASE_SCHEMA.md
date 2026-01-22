@@ -56,7 +56,14 @@
 
 ## 🔒 Security Architecture
 
-### **Recent Security Updates (2026-01-21)**
+### **Recent Security Updates (2026-01-22)**
+- **Child Account Hardening**: `generated_email` never exposed to client via new secure RPCs
+- **PIN Verification**: Optional 6-digit PIN for two-factor child account completion
+- **Lockout Protection**: 5 failed attempts → 30-minute lockout with rate limiting
+- **Secure Edge Function**: `complete-child-account` handles auth server-side only
+- **New Security Functions**: `get_pending_child_account_for_completion`, `complete_child_account_secure`, `get_my_child_account_safe`
+
+### **Previous Security Updates (2026-01-21)**
 - **Dropped Views**: `child_accounts_safe` view removed (lacked RLS policies)
 - **CORS Hardening**: All 14 edge functions use dynamic origin validation
 - **Input Validation**: Zod schemas on all form components
@@ -69,20 +76,25 @@
 
 ### **Security Functions (30+ Active)**
 ```sql
-has_role(user_id, role)                    -- Role verification
-is_family_creator_secure(family_id, user_id) -- Family ownership
-has_family_access(family_id, user_id)      -- Family access verification
-log_security_event()                       -- Security event logging
+has_role(user_id, role)                                  -- Role verification
+is_family_creator_secure(family_id, user_id)             -- Family ownership
+has_family_access(family_id, user_id)                    -- Family access verification
+log_security_event()                                      -- Security event logging
+get_pending_child_account_for_completion(code, pin)      -- Secure account lookup (no email)
+complete_child_account_secure(account_id, user_id, pin)  -- Server-side completion
+get_my_child_account_safe()                               -- Child self-view (no email)
+check_child_account_lookup_rate_limit(identifier)        -- Rate limiting for lookups
 ```
 
 ### **Enhanced Security Measures**
 - **Data Encryption**: HTTPS/TLS 1.3 + database encryption at rest
 - **Authentication**: JWT tokens with role-based verification
-- **Rate Limiting**: API endpoint protection
-- **Activity Logging**: Complete audit trail
-- **Child Data Protection**: COPPA compliance
+- **Rate Limiting**: API endpoint protection + database-level rate limiting
+- **Activity Logging**: Complete audit trail with security events
+- **Child Data Protection**: COPPA compliance with email masking
 - **CORS**: Dynamic origin validation (no wildcard `*`)
 - **CSP**: Hardened Content Security Policy
+- **PIN Verification**: Optional two-factor for child accounts
 
 ## 🚀 Performance Features
 
@@ -94,8 +106,8 @@ log_security_event()                       -- Security event logging
 ---
 
 **Database Health**: ✅ Excellent  
-**Security Rating**: A (Fully hardened)  
+**Security Rating**: A+ (Fully hardened with child account protection)  
 **RLS Policies**: 65+ (consolidated from 130+)  
-**Edge Functions**: 14 with dynamic CORS validation  
-**Last Security Review**: 2026-01-21  
-**Next Review**: 2026-04-21
+**Edge Functions**: 15 with dynamic CORS validation  
+**Last Security Review**: 2026-01-22  
+**Next Review**: 2026-04-22

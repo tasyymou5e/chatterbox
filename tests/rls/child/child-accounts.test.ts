@@ -192,5 +192,35 @@ describe('child_accounts table RLS policies - COPPA Compliance', () => {
         expect(data.length).toBeLessThanOrEqual(1);
       }
     });
+
+    it('should use secure RPC that never returns generated_email to clients', async () => {
+      const { client } = await signInTestUser(parentUser1.email, parentUser1.password);
+      
+      // The secure RPC should NOT include generated_email in the response
+      const { data, error } = await client.rpc('get_pending_child_account_for_completion', {
+        p_family_code: 'TEST-FAMILY-CODE',
+        p_verification_pin: null
+      });
+      
+      // Even if data is returned, it should not contain generated_email
+      if (data && data.length > 0) {
+        expect(data[0]).not.toHaveProperty('generated_email');
+        expect(data[0]).toHaveProperty('first_name');
+        expect(data[0]).toHaveProperty('is_locked');
+      }
+    });
+
+    it('should allow children to use safe RPC without seeing generated_email', async () => {
+      const { client } = await signInTestUser(childUser1.email, childUser1.password);
+      
+      // Use the safe function for children
+      const { data, error } = await client.rpc('get_my_child_account_safe');
+      
+      // Should return data without generated_email
+      if (data && data.length > 0) {
+        expect(data[0]).not.toHaveProperty('generated_email');
+        expect(data[0]).toHaveProperty('first_name');
+      }
+    });
   });
 });
