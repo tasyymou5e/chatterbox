@@ -7,7 +7,7 @@
  * @module authRoleStore
  */
 import { create } from 'zustand';
-import { devtools } from 'zustand/middleware';
+import { devtools, subscribeWithSelector } from 'zustand/middleware';
 import { supabase } from '@/integrations/supabase/client';
 import { isAdminRole } from '@/types/auth';
 import { secureLog } from '@/utils/secureLogging';
@@ -31,8 +31,9 @@ interface AuthRoleState {
 }
 
 export const useAuthRoleStore = create<AuthRoleState>()(
-  devtools(
-    (set) => ({
+  subscribeWithSelector(
+    devtools(
+      (set) => ({
       // Initial state
       userRole: null,
       isAdmin: false,
@@ -122,8 +123,9 @@ export const useAuthRoleStore = create<AuthRoleState>()(
           set({ isCheckingRole: false });
           return false;
         }
-      },
-    }),
-    { name: 'AuthRoleStore' }
+        },
+      }),
+      { name: 'AuthRoleStore' }
+    )
   )
 );

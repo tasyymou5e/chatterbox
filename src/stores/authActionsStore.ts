@@ -7,7 +7,7 @@
  * @module authActionsStore
  */
 import { create } from 'zustand';
-import { devtools } from 'zustand/middleware';
+import { devtools, subscribeWithSelector } from 'zustand/middleware';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { authLoggingService } from '@/services/authLoggingService';
@@ -39,8 +39,9 @@ interface AuthActionsState {
 }
 
 export const useAuthActionsStore = create<AuthActionsState>()(
-  devtools(
-    (set, get) => ({
+  subscribeWithSelector(
+    devtools(
+      (set, get) => ({
       // Initial state
       signingOut: false,
 
@@ -307,9 +308,10 @@ export const useAuthActionsStore = create<AuthActionsState>()(
           // Silent fail
         }
         
-        secureLog.security('emergency_logout', { timestamp: new Date().toISOString() }, 'medium');
-      },
-    }),
-    { name: 'AuthActionsStore' }
+          secureLog.security('emergency_logout', { timestamp: new Date().toISOString() }, 'medium');
+        },
+      }),
+      { name: 'AuthActionsStore' }
+    )
   )
 );
