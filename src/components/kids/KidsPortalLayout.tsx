@@ -1,6 +1,6 @@
 /**
  * KidsPortalLayout - Age-appropriate colorful layout for children
- * Features: gradient header, star counter, tab navigation, customizable avatar
+ * Features: gradient header, star counter, tab navigation, customizable avatar, seasonal decorations
  */
 
 import React, { useState } from 'react';
@@ -11,6 +11,7 @@ import type { ChildProfile, ContentType } from '@/types/kidsPortal';
 import type { AvatarConfig, AvatarCustomization } from '@/types/avatar';
 import { cn } from '@/lib/utils';
 import { AvatarDisplay, AvatarBuilder } from '@/components/avatar';
+import { SeasonalDecorations, useSeasonalTheme } from '@/components/illustrations';
 
 interface KidsPortalLayoutProps {
   childProfile: ChildProfile | null;
@@ -47,10 +48,18 @@ export const KidsPortalLayout: React.FC<KidsPortalLayoutProps> = ({
     { value: 'activity', label: 'Activities', icon: <Sparkles className="h-5 w-5" /> },
   ];
 
+  const { holiday } = useSeasonalTheme();
+  const isFestive = holiday !== 'none';
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-sky-100 via-purple-50 to-pink-100 dark:from-slate-900 dark:via-purple-950 dark:to-slate-900">
+    <div className="min-h-screen bg-gradient-to-b from-sky-100 via-purple-50 to-pink-100 dark:from-slate-900 dark:via-purple-950 dark:to-slate-900 relative overflow-hidden">
+      {/* Seasonal Decorations Layer */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <SeasonalDecorations intensity={isFestive ? 'festive' : 'normal'} />
+      </div>
+
       {/* Colorful Header */}
-      <header className="bg-gradient-to-r from-violet-500 via-purple-500 to-pink-500 text-white shadow-lg">
+      <header className="relative z-10 bg-gradient-to-r from-violet-500 via-purple-500 to-pink-500 text-white shadow-lg">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             {/* Left: Avatar and Welcome message */}
@@ -154,7 +163,7 @@ export const KidsPortalLayout: React.FC<KidsPortalLayoutProps> = ({
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-6">
+      <main className="relative z-10 container mx-auto px-4 py-6">
         {children}
       </main>
 
