@@ -10,6 +10,7 @@ import { KidsPortalLayout, KidsContentCard, AgeGroupMenu, KidsProgressHeader, Ki
 import { useKidsContentLoader } from '@/hooks/useKidsContentLoader';
 import { useChildProfile } from '@/hooks/useChildProfile';
 import { useLessonProgressStore } from '@/stores/lessonProgressStore';
+import { cLog } from '@/utils/conditionalLogger';
 import type { KidContentItem, ContentType, AgeGroup, ChildProfile } from '@/types/kidsPortal';
 import { Loader2 } from 'lucide-react';
 
@@ -78,7 +79,7 @@ export default function KidsPortal() {
   };
 
   const handleGameComplete = (results: { score: number; duration: number; completed: boolean }) => {
-    console.log('Game completed:', results);
+    cLog('Game completed', results);
     // Could show a completion summary or trigger additional rewards
   };
 

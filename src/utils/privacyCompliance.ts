@@ -1,5 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { updatePrivacySettings } from './privacySettings';
+import { secureLog } from '@/utils/secureLogging';
+import { cLog } from '@/utils/conditionalLogger';
 import type { UserDataExport, DataDeletionOptions } from '@/types/privacy';
 
 /**
@@ -45,7 +47,7 @@ export const exportUserData = async (): Promise<UserDataExport | null> => {
       error_logs: errorResult.status === 'fulfilled' ? errorResult.value.data || [] : []
     };
   } catch (error) {
-    console.error('Error exporting user data:', error);
+    secureLog.error('Error exporting user data', error, 'PrivacyCompliance');
     return null;
   }
 };
@@ -90,7 +92,7 @@ export const requestDataDeletion = async (options: DataDeletionOptions = {}): Pr
     // Check if any deletions failed
     const failures = results.filter(result => result.status === 'rejected');
     if (failures.length > 0) {
-      console.error('Some data deletion operations failed:', failures);
+      secureLog.error('Some data deletion operations failed', { count: failures.length }, 'PrivacyCompliance');
       return false;
     }
 
@@ -111,7 +113,7 @@ export const requestDataDeletion = async (options: DataDeletionOptions = {}): Pr
 
     return true;
   } catch (error) {
-    console.error('Error processing data deletion request:', error);
+    secureLog.error('Error processing data deletion request', error, 'PrivacyCompliance');
     return false;
   }
 };
@@ -126,12 +128,12 @@ export const scheduleDataCleanup = async (): Promise<void> => {
 
     // This would typically be handled by a scheduled function
     // For now, we'll just log the intention
-    console.log('Data cleanup scheduled for user:', user.id);
+    cLog('Data cleanup scheduled for user', { userId: user.id });
     
     // In a real implementation, this would trigger a background job
     // to clean up data older than the user's retention preference
   } catch (error) {
-    console.error('Error scheduling data cleanup:', error);
+    secureLog.error('Error scheduling data cleanup', error, 'PrivacyCompliance');
   }
 };
 
@@ -162,7 +164,7 @@ export const anonymizeUserData = async (): Promise<boolean> => {
     const failures = updates.filter(result => result.status === 'rejected');
     return failures.length === 0;
   } catch (error) {
-    console.error('Error anonymizing user data:', error);
+    secureLog.error('Error anonymizing user data', error, 'PrivacyCompliance');
     return false;
   }
 };

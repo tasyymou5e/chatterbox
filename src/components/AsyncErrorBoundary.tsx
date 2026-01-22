@@ -2,8 +2,8 @@ import React, { Component, ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
-import { logger } from '@/utils/logger';
 import { isRetryableError, getErrorMessage } from '@/utils/errorHandling';
+import { logBoundaryErrorStatic } from '@/hooks/useErrorBoundaryLogging';
 
 interface Props {
   children: ReactNode;
@@ -41,15 +41,8 @@ export class AsyncErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     const { componentName = 'Unknown', onError } = this.props;
     
-    // Log error with context
-    logger.error(`AsyncErrorBoundary caught error in ${componentName}`, error, {
-      component: componentName,
-      metadata: {
-        componentStack: errorInfo.componentStack,
-        retryCount: this.state.retryCount,
-        isRetryable: isRetryableError(error),
-      },
-    });
+    // Log error using unified boundary logging
+    logBoundaryErrorStatic(error, errorInfo, componentName, 'async');
 
     // Call custom error handler if provided
     onError?.(error, errorInfo);

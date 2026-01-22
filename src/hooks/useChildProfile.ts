@@ -3,6 +3,7 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
+import { cWarn } from '@/utils/conditionalLogger';
 import { supabase } from '@/integrations/supabase/client';
 import type { ChildProfile, AgeGroup } from '@/types/kidsPortal';
 
@@ -39,7 +40,7 @@ export function useChildProfile(userId: string | undefined): UseChildProfileResu
 
       // Family membership is optional
       if (membershipError && membershipError.code !== 'PGRST116') {
-        console.warn('Could not fetch family membership:', membershipError);
+        cWarn('Could not fetch family membership', membershipError);
       }
 
       const childProfile: ChildProfile = {

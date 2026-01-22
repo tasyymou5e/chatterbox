@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { hasTrackingConsent } from '@/utils/privacySettings';
+import { cLog } from '@/utils/conditionalLogger';
 
 interface BehavioralEvent {
   event_type: string;
@@ -20,7 +21,7 @@ export const usePrivacyAwareBehavioralTracking = () => {
       // Check for user consent before tracking
       const hasConsent = await hasTrackingConsent();
       if (!hasConsent) {
-        console.log('Behavioral tracking skipped - no user consent');
+        cLog('Behavioral tracking skipped - no user consent');
         return;
       }
 
