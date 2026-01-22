@@ -115,5 +115,16 @@ export default tseslint.config(
     rules: {
       "no-console": "off",
     },
+  },
+  // Logging utilities - these ARE the console wrappers
+  {
+    files: [
+      "src/utils/secureLogging.ts",
+      "src/utils/conditionalLogger.ts", 
+      "src/utils/logger.ts"
+    ],
+    rules: {
+      "no-console": "off",
+    },
   }
 );

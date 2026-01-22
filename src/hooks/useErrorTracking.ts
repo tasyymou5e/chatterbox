@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { getErrorMessage } from '@/utils/getErrorMessage';
+import { secureLog } from '@/utils/secureLogging';
 
 interface ErrorInfo {
   errorType: string;
@@ -84,8 +84,8 @@ export const useErrorTracking = () => {
         body: errorPayload
       });
     } catch (err: unknown) {
-      // Fallback: log to console if error collection fails
-      console.error('Failed to log error to system:', getErrorMessage(err), errorInfo);
+      // Fallback: secure log if error collection fails
+      secureLog.error('Failed to log error to system', err, 'ErrorTracking');
     }
   }, [getBrowserInfo, getDeviceInfo, getSessionId]);
 

@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import '@/types/navigator'; // Import type extensions for webkitAudioContext
+import { cLog } from '@/utils/conditionalLogger';
 
 type CelebrationType = 'confetti' | 'stars' | 'hearts';
 
@@ -25,7 +26,7 @@ export function useCelebration(): UseCelebrationReturn {
     try {
       const AudioContextClass = window.AudioContext || window.webkitAudioContext;
       if (!AudioContextClass) {
-        console.log('AudioContext not supported');
+        cLog('AudioContext not supported');
         return;
       }
       const audioContext = new AudioContextClass();
@@ -53,8 +54,8 @@ export function useCelebration(): UseCelebrationReturn {
       playNote(659.25, now + 0.1, 0.15);  // E5
       playNote(783.99, now + 0.2, 0.2);   // G5
       playNote(1046.50, now + 0.3, 0.3);  // C6
-    } catch (e) {
-      console.log('Audio not supported');
+    } catch {
+      cLog('Audio not supported');
     }
   }, []);
 
