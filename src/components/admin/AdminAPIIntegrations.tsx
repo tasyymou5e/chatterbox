@@ -99,7 +99,7 @@ export default function AdminAPIIntegrations() {
       // Refresh status after test
       await fetchIntegrationStatus();
     } catch (error: unknown) {
-      console.error('Integration test failed:', getErrorMessage(error));
+      secureLog.error('Integration test failed', error, 'AdminAPIIntegrations');
       toast.error(`Failed to test ${provider} integration`);
     } finally {
       setTesting(null);
