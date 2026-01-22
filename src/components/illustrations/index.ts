@@ -41,3 +41,11 @@ export {
 } from './EmptyStateWithIllustration';
 
 export { AdminEmptyState } from '../admin/AdminEmptyState';
+
+export {
+  SeasonalDecorations,
+  SeasonalWrapper,
+  useSeasonalTheme,
+  type Season,
+  type Holiday,
+} from './SeasonalDecorations';
