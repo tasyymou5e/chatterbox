@@ -39,3 +39,5 @@ export {
   KidsLoadingState,
   KidsBreakState,
 } from './EmptyStateWithIllustration';
+
+export { AdminEmptyState } from '../admin/AdminEmptyState';

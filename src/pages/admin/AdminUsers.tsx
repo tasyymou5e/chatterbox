@@ -32,6 +32,7 @@ import { UserEditDialog } from '@/components/admin/UserEditDialog';
 import { UserDeleteDialog } from '@/components/admin/UserDeleteDialog';
 import { UserPasswordResetDialog } from '@/components/admin/UserPasswordResetDialog';
 import { UserCreateDialog } from '@/components/admin/UserCreateDialog';
+import { AdminEmptyState } from '@/components/illustrations';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { cLog, cError, cWarn } from '@/utils/conditionalLogger';
 
@@ -518,14 +519,17 @@ export default function AdminUsers() {
           </Table>
 
           {filteredUsers.length === 0 && (
-            <div className="text-center py-8">
-              <Users className="h-12 w-12 text-gray-600 mx-auto mb-4" />
-              <p className="text-gray-400">
-                {searchTerm || roleFilter !== 'all' 
-                  ? 'No users match your search criteria.' 
-                  : 'No users found.'}
-              </p>
-            </div>
+            <AdminEmptyState
+              variant={searchTerm || roleFilter !== 'all' ? 'noResults' : 'users'}
+              isFiltered={!!(searchTerm || roleFilter !== 'all')}
+              searchTerm={searchTerm}
+              onPrimaryAction={() => setCreateDialogOpen(true)}
+              primaryActionLabel="Add User"
+              onSecondaryAction={() => {
+                setSearchTerm('');
+                setRoleFilter('all');
+              }}
+            />
           )}
         </CardContent>
       </Card>

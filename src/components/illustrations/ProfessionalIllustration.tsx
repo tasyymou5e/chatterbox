@@ -12,7 +12,10 @@ export type ProfessionalIllustrationVariant =
   | 'security' 
   | 'collaboration'
   | 'education'
-  | 'empty';
+  | 'empty'
+  | 'users'
+  | 'content'
+  | 'noResults';
 
 interface ProfessionalIllustrationProps {
   /** Which illustration to show */
@@ -206,6 +209,100 @@ const illustrations: Record<ProfessionalIllustrationVariant, React.FC<{ classNam
       
       {/* Sparkle indicating potential */}
       <path d="M170 40 L172 46 L178 46 L173 50 L175 56 L170 52 L165 56 L167 50 L162 46 L168 46 Z" className="fill-warning/60"/>
+    </svg>
+  ),
+
+  users: ({ className }) => (
+    <svg viewBox="0 0 200 160" className={cn('w-full h-full', className)} fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* Main user */}
+      <circle cx="100" cy="40" r="20" className="fill-primary/20"/>
+      <circle cx="100" cy="40" r="16" className="fill-primary/30"/>
+      <path d="M100 60 L100 95" className="stroke-primary" strokeWidth="3" strokeLinecap="round"/>
+      <path d="M100 70 L82 85" className="stroke-primary" strokeWidth="3" strokeLinecap="round"/>
+      <path d="M100 70 L118 85" className="stroke-primary" strokeWidth="3" strokeLinecap="round"/>
+      <path d="M100 95 L88 125" className="stroke-primary" strokeWidth="3" strokeLinecap="round"/>
+      <path d="M100 95 L112 125" className="stroke-primary" strokeWidth="3" strokeLinecap="round"/>
+      
+      {/* Left user (smaller, background) */}
+      <circle cx="45" cy="55" r="14" className="fill-secondary/15"/>
+      <circle cx="45" cy="55" r="11" className="fill-secondary/25"/>
+      <path d="M45 69 L45 95" className="stroke-secondary/60" strokeWidth="2.5" strokeLinecap="round"/>
+      <path d="M45 77 L33 87" className="stroke-secondary/60" strokeWidth="2.5" strokeLinecap="round"/>
+      <path d="M45 77 L57 87" className="stroke-secondary/60" strokeWidth="2.5" strokeLinecap="round"/>
+      <path d="M45 95 L37 118" className="stroke-secondary/60" strokeWidth="2.5" strokeLinecap="round"/>
+      <path d="M45 95 L53 118" className="stroke-secondary/60" strokeWidth="2.5" strokeLinecap="round"/>
+      
+      {/* Right user (smaller, background) */}
+      <circle cx="155" cy="55" r="14" className="fill-accent/15"/>
+      <circle cx="155" cy="55" r="11" className="fill-accent/25"/>
+      <path d="M155 69 L155 95" className="stroke-accent/60" strokeWidth="2.5" strokeLinecap="round"/>
+      <path d="M155 77 L143 87" className="stroke-accent/60" strokeWidth="2.5" strokeLinecap="round"/>
+      <path d="M155 77 L167 87" className="stroke-accent/60" strokeWidth="2.5" strokeLinecap="round"/>
+      <path d="M155 95 L147 118" className="stroke-accent/60" strokeWidth="2.5" strokeLinecap="round"/>
+      <path d="M155 95 L163 118" className="stroke-accent/60" strokeWidth="2.5" strokeLinecap="round"/>
+      
+      {/* Plus icon indicating add user */}
+      <circle cx="175" cy="25" r="12" className="fill-success/20 stroke-success" strokeWidth="2"/>
+      <line x1="175" y1="19" x2="175" y2="31" className="stroke-success" strokeWidth="2" strokeLinecap="round"/>
+      <line x1="169" y1="25" x2="181" y2="25" className="stroke-success" strokeWidth="2" strokeLinecap="round"/>
+    </svg>
+  ),
+
+  content: ({ className }) => (
+    <svg viewBox="0 0 200 160" className={cn('w-full h-full', className)} fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* Stacked content cards */}
+      <rect x="40" y="55" width="120" height="85" rx="6" className="fill-muted/30 stroke-border" strokeWidth="2"/>
+      <rect x="50" y="45" width="120" height="85" rx="6" className="fill-muted/50 stroke-border" strokeWidth="2"/>
+      <rect x="60" y="35" width="120" height="85" rx="6" className="fill-background stroke-border" strokeWidth="2"/>
+      
+      {/* Content lines */}
+      <rect x="75" y="50" width="60" height="8" rx="2" className="fill-primary/40"/>
+      <rect x="75" y="65" width="90" height="5" rx="1" className="fill-muted-foreground/30"/>
+      <rect x="75" y="75" width="80" height="5" rx="1" className="fill-muted-foreground/30"/>
+      <rect x="75" y="85" width="70" height="5" rx="1" className="fill-muted-foreground/30"/>
+      
+      {/* Media placeholder */}
+      <rect x="75" y="98" width="40" height="12" rx="2" className="fill-secondary/30 stroke-secondary/50" strokeWidth="1"/>
+      
+      {/* Add button */}
+      <circle cx="170" cy="25" r="12" className="fill-success/20 stroke-success" strokeWidth="2"/>
+      <line x1="170" y1="19" x2="170" y2="31" className="stroke-success" strokeWidth="2" strokeLinecap="round"/>
+      <line x1="164" y1="25" x2="176" y2="25" className="stroke-success" strokeWidth="2" strokeLinecap="round"/>
+      
+      {/* Decorative elements */}
+      <circle cx="25" cy="70" r="5" className="fill-primary/20"/>
+      <circle cx="30" cy="110" r="3" className="fill-secondary/20"/>
+    </svg>
+  ),
+
+  noResults: ({ className }) => (
+    <svg viewBox="0 0 200 160" className={cn('w-full h-full', className)} fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* Large search magnifying glass */}
+      <circle cx="90" cy="65" r="35" className="fill-muted/30 stroke-primary/60" strokeWidth="3"/>
+      <circle cx="90" cy="65" r="28" className="fill-background/80"/>
+      <line x1="115" y1="90" x2="145" y2="120" className="stroke-primary/60" strokeWidth="6" strokeLinecap="round"/>
+      
+      {/* Question mark inside */}
+      <text x="90" y="75" textAnchor="middle" className="fill-muted-foreground/50" fontSize="28" fontWeight="bold">?</text>
+      
+      {/* X marks (not found indicators) */}
+      <g className="stroke-destructive/40" strokeWidth="2" strokeLinecap="round">
+        <line x1="155" y1="35" x2="165" y2="45"/>
+        <line x1="165" y1="35" x2="155" y2="45"/>
+      </g>
+      <g className="stroke-destructive/30" strokeWidth="2" strokeLinecap="round">
+        <line x1="30" y1="85" x2="38" y2="93"/>
+        <line x1="38" y1="85" x2="30" y2="93"/>
+      </g>
+      <g className="stroke-destructive/20" strokeWidth="2" strokeLinecap="round">
+        <line x1="165" y1="95" x2="171" y2="101"/>
+        <line x1="171" y1="95" x2="165" y2="101"/>
+      </g>
+      
+      {/* Decorative dots */}
+      <circle cx="45" cy="45" r="4" className="fill-secondary/30"/>
+      <circle cx="175" cy="70" r="3" className="fill-accent/30"/>
+      <circle cx="55" cy="130" r="5" className="fill-primary/20"/>
     </svg>
   ),
 };

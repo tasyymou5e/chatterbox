@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus, Search, Edit, Trash2, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ContentItemDialog } from '@/components/admin/ContentItemDialog';
+import { AdminEmptyState } from '@/components/illustrations';
 import { cError } from '@/utils/conditionalLogger';
 
 interface ContentItem {
@@ -301,9 +302,21 @@ export default function AdminContent() {
       </div>
 
       {filteredItems.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">No content items found</p>
-        </div>
+        <AdminEmptyState
+          variant={searchTerm || filterCategory !== 'all' || filterStatus !== 'all' ? 'noResults' : 'content'}
+          isFiltered={!!(searchTerm || filterCategory !== 'all' || filterStatus !== 'all')}
+          searchTerm={searchTerm}
+          onPrimaryAction={() => {
+            setSelectedItem(null);
+            setDialogOpen(true);
+          }}
+          primaryActionLabel="Add Content"
+          onSecondaryAction={() => {
+            setSearchTerm('');
+            setFilterCategory('all');
+            setFilterStatus('all');
+          }}
+        />
       )}
 
       <ContentItemDialog
