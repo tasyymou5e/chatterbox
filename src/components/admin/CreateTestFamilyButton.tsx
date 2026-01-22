@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import CreateTestFamilyDialog from './CreateTestFamilyDialog';
+import { cLog } from '@/utils/conditionalLogger';
 
 interface CreateTestFamilyButtonProps {
   onSuccess?: () => void;
@@ -10,10 +11,25 @@ interface CreateTestFamilyButtonProps {
 export default function CreateTestFamilyButton({ onSuccess }: CreateTestFamilyButtonProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
 
+  const handleOpenChange = (open: boolean) => {
+    cLog('[CreateTestFamilyButton] Dialog state change:', { open });
+    setDialogOpen(open);
+  };
+
+  const handleButtonClick = () => {
+    cLog('[CreateTestFamilyButton] Button clicked, opening dialog');
+    setDialogOpen(true);
+  };
+
+  const handleSuccess = () => {
+    cLog('[CreateTestFamilyButton] Creation successful, calling onSuccess');
+    onSuccess?.();
+  };
+
   return (
     <>
       <Button
-        onClick={() => setDialogOpen(true)}
+        onClick={handleButtonClick}
         className="w-full justify-start text-sm text-primary hover:text-primary-hover bg-primary/5 hover:bg-primary/10 border-0"
         variant="outline"
       >
@@ -23,8 +39,8 @@ export default function CreateTestFamilyButton({ onSuccess }: CreateTestFamilyBu
       
       <CreateTestFamilyDialog
         open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        {...(onSuccess !== undefined ? { onSuccess } : {})}
+        onOpenChange={handleOpenChange}
+        {...(onSuccess !== undefined ? { onSuccess: handleSuccess } : {})}
       />
     </>
   );
