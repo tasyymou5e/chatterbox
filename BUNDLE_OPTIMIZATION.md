@@ -26,7 +26,7 @@
 
 ---
 
-## 📦 Manual Chunks Strategy
+## 📦 Manual Chunks Strategy (5 chunks)
 
 The build is split into logical chunks for optimal caching and loading performance.
 
@@ -34,26 +34,26 @@ The build is split into logical chunks for optimal caching and loading performan
 
 | Chunk | Contents | Rationale | Est. Size |
 |-------|----------|-----------|-----------|
-| **vendor** | React, React DOM | Core framework, rarely changes | ~45KB |
-| **router** | React Router DOM | Routing logic, stable | ~15KB |
-| **ui-radix-core** | Dialog, Dropdown, Popover, Select, Tabs, Tooltip, Slot | Most-used Radix components | ~35KB |
-| **ui-radix-extended** | Accordion, Alert, Avatar, Checkbox, Collapsible, Context-menu, Hover-card, Label, Menubar, Navigation-menu, Progress, Radio-group, Scroll-area | Less frequently used | ~40KB |
-| **charts** | Recharts | Heavy charting library, lazy-loaded | ~50KB |
-| **forms** | React Hook Form, Zod | Form handling and validation | ~25KB |
-| **state** | Zustand, React Query | State management | ~20KB |
-| **supabase** | Supabase JS Client | Backend integration | ~30KB |
+| **vendor** | React, React DOM, React Router | Core framework + routing, rarely changes | ~60KB |
+| **ui** | All 26 Radix UI components | UI primitives, consolidated for simplicity | ~75KB |
+| **charts** | Recharts | Heavy charting library, lazy-loaded for admin/analytics only | ~50KB |
+| **forms** | React Hook Form, Zod, Zustand, React Query | Form handling, validation, and state management | ~35KB |
+| **supabase** | Supabase JS Client | Backend integration | ~25KB |
 
-### Radix UI Split Strategy (2026-01-15 Optimization)
+### Charts Lazy-Loading Strategy (2026-01-22 Optimization)
 
-**Core Components** (`ui-radix-core`):
-- Used on most pages
-- Loaded early in app lifecycle
-- Includes: Dialog, Dropdown Menu, Popover, Select, Tabs, Tooltip, Slot
+The `recharts` library (~50KB) is isolated in its own chunk because it's **only used in 6 files**:
 
-**Extended Components** (`ui-radix-extended`):
-- Used on specific pages only
-- Lazy-loaded when needed
-- Includes: Accordion, Alert Dialog, Aspect Ratio, Avatar, Checkbox, Collapsible, Context Menu, Hover Card, Label, Menubar, Navigation Menu, Progress, Radio Group, Scroll Area, Separator, Slider, Switch, Toggle, Toggle Group
+| Component | Location | Route |
+|-----------|----------|-------|
+| `chart.tsx` | `src/components/ui/` | Shared foundation |
+| `LLMUsageTrendsChart` | `src/components/admin/` | `/admin/system-monitoring` |
+| `EngagementChart` | `src/components/analytics/` | `/admin/reports` |
+| `FamilyGrowthChart` | `src/components/analytics/` | `/admin/reports` |
+| `RetentionChart` | `src/components/analytics/` | `/admin/reports` |
+| `FamilyProgressDashboard` | `src/components/analytics/` | Parent dashboard |
+
+**Result**: Regular users (kids portal, basic parent views) never load the ~50KB recharts bundle.
 
 ---
 
@@ -147,29 +147,18 @@ npm install
 ```typescript
 // vite.config.ts
 build: {
-  sourcemap: true,
+  sourcemap: mode !== 'production',
   rollupOptions: {
     output: {
       manualChunks: {
-        'vendor': ['react', 'react-dom'],
-        'router': ['react-router-dom'],
-        'ui-radix-core': [
+        'vendor': ['react', 'react-dom', 'react-router-dom'],
+        'ui': [
           '@radix-ui/react-dialog',
           '@radix-ui/react-dropdown-menu',
-          '@radix-ui/react-popover',
-          '@radix-ui/react-select',
-          '@radix-ui/react-tabs',
-          '@radix-ui/react-tooltip',
-          '@radix-ui/react-slot'
-        ],
-        'ui-radix-extended': [
-          '@radix-ui/react-accordion',
-          '@radix-ui/react-alert-dialog',
-          // ... 13 more packages
+          // ... all 26 Radix packages
         ],
         'charts': ['recharts'],
-        'forms': ['react-hook-form', 'zod'],
-        'state': ['zustand', '@tanstack/react-query'],
+        'forms': ['react-hook-form', '@hookform/resolvers', 'zod', 'zustand', '@tanstack/react-query'],
         'supabase': ['@supabase/supabase-js']
       }
     }
@@ -204,7 +193,8 @@ If `depcheck` reports false positives:
 
 | Date | Change | Impact |
 |------|--------|--------|
-| 2026-01-15 | Split Radix UI into core/extended | ~15-20% initial JS reduction |
+| 2026-01-22 | Split features into charts/forms chunks | ~50KB reduction for non-admin users |
+| 2026-01-22 | Consolidated to 5-chunk strategy | Simplified, better caching |
 | 2025-12-18 | Added comprehensive lazy loading | ~30% initial JS reduction |
 | 2025-12-01 | Implemented manual chunks | ~25% improvement in caching |
 
