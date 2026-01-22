@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuthStore } from '@/stores/authStore';
 import { useAuthSessionStore } from '@/stores/authSessionStore';
 import { useAuthRoleStore } from '@/stores/authRoleStore';
+import { useAuthActionsStore } from '@/stores/authActionsStore';
 import { RefreshCw, AlertCircle, Shield } from 'lucide-react';
 import { cLog, cWarn, cInfo } from '@/utils/conditionalLogger';
 
@@ -16,16 +16,13 @@ const ROLE_CHECK_TIMEOUT_MS = 5000; // 5 seconds for role check
 const SIGNOUT_TIMEOUT_MS = 5000; // 5 seconds for sign out
 
 export const AdminRoute = ({ children }: AdminRouteProps) => {
-  // Read directly from source stores for most accurate state
-  const sessionStore = useAuthSessionStore();
-  const roleStore = useAuthRoleStore();
-  const { signingOut } = useAuthStore();
+  // Read directly from source stores - this is the most reliable approach
+  // Avoids any potential race conditions from the facade store
+  const { loading: sessionLoading, user, sessionReady, initialize } = useAuthSessionStore();
+  const { isAdmin, isCheckingRole, fetchUserRole } = useAuthRoleStore();
+  const { signingOut } = useAuthActionsStore();
   
-  // Derived state from source stores
-  const { loading: sessionLoading, user, sessionReady } = sessionStore;
-  const { isAdmin, isCheckingRole } = roleStore;
-  
-  // Combined loading state
+  // Combined loading state - only show loading if session isn't ready yet
   const loading = sessionLoading || (!sessionReady && !user);
 
   // Timeout states
@@ -35,6 +32,9 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
   
   // Track mount state to prevent state updates after unmount
   const mountedRef = useRef(true);
+  
+  // Track if we've already triggered role fetch to prevent loops
+  const roleFetchedRef = useRef(false);
   
   // Debug info for troubleshooting
   const authDebugInfo = `Session: ${sessionReady ? 'ready' : 'pending'}, User: ${user ? 'present' : 'null'}, Admin: ${isAdmin}, Loading: ${loading}, RoleCheck: ${isCheckingRole}`;
@@ -60,19 +60,35 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
 
   // Initialize auth on mount if not already initialized
   useEffect(() => {
-    if (!sessionReady && !loading) {
+    if (!sessionReady && !sessionLoading) {
       cInfo('AdminRoute: Initializing auth session');
-      sessionStore.initialize();
+      initialize();
     }
-  }, [sessionReady, loading]);
+  }, [sessionReady, sessionLoading, initialize]);
 
   // Trigger role check when user is present but role not checked
+  // Uses a ref to prevent duplicate fetches
   useEffect(() => {
-    if (user && !isAdmin && !isCheckingRole && sessionReady) {
+    if (user && !isAdmin && !isCheckingRole && sessionReady && !roleFetchedRef.current) {
       cInfo('AdminRoute: Triggering role check for user', user.id);
-      roleStore.fetchUserRole(user.id);
+      roleFetchedRef.current = true;
+      fetchUserRole(user.id).then(() => {
+        // Reset ref after a delay to allow re-fetch if needed
+        setTimeout(() => {
+          if (mountedRef.current) {
+            roleFetchedRef.current = false;
+          }
+        }, 1000);
+      });
     }
-  }, [user, isAdmin, isCheckingRole, sessionReady]);
+  }, [user, isAdmin, isCheckingRole, sessionReady, fetchUserRole]);
+
+  // Reset role fetched ref when user changes
+  useEffect(() => {
+    if (!user) {
+      roleFetchedRef.current = false;
+    }
+  }, [user]);
 
   // Loading timeout handler
   useEffect(() => {

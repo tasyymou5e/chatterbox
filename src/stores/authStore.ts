@@ -2,7 +2,7 @@
  * Authentication Store (Unified Facade)
  * 
  * @description Unified facade that composes from the split auth stores.
- * Uses useSyncExternalStore pattern for proper React synchronization.
+ * Uses synchronous state composition to avoid race conditions.
  * 
  * @module authStore
  * 
@@ -17,6 +17,7 @@ import { useAuthSessionStore } from './authSessionStore';
 import { useAuthRoleStore } from './authRoleStore';
 import { useAuthActionsStore } from './authActionsStore';
 import { type AuthError } from '@/types/auth';
+import { secureLog } from '@/utils/secureLogging';
 
 /**
  * Authentication state interface - maintained for backward compatibility.
@@ -32,6 +33,9 @@ interface AuthState {
   sessionReady: boolean;
   signingOut: boolean;
   isHydrated: boolean;
+  
+  // Sync tracking
+  _lastSyncTime: number;
   
   // Actions (delegated to split stores)
   initialize: () => void;
@@ -52,51 +56,94 @@ interface AuthState {
   setLoading: (loading: boolean) => void;
   setIsCheckingRole: (checking: boolean) => void;
   setSessionReady: (ready: boolean) => void;
+  
+  // Sync action
+  syncFromSourceStores: () => void;
 }
 
 /**
- * Unified auth store facade using proper Zustand composition.
+ * Helper to get current composed state from all source stores.
+ * This reads synchronously from source stores.
+ */
+const getComposedState = () => {
+  const sessionState = useAuthSessionStore.getState();
+  const roleState = useAuthRoleStore.getState();
+  const actionsState = useAuthActionsStore.getState();
+  
+  return {
+    user: sessionState.user,
+    session: sessionState.session,
+    loading: sessionState.loading,
+    sessionReady: sessionState.sessionReady,
+    isHydrated: sessionState.isHydrated,
+    userRole: roleState.userRole,
+    isAdmin: roleState.isAdmin,
+    isCheckingRole: roleState.isCheckingRole,
+    signingOut: actionsState.signingOut,
+    _lastSyncTime: Date.now(),
+  };
+};
+
+/**
+ * Unified auth store facade using synchronous state composition.
  * 
- * This store synchronously reads from source stores on each access,
- * avoiding race conditions from async subscriptions.
+ * IMPORTANT: This store subscribes to source stores and synchronizes
+ * state immediately (no debouncing) to prevent race conditions.
  */
 export const useAuthStore = create<AuthState>()(
   devtools(
-    (set) => {
-      // Helper to get current composed state from all stores
-      const getComposedState = () => {
-        const sessionState = useAuthSessionStore.getState();
-        const roleState = useAuthRoleStore.getState();
-        const actionsState = useAuthActionsStore.getState();
+    (set, get) => {
+      // Synchronous sync function - no debouncing
+      const syncFromSourceStores = () => {
+        const composed = getComposedState();
+        const current = get();
         
-        return {
-          user: sessionState.user,
-          session: sessionState.session,
-          loading: sessionState.loading,
-          sessionReady: sessionState.sessionReady,
-          isHydrated: sessionState.isHydrated,
-          userRole: roleState.userRole,
-          isAdmin: roleState.isAdmin,
-          isCheckingRole: roleState.isCheckingRole,
-          signingOut: actionsState.signingOut,
-        };
-      };
-
-      // Debounce sync to prevent rapid updates
-      let syncTimeout: ReturnType<typeof setTimeout> | null = null;
-      const syncState = () => {
-        if (syncTimeout) clearTimeout(syncTimeout);
-        syncTimeout = setTimeout(() => {
-          const composed = getComposedState();
+        // Only update if state actually changed to prevent unnecessary renders
+        const hasChanged = 
+          current.user?.id !== composed.user?.id ||
+          current.session?.access_token !== composed.session?.access_token ||
+          current.loading !== composed.loading ||
+          current.sessionReady !== composed.sessionReady ||
+          current.isHydrated !== composed.isHydrated ||
+          current.userRole !== composed.userRole ||
+          current.isAdmin !== composed.isAdmin ||
+          current.isCheckingRole !== composed.isCheckingRole ||
+          current.signingOut !== composed.signingOut;
+        
+        if (hasChanged) {
+          secureLog.dev('AuthStore: Syncing state from source stores', {
+            userChanged: current.user?.id !== composed.user?.id,
+            adminChanged: current.isAdmin !== composed.isAdmin,
+            sessionReadyChanged: current.sessionReady !== composed.sessionReady
+          });
           set(composed);
-        }, 10);
+        }
       };
 
-      // Initialize subscriptions immediately
+      // Set up subscriptions to source stores (runs immediately, no debounce)
       if (typeof window !== 'undefined') {
-        useAuthSessionStore.subscribe(syncState);
-        useAuthRoleStore.subscribe(syncState);
-        useAuthActionsStore.subscribe(syncState);
+        // Subscribe to session store changes - use simple subscribe
+        const unsubSession = useAuthSessionStore.subscribe(() => {
+          // Use setTimeout(0) to ensure state is fully updated before sync
+          setTimeout(syncFromSourceStores, 0);
+        });
+
+        // Subscribe to role store changes
+        const unsubRole = useAuthRoleStore.subscribe(() => {
+          setTimeout(syncFromSourceStores, 0);
+        });
+
+        // Subscribe to actions store changes
+        const unsubActions = useAuthActionsStore.subscribe(() => {
+          setTimeout(syncFromSourceStores, 0);
+        });
+
+        // Store unsubscribe functions for cleanup if needed
+        (window as unknown as { __authStoreCleanup?: () => void }).__authStoreCleanup = () => {
+          unsubSession();
+          unsubRole();
+          unsubActions();
+        };
       }
 
       // Get initial state synchronously
@@ -106,33 +153,82 @@ export const useAuthStore = create<AuthState>()(
         // Initial state from split stores (synchronous)
         ...initialState,
 
+        // Sync action for manual triggering if needed
+        syncFromSourceStores,
+
         // Delegate to session store
-        initialize: () => useAuthSessionStore.getState().initialize(),
-        setUser: (user) => useAuthSessionStore.getState().setUser(user),
-        setSession: (session) => useAuthSessionStore.getState().setSession(session),
-        setLoading: (loading) => useAuthSessionStore.getState().setLoading(loading),
-        setSessionReady: (ready) => useAuthSessionStore.getState().setSessionReady(ready),
+        initialize: () => {
+          useAuthSessionStore.getState().initialize();
+          // Immediately sync after initialization starts
+          syncFromSourceStores();
+        },
+        setUser: (user: User | null) => {
+          useAuthSessionStore.getState().setUser(user);
+          syncFromSourceStores();
+        },
+        setSession: (session: Session | null) => {
+          useAuthSessionStore.getState().setSession(session);
+          syncFromSourceStores();
+        },
+        setLoading: (loading: boolean) => {
+          useAuthSessionStore.getState().setLoading(loading);
+          syncFromSourceStores();
+        },
+        setSessionReady: (ready: boolean) => {
+          useAuthSessionStore.getState().setSessionReady(ready);
+          syncFromSourceStores();
+        },
 
         // Delegate to role store
-        fetchUserRole: (userId) => useAuthRoleStore.getState().fetchUserRole(userId),
-        checkAdminRole: (userId) => useAuthRoleStore.getState().checkAdminRole(userId),
-        setUserRole: (role) => useAuthRoleStore.getState().setUserRole(role),
-        setIsAdmin: (isAdmin) => useAuthRoleStore.getState().setIsAdmin(isAdmin),
-        setIsCheckingRole: (checking) => useAuthRoleStore.getState().setIsCheckingRole(checking),
+        fetchUserRole: async (userId: string) => {
+          const result = await useAuthRoleStore.getState().fetchUserRole(userId);
+          syncFromSourceStores();
+          return result;
+        },
+        checkAdminRole: async (userId: string) => {
+          const result = await useAuthRoleStore.getState().checkAdminRole(userId);
+          syncFromSourceStores();
+          return result;
+        },
+        setUserRole: (role: string | null) => {
+          useAuthRoleStore.getState().setUserRole(role);
+          syncFromSourceStores();
+        },
+        setIsAdmin: (isAdmin: boolean) => {
+          useAuthRoleStore.getState().setIsAdmin(isAdmin);
+          syncFromSourceStores();
+        },
+        setIsCheckingRole: (checking: boolean) => {
+          useAuthRoleStore.getState().setIsCheckingRole(checking);
+          syncFromSourceStores();
+        },
 
         // Delegate to actions store
-        signUp: (email, password, firstName, lastName) => 
-          useAuthActionsStore.getState().signUp(email, password, firstName, lastName),
-        signIn: (email, password) => 
-          useAuthActionsStore.getState().signIn(email, password),
-        signOut: () => 
-          useAuthActionsStore.getState().signOut(),
-        resetPassword: (email, userType) => 
+        signUp: async (email: string, password: string, firstName?: string, lastName?: string) => {
+          const result = await useAuthActionsStore.getState().signUp(email, password, firstName, lastName);
+          syncFromSourceStores();
+          return result;
+        },
+        signIn: async (email: string, password: string) => {
+          const result = await useAuthActionsStore.getState().signIn(email, password);
+          syncFromSourceStores();
+          return result;
+        },
+        signOut: async () => {
+          const result = await useAuthActionsStore.getState().signOut();
+          syncFromSourceStores();
+          return result;
+        },
+        resetPassword: (email: string, userType?: 'admin' | 'user') => 
           useAuthActionsStore.getState().resetPassword(email, userType),
-        clearSignOutState: () => 
-          useAuthActionsStore.getState().clearSignOutState(),
-        emergencyLogout: () => 
-          useAuthActionsStore.getState().emergencyLogout(),
+        clearSignOutState: () => {
+          useAuthActionsStore.getState().clearSignOutState();
+          syncFromSourceStores();
+        },
+        emergencyLogout: () => {
+          useAuthActionsStore.getState().emergencyLogout();
+          syncFromSourceStores();
+        },
       };
     },
     { name: 'AuthStore' }
@@ -148,3 +244,25 @@ export const useAuthSession = () => useAuthStore((state) => state.session);
 export const useAuthLoading = () => useAuthStore((state) => state.loading);
 export const useIsAdmin = () => useAuthStore((state) => state.isAdmin);
 export const useSessionReady = () => useAuthStore((state) => state.sessionReady);
+
+/**
+ * Hook to get fresh auth state directly from source stores.
+ * Use this in critical components like AdminRoute for most accurate state.
+ */
+export const useFreshAuthState = () => {
+  const sessionStore = useAuthSessionStore();
+  const roleStore = useAuthRoleStore();
+  const actionsStore = useAuthActionsStore();
+  
+  return {
+    user: sessionStore.user,
+    session: sessionStore.session,
+    loading: sessionStore.loading,
+    sessionReady: sessionStore.sessionReady,
+    isHydrated: sessionStore.isHydrated,
+    userRole: roleStore.userRole,
+    isAdmin: roleStore.isAdmin,
+    isCheckingRole: roleStore.isCheckingRole,
+    signingOut: actionsStore.signingOut,
+  };
+};
