@@ -36,6 +36,7 @@ export interface AuthContextType {
   session: Session | null;
   userRole: string | null;
   loading: boolean;
+  sessionReady: boolean;
   signUp: (email: string, password: string, firstName?: string, lastName?: string) => Promise<{ error: SupabaseError | null }>;
   signIn: (email: string, password: string) => Promise<{ error: SupabaseError | null; user?: User | null; isAdmin?: boolean }>;
   signOut: () => Promise<{ error: SupabaseError | null }>;
@@ -76,6 +77,7 @@ export const useAuth = (): AuthContextType => {
     userRole,
     loading,
     isHydrated,
+    sessionReady,
     initialize,
     signUp: storeSignUp,
     signIn: storeSignIn,
@@ -92,6 +94,7 @@ export const useAuth = (): AuthContextType => {
     session,
     userRole,
     loading: loading || !isHydrated, // Include hydration state in loading
+    sessionReady: sessionReady && isHydrated, // Only ready when fully hydrated
     signUp: storeSignUp as (email: string, password: string, firstName?: string, lastName?: string) => Promise<{ error: SupabaseError | null }>,
     signIn: storeSignIn as (email: string, password: string) => Promise<{ error: SupabaseError | null; user?: User | null; isAdmin?: boolean }>,
     signOut: storeSignOut as () => Promise<{ error: SupabaseError | null }>,
