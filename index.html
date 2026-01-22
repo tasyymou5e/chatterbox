@@ -4,42 +4,53 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
-    <!-- Content Security Policy -->
+    <!-- Security Headers -->
     <meta http-equiv="Content-Security-Policy" content="
       default-src 'self';
-      script-src 'self' 'unsafe-inline' 'unsafe-eval';
-      style-src 'self' 'unsafe-inline';
-      img-src 'self' data: https: blob:;
-      font-src 'self' data:;
-      connect-src 'self' https://lxuqfgbukrrickanmmic.supabase.co wss://lxuqfgbukrrickanmmic.supabase.co https://*.supabase.co wss://*.supabase.co https://api.openai.com https://api.x.ai https://chatterboxlife.lovable.app;
-      media-src 'self' blob:;
-      object-src 'none';
-      frame-ancestors 'none';
-      base-uri 'self';
-      form-action 'self';
-      upgrade-insecure-requests;
-    " />
+      script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.gpteng.co;
+      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+      font-src 'self' https://fonts.gstatic.com;
+      img-src 'self' data: blob: https:;
+      connect-src 'self' https://lxuqfgbukrrickanmmic.supabase.co wss://lxuqfgbukrrickanmmic.supabase.co https://api.x.ai https://fonts.googleapis.com https://fonts.gstatic.com;
+      frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com;
+      media-src 'self' https: blob:;
+      worker-src 'self';
+      manifest-src 'self';
+    ">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
     
-    <!-- Additional Security Headers via Meta Tags -->
-    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
-    <meta http-equiv="X-Frame-Options" content="DENY" />
-    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <!-- Primary Meta Tags -->
+    <title>Chatterbox - Empowering Children with Autism</title>
+    <meta name="title" content="Chatterbox - Empowering Children with Autism">
+    <meta name="description" content="Chatterbox empowers children with autism through technology, education, and family connection.">
+    <meta name="author" content="Chatterbox Team">
     
-    <title>Chatterbox</title>
-    <meta name="description" content="Empowering children with autism through technology, education, and family connection" />
-    <meta name="author" content="Chatterbox" />
-    <link rel="icon" href="/favicon.png" type="image/png" />
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#4f46e5" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Chatterbox" />
+    <link rel="apple-touch-icon" href="/pwa-192x192.png" />
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://chatterboxlife.lovable.app/">
+    <meta property="og:title" content="Chatterbox - Empowering Children with Autism">
+    <meta property="og:description" content="Chatterbox empowers children with autism through technology, education, and family connection.">
+    <meta property="og:image" content="/og-image.png">
 
-    <meta property="og:title" content="Chatterbox" />
-    <meta property="og:description" content="Empowering children with autism through technology, education, and family connection" />
-    <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://chatterboxlife.lovable.app/og-image.png" />
-
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@chatterbox" />
-    <meta name="twitter:image" content="https://chatterboxlife.lovable.app/og-image.png" />
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://chatterboxlife.lovable.app/">
+    <meta property="twitter:title" content="Chatterbox - Empowering Children with Autism">
+    <meta property="twitter:description" content="Chatterbox empowers children with autism through technology, education, and family connection.">
+    <meta property="twitter:image" content="/og-image.png">
   </head>
-
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>

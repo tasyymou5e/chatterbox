@@ -8,6 +8,7 @@ import { useAutoErrorLogging } from "@/hooks/useAutoErrorLogging";
 import { SecurityMonitoringProvider } from '@/components/security/SecurityMonitoringService';
 import { ProductionSecurityWrapper } from '@/components/security/ProductionSecurityWrapper';
 import { usePerformanceMonitoringSafe } from "@/hooks/usePerformanceMonitoringSafe";
+import { PWAInstallPrompt } from '@/components/pwa/PWAInstallPrompt';
 import {
   coreRoutes,
   parentRoutes,
@@ -55,6 +56,7 @@ const App = () => {
           <ErrorBoundary componentName="App">
             <Toaster />
             <Sonner />
+            <PWAInstallPrompt />
             <Routes>
               {/* Core routes */}
               {coreRoutes.map(route => (
