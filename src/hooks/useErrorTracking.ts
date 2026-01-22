@@ -54,7 +54,8 @@ export const useErrorTracking = () => {
   const getSessionId = useCallback((): string => {
     let sessionId = sessionStorage.getItem('error_session_id');
     if (!sessionId) {
-      sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      // Use cryptographically secure UUID instead of predictable Date.now() + Math.random()
+      sessionId = crypto.randomUUID();
       sessionStorage.setItem('error_session_id', sessionId);
     }
     return sessionId;

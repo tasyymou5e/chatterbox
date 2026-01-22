@@ -37,6 +37,12 @@ class ErrorBoundary extends Component<Props, State> {
     this.logErrorToSystem(error, errorInfo);
   }
 
+  componentWillUnmount() {
+    // Reset error tracking state to prevent memory leaks
+    this.errorLogCount = 0;
+    this.lastErrorLogTime = 0;
+  }
+
   private shouldLogError(): boolean {
     const now = Date.now();
     
@@ -65,11 +71,10 @@ class ErrorBoundary extends Component<Props, State> {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
-      // Create sanitized session ID without exposing full session
-      const sessionId = sessionStorage.getItem('error_session_id') || 
-        `err_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
-      if (!sessionStorage.getItem('error_session_id')) {
+      // Use cryptographically secure session ID
+      let sessionId = sessionStorage.getItem('error_session_id');
+      if (!sessionId) {
+        sessionId = crypto.randomUUID();
         sessionStorage.setItem('error_session_id', sessionId);
       }
       
