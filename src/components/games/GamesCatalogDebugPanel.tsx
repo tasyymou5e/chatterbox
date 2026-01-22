@@ -4,16 +4,17 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { AlertTriangle, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
+import type { CatalogContentItem, CatalogCategory, CatalogCacheStats } from '@/components/games/types/catalog';
 
 interface GamesCatalogDebugPanelProps {
   isLoading: boolean;
-  contentItems: any[];
-  categories: any[];
+  contentItems: CatalogContentItem[];
+  categories: CatalogCategory[];
   favorites: string[];
   userFamily: string | null;
   isParent: boolean;
   realtimeConnected: boolean;
-  cacheStats: any;
+  cacheStats: CatalogCacheStats | null;
   onCacheReset: () => void;
   onForceRefresh: () => void;
 }

@@ -139,7 +139,7 @@ export interface StoreError {
   type: 'validation' | 'auth' | 'network' | 'permission';
   message: string;
   code?: string;
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
 }
 
 /**
@@ -158,7 +158,7 @@ export const createStoreError = (
   type: StoreError['type'], 
   message: string, 
   code?: string, 
-  context?: Record<string, any>
+  context?: Record<string, unknown>
 ): StoreError => ({
   type,
   message,
@@ -171,6 +171,7 @@ export const createStoreError = (
  * 
  * @template T - Type of the data payload
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface StoreSuccess<T = any> {
   /** The operation result data */
   data: T;
@@ -207,6 +208,7 @@ export const createStoreSuccess = <T>(data: T, message?: string): StoreSuccess<T
  *   }
  * }
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type StoreResult<T = any> = 
   | { success: true; result: StoreSuccess<T> }
   | { success: false; error: StoreError; retryCount?: number; canRetry?: boolean };
@@ -356,13 +358,14 @@ export const withRetry = async <T>(
 };
 
 // Utility to check if an error is network-related
-export const isNetworkError = (error: any): boolean => {
-  const errorMessage = error?.message?.toLowerCase() || '';
+export const isNetworkError = (error: unknown): boolean => {
+  const errorObj = error as { message?: string; code?: string } | null;
+  const errorMessage = errorObj?.message?.toLowerCase() || '';
   return errorMessage.includes('network') ||
          errorMessage.includes('fetch') ||
          errorMessage.includes('timeout') ||
          errorMessage.includes('connection') ||
-         error?.code === 'NETWORK_ERROR';
+         errorObj?.code === 'NETWORK_ERROR';
 };
 
 // Create retry-enhanced store result
@@ -370,7 +373,7 @@ export const createRetryableStoreError = (
   type: StoreError['type'],
   message: string,
   code?: string,
-  context?: Record<string, any>,
+  context?: Record<string, unknown>,
   retryCount = 0,
   canRetry = false
 ): StoreResult => ({

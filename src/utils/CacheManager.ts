@@ -12,7 +12,7 @@ interface CacheOptions {
 
 class CacheManager {
   private static instance: CacheManager;
-  private memoryCache = new Map<string, CacheItem<any>>();
+  private memoryCache = new Map<string, CacheItem<unknown>>();
   private readonly defaultTTL = 5 * 60 * 1000; // 5 minutes
   private readonly defaultMaxItems = 100;
 
@@ -131,7 +131,7 @@ class CacheManager {
   }
 
   // Check if cache item is expired
-  private isExpired(item: CacheItem<any>): boolean {
+  private isExpired(item: CacheItem<unknown>): boolean {
     return Date.now() - item.timestamp > item.ttl;
   }
 

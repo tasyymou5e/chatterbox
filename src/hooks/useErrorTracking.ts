@@ -9,7 +9,7 @@ interface ErrorInfo {
   stackTrace?: string;
   componentName?: string;
   routePath?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 interface BrowserInfo {
@@ -115,7 +115,7 @@ export const useErrorTracking = () => {
     });
   }, [logError]);
 
-  const logAuthError = useCallback((message: string, metadata?: Record<string, any>) => {
+  const logAuthError = useCallback((message: string, metadata?: Record<string, unknown>) => {
     logError({
       errorType: 'auth_error',
       severity: 'high',
@@ -124,7 +124,7 @@ export const useErrorTracking = () => {
     });
   }, [logError]);
 
-  const logComponentError = useCallback((componentName: string, error: Error, errorInfo?: any) => {
+  const logComponentError = useCallback((componentName: string, error: Error, errorInfo?: Record<string, unknown>) => {
     logError({
       errorType: 'component_error',
       severity: 'medium',
@@ -132,8 +132,7 @@ export const useErrorTracking = () => {
       stackTrace: error.stack,
       componentName,
       metadata: {
-        errorInfo,
-        componentStack: errorInfo?.componentStack,
+        componentStack: typeof errorInfo?.componentStack === 'string' ? errorInfo.componentStack : undefined,
       }
     });
   }, [logError]);

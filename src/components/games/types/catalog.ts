@@ -71,4 +71,7 @@ export interface CatalogCacheStats {
   totalSize: number;
   oldestItem?: number;
   newestItem?: number;
+  size?: number;
+  hits?: number;
+  misses?: number;
 }

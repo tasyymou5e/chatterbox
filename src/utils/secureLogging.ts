@@ -136,7 +136,8 @@ export const secureLog = {
     // Send critical and high severity events to security monitoring edge function
     if (severity === 'critical' || severity === 'high') {
       try {
-        await fetch('https://lxuqfgbukrrickanmmic.supabase.co/functions/v1/security-monitoring', {
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://lxuqfgbukrrickanmmic.supabase.co';
+        await fetch(`${supabaseUrl}/functions/v1/security-monitoring`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(securityEvent),

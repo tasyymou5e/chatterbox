@@ -306,7 +306,7 @@ export const createSecureFamilyInvitation = async (
       .from('family_invitations')
       .insert({
         family_id: familyId,
-        invited_email: invitedEmail,
+        invited_email: invitedEmail.toLowerCase().trim(),
         connection_role: connectionRole,
         permissions: permissions as any,
         invited_by: user.id,

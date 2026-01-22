@@ -33,12 +33,10 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks: {
-          // Core React
-          vendor: ['react', 'react-dom'],
-          // Routing
-          router: ['react-router-dom'],
-          // UI Components (Radix) - Core frequently used
-          'ui-radix-core': [
+          // Core vendor bundle (React + Router)
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          // All UI components (Radix) consolidated
+          ui: [
             '@radix-ui/react-dialog',
             '@radix-ui/react-dropdown-menu',
             '@radix-ui/react-popover',
@@ -46,9 +44,6 @@ export default defineConfig(({ mode }) => ({
             '@radix-ui/react-tabs',
             '@radix-ui/react-tooltip',
             '@radix-ui/react-slot',
-          ],
-          // UI Components (Radix) - Extended
-          'ui-radix-extended': [
             '@radix-ui/react-accordion',
             '@radix-ui/react-alert-dialog',
             '@radix-ui/react-avatar',
@@ -70,13 +65,9 @@ export default defineConfig(({ mode }) => ({
             '@radix-ui/react-toggle-group',
             '@radix-ui/react-aspect-ratio',
           ],
-          // Charts
-          charts: ['recharts'],
-          // Forms
-          forms: ['react-hook-form', '@hookform/resolvers', 'zod'],
-          // State & Data
-          state: ['zustand', '@tanstack/react-query'],
-          // Supabase
+          // Feature libraries (charts, forms, state)
+          features: ['recharts', 'react-hook-form', '@hookform/resolvers', 'zod', 'zustand', '@tanstack/react-query'],
+          // Supabase (separate for auth/data isolation)
           supabase: ['@supabase/supabase-js'],
         },
       },
