@@ -10,13 +10,14 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Filter, Download, Search, Shield, User, Database, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
+import type { AuditEventDetails } from '@/types/analytics';
 
 interface AuditEvent {
   id: string;
   user_id: string | null;
   event_type: string;
   severity: string;
-  event_details: any;
+  event_details: AuditEventDetails;
   created_at: string;
   ip_address?: unknown;
   user_agent?: string | null;
@@ -87,7 +88,19 @@ export const SecurityAuditTrail: React.FC = () => {
 
       if (error) throw error;
 
-      setEvents(data || []);
+      // Map DB rows to typed AuditEvent interface
+      const typedEvents: AuditEvent[] = (data || []).map(row => ({
+        id: row.id,
+        user_id: row.user_id,
+        event_type: row.event_type,
+        severity: row.severity,
+        event_details: (row.event_details as AuditEventDetails) || {},
+        created_at: row.created_at,
+        ip_address: row.ip_address,
+        user_agent: row.user_agent,
+      }));
+
+      setEvents(typedEvents);
       setTotalCount(count || 0);
     } catch (error) {
       console.error('Failed to load audit events:', error);
@@ -110,14 +123,17 @@ export const SecurityAuditTrail: React.FC = () => {
 
       const csvContent = [
         'Timestamp,User ID,Event Type,Severity,Details,IP Address',
-        ...(data || []).map(event => [
-          event.created_at,
-          event.user_id || '',
-          event.event_type,
-          event.severity,
-          JSON.stringify(event.event_details).replace(/"/g, '""'),
-          (event.event_details as any)?.ip_address || ''
-        ].join(','))
+        ...(data || []).map(event => {
+          const details = (event.event_details as AuditEventDetails) || {};
+          return [
+            event.created_at,
+            event.user_id || '',
+            event.event_type,
+            event.severity,
+            JSON.stringify(event.event_details).replace(/"/g, '""'),
+            details.ip_address || ''
+          ].join(',');
+        })
       ].join('\n');
 
       const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -159,7 +175,7 @@ export const SecurityAuditTrail: React.FC = () => {
     }
   };
 
-  const formatEventDetails = (details: any) => {
+  const formatEventDetails = (details: AuditEventDetails): string => {
     if (!details) return '';
     
     // Format common event details
@@ -353,9 +369,9 @@ export const SecurityAuditTrail: React.FC = () => {
                             </pre>
                           </div>
                           
-                          {(event.event_details as any)?.ip_address && (
+                          {event.event_details?.ip_address && (
                             <div>
-                              <span className="font-medium">IP Address:</span> {String((event.event_details as any).ip_address)}
+                              <span className="font-medium">IP Address:</span> {event.event_details.ip_address}
                             </div>
                           )}
                         </div>

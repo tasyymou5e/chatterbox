@@ -27,8 +27,14 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { CalendarIcon, Gamepad2, Star, Check, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
+import {
+  deleteChildGameAssignment,
+  upsertChildGameAssignment,
+  getChildGameAssignments,
+} from '@/integrations/supabase/rpc-helpers';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+
 
 interface ChildProfile {
   id: string;
@@ -147,16 +153,7 @@ export function ChildGameAssignmentDialog({
     }
     
     try {
-      // Use RPC - need to handle type casting carefully
-      const rpcResult = await supabase.rpc('get_child_game_assignments', { 
-        p_child_id: selectedChild, 
-        p_family_id: familyId 
-      });
-      
-      const { data, error } = rpcResult as { 
-        data: { content_item_id: string; is_required: boolean; difficulty_override: string | null; due_date: string | null }[] | null; 
-        error: { code?: string; message?: string } | null 
-      };
+      const { data, error } = await getChildGameAssignments(selectedChild, familyId);
 
       // Fallback to direct query if RPC doesn't exist
       if (error?.code === 'PGRST202') {
@@ -232,12 +229,11 @@ export function ChildGameAssignmentDialog({
       // Delete removed assignments using RPC
       if (toDelete.length > 0) {
         for (const contentId of toDelete) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const { error: deleteError } = await (supabase.rpc as any)('delete_child_game_assignment', {
-            p_child_id: selectedChild,
-            p_family_id: familyId,
-            p_content_item_id: contentId,
-          }) as { error: { code?: string; message?: string } | null };
+          const { error: deleteError } = await deleteChildGameAssignment(
+            selectedChild,
+            familyId,
+            contentId
+          );
           
           // If RPC doesn't exist, the table might be new
           if (deleteError?.code === 'PGRST202') {
@@ -249,16 +245,15 @@ export function ChildGameAssignmentDialog({
       // Upsert new/updated assignments
       if (toUpsert.length > 0) {
         for (const a of toUpsert) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const { error: upsertError } = await (supabase.rpc as any)('upsert_child_game_assignment', {
-            p_child_id: selectedChild,
-            p_content_item_id: a.content_item_id,
-            p_family_id: familyId,
-            p_assigned_by: parentId,
-            p_is_required: a.is_required,
-            p_difficulty_override: a.difficulty_override ?? null,
-            p_due_date: a.due_date?.toISOString() ?? null,
-          }) as { error: { code?: string; message?: string } | null };
+          const { error: upsertError } = await upsertChildGameAssignment({
+            childId: selectedChild,
+            contentItemId: a.content_item_id,
+            familyId,
+            assignedBy: parentId,
+            isRequired: a.is_required,
+            difficultyOverride: a.difficulty_override,
+            dueDate: a.due_date?.toISOString(),
+          });
 
           if (upsertError?.code === 'PGRST202') {
             console.log('Upsert RPC not available');
