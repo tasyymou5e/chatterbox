@@ -7,7 +7,7 @@
  * @module authSessionStore
  */
 import { create } from 'zustand';
-import { devtools, persist } from 'zustand/middleware';
+import { devtools, persist, subscribeWithSelector } from 'zustand/middleware';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthRoleStore } from './authRoleStore';
@@ -35,8 +35,9 @@ interface AuthSessionState {
 }
 
 export const useAuthSessionStore = create<AuthSessionState>()(
-  devtools(
-    persist(
+  subscribeWithSelector(
+    devtools(
+      persist(
       (set, get) => ({
         // Initial state
         user: null,
@@ -182,6 +183,7 @@ export const useAuthSessionStore = create<AuthSessionState>()(
         },
       }
     ),
-    { name: 'AuthSessionStore' }
+      { name: 'AuthSessionStore' }
+    )
   )
 );

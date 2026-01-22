@@ -121,22 +121,39 @@ export const useAuthStore = create<AuthState>()(
           }
         };
 
-        // Set up subscriptions to source stores using queueMicrotask for synchronous-like behavior
-        // This runs before the next paint but after the current task completes
+        // Set up subscriptions using selector pattern for immediate, granular updates
+        // This eliminates race conditions by using fireImmediately: true
         if (typeof window !== 'undefined') {
-          queueMicrotask(() => {
-            // Subscribe to session store changes
-            useAuthSessionStore.subscribe(syncFromSourceStores);
+          // Subscribe to session store with selector for granular updates
+          useAuthSessionStore.subscribe(
+            (state) => ({ 
+              user: state.user, 
+              session: state.session, 
+              loading: state.loading,
+              sessionReady: state.sessionReady,
+              isHydrated: state.isHydrated
+            }),
+            syncFromSourceStores,
+            { fireImmediately: true, equalityFn: Object.is }
+          );
 
-            // Subscribe to role store changes
-            useAuthRoleStore.subscribe(syncFromSourceStores);
+          // Subscribe to role store with selector
+          useAuthRoleStore.subscribe(
+            (state) => ({ 
+              userRole: state.userRole, 
+              isAdmin: state.isAdmin, 
+              isCheckingRole: state.isCheckingRole 
+            }),
+            syncFromSourceStores,
+            { fireImmediately: true, equalityFn: Object.is }
+          );
 
-            // Subscribe to actions store changes
-            useAuthActionsStore.subscribe(syncFromSourceStores);
-            
-            // Fire immediately to ensure initial sync
-            syncFromSourceStores();
-          });
+          // Subscribe to actions store with selector
+          useAuthActionsStore.subscribe(
+            (state) => ({ signingOut: state.signingOut }),
+            syncFromSourceStores,
+            { fireImmediately: true, equalityFn: Object.is }
+          );
         }
 
       // Get initial state synchronously
