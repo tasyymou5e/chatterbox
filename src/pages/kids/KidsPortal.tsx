@@ -6,7 +6,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { KidsPortalLayout, KidsContentCard, AgeGroupMenu, KidsProgressHeader, KidsGameLauncher } from '@/components/kids';
+import { KidsPortalLayout, KidsContentCard, AgeGroupMenu, KidsProgressHeader, KidsGameLauncher, MascotGuide, useMascotGuide } from '@/components/kids';
 import { useKidsContentLoader } from '@/hooks/useKidsContentLoader';
 import { useChildProfile } from '@/hooks/useChildProfile';
 import { useChildAvatar } from '@/hooks/useChildAvatar';
@@ -21,7 +21,9 @@ export default function KidsPortal() {
   const [activeTab, setActiveTab] = useState<ContentType>('game');
   const [selectedAgeGroup, setSelectedAgeGroup] = useState<AgeGroup | 'all'>('all');
   const [activeGame, setActiveGame] = useState<KidContentItem | null>(null);
-
+  
+  // Mascot guide state
+  const mascot = useMascotGuide();
   // Use the new reusable hook for profile loading
   const { profile: baseProfile, familyId, isLoading: isLoadingProfile } = useChildProfile(user?.id);
 
@@ -36,8 +38,10 @@ export default function KidsPortal() {
     if (user?.id && familyId) {
       setUser(user.id, familyId);
       fetchAllProgress();
+      // Show welcome mascot after loading
+      setTimeout(() => mascot.showGuide('welcome'), 1000);
     }
-  }, [user?.id, familyId, setUser, fetchAllProgress]);
+  }, [user?.id, familyId, setUser, fetchAllProgress, mascot.showGuide]);
 
   // Calculate total stars and moons from progress store
   const { totalStars, totalMoons } = useMemo(() => {
@@ -84,7 +88,10 @@ export default function KidsPortal() {
 
   const handleGameComplete = (results: { score: number; duration: number; completed: boolean }) => {
     cLog('Game completed', results);
-    // Could show a completion summary or trigger additional rewards
+    // Show celebration mascot on game complete
+    if (results.completed) {
+      mascot.celebrateAchievement(results.score > 80 ? 'Amazing score!' : undefined);
+    }
   };
 
   const handleLogout = async () => {
@@ -153,6 +160,19 @@ export default function KidsPortal() {
         onClose={() => setActiveGame(null)}
         onComplete={handleGameComplete}
       />
+
+      {/* Mascot Guide */}
+      {mascot.visible && (
+        <MascotGuide
+          context={mascot.context}
+          customMessage={mascot.customMessage}
+          childName={childProfile?.firstName}
+          streakCount={childProfile?.currentStreak}
+          onDismiss={mascot.hideGuide}
+          autoHide={mascot.context === 'welcome'}
+          autoHideDelay={6000}
+        />
+      )}
     </>
   );
 }
