@@ -11,7 +11,7 @@
  * await signIn('user@example.com', 'password');
  */
 import { create } from 'zustand';
-import { devtools } from 'zustand/middleware';
+import { devtools, subscribeWithSelector } from 'zustand/middleware';
 import { User, Session } from '@supabase/supabase-js';
 import { useAuthSessionStore } from './authSessionStore';
 import { useAuthRoleStore } from './authRoleStore';
@@ -92,59 +92,52 @@ const getComposedState = () => {
  */
 export const useAuthStore = create<AuthState>()(
   devtools(
-    (set, get) => {
-      // Synchronous sync function - no debouncing
-      const syncFromSourceStores = () => {
-        const composed = getComposedState();
-        const current = get();
-        
-        // Only update if state actually changed to prevent unnecessary renders
-        const hasChanged = 
-          current.user?.id !== composed.user?.id ||
-          current.session?.access_token !== composed.session?.access_token ||
-          current.loading !== composed.loading ||
-          current.sessionReady !== composed.sessionReady ||
-          current.isHydrated !== composed.isHydrated ||
-          current.userRole !== composed.userRole ||
-          current.isAdmin !== composed.isAdmin ||
-          current.isCheckingRole !== composed.isCheckingRole ||
-          current.signingOut !== composed.signingOut;
-        
-        if (hasChanged) {
-          secureLog.dev('AuthStore: Syncing state from source stores', {
-            userChanged: current.user?.id !== composed.user?.id,
-            adminChanged: current.isAdmin !== composed.isAdmin,
-            sessionReadyChanged: current.sessionReady !== composed.sessionReady
-          });
-          set(composed);
-        }
-      };
-
-      // Set up subscriptions to source stores (runs immediately, no debounce)
-      if (typeof window !== 'undefined') {
-        // Subscribe to session store changes - use simple subscribe
-        const unsubSession = useAuthSessionStore.subscribe(() => {
-          // Use setTimeout(0) to ensure state is fully updated before sync
-          setTimeout(syncFromSourceStores, 0);
-        });
-
-        // Subscribe to role store changes
-        const unsubRole = useAuthRoleStore.subscribe(() => {
-          setTimeout(syncFromSourceStores, 0);
-        });
-
-        // Subscribe to actions store changes
-        const unsubActions = useAuthActionsStore.subscribe(() => {
-          setTimeout(syncFromSourceStores, 0);
-        });
-
-        // Store unsubscribe functions for cleanup if needed
-        (window as unknown as { __authStoreCleanup?: () => void }).__authStoreCleanup = () => {
-          unsubSession();
-          unsubRole();
-          unsubActions();
+    subscribeWithSelector(
+      (set, get) => {
+        // Synchronous sync function - no debouncing, no setTimeout
+        const syncFromSourceStores = () => {
+          const composed = getComposedState();
+          const current = get();
+          
+          // Only update if state actually changed to prevent unnecessary renders
+          const hasChanged = 
+            current.user?.id !== composed.user?.id ||
+            current.session?.access_token !== composed.session?.access_token ||
+            current.loading !== composed.loading ||
+            current.sessionReady !== composed.sessionReady ||
+            current.isHydrated !== composed.isHydrated ||
+            current.userRole !== composed.userRole ||
+            current.isAdmin !== composed.isAdmin ||
+            current.isCheckingRole !== composed.isCheckingRole ||
+            current.signingOut !== composed.signingOut;
+          
+          if (hasChanged) {
+            secureLog.dev('AuthStore: Syncing state from source stores', {
+              userChanged: current.user?.id !== composed.user?.id,
+              adminChanged: current.isAdmin !== composed.isAdmin,
+              sessionReadyChanged: current.sessionReady !== composed.sessionReady
+            });
+            set(composed);
+          }
         };
-      }
+
+        // Set up subscriptions to source stores using queueMicrotask for synchronous-like behavior
+        // This runs before the next paint but after the current task completes
+        if (typeof window !== 'undefined') {
+          queueMicrotask(() => {
+            // Subscribe to session store changes
+            useAuthSessionStore.subscribe(syncFromSourceStores);
+
+            // Subscribe to role store changes
+            useAuthRoleStore.subscribe(syncFromSourceStores);
+
+            // Subscribe to actions store changes
+            useAuthActionsStore.subscribe(syncFromSourceStores);
+            
+            // Fire immediately to ensure initial sync
+            syncFromSourceStores();
+          });
+        }
 
       // Get initial state synchronously
       const initialState = getComposedState();
@@ -230,7 +223,8 @@ export const useAuthStore = create<AuthState>()(
           syncFromSourceStores();
         },
       };
-    },
+      }
+    ),
     { name: 'AuthStore' }
   )
 );

@@ -4,7 +4,7 @@ import { useAuthSessionStore } from '@/stores/authSessionStore';
 import { useAuthRoleStore } from '@/stores/authRoleStore';
 import { useAuthActionsStore } from '@/stores/authActionsStore';
 import { RefreshCw, AlertCircle, Shield } from 'lucide-react';
-import { cLog, cWarn, cInfo } from '@/utils/conditionalLogger';
+import { cLog, cWarn, cInfo, cError } from '@/utils/conditionalLogger';
 
 interface AdminRouteProps {
   children: React.ReactNode;
@@ -14,16 +14,22 @@ interface AdminRouteProps {
 const LOADING_TIMEOUT_MS = 10000; // 10 seconds
 const ROLE_CHECK_TIMEOUT_MS = 5000; // 5 seconds for role check
 const SIGNOUT_TIMEOUT_MS = 5000; // 5 seconds for sign out
+const INIT_RETRY_DELAY_MS = 100; // Delay before retrying initialization
 
 export const AdminRoute = ({ children }: AdminRouteProps) => {
   // Read directly from source stores - this is the most reliable approach
   // Avoids any potential race conditions from the facade store
-  const { loading: sessionLoading, user, sessionReady, initialize } = useAuthSessionStore();
+  const { loading: sessionLoading, user, sessionReady, initialize, isHydrated } = useAuthSessionStore();
   const { isAdmin, isCheckingRole, fetchUserRole } = useAuthRoleStore();
   const { signingOut } = useAuthActionsStore();
   
+  // Track initialization attempts to prevent infinite loops
+  const [initAttempts, setInitAttempts] = useState(0);
+  const MAX_INIT_ATTEMPTS = 3;
+  
   // Combined loading state - only show loading if session isn't ready yet
-  const loading = sessionLoading || (!sessionReady && !user);
+  // Also check isHydrated to ensure persisted state has been loaded
+  const loading = sessionLoading || (!sessionReady && !user) || !isHydrated;
 
   // Timeout states
   const [loadingTimeout, setLoadingTimeout] = useState(false);
@@ -36,8 +42,11 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
   // Track if we've already triggered role fetch to prevent loops
   const roleFetchedRef = useRef(false);
   
+  // Track if initialization has been triggered
+  const initTriggeredRef = useRef(false);
+  
   // Debug info for troubleshooting
-  const authDebugInfo = `Session: ${sessionReady ? 'ready' : 'pending'}, User: ${user ? 'present' : 'null'}, Admin: ${isAdmin}, Loading: ${loading}, RoleCheck: ${isCheckingRole}`;
+  const authDebugInfo = `Session: ${sessionReady ? 'ready' : 'pending'}, User: ${user ? 'present' : 'null'}, Admin: ${isAdmin}, Loading: ${loading}, RoleCheck: ${isCheckingRole}, Hydrated: ${isHydrated}`;
 
   useEffect(() => {
     mountedRef.current = true;
@@ -59,12 +68,52 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
   }, [sessionReady, user, isAdmin, loading, isCheckingRole, signingOut]);
 
   // Initialize auth on mount if not already initialized
+  // This is the critical fix - we need to handle corrupted/stale persisted state
   useEffect(() => {
-    if (!sessionReady && !sessionLoading) {
-      cInfo('AdminRoute: Initializing auth session');
-      initialize();
+    // Wait for hydration before attempting initialization
+    if (!isHydrated) {
+      cInfo('AdminRoute: Waiting for store hydration...');
+      return;
     }
-  }, [sessionReady, sessionLoading, initialize]);
+
+    // If session is ready, no need to initialize
+    if (sessionReady) {
+      cInfo('AdminRoute: Session already ready, skipping initialization');
+      initTriggeredRef.current = false;
+      return;
+    }
+
+    // If already loading, don't trigger another initialization
+    if (sessionLoading) {
+      cInfo('AdminRoute: Session loading in progress...');
+      return;
+    }
+
+    // Prevent duplicate initialization attempts
+    if (initTriggeredRef.current) {
+      return;
+    }
+
+    // Check if we've exceeded max attempts
+    if (initAttempts >= MAX_INIT_ATTEMPTS) {
+      cError('AdminRoute: Max initialization attempts exceeded, forcing redirect');
+      return;
+    }
+
+    // Trigger initialization
+    cInfo('AdminRoute: Initializing auth session', { attempt: initAttempts + 1 });
+    initTriggeredRef.current = true;
+    setInitAttempts(prev => prev + 1);
+    
+    // Use a small delay to allow for any pending state updates
+    const timer = setTimeout(() => {
+      if (mountedRef.current) {
+        initialize();
+      }
+    }, INIT_RETRY_DELAY_MS);
+
+    return () => clearTimeout(timer);
+  }, [sessionReady, sessionLoading, initialize, isHydrated, initAttempts]);
 
   // Trigger role check when user is present but role not checked
   // Uses a ref to prevent duplicate fetches

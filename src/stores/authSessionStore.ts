@@ -150,8 +150,34 @@ export const useAuthSessionStore = create<AuthSessionState>()(
         onRehydrateStorage: () => (state) => {
           if (state) {
             state.isHydrated = true;
-            // Never trust persisted admin state - must be re-validated
-            secureLog.dev('Auth session store rehydrated');
+            
+            // Validate persisted session is still valid
+            if (state.session?.expires_at) {
+              const expiresAt = new Date(state.session.expires_at * 1000);
+              const now = new Date();
+              const isExpired = expiresAt < now;
+              
+              if (isExpired) {
+                secureLog.dev('Auth session store: Persisted session expired, clearing');
+                // Clear expired session data
+                state.user = null;
+                state.session = null;
+                state.sessionReady = false;
+              } else {
+                secureLog.dev('Auth session store rehydrated with valid session', {
+                  expiresAt: expiresAt.toISOString(),
+                  minutesRemaining: Math.round((expiresAt.getTime() - now.getTime()) / 60000)
+                });
+              }
+            } else if (state.session) {
+              // Session exists but no expiry - treat as invalid
+              secureLog.dev('Auth session store: Session missing expiry, clearing');
+              state.user = null;
+              state.session = null;
+              state.sessionReady = false;
+            } else {
+              secureLog.dev('Auth session store rehydrated (no session)');
+            }
           }
         },
       }
