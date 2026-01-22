@@ -7,8 +7,15 @@ import { Toaster as SonnerToaster } from '@/components/ui/sonner'
 import App from './App.tsx'
 import AppInitializer from '@/components/app/AppInitializer'
 import ErrorBoundary from './components/ErrorBoundary'
+import InitializationErrorBoundary from '@/components/app/InitializationErrorBoundary'
 import { logger } from '@/utils/logger'
+import { initLogger } from '@/utils/initializationLogger'
+import { secureLog } from '@/utils/secureLogging'
 import './index.css'
+
+// Start initialization tracking immediately
+initLogger.start();
+initLogger.beginPhase('module_load');
 
 // Configure QueryClient with retry logic and error handling
 const queryClient = new QueryClient({
@@ -37,18 +44,35 @@ const queryClient = new QueryClient({
   },
 })
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <ErrorBoundary componentName="AppRoot">
-      <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <AppInitializer>
-            <App />
-          </AppInitializer>
-          <Toaster />
-          <SonnerToaster />
-        </BrowserRouter>
-      </QueryClientProvider>
-    </ErrorBoundary>
-  </React.StrictMode>,
-)
+// Mark module load phase complete
+initLogger.completePhase('module_load');
+initLogger.beginPhase('react_render');
+
+try {
+  ReactDOM.createRoot(document.getElementById('root')!).render(
+    <React.StrictMode>
+      <InitializationErrorBoundary>
+        <ErrorBoundary componentName="AppRoot">
+          <QueryClientProvider client={queryClient}>
+            <BrowserRouter>
+              <AppInitializer>
+                <App />
+              </AppInitializer>
+              <Toaster />
+              <SonnerToaster />
+            </BrowserRouter>
+          </QueryClientProvider>
+        </ErrorBoundary>
+      </InitializationErrorBoundary>
+    </React.StrictMode>,
+  );
+  
+  // Mark React render phase complete
+  initLogger.completePhase('react_render');
+  secureLog.dev('React render initiated successfully');
+} catch (error) {
+  // Catch any synchronous errors during render setup
+  initLogger.failPhase('react_render', error);
+  initLogger.logCriticalError(error, 'React render failed');
+  throw error;
+}
