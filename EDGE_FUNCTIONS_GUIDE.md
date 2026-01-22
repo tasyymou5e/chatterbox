@@ -1,6 +1,6 @@
 # Edge Functions Developer Guide
 
-> **Last Updated:** 2026-01-21  
+> **Last Updated:** 2026-01-22  
 > **Total Functions:** 19  
 > **Runtime:** Deno  
 > **Location:** `supabase/functions/`
@@ -31,7 +31,10 @@ This guide provides comprehensive documentation for developing, testing, and dep
 supabase/functions/
 ├── _shared/                          # Shared utilities
 │   ├── api-types.ts                  # API type definitions
+│   ├── auth-validator.ts             # Authentication validation
 │   ├── cors.ts                       # CORS configuration
+│   ├── email-sender.ts               # Email sending via Resend
+│   ├── email-templates.ts            # HTML email templates
 │   ├── password-validator.ts         # Password validation
 │   ├── rate-limiter.ts               # Rate limiting
 │   └── security-headers.ts           # Security headers
@@ -151,6 +154,102 @@ Deno.serve(async (req) => {
 ```
 
 **IMPORTANT**: Never use `'Access-Control-Allow-Origin': '*'` directly. Always use `getCorsHeaders()`.
+
+---
+
+### `email-sender.ts`
+
+Email sending utility using Resend (added 2026-01-22).
+
+```typescript
+import { sendEmail, sendEmailNonBlocking } from '../_shared/email-sender.ts';
+
+interface EmailOptions {
+  to: string;
+  subject: string;
+  html: string;
+  from?: string;  // Defaults to 'Chatterbox <onboarding@resend.dev>'
+}
+
+interface EmailResult {
+  success: boolean;
+  messageId?: string;
+  error?: string;
+}
+
+// Standard email send (awaits result)
+const result = await sendEmail({
+  to: 'parent@example.com',
+  subject: 'Account Setup Complete',
+  html: '<h1>Welcome!</h1>'
+});
+
+// Non-blocking send (fire and forget, logs errors)
+await sendEmailNonBlocking({
+  to: 'parent@example.com',
+  subject: 'Security Alert',
+  html: '<h1>Alert</h1>'
+});
+```
+
+**Required Secret:** `RESEND_API_KEY` - Get from https://resend.com/api-keys
+
+---
+
+### `email-templates.ts`
+
+HTML email templates for parent notifications (added 2026-01-22).
+
+```typescript
+import { 
+  childAccountCompletedTemplate, 
+  childAccountFailedTemplate,
+  securityAlertTemplate 
+} from '../_shared/email-templates.ts';
+
+// Success notification
+const successHtml = childAccountCompletedTemplate({
+  parentName: 'John',
+  childName: 'Emma Smith',
+  familyName: 'The Smiths',
+  completedAt: '2026-01-22, 10:30 AM'
+});
+
+// Failed attempt notification
+const failedHtml = childAccountFailedTemplate({
+  parentName: 'John',
+  childName: 'Emma Smith',
+  familyName: 'The Smiths',
+  failureReason: 'Invalid verification PIN',
+  isLocked: false
+});
+
+// Lockout notification
+const lockoutHtml = childAccountFailedTemplate({
+  parentName: 'John',
+  childName: 'Emma Smith',
+  familyName: 'The Smiths',
+  failureReason: 'Too many failed attempts',
+  isLocked: true,
+  lockMinutes: 15
+});
+
+// Security alert
+const alertHtml = securityAlertTemplate({
+  parentName: 'John',
+  alertType: 'Suspicious Activity',
+  description: 'Multiple failed login attempts detected',
+  timestamp: '2026-01-22, 10:30 AM',
+  actionRequired: 'Review your child accounts'
+});
+```
+
+**Templates Available:**
+| Template | Use Case | Header Color |
+|----------|----------|--------------|
+| `childAccountCompletedTemplate` | Successful account setup | Green |
+| `childAccountFailedTemplate` | Failed attempt / lockout | Orange |
+| `securityAlertTemplate` | Security warnings | Red |
 
 ---
 

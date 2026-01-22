@@ -2,6 +2,8 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { getCorsHeaders } from '../_shared/cors.ts'
 import { RateLimiter } from '../_shared/rate-limiter.ts'
 import { getServiceClient } from '../_shared/auth-validator.ts'
+import { sendEmailNonBlocking } from '../_shared/email-sender.ts'
+import { childAccountCompletedTemplate, childAccountFailedTemplate } from '../_shared/email-templates.ts'
 
 /**
  * SECURE Child Account Completion Edge Function
@@ -15,6 +17,7 @@ import { getServiceClient } from '../_shared/auth-validator.ts'
  * - Lockout after 5 failed attempts
  * - Security event logging
  * - No generated_email exposure to client
+ * - Parent email notifications on success/failure
  */
 
 interface CompleteChildAccountRequest {
@@ -23,11 +26,125 @@ interface CompleteChildAccountRequest {
   verificationPin?: string;
 }
 
+interface ParentInfo {
+  parentEmail: string | null;
+  parentName: string;
+  familyName: string;
+}
+
 // Strict rate limiter for account completion attempts
 const completionLimiter = new RateLimiter({
   windowMs: 15 * 60 * 1000, // 15 minute window
   maxRequests: 5, // Max 5 attempts per 15 minutes per IP
 });
+
+/**
+ * Get parent information for notifications
+ */
+async function getParentInfo(
+  supabase: ReturnType<typeof getServiceClient>, 
+  createdBy: string, 
+  familyId: string
+): Promise<ParentInfo> {
+  try {
+    // Get parent's auth user data
+    const { data: parentAuth } = await supabase.auth.admin.getUserById(createdBy);
+    
+    // Get family name
+    const { data: family } = await supabase
+      .from('families')
+      .select('name, display_name')
+      .eq('id', familyId)
+      .single();
+
+    return {
+      parentEmail: parentAuth?.user?.email || null,
+      parentName: parentAuth?.user?.user_metadata?.first_name || 'Parent',
+      familyName: family?.display_name || family?.name || 'Your Family'
+    };
+  } catch (error) {
+    console.warn('[getParentInfo] Failed to get parent info:', error);
+    return {
+      parentEmail: null,
+      parentName: 'Parent',
+      familyName: 'Your Family'
+    };
+  }
+}
+
+/**
+ * Send success notification to parent
+ */
+async function notifyParentSuccess(
+  supabase: ReturnType<typeof getServiceClient>,
+  createdBy: string,
+  familyId: string,
+  childFirstName: string,
+  childLastName: string
+): Promise<void> {
+  const parentInfo = await getParentInfo(supabase, createdBy, familyId);
+  
+  if (!parentInfo.parentEmail) {
+    console.log('[notifyParentSuccess] No parent email available');
+    return;
+  }
+
+  await sendEmailNonBlocking({
+    to: parentInfo.parentEmail,
+    subject: `✓ ${childFirstName} has completed their account setup`,
+    html: childAccountCompletedTemplate({
+      parentName: parentInfo.parentName,
+      childName: `${childFirstName} ${childLastName}`,
+      familyName: parentInfo.familyName,
+      completedAt: new Date().toLocaleString('en-US', {
+        dateStyle: 'medium',
+        timeStyle: 'short'
+      })
+    })
+  });
+  
+  console.log('[notifyParentSuccess] Sent success notification to parent');
+}
+
+/**
+ * Send failure/lockout notification to parent
+ */
+async function notifyParentFailure(
+  supabase: ReturnType<typeof getServiceClient>,
+  createdBy: string,
+  familyId: string,
+  childFirstName: string,
+  childLastName: string,
+  failureReason: string,
+  isLocked: boolean = false,
+  lockMinutes: number = 0
+): Promise<void> {
+  const parentInfo = await getParentInfo(supabase, createdBy, familyId);
+  
+  if (!parentInfo.parentEmail) {
+    console.log('[notifyParentFailure] No parent email available');
+    return;
+  }
+
+  const subject = isLocked 
+    ? `🔒 Security Alert: ${childFirstName}'s account is temporarily locked`
+    : `⚠️ Failed account setup attempt for ${childFirstName}`;
+
+  await sendEmailNonBlocking({
+    to: parentInfo.parentEmail,
+    subject,
+    html: childAccountFailedTemplate({
+      parentName: parentInfo.parentName,
+      childName: `${childFirstName} ${childLastName}`,
+      familyName: parentInfo.familyName,
+      failureReason,
+      isLocked,
+      lockMinutes
+    })
+  });
+  
+  console.log('[notifyParentFailure] Sent failure notification to parent');
+}
 
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req.headers.get('origin'));
@@ -103,6 +220,9 @@ serve(async (req) => {
           }
         });
 
+      // Note: We can't notify parent here because we don't know which account
+      // was targeted (invalid family code = no account match)
+
       return new Response(
         JSON.stringify({
           success: false,
@@ -117,6 +237,28 @@ serve(async (req) => {
     // Check if account is locked
     if (account.is_locked) {
       const minutes = Math.ceil(account.lock_remaining_seconds / 60);
+      
+      // Get account details for notification
+      const { data: lockedAccount } = await supabase
+        .from('child_accounts')
+        .select('first_name, last_name, family_id, created_by')
+        .eq('id', account.id)
+        .single();
+      
+      if (lockedAccount) {
+        // Send lockout notification to parent (non-blocking)
+        notifyParentFailure(
+          supabase,
+          lockedAccount.created_by,
+          lockedAccount.family_id,
+          lockedAccount.first_name,
+          lockedAccount.last_name,
+          'Too many failed verification attempts',
+          true,
+          minutes
+        );
+      }
+      
       return new Response(
         JSON.stringify({
           success: false,
@@ -139,7 +281,7 @@ serve(async (req) => {
     // First just get the email for auth user creation
     const { data: accountData } = await supabase
       .from('child_accounts')
-      .select('generated_email, first_name, last_name, family_id')
+      .select('generated_email, first_name, last_name, family_id, created_by')
       .eq('id', account.id)
       .single();
 
@@ -181,6 +323,16 @@ serve(async (req) => {
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
         );
       }
+      
+      // Notify parent of failure (non-blocking)
+      notifyParentFailure(
+        supabase,
+        accountData.created_by,
+        accountData.family_id,
+        accountData.first_name,
+        accountData.last_name,
+        'Account creation failed. Please contact support.'
+      );
       
       return new Response(
         JSON.stringify({
@@ -262,6 +414,15 @@ serve(async (req) => {
       });
 
     console.log('Child account completed successfully:', account.id);
+
+    // Send success notification to parent (non-blocking)
+    notifyParentSuccess(
+      supabase,
+      accountData.created_by,
+      accountData.family_id,
+      accountData.first_name,
+      accountData.last_name
+    );
 
     // Step 8: Sign in the user server-side to create session tokens
     // This way the generated_email NEVER leaves the server
