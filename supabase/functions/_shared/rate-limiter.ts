@@ -86,7 +86,7 @@ export class RateLimiter {
   /**
    * Create response for rate limited requests
    */
-  static createRateLimitResponse(resetTime: number): Response {
+  static createRateLimitResponse(resetTime: number, corsHeaders?: Record<string, string>): Response {
     const retryAfter = Math.ceil((resetTime - Date.now()) / 1000);
     
     return new Response(
@@ -101,8 +101,10 @@ export class RateLimiter {
           'Content-Type': 'application/json',
           'Retry-After': retryAfter.toString(),
           'X-RateLimit-Reset': new Date(resetTime).toISOString(),
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+          ...(corsHeaders || {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+          })
         }
       }
     );
