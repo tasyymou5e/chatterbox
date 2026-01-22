@@ -19,24 +19,24 @@ import {
   FileText
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { authLoggingService } from '@/services/authLoggingService';
+import { secureLog } from '@/utils/secureLogging';
+import type { LucideIcon } from 'lucide-react';
 
 export interface ErrorRecoveryActions {
   primary?: {
     label: string;
     action: () => void;
-    icon?: React.ElementType;
+    icon?: LucideIcon;
   };
   secondary?: {
     label: string;
     action: () => void;
-    icon?: React.ElementType;
+    icon?: LucideIcon;
   };
   tertiary?: {
     label: string;
     action: () => void;
-    icon?: React.ElementType;
+    icon?: LucideIcon;
   };
 }
 
@@ -45,22 +45,27 @@ export interface ErrorAnalysis {
   category: 'network' | 'database' | 'authentication' | 'validation' | 'system' | 'rate_limit';
   recoverable: boolean;
   suggestedActions: string[];
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
   retryAfter?: number;
 }
 
-const AdminErrorBoundary: React.FC<{
+interface AdminErrorBoundaryProps {
   error: Error;
   componentName: string;
-  resetError: () => void;
   retry?: () => void;
-}> = ({ error, componentName, resetError, retry }) => {
+}
+
+const AdminErrorBoundary: React.FC<AdminErrorBoundaryProps> = ({ 
+  error, 
+  componentName, 
+  retry 
+}) => {
   const { toast } = useToast();
 
   // Analyze error and suggest recovery actions
   const analyzeError = (error: Error): ErrorAnalysis => {
     const message = error.message.toLowerCase();
-    const status = 'status' in error ? (error as any).status : null;
+    const status = 'status' in error ? (error as Error & { status: number }).status : null;
     
     // Network errors
     if (message.includes('fetch') || message.includes('network') || status === 0) {
@@ -137,20 +142,13 @@ const AdminErrorBoundary: React.FC<{
 
   // Log error for audit trail
   React.useEffect(() => {
-    authLoggingService.logActivity(
-      'admin-system',
-      'system_error',
-      false,
-      error.message,
-      {
-        componentName,
-        errorType: errorAnalysis.category,
-        severity: errorAnalysis.severity,
-        timestamp: new Date().toISOString(),
-        userAgent: navigator.userAgent,
-        context: errorAnalysis.context
-      }
-    ).catch(console.error);
+    secureLog.error('Admin component error', {
+      componentName,
+      errorType: errorAnalysis.category,
+      severity: errorAnalysis.severity,
+      message: error.message,
+      timestamp: new Date().toISOString(),
+    });
   }, [error, componentName, errorAnalysis]);
 
   const getRecoveryActions = (): ErrorRecoveryActions => {
@@ -254,7 +252,7 @@ const AdminErrorBoundary: React.FC<{
     }
   };
 
-  const getSeverityIcon = (severity: string) => {
+  const getSeverityIcon = (severity: string): LucideIcon => {
     switch (severity) {
       case 'critical':
       case 'high': return AlertTriangle;
@@ -264,16 +262,18 @@ const AdminErrorBoundary: React.FC<{
     }
   };
 
+  const SeverityIcon = getSeverityIcon(errorAnalysis.severity);
+
   return (
     <Card className={`w-full ${getSeverityColor(errorAnalysis.severity)}`}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          {React.createElement(getSeverityIcon(errorAnalysis.severity), {
-            className: `h-5 w-5 ${
+          <SeverityIcon 
+            className={`h-5 w-5 ${
               errorAnalysis.severity === 'critical' || errorAnalysis.severity === 'high' ? 'text-red-500' : 
               errorAnalysis.severity === 'medium' ? 'text-yellow-500' : 'text-blue-500'
-            }`
-          })}
+            }`}
+          />
           <span>Something went wrong</span>
         </CardTitle>
       </CardHeader>
@@ -317,7 +317,9 @@ const AdminErrorBoundary: React.FC<{
                 className="flex-1"
                 variant="default"
               >
-                <recoveryActions.primary.icon className="h-4 w-4 mr-2" />
+                {recoveryActions.primary.icon && (
+                  <recoveryActions.primary.icon className="h-4 w-4 mr-2" />
+                )}
                 {recoveryActions.primary.label}
               </Button>
             )}
@@ -327,7 +329,9 @@ const AdminErrorBoundary: React.FC<{
                 variant="outline"
                 className="flex-1"
               >
-                <recoveryActions.secondary.icon className="h-4 w-4 mr-2" />
+                {recoveryActions.secondary.icon && (
+                  <recoveryActions.secondary.icon className="h-4 w-4 mr-2" />
+                )}
                 {recoveryActions.secondary.label}
               </Button>
             )}
@@ -337,7 +341,9 @@ const AdminErrorBoundary: React.FC<{
                 variant="ghost"
                 size="sm"
               >
-                <recoveryActions.tertiary.icon className="h-4 w-4 mr-2" />
+                {recoveryActions.tertiary.icon && (
+                  <recoveryActions.tertiary.icon className="h-4 w-4 mr-2" />
+                )}
                 {recoveryActions.tertiary.label}
               </Button>
             )}

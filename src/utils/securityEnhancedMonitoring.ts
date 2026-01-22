@@ -9,7 +9,7 @@ interface SecurityEvent {
   type: 'password_generation' | 'session_anomaly' | 'auth_failure_pattern' | 'cors_mismatch';
   severity: 'low' | 'medium' | 'high' | 'critical';
   timestamp: number;
-  details: Record<string, any>;
+  details: Record<string, unknown>;
 }
 
 class SecurityEnhancedMonitoring {
@@ -250,7 +250,7 @@ class SecurityEnhancedMonitoring {
     // - SMS alerts
     // - External security monitoring services
     
-    console.error('CRITICAL SECURITY ALERT:', event);
+    secureLog.error('CRITICAL SECURITY ALERT', event);
   }
 
   /**
@@ -287,7 +287,6 @@ class SecurityEnhancedMonitoring {
     // In a real implementation, this would pull from a persistent store
     // For now, return a summary of current state
     const events: SecurityEvent[] = [];
-    const now = Date.now();
 
     for (const [key, entry] of this.failedAuthAttempts.entries()) {
       if (entry.count >= this.FAILED_AUTH_THRESHOLD) {

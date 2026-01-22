@@ -3,6 +3,8 @@
  * Prevents abuse of admin operations with configurable limits
  */
 
+import React from 'react';
+
 interface RateLimitConfig {
   windowMs: number;
   maxRequests: number;
@@ -15,6 +17,14 @@ interface RateLimitEntry {
   lastAttempt: number;
 }
 
+interface RateLimitStatus {
+  count: number;
+  limit: number;
+  remaining: number;
+  resetTime: number;
+  resetTimeFormatted: string;
+}
+
 interface RateLimitState {
   userCreation: RateLimitEntry;
   passwordReset: RateLimitEntry;
@@ -25,7 +35,7 @@ interface RateLimitState {
 class AdminRateLimiter {
   private static instance: AdminRateLimiter;
   private storage = new Map<string, RateLimitEntry>();
-  private cleanupInterval: NodeJS.Timeout | null = null;
+  private cleanupInterval: ReturnType<typeof setInterval> | null = null;
 
   static getInstance(): AdminRateLimiter {
     if (!AdminRateLimiter.instance) {
@@ -115,13 +125,7 @@ class AdminRateLimiter {
   /**
    * Get current rate limit status without consuming a request
    */
-  getStatus(operation: keyof RateLimitState, identifier: string): {
-    count: number;
-    limit: number;
-    remaining: number;
-    resetTime: number;
-    resetTimeFormatted: string;
-  } {
+  getStatus(operation: keyof RateLimitState, identifier: string): RateLimitStatus {
     const config = this.configs[operation];
     const key = config.keyGenerator?.(identifier) || `${operation}:${identifier}`;
     const entry = this.storage.get(key);
@@ -149,9 +153,9 @@ class AdminRateLimiter {
   /**
    * Get all rate limit states for monitoring
    */
-  getAllStatus(identifier: string): Partial<RateLimitState> {
+  getAllStatus(identifier: string): Record<keyof RateLimitState, RateLimitStatus> {
     const operations = Object.keys(this.configs) as (keyof RateLimitState)[];
-    const status: Partial<RateLimitState> = {};
+    const status = {} as Record<keyof RateLimitState, RateLimitStatus>;
 
     for (const operation of operations) {
       status[operation] = this.getStatus(operation, identifier);
@@ -205,7 +209,7 @@ class AdminRateLimiter {
     operationsWithUsage: Record<string, number>;
   } {
     const now = Date.now();
-    let totalEntries = this.storage.size;
+    const totalEntries = this.storage.size;
     let activeEntries = 0;
     const operationsWithUsage: Record<string, number> = {};
 
@@ -276,5 +280,7 @@ export const useAdminRateLimiter = (userId: string) => {
     statistics: adminRateLimiter.getStatistics()
   };
 };
+
+export type { RateLimitEntry, RateLimitStatus, RateLimitState };
 
 export default adminRateLimiter;

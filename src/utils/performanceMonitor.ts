@@ -1,29 +1,23 @@
 /**
  * Performance monitoring utility for tracking Web Vitals
  * Tracks Core Web Vitals metrics and reports them for optimization
+ * Updated for web-vitals v5+ API
  */
 
-import { getCLS, getFID, getFCP, getLCP, getTTFB } from 'web-vitals';
+import { onCLS, onINP, onFCP, onLCP, onTTFB, type Metric } from 'web-vitals';
 import { secureLog } from '@/utils/secureLogging';
 
 export interface PerformanceMetrics {
   cls: number; // Cumulative Layout Shift
-  fid: number; // First Input Delay  
+  inp: number; // Interaction to Next Paint (replaced FID in v4+)
   fcp: number; // First Contentful Paint
   lcp: number; // Largest Contentful Paint
   ttfb: number; // Time to First Byte
 }
 
-interface MetricEntry extends PerformanceMetrics {
-  timestamp: number;
-  userAgent: string;
-  url: string;
-}
-
 class PerformanceMonitor {
   private static instance: PerformanceMonitor;
   private metrics: Partial<PerformanceMetrics> = {};
-  private reportingThreshold = 5000; // 5 seconds
 
   static getInstance(): PerformanceMonitor {
     if (!PerformanceMonitor.instance) {
@@ -39,35 +33,35 @@ class PerformanceMonitor {
     if (typeof window === 'undefined') return;
 
     // Cumulative Layout Shift
-    getCLS((metric) => {
+    onCLS((metric: Metric) => {
       this.metrics.cls = metric.value;
       this.evaluateThreshold('CLS', metric.value, 0.1);
       this.logMetric('CLS', metric);
     });
 
-    // First Input Delay
-    getFID((metric) => {
-      this.metrics.fid = metric.value;
-      this.evaluateThreshold('FID', metric.value, 100);
-      this.logMetric('FID', metric);
+    // Interaction to Next Paint (replaced FID in web-vitals v4+)
+    onINP((metric: Metric) => {
+      this.metrics.inp = metric.value;
+      this.evaluateThreshold('INP', metric.value, 200);
+      this.logMetric('INP', metric);
     });
 
     // First Contentful Paint
-    getFCP((metric) => {
+    onFCP((metric: Metric) => {
       this.metrics.fcp = metric.value;
       this.evaluateThreshold('FCP', metric.value, 1800);
       this.logMetric('FCP', metric);
     });
 
     // Largest Contentful Paint
-    getLCP((metric) => {
+    onLCP((metric: Metric) => {
       this.metrics.lcp = metric.value;
       this.evaluateThreshold('LCP', metric.value, 2500);
       this.logMetric('LCP', metric);
     });
 
     // Time to First Byte
-    getTTFB((metric) => {
+    onTTFB((metric: Metric) => {
       this.metrics.ttfb = metric.value;
       this.evaluateThreshold('TTFB', metric.value, 800);
       this.logMetric('TTFB', metric);
@@ -92,7 +86,7 @@ class PerformanceMonitor {
   /**
    * Log metric to console and potentially to analytics
    */
-  private logMetric(name: string, metric: any): void {
+  private logMetric(name: string, metric: Metric): void {
     const logEntry = {
       name,
       value: metric.value,
@@ -105,7 +99,8 @@ class PerformanceMonitor {
 
     // Log to console in development
     if (import.meta.env.DEV) {
-      console.log(`[Web Vitals] ${name}:`, logEntry);
+      // Using secureLog for consistent logging
+      secureLog.info(`[Web Vitals] ${name}:`, logEntry);
     }
 
     // Send to analytics for production
@@ -115,11 +110,11 @@ class PerformanceMonitor {
   /**
    * Report metrics to analytics service
    */
-  private reportToAnalytics(entry: Record<string, any>): void {
+  private reportToAnalytics(entry: { name: string; value: number; rating: string; delta: number; navigationType: string; timestamp: number; url: string }): void {
     try {
       // This could be sent to your analytics service
-      // For now, just log securely
-      secureLog.performance('web_vital', entry);
+      // For now, just log securely with the metric value
+      secureLog.performance('web_vital', entry.value, entry.name);
     } catch (error) {
       secureLog.error('Failed to report metrics to analytics', error, 'PerformanceMonitor');
     }
@@ -162,7 +157,7 @@ class PerformanceMonitor {
     const scores = [];
     
     if (metrics.cls !== undefined) scores.push(metrics.cls <= 0.1 ? 1 : 0);
-    if (metrics.fid !== undefined) scores.push(metrics.fid <= 100 ? 1 : 0);
+    if (metrics.inp !== undefined) scores.push(metrics.inp <= 200 ? 1 : 0);
     if (metrics.fcp !== undefined) scores.push(metrics.fcp <= 1800 ? 1 : 0);
     if (metrics.lcp !== undefined) scores.push(metrics.lcp <= 2500 ? 1 : 0);
     if (metrics.ttfb !== undefined) scores.push(metrics.ttfb <= 800 ? 1 : 0);
@@ -184,7 +179,7 @@ class PerformanceMonitor {
       recommendations.push('Optimize layout stability by reserving space for images and dynamic content');
     }
 
-    if (metrics.fid !== undefined && metrics.fid > 100) {
+    if (metrics.inp !== undefined && metrics.inp > 200) {
       recommendations.push('Reduce JavaScript execution time and break up long tasks');
     }
 
