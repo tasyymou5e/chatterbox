@@ -422,6 +422,25 @@ export const docRegistry: DocMapping[] = [
     autoUpdateFields: ['Last Updated'],
     category: 'status',
   },
+  
+  // ============ GRAPHICS & DESIGN ============
+  {
+    docFile: 'GRAPHICS_TECH_STACK.md',
+    watchPatterns: [
+      'src/components/ui/chart.tsx',
+      'src/components/ui/*.tsx',
+      'src/components/illustrations/**/*',
+      'src/components/progress/**/*',
+      'src/lib/animations.ts',
+      'tailwind.config.ts',
+      'package.json',
+    ],
+    sections: [
+      { header: 'Component Statistics', extractor: 'countFiles', subPatterns: ['src/components/ui/**/*.tsx'] },
+    ],
+    autoUpdateFields: ['Last Updated'],
+    category: 'components',
+  },
 ];
 
 /**
