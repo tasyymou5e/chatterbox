@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,7 +10,8 @@ import {
   Activity,
   TrendingUp,
   RefreshCw,
-  BarChart3
+  BarChart3,
+  AlertTriangle
 } from 'lucide-react';
 import CreateTestFamilyButton from '@/components/admin/CreateTestFamilyButton';
 import { AnalyticsKPICard } from '@/components/analytics/AnalyticsKPICard';
@@ -24,6 +25,9 @@ import { useAuthStore } from '@/stores/authStore';
 import EnhancedSecurityDashboard from '@/components/admin/EnhancedSecurityDashboard';
 import AdminSiteSettings from '@/components/admin/AdminSiteSettings';
 import AdminAPIIntegrations from '@/components/admin/AdminAPIIntegrations';
+import { DashboardErrorBoundary } from '@/components/admin/DashboardErrorBoundary';
+import { FallbackCard, DEFAULT_KPI_DATA, DEFAULT_SYSTEM_HEALTH } from '@/components/admin/DashboardFallback';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface DashboardStats {
   totalFamilies: number;
@@ -32,6 +36,9 @@ interface DashboardStats {
   totalChildren: number;
   recentSignups: number;
 }
+
+// Default stats when fetch fails
+const DEFAULT_STATS: DashboardStats = DEFAULT_KPI_DATA;
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -74,28 +81,33 @@ export default function AdminDashboard() {
     }
   }, [sessionReady, isAdmin, fetchSystemMetrics]);
 
-  // Extract fetchDashboardStats to be reusable
-  const fetchDashboardStats = async () => {
+  // State for tracking fetch errors
+  const [statsError, setStatsError] = useState<string | null>(null);
+
+  // Extract fetchDashboardStats to be reusable with error handling
+  const fetchDashboardStats = useCallback(async () => {
     setLoading('adminDashboard', true);
+    setStatsError(null);
+    
     try {
-      // Get total families
-      const { count: familiesCount } = await supabase
+      // Get total families with timeout
+      const familiesPromise = supabase
         .from('families')
         .select('*', { count: 'exact', head: true });
 
       // Get total users
-      const { count: usersCount } = await supabase
+      const usersPromise = supabase
         .from('profiles')
         .select('*', { count: 'exact', head: true });
 
       // Get parents count
-      const { count: parentsCount } = await supabase
+      const parentsPromise = supabase
         .from('user_roles')
         .select('*', { count: 'exact', head: true })
         .eq('role', 'parent');
 
       // Get children count
-      const { count: childrenCount } = await supabase
+      const childrenPromise = supabase
         .from('user_roles')
         .select('*', { count: 'exact', head: true })
         .eq('role', 'child');
@@ -104,24 +116,39 @@ export default function AdminDashboard() {
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
       
-      const { count: recentSignupsCount } = await supabase
+      const recentSignupsPromise = supabase
         .from('profiles')
         .select('*', { count: 'exact', head: true })
         .gte('created_at', sevenDaysAgo.toISOString());
 
+      // Execute all queries in parallel with timeout
+      const timeout = new Promise<never>((_, reject) => 
+        setTimeout(() => reject(new Error('Query timeout')), 10000)
+      );
+
+      const [families, users, parents, children, recentSignups] = await Promise.race([
+        Promise.all([familiesPromise, usersPromise, parentsPromise, childrenPromise, recentSignupsPromise]),
+        timeout.then(() => { throw new Error('timeout'); })
+      ]) as Awaited<typeof familiesPromise>[];
+
       setStats({
-        totalFamilies: familiesCount || 0,
-        totalUsers: usersCount || 0,
-        totalParents: parentsCount || 0,
-        totalChildren: childrenCount || 0,
-        recentSignups: recentSignupsCount || 0,
+        totalFamilies: families.count || 0,
+        totalUsers: users.count || 0,
+        totalParents: parents.count || 0,
+        totalChildren: children.count || 0,
+        recentSignups: recentSignups.count || 0,
       });
     } catch (error) {
-      console.error('Error fetching dashboard stats:', error);
+      console.error('[AdminDashboard] Error fetching stats:', error);
+      setStatsError('Unable to load dashboard statistics');
+      // Keep showing previous stats or defaults - don't clear data
+      if (stats.totalFamilies === 0 && stats.totalUsers === 0) {
+        setStats(DEFAULT_STATS);
+      }
     } finally {
       setLoading('adminDashboard', false);
     }
-  };
+  }, [setLoading, stats.totalFamilies, stats.totalUsers]);
 
   const getEngagementMetric = (metricName: string) => {
     const metric = engagementMetrics.find(m => m.metric === metricName);
@@ -211,21 +238,60 @@ export default function AdminDashboard() {
         />
       </div>
 
-      {/* Analytics Charts Section - Lazy loaded */}
+      {/* Stats Error Alert */}
+      {statsError && (
+        <Alert variant="destructive" className="bg-destructive/10">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Data Loading Issue</AlertTitle>
+          <AlertDescription className="flex items-center justify-between">
+            <span>{statsError}</span>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={fetchDashboardStats}
+              disabled={dashboardLoading}
+            >
+              <RefreshCw className={`h-3 w-3 mr-1 ${dashboardLoading ? 'animate-spin' : ''}`} />
+              Retry
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Analytics Charts Section - Lazy loaded with error boundaries */}
       <div className="grid gap-6 lg:grid-cols-2">
-        <LazyEngagementChart data={dailyAnalytics} loading={analyticsLoading} />
-        <LazyRetentionChart data={retentionData} loading={analyticsLoading} />
+        <DashboardErrorBoundary componentName="Engagement Chart">
+          <LazyEngagementChart data={dailyAnalytics} loading={analyticsLoading} />
+        </DashboardErrorBoundary>
+        <DashboardErrorBoundary componentName="Retention Chart">
+          <LazyRetentionChart data={retentionData} loading={analyticsLoading} />
+        </DashboardErrorBoundary>
       </div>
 
       {/* System Health, Settings, API Integrations, and Quick Actions */}
       <div className="grid gap-6 lg:grid-cols-2">
-        <SystemHealthWidget data={systemMetrics || []} loading={!sessionReady} />
-        <AdminSiteSettings />
+        <DashboardErrorBoundary 
+          componentName="System Health"
+          fallbackComponent={
+            <FallbackCard 
+              title="System Health" 
+              description="Health metrics temporarily unavailable"
+              onRetry={fetchSystemMetrics}
+            />
+          }
+        >
+          <SystemHealthWidget data={systemMetrics?.length ? systemMetrics : DEFAULT_SYSTEM_HEALTH} loading={!sessionReady} />
+        </DashboardErrorBoundary>
+        <DashboardErrorBoundary componentName="Site Settings">
+          <AdminSiteSettings />
+        </DashboardErrorBoundary>
       </div>
 
       {/* API Integrations and Quick Actions */}
       <div className="grid gap-6 lg:grid-cols-2">
-        <AdminAPIIntegrations />
+        <DashboardErrorBoundary componentName="API Integrations">
+          <AdminAPIIntegrations />
+        </DashboardErrorBoundary>
         
         <Card className="bg-gradient-card border-border shadow-soft">
           <CardHeader>
@@ -274,8 +340,18 @@ export default function AdminDashboard() {
         </Card>
       </div>
 
-      {/* Enhanced Security Dashboard */}
-      <EnhancedSecurityDashboard />
+      {/* Enhanced Security Dashboard with Error Boundary */}
+      <DashboardErrorBoundary 
+        componentName="Security Dashboard"
+        fallbackComponent={
+          <FallbackCard 
+            title="Security Dashboard" 
+            description="Security metrics temporarily unavailable"
+          />
+        }
+      >
+        <EnhancedSecurityDashboard />
+      </DashboardErrorBoundary>
 
         {/* Error Display */}
         {analyticsError && (
