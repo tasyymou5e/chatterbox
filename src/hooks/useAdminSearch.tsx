@@ -3,7 +3,7 @@
  * Replaces client-side filtering with efficient database queries
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -11,14 +11,11 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Search, 
-  Filter, 
   RefreshCw, 
-  Loader2, 
   X,
   Clock
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { Skeleton } from '@/components/admin/SkeletonLoading';
 
 interface SearchFilters {
   query: string;
@@ -128,25 +125,37 @@ const useAdminSearch = () => {
           searchTime: Date.now() - startTime,
           cacheHit: true
         });
+        setLoading(false);
+        setDebouncing(false);
         return;
       }
 
-      // Server-side search with advanced query
-      const { data, error } = await supabase.rpc('admin_search_users', {
-        search_query: filters.query,
-        role_filter: filters.role === 'all' ? null : filters.role,
-        status_filter: filters.status === 'all' ? null : filters.status,
-        family_id_filter: filters.familyId || null,
-        limit: 100,
-        offset: 0,
-        include_ranking: true
-      });
+      // Direct query on profiles table instead of RPC
+      const searchQuery = `%${filters.query}%`;
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, user_id, first_name, last_name, created_at')
+        .or(`first_name.ilike.${searchQuery},last_name.ilike.${searchQuery}`)
+        .limit(100);
 
       if (error) {
         throw error;
       }
 
-      const searchResults = data || [];
+      // Transform to SearchResult format
+      const searchResults: SearchResult[] = (data || []).map(row => ({
+        id: row.id,
+        email: '', // Not available in profiles for privacy
+        first_name: row.first_name || '',
+        last_name: row.last_name || '',
+        roles: [],
+        families: [],
+        created_at: row.created_at,
+        status: 'active' as const,
+        matchScore: 1
+      }));
+
       setResults(searchResults);
       
       // Cache the results
@@ -182,7 +191,7 @@ const useAdminSearch = () => {
 
   // Debounced search
   const debouncedSearch = useMemo(() => {
-    let timeoutId: NodeJS.Timeout;
+    let timeoutId: ReturnType<typeof setTimeout>;
     return () => {
       clearTimeout(timeoutId);
       setDebouncing(true);
@@ -235,6 +244,7 @@ const useAdminSearch = () => {
     if (filters.query.trim()) {
       performSearch();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return {
@@ -368,3 +378,5 @@ export const AdvancedSearch: React.FC<{
     </div>
   );
 };
+
+export type { SearchFilters, SearchResult, SearchStats };

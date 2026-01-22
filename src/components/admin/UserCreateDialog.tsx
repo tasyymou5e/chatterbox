@@ -314,6 +314,9 @@ export const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
     onOpenChange(false);
   };
 
+  // Get user creation status with proper typing
+  const userCreationStatus = rateLimitStatus.userCreation;
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl">
@@ -325,16 +328,16 @@ export const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
         </DialogHeader>
         
         {/* Rate Limit Alert */}
-        {rateLimitStatus.userCreation && rateLimitStatus.userCreation.remaining < 3 && (
+        {userCreationStatus && userCreationStatus.remaining < 3 && (
           <Alert className="mb-4">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
               <div className="space-y-1">
                 <p className="font-medium">
-                  Rate Limit: {rateLimitStatus.userCreation.remaining} of {rateLimitStatus.userCreation.limit} creations remaining
+                  Rate Limit: {userCreationStatus.remaining} of {userCreationStatus.limit} creations remaining
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Resets at: {rateLimitStatus.userCreation.resetTimeFormatted}
+                  Resets at: {userCreationStatus.resetTimeFormatted}
                 </p>
               </div>
             </AlertDescription>
@@ -520,48 +523,36 @@ export const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
 
           {/* Generated Password Display */}
           {generatedPassword && (
-            <div className="space-y-2 p-4 bg-muted rounded-lg">
-              <h3 className="text-sm font-medium text-green-600">User Created Successfully!</h3>
-              <p className="text-sm text-muted-foreground">
-                Generated password for the new user:
-              </p>
-              <div className="flex items-center gap-2">
-                <Input
-                  value={generatedPassword}
-                  readOnly
-                  className="font-mono text-sm"
-                />
+            <div className="space-y-4 p-4 bg-muted rounded-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-medium">Generated Password</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Please save this password and share it securely with the user.
+                  </p>
+                </div>
                 <Button
-                  type="button"
                   variant="outline"
                   size="sm"
                   onClick={copyPassword}
-                  className="flex items-center gap-1"
+                  className="flex items-center gap-2"
                 >
                   {passwordCopied ? (
-                    <Check className="h-4 w-4" />
+                    <>
+                      <Check className="h-4 w-4" />
+                      Copied
+                    </>
                   ) : (
-                    <Copy className="h-4 w-4" />
+                    <>
+                      <Copy className="h-4 w-4" />
+                      Copy
+                    </>
                   )}
-                  {passwordCopied ? 'Copied' : 'Copy'}
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Please securely share this password with the new user. They should change it on first login.
-              </p>
-            </div>
-          )}
-          
-          {/* Success Message for Custom Password */}
-          {formData.useCustomPassword && !generatedPassword && !loading && (
-            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-              <div className="flex items-center gap-2">
-                <Check className="h-4 w-4 text-green-600" />
-                <h3 className="text-sm font-medium text-green-800">Ready to Create User</h3>
+              <div className="font-mono text-lg p-3 bg-background rounded border">
+                {generatedPassword}
               </div>
-              <p className="text-sm text-green-700 mt-1">
-                User will be created with your custom password. Make sure to share the password securely.
-              </p>
             </div>
           )}
           </div>
@@ -569,19 +560,25 @@ export const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
 
         <DialogFooter>
           <Button variant="outline" onClick={handleClose} disabled={loading}>
-            {generatedPassword || (formData.useCustomPassword && !loading) ? 'Close' : 'Cancel'}
+            Cancel
           </Button>
-          {!generatedPassword && (
-            <Button 
-              onClick={handleCreate} 
-              disabled={loading || emailAvailable === false || (formData.useCustomPassword && formData.customPassword.length < 8)}
-            >
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Create User
-            </Button>
-          )}
+          <Button onClick={handleCreate} disabled={loading || !!generatedPassword}>
+            {loading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Creating...
+              </>
+            ) : (
+              <>
+                <UserPlus className="h-4 w-4 mr-2" />
+                Create User
+              </>
+            )}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 };
+
+export default UserCreateDialog;
