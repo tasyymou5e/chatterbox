@@ -152,11 +152,17 @@ expectOnlyFamilyData(data, familyId);
   - ✅ Parent update permissions
   - ✅ Enumeration attack prevention
 
+- **generated-email-protection** - Comprehensive email security tests
+  - ✅ Direct table access blocking for children
+  - ✅ RPC function email exclusion verification
+  - ✅ Join attack prevention (profiles, families, family_members)
+  - ✅ Enumeration attack prevention (LIKE, count, distinct)
+  - ✅ Column-level security verification
+  - ✅ Cross-family isolation for generated_email
+  - ✅ Edge cases (null user_id, pending accounts, updates, deletes)
+  - ✅ Error message leak prevention
+
 #### Cross-Cutting Security
-- **family-isolation** - Family data boundaries
-  - ✅ Cross-family data isolation
-  - ✅ Family enumeration prevention
-  - ✅ Lateral movement blocking
 
 ### 🔄 Next Phase (Priority 2)
 
