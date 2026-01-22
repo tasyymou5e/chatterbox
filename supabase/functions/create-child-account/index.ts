@@ -13,6 +13,17 @@ interface CreateChildAccountRequest {
   parentUserId: string;
   password: string;
   familyId?: string; // Optional - used by admins to specify which family
+  generatePin?: boolean; // If true, generate a verification PIN for extra security
+}
+
+/**
+ * Generate a cryptographically secure 6-digit PIN
+ */
+function generateSecurePin(): string {
+  const array = new Uint32Array(1);
+  crypto.getRandomValues(array);
+  // Generate 6-digit PIN (100000-999999)
+  return String(100000 + (array[0] % 900000));
 }
 
 serve(async (req) => {
@@ -40,7 +51,7 @@ serve(async (req) => {
 
     const supabase = getServiceClient();
 
-    const { firstName, lastName, parentUserId, password, familyId }: CreateChildAccountRequest = await req.json();
+    const { firstName, lastName, parentUserId, password, familyId, generatePin }: CreateChildAccountRequest = await req.json();
     
     // Validate required fields
     if (!firstName || !lastName || !parentUserId || !password) {
@@ -168,6 +179,9 @@ serve(async (req) => {
     const createdAuthUser = authUser.user;
     console.log('Created auth user:', createdAuthUser.id);
 
+    // Generate verification PIN if requested (for enhanced security)
+    const verificationPin = generatePin ? generateSecurePin() : null;
+
     // Create child account record
     const { data: childAccount, error: childAccountError } = await supabase
       .from('child_accounts')
@@ -181,13 +195,15 @@ serve(async (req) => {
         family_code: family.family_code,
         status: 'completed',
         completed_at: new Date().toISOString(),
+        verification_pin: verificationPin, // Store PIN if generated
         metadata: {
           creator_email: creatorEmail,
           creator_name: `${userProfile.first_name} ${userProfile.last_name}`,
           creator_role: userRole.role,
           family_name: family.name,
           created_via: isAdmin ? 'admin_dashboard' : 'parent_dashboard',
-          password_set_by_creator: true
+          password_set_by_creator: true,
+          has_verification_pin: !!verificationPin
         }
       })
       .select()
@@ -272,31 +288,49 @@ serve(async (req) => {
       console.warn('Failed to log family activity:', logError);
     }
 
+    // Build response with optional PIN (shown once to parent)
+    const response: Record<string, unknown> = {
+      success: true,
+      childAccount: {
+        id: childAccount.id,
+        firstName: firstName,
+        lastName: lastName,
+        email: childEmail,
+        accountCode: null,
+        status: 'completed'
+      },
+      family: {
+        id: family.id,
+        name: family.name,
+        code: family.family_code
+      },
+      instructions: {
+        nextSteps: [
+          `${firstName} can now login with their email and password`,
+          `Email: ${childEmail}`,
+          'Password: The password you set'
+        ],
+        loginUrl: `${Deno.env.get('SUPABASE_URL') || 'https://your-app.com'}/auth`
+      }
+    };
+
+    // Include verification PIN in response (shown once, not logged)
+    if (verificationPin) {
+      response.verificationPin = verificationPin;
+      response.instructions = {
+        nextSteps: [
+          `${firstName} can now login with their email and password`,
+          `Email: ${childEmail}`,
+          'Password: The password you set',
+          `Verification PIN: ${verificationPin} (share this securely with ${firstName})`
+        ],
+        loginUrl: `${Deno.env.get('SUPABASE_URL') || 'https://your-app.com'}/auth`,
+        securityNote: 'The verification PIN adds an extra layer of security. Share it privately with your child.'
+      };
+    }
+
     return new Response(
-      JSON.stringify({
-        success: true,
-        childAccount: {
-          id: childAccount.id,
-          firstName: firstName,
-          lastName: lastName,
-          email: childEmail,
-          accountCode: null,
-          status: 'completed'
-        },
-        family: {
-          id: family.id,
-          name: family.name,
-          code: family.family_code
-        },
-        instructions: {
-          nextSteps: [
-            `${firstName} can now login with their email and password`,
-            `Email: ${childEmail}`,
-            'Password: The password you set'
-          ],
-          loginUrl: `${Deno.env.get('SUPABASE_URL') || 'https://your-app.com'}/auth`
-        }
-      }),
+      JSON.stringify(response),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
