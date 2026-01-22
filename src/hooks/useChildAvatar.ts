@@ -3,6 +3,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { 
   AvatarConfig, 
@@ -23,25 +24,53 @@ interface UseChildAvatarResult {
 }
 
 /**
- * Convert database row to AvatarConfig
+ * Zod schema for validating avatar database rows
  */
-function rowToConfig(row: Record<string, unknown>): AvatarConfig {
+const avatarRowSchema = z.object({
+  id: z.string(),
+  user_id: z.string(),
+  family_id: z.string().nullable().optional(),
+  avatar_type: z.enum(['illustrated', 'uploaded']),
+  base_character: z.string().nullable().optional(),
+  skin_tone: z.string().nullable().optional(),
+  hair_color: z.string().nullable().optional(),
+  hair_style: z.string().nullable().optional(),
+  eye_color: z.string().nullable().optional(),
+  accessory: z.string().nullable().optional(),
+  outfit_color: z.string().nullable().optional(),
+  uploaded_url: z.string().nullable().optional(),
+  created_at: z.string(),
+  updated_at: z.string(),
+});
+
+/**
+ * Convert and validate database row to AvatarConfig
+ */
+function rowToConfig(row: unknown): AvatarConfig | null {
+  const result = avatarRowSchema.safeParse(row);
+  
+  if (!result.success) {
+    cWarn('Invalid avatar config from database:', result.error.flatten());
+    return null;
+  }
+  
+  const data = result.data;
   return {
-    id: row.id as string,
-    userId: row.user_id as string,
-    familyId: row.family_id as string | undefined,
-    avatarType: row.avatar_type as AvatarType,
-    baseCharacter: (row.base_character as string) || 'kid1',
-    skinTone: (row.skin_tone as string) || 'medium',
-    hairColor: (row.hair_color as string) || 'brown',
-    hairStyle: (row.hair_style as string) || 'short',
-    eyeColor: (row.eye_color as string) || 'brown',
-    accessory: (row.accessory as string) || 'none',
-    outfitColor: (row.outfit_color as string) || 'blue',
-    uploadedUrl: row.uploaded_url as string | undefined,
-    createdAt: row.created_at as string,
-    updatedAt: row.updated_at as string,
-  } as AvatarConfig;
+    id: data.id,
+    userId: data.user_id,
+    familyId: data.family_id ?? undefined,
+    avatarType: data.avatar_type as AvatarType,
+    baseCharacter: (data.base_character ?? 'kid1') as AvatarConfig['baseCharacter'],
+    skinTone: (data.skin_tone ?? 'medium') as AvatarConfig['skinTone'],
+    hairColor: (data.hair_color ?? 'brown') as AvatarConfig['hairColor'],
+    hairStyle: (data.hair_style ?? 'short') as AvatarConfig['hairStyle'],
+    eyeColor: (data.eye_color ?? 'brown') as AvatarConfig['eyeColor'],
+    accessory: (data.accessory ?? 'none') as AvatarConfig['accessory'],
+    outfitColor: (data.outfit_color ?? 'blue') as AvatarConfig['outfitColor'],
+    uploadedUrl: data.uploaded_url ?? undefined,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at,
+  };
 }
 
 export function useChildAvatar(userId: string | undefined, familyId?: string): UseChildAvatarResult {

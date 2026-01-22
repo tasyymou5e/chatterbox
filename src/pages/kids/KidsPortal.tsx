@@ -41,7 +41,9 @@ export default function KidsPortal() {
       // Show welcome mascot after loading
       setTimeout(() => mascot.showGuide('welcome'), 1000);
     }
-  }, [user?.id, familyId, setUser, fetchAllProgress, mascot.showGuide]);
+  // mascot.showGuide is stable (wrapped in useCallback), safe to exclude from deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, familyId, setUser, fetchAllProgress]);
 
   // Calculate total stars and moons from progress store
   const { totalStars, totalMoons } = useMemo(() => {

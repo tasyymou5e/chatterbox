@@ -326,7 +326,6 @@ const AdminErrorBoundary: React.FC<{
                 onClick={recoveryActions.secondary.action}
                 variant="outline"
                 className="flex-1"
-              masking_status=True
               >
                 <recoveryActions.secondary.icon className="h-4 w-4 mr-2" />
                 {recoveryActions.secondary.label}
