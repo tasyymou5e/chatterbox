@@ -1,4 +1,4 @@
-import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.56.0';
+import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 
 export interface AuthResult {
   success: boolean;
@@ -13,8 +13,7 @@ export interface AdminAuthResult extends AuthResult {
 }
 
 /**
- * Validate JWT using asymmetric signing keys (getClaims)
- * This is faster than getUser() as it doesn't require a network call to the auth server
+ * Validate JWT using getUser() for reliable token verification
  * 
  * @param req - The incoming request with Authorization header
  * @returns AuthResult with user information or error
@@ -26,8 +25,6 @@ export async function validateJWT(req: Request): Promise<AuthResult> {
     return { success: false, error: 'Missing or invalid authorization header' };
   }
 
-  const token = authHeader.replace('Bearer ', '');
-  
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_ANON_KEY')!,
@@ -35,17 +32,17 @@ export async function validateJWT(req: Request): Promise<AuthResult> {
   );
 
   try {
-    const { data, error } = await supabase.auth.getClaims(token);
+    const { data: { user }, error } = await supabase.auth.getUser();
     
-    if (error || !data?.claims) {
+    if (error || !user) {
       return { success: false, error: error?.message || 'Invalid token' };
     }
 
     return {
       success: true,
-      userId: data.claims.sub as string,
-      email: data.claims.email as string,
-      role: data.claims.role as string,
+      userId: user.id,
+      email: user.email,
+      role: user.role,
     };
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : 'Token validation failed' };
