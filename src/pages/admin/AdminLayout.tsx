@@ -14,7 +14,8 @@ import {
   Shield,
   Activity,
   Brain,
-  Loader2
+  Loader2,
+  TrendingUp
 } from 'lucide-react';
 
 export default function AdminLayout() {
@@ -147,6 +148,17 @@ export default function AdminLayout() {
                 >
                   <Brain className="h-4 w-4" />
                   <span>LLM Monitor</span>
+                </Link>
+                <Link 
+                  to="/admin/uptime-report" 
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    location.pathname === '/admin/uptime-report' 
+                      ? 'text-white bg-gray-700' 
+                      : 'text-gray-300 hover:text-white hover:bg-gray-700'
+                  }`}
+                >
+                  <TrendingUp className="h-4 w-4" />
+                  <span>Uptime Report</span>
                 </Link>
               </div>
             </div>

@@ -1419,6 +1419,48 @@ export type Database = {
         }
         Relationships: []
       }
+      edge_function_uptime_daily: {
+        Row: {
+          avg_response_time_ms: number | null
+          created_at: string
+          date: string
+          downtime_minutes: number | null
+          function_name: string
+          healthy_checks: number
+          id: string
+          max_response_time_ms: number | null
+          min_response_time_ms: number | null
+          total_checks: number
+          uptime_percentage: number | null
+        }
+        Insert: {
+          avg_response_time_ms?: number | null
+          created_at?: string
+          date: string
+          downtime_minutes?: number | null
+          function_name: string
+          healthy_checks?: number
+          id?: string
+          max_response_time_ms?: number | null
+          min_response_time_ms?: number | null
+          total_checks?: number
+          uptime_percentage?: number | null
+        }
+        Update: {
+          avg_response_time_ms?: number | null
+          created_at?: string
+          date?: string
+          downtime_minutes?: number | null
+          function_name?: string
+          healthy_checks?: number
+          id?: string
+          max_response_time_ms?: number | null
+          min_response_time_ms?: number | null
+          total_checks?: number
+          uptime_percentage?: number | null
+        }
+        Relationships: []
+      }
       engagement_metrics: {
         Row: {
           actions_performed: number | null
@@ -3189,6 +3231,36 @@ export type Database = {
         }
         Relationships: []
       }
+      sla_configurations: {
+        Row: {
+          created_at: string
+          id: string
+          is_default: boolean | null
+          max_response_time_ms: number
+          name: string
+          updated_at: string
+          uptime_target: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          max_response_time_ms?: number
+          name: string
+          updated_at?: string
+          uptime_target?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          max_response_time_ms?: number
+          name?: string
+          updated_at?: string
+          uptime_target?: number
+        }
+        Relationships: []
+      }
       system_alerts: {
         Row: {
           acknowledged: boolean | null
@@ -3840,6 +3912,7 @@ export type Database = {
       }
     }
     Functions: {
+      aggregate_daily_uptime: { Args: { p_date?: string }; Returns: number }
       archive_old_activity_logs: {
         Args: { days_to_keep?: number }
         Returns: number
@@ -4206,6 +4279,30 @@ export type Database = {
           metric_name: string
           metric_value: number
           status: string
+        }[]
+      }
+      get_uptime_stats: {
+        Args: { p_days?: number }
+        Returns: {
+          avg_response_time_ms: number
+          function_name: string
+          healthy_checks: number
+          max_response_time_ms: number
+          min_response_time_ms: number
+          total_checks: number
+          total_downtime_minutes: number
+          uptime_percentage: number
+        }[]
+      }
+      get_uptime_trend: {
+        Args: { p_days?: number; p_function_name?: string }
+        Returns: {
+          avg_response_time_ms: number
+          date: string
+          function_name: string
+          healthy_checks: number
+          total_checks: number
+          uptime_percentage: number
         }[]
       }
       get_user_roles: {
