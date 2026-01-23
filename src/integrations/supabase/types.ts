@@ -2143,11 +2143,14 @@ export type Database = {
       llm_providers: {
         Row: {
           api_endpoint: string
+          api_key_configured: boolean
           created_at: string | null
           display_name: string
+          health_status: string | null
           id: string
           is_active: boolean | null
           is_custom: boolean | null
+          last_health_check: string | null
           models: Json | null
           pricing_config: Json | null
           provider_key: string
@@ -2155,11 +2158,14 @@ export type Database = {
         }
         Insert: {
           api_endpoint: string
+          api_key_configured?: boolean
           created_at?: string | null
           display_name: string
+          health_status?: string | null
           id?: string
           is_active?: boolean | null
           is_custom?: boolean | null
+          last_health_check?: string | null
           models?: Json | null
           pricing_config?: Json | null
           provider_key: string
@@ -2167,11 +2173,14 @@ export type Database = {
         }
         Update: {
           api_endpoint?: string
+          api_key_configured?: boolean
           created_at?: string | null
           display_name?: string
+          health_status?: string | null
           id?: string
           is_active?: boolean | null
           is_custom?: boolean | null
+          last_health_check?: string | null
           models?: Json | null
           pricing_config?: Json | null
           provider_key?: string

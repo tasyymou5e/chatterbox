@@ -8,12 +8,12 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthStore } from "@/stores/authStore";
-import { AlertCircle, AlertTriangle, Brain, DollarSign, Clock, TrendingUp, Zap, RefreshCw, Bell, Plus } from "lucide-react";
+import { AlertCircle, AlertTriangle, Brain, DollarSign, Clock, TrendingUp, Zap, RefreshCw, Bell, Bot } from "lucide-react";
 import { AdminRoute } from "@/components/admin/AdminRoute";
 import { LazyLLMUsageTrendsChart } from "@/components/admin/lazy";
 import { LLMCostAlerts } from "@/components/admin/LLMCostAlerts";
 import { LLMCostThresholdSettings } from "@/components/admin/LLMCostThresholdSettings";
-import { AddLLMProviderDialog } from "@/components/admin/llm/AddLLMProviderDialog";
+import { LLMProvidersPanel } from "@/components/admin/llm/LLMProvidersPanel";
 
 interface LLMStats {
   total_calls: number;
@@ -47,23 +47,23 @@ const AdminLLMMonitoring = () => {
   const [selectedProvider, setSelectedProvider] = useState<string>("all");
   const [error, setError] = useState<string | null>(null);
   const [unacknowledgedAlerts, setUnacknowledgedAlerts] = useState(0);
-  const [showAddProviderDialog, setShowAddProviderDialog] = useState(false);
-  const [customProviders, setCustomProviders] = useState<Array<{ provider_key: string; display_name: string; is_active: boolean | null }>>([]);
+  const [allProviders, setAllProviders] = useState<Array<{ provider_key: string; display_name: string; is_active: boolean | null }>>([]);
   const { toast } = useToast();
   
   // Wait for session readiness before fetching
   const { sessionReady, isAdmin } = useAuthStore();
 
-  // Fetch custom providers
-  const fetchCustomProviders = useCallback(async () => {
+  // Fetch all providers for filter dropdown
+  const fetchProviders = useCallback(async () => {
     try {
       const { data } = await supabase
         .from('llm_providers')
         .select('provider_key, display_name, is_active')
-        .eq('is_custom', true);
-      if (data) setCustomProviders(data);
+        .eq('is_active', true)
+        .order('display_name');
+      if (data) setAllProviders(data);
     } catch (err) {
-      console.error('Failed to fetch custom providers:', err);
+      console.error('Failed to fetch providers:', err);
     }
   }, []);
 
@@ -156,8 +156,9 @@ const AdminLLMMonitoring = () => {
   useEffect(() => {
     if (sessionReady && isAdmin) {
       fetchStats();
+      fetchProviders();
     }
-  }, [fetchStats, sessionReady, isAdmin]);
+  }, [fetchStats, fetchProviders, sessionReady, isAdmin]);
 
   const formatCurrency = (amount: number) => `$${(amount || 0).toFixed(4)}`;
   const formatNumber = (num: number) => (num || 0).toLocaleString();
@@ -259,21 +260,13 @@ const AdminLLMMonitoring = () => {
             <h1 className="text-2xl font-bold">LLM Monitoring</h1>
           </div>
           <div className="flex gap-2">
-            <Button onClick={() => setShowAddProviderDialog(true)} variant="outline" size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Provider
-            </Button>
             <Select value={selectedProvider} onValueChange={setSelectedProvider}>
-              <SelectTrigger className="w-32">
-                <SelectValue />
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="All Providers" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Providers</SelectItem>
-                <SelectItem value="grok">Grok (xAI)</SelectItem>
-                <SelectItem value="openai">OpenAI</SelectItem>
-                <SelectItem value="anthropic">Anthropic</SelectItem>
-                <SelectItem value="google">Google (Gemini)</SelectItem>
-                {customProviders.filter(p => p.is_active === true).map(p => (
+                {allProviders.map(p => (
                   <SelectItem key={p.provider_key} value={p.provider_key}>{p.display_name}</SelectItem>
                 ))}
               </SelectContent>
@@ -347,8 +340,12 @@ const AdminLLMMonitoring = () => {
           </Card>
         </div>
 
-        <Tabs defaultValue="recent" className="w-full">
+        <Tabs defaultValue="providers" className="w-full">
           <TabsList>
+            <TabsTrigger value="providers">
+              <Bot className="h-4 w-4 mr-1" />
+              Providers
+            </TabsTrigger>
             <TabsTrigger value="recent">Recent Calls</TabsTrigger>
             <TabsTrigger value="trends">
               <TrendingUp className="h-4 w-4 mr-1" />
@@ -363,9 +360,12 @@ const AdminLLMMonitoring = () => {
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="providers">Providers</TabsTrigger>
-            <TabsTrigger value="models">Models</TabsTrigger>
+            <TabsTrigger value="usage-breakdown">Usage Breakdown</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="providers" className="space-y-4">
+            <LLMProvidersPanel />
+          </TabsContent>
 
           <TabsContent value="recent" className="space-y-4">
             <Card>
@@ -436,77 +436,62 @@ const AdminLLMMonitoring = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="providers" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {stats?.provider_breakdown && Object.keys(stats.provider_breakdown).length > 0 ? (
-                Object.entries(stats.provider_breakdown).map(([provider, data]) => (
-                  <Card key={provider}>
-                    <CardHeader>
-                      <CardTitle className="capitalize">{provider}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <span className="text-sm">Calls:</span>
-                          <span className="font-medium">{formatNumber(data?.calls || 0)}</span>
+          <TabsContent value="usage-breakdown" className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* Provider Breakdown */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>By Provider</CardTitle>
+                  <CardDescription>Usage statistics per provider</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {stats?.provider_breakdown && Object.keys(stats.provider_breakdown).length > 0 ? (
+                    <div className="space-y-3">
+                      {Object.entries(stats.provider_breakdown).map(([provider, data]) => (
+                        <div key={provider} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                          <span className="font-medium capitalize">{provider}</span>
+                          <div className="text-sm text-muted-foreground space-x-4">
+                            <span>{formatNumber(data?.calls || 0)} calls</span>
+                            <span>{formatNumber(data?.tokens || 0)} tokens</span>
+                            <span className="font-medium text-foreground">{formatCurrency(data?.cost || 0)}</span>
+                          </div>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm">Tokens:</span>
-                          <span className="font-medium">{formatNumber(data?.tokens || 0)}</span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-center text-muted-foreground py-4">No provider data available</p>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Model Breakdown */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>By Model</CardTitle>
+                  <CardDescription>Usage statistics per model</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {stats?.model_breakdown && Object.keys(stats.model_breakdown).length > 0 ? (
+                    <div className="space-y-3">
+                      {Object.entries(stats.model_breakdown).map(([model, data]) => (
+                        <div key={model} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                          <span className="font-medium text-sm">{model}</span>
+                          <div className="text-sm text-muted-foreground space-x-4">
+                            <span>{formatNumber(data?.calls || 0)} calls</span>
+                            <span>{formatNumber(data?.tokens || 0)} tokens</span>
+                            <span className="font-medium text-foreground">{formatCurrency(data?.cost || 0)}</span>
+                          </div>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm">Cost:</span>
-                          <span className="font-medium">{formatCurrency(data?.cost || 0)}</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
-              ) : (
-                <Card className="col-span-full">
-                  <CardContent className="p-6 text-center text-muted-foreground">
-                    No provider data available
-                  </CardContent>
-                </Card>
-              )}
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-center text-muted-foreground py-4">No model data available</p>
+                  )}
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
 
-          <TabsContent value="models" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {stats?.model_breakdown && Object.keys(stats.model_breakdown).length > 0 ? (
-                Object.entries(stats.model_breakdown).map(([model, data]) => (
-                  <Card key={model}>
-                    <CardHeader>
-                      <CardTitle className="text-sm">{model}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <span className="text-sm">Calls:</span>
-                          <span className="font-medium">{formatNumber(data?.calls || 0)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm">Tokens:</span>
-                          <span className="font-medium">{formatNumber(data?.tokens || 0)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm">Cost:</span>
-                          <span className="font-medium">{formatCurrency(data?.cost || 0)}</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
-              ) : (
-                <Card className="col-span-full">
-                  <CardContent className="p-6 text-center text-muted-foreground">
-                    No model data available
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          </TabsContent>
         </Tabs>
 
         {/* Success Rate & Performance */}
@@ -562,15 +547,6 @@ const AdminLLMMonitoring = () => {
           </Card>
         </div>
 
-        {/* Add Provider Dialog */}
-        <AddLLMProviderDialog
-          open={showAddProviderDialog}
-          onOpenChange={setShowAddProviderDialog}
-          onProviderAdded={() => {
-            fetchCustomProviders();
-            toast({ title: 'Provider Added', description: 'New LLM provider has been configured' });
-          }}
-        />
       </div>
     </AdminRoute>
   );
