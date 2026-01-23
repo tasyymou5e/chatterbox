@@ -200,13 +200,13 @@ serve(async (req) => {
     }
 
     // Upsert profile (handle conflicts from trigger)
+    // Note: email is stored in auth.users, not profiles table
     const { error: profileError } = await supabase
       .from('profiles')
       .upsert({
         user_id: newUser.user.id,
         first_name: firstName,
-        last_name: lastName,
-        email: email
+        last_name: lastName
       }, {
         onConflict: 'user_id'
       });
