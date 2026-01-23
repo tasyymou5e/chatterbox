@@ -1296,6 +1296,75 @@ export type Database = {
           },
         ]
       }
+      edge_function_alert_config: {
+        Row: {
+          consecutive_failures_threshold: number
+          created_at: string
+          function_name: string
+          id: string
+          is_enabled: boolean
+          response_time_threshold_ms: number
+          updated_at: string
+        }
+        Insert: {
+          consecutive_failures_threshold?: number
+          created_at?: string
+          function_name: string
+          id?: string
+          is_enabled?: boolean
+          response_time_threshold_ms?: number
+          updated_at?: string
+        }
+        Update: {
+          consecutive_failures_threshold?: number
+          created_at?: string
+          function_name?: string
+          id?: string
+          is_enabled?: boolean
+          response_time_threshold_ms?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      edge_function_health_logs: {
+        Row: {
+          check_type: string
+          created_at: string
+          error_message: string | null
+          function_name: string
+          http_status_code: number | null
+          id: string
+          metadata: Json | null
+          previous_status: string | null
+          response_time_ms: number | null
+          status: string
+        }
+        Insert: {
+          check_type?: string
+          created_at?: string
+          error_message?: string | null
+          function_name: string
+          http_status_code?: number | null
+          id?: string
+          metadata?: Json | null
+          previous_status?: string | null
+          response_time_ms?: number | null
+          status: string
+        }
+        Update: {
+          check_type?: string
+          created_at?: string
+          error_message?: string | null
+          function_name?: string
+          http_status_code?: number | null
+          id?: string
+          metadata?: Json | null
+          previous_status?: string | null
+          response_time_ms?: number | null
+          status?: string
+        }
+        Relationships: []
+      }
       engagement_metrics: {
         Row: {
           actions_performed: number | null
@@ -3818,6 +3887,7 @@ export type Database = {
       cleanup_expired_child_accounts: { Args: never; Returns: number }
       cleanup_expired_data: { Args: never; Returns: string }
       cleanup_expired_sessions: { Args: never; Returns: undefined }
+      cleanup_old_health_logs: { Args: never; Returns: number }
       cleanup_test_families: {
         Args: never
         Returns: {
@@ -3921,6 +3991,10 @@ export type Database = {
           due_date: string
           is_required: boolean
         }[]
+      }
+      get_consecutive_failures: {
+        Args: { p_function_name: string }
+        Returns: number
       }
       get_daily_analytics_for_admins: {
         Args: { days_back?: number }
