@@ -35,7 +35,6 @@ interface LogMetadata {
 interface ProfileInfo {
   first_name?: string;
   last_name?: string;
-  email?: string;
 }
 
 interface ActivityLog {
@@ -109,8 +108,7 @@ const ActivityLogsTable = () => {
           *,
           profiles (
             first_name,
-            last_name,
-            email
+            last_name
           )
         `)
         .gte('timestamp', startDate.toISOString())
@@ -137,12 +135,11 @@ const ActivityLogsTable = () => {
         if (searchTerm) {
           filteredData = filteredData.filter(log => {
             const profile = log.profiles;
-            const profileEmail = profile && 'email' in profile ? profile.email : undefined;
             const profileFirstName = profile && 'first_name' in profile ? profile.first_name : undefined;
             const profileLastName = profile && 'last_name' in profile ? profile.last_name : undefined;
-            return profileEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-              profileFirstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            return profileFirstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
               profileLastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              log.user_id?.includes(searchTerm) ||
               log.ip_address?.toString().includes(searchTerm) ||
               log.session_id?.includes(searchTerm);
           });
@@ -204,7 +201,7 @@ const ActivityLogsTable = () => {
     if (profile?.first_name || profile?.last_name) {
       return `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
     }
-    return profile?.email || 'Unknown User';
+    return `User ${log.user_id.slice(0, 8)}...`;
   };
 
   const exportLogs = () => {
