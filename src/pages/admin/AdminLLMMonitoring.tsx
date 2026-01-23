@@ -14,6 +14,7 @@ import { LazyLLMUsageTrendsChart } from "@/components/admin/lazy";
 import { LLMCostAlerts } from "@/components/admin/LLMCostAlerts";
 import { LLMCostThresholdSettings } from "@/components/admin/LLMCostThresholdSettings";
 import { LLMProvidersPanel } from "@/components/admin/llm/LLMProvidersPanel";
+import { LLMCostComparisonChart } from "@/components/admin/llm/LLMCostComparisonChart";
 
 interface LLMStats {
   total_calls: number;
@@ -360,11 +361,19 @@ const AdminLLMMonitoring = () => {
                 </Badge>
               )}
             </TabsTrigger>
+            <TabsTrigger value="comparison">
+              <DollarSign className="h-4 w-4 mr-1" />
+              Comparison
+            </TabsTrigger>
             <TabsTrigger value="usage-breakdown">Usage Breakdown</TabsTrigger>
           </TabsList>
 
           <TabsContent value="providers" className="space-y-4">
             <LLMProvidersPanel />
+          </TabsContent>
+
+          <TabsContent value="comparison" className="space-y-4">
+            <LLMCostComparisonChart />
           </TabsContent>
 
           <TabsContent value="recent" className="space-y-4">
