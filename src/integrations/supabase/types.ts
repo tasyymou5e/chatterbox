@@ -1300,29 +1300,41 @@ export type Database = {
         Row: {
           consecutive_failures_threshold: number
           created_at: string
+          critical_threshold: number
           function_name: string
           id: string
           is_enabled: boolean
+          max_recovery_attempts: number
+          recovery_cooldown_minutes: number
           response_time_threshold_ms: number
           updated_at: string
+          warmup_threshold: number
         }
         Insert: {
           consecutive_failures_threshold?: number
           created_at?: string
+          critical_threshold?: number
           function_name: string
           id?: string
           is_enabled?: boolean
+          max_recovery_attempts?: number
+          recovery_cooldown_minutes?: number
           response_time_threshold_ms?: number
           updated_at?: string
+          warmup_threshold?: number
         }
         Update: {
           consecutive_failures_threshold?: number
           created_at?: string
+          critical_threshold?: number
           function_name?: string
           id?: string
           is_enabled?: boolean
+          max_recovery_attempts?: number
+          recovery_cooldown_minutes?: number
           response_time_threshold_ms?: number
           updated_at?: string
+          warmup_threshold?: number
         }
         Relationships: []
       }
@@ -1362,6 +1374,48 @@ export type Database = {
           previous_status?: string | null
           response_time_ms?: number | null
           status?: string
+        }
+        Relationships: []
+      }
+      edge_function_recovery_attempts: {
+        Row: {
+          attempt_number: number
+          attempt_type: string
+          consecutive_failures_before: number
+          created_at: string
+          error_message: string | null
+          function_name: string
+          id: string
+          metadata: Json | null
+          response_time_ms: number | null
+          status: string
+          triggered_by: string
+        }
+        Insert: {
+          attempt_number?: number
+          attempt_type: string
+          consecutive_failures_before: number
+          created_at?: string
+          error_message?: string | null
+          function_name: string
+          id?: string
+          metadata?: Json | null
+          response_time_ms?: number | null
+          status: string
+          triggered_by?: string
+        }
+        Update: {
+          attempt_number?: number
+          attempt_type?: string
+          consecutive_failures_before?: number
+          created_at?: string
+          error_message?: string | null
+          function_name?: string
+          id?: string
+          metadata?: Json | null
+          response_time_ms?: number | null
+          status?: string
+          triggered_by?: string
         }
         Relationships: []
       }
@@ -3888,6 +3942,7 @@ export type Database = {
       cleanup_expired_data: { Args: never; Returns: string }
       cleanup_expired_sessions: { Args: never; Returns: undefined }
       cleanup_old_health_logs: { Args: never; Returns: number }
+      cleanup_old_recovery_attempts: { Args: never; Returns: number }
       cleanup_test_families: {
         Args: never
         Returns: {
@@ -4072,6 +4127,16 @@ export type Database = {
           created_at: string
           display_name: string
           id: string
+        }[]
+      }
+      get_function_recovery_status: {
+        Args: { p_function_name: string }
+        Returns: {
+          consecutive_failures: number
+          is_critical: boolean
+          last_recovery_attempt: string
+          needs_recovery: boolean
+          recovery_attempts_today: number
         }[]
       }
       get_llm_usage_stats: {
