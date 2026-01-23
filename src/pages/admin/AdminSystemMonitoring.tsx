@@ -15,7 +15,8 @@ import {
   WifiOff,
   User,
   FileText,
-  AlertTriangle
+  AlertTriangle,
+  Zap
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSystemMonitoring } from '@/hooks/useSystemMonitoring';
@@ -28,6 +29,7 @@ import {
   LogsTabContent
 } from '@/components/admin/monitoring';
 import { ErrorPatternsAnalysis } from '@/components/admin/monitoring/ErrorPatternsAnalysis';
+import { EdgeFunctionHealthPanel } from '@/components/admin/monitoring/EdgeFunctionHealthPanel';
 import type { SystemError } from '@/types/systemHealth';
 import { cLog } from '@/utils/conditionalLogger';
 
@@ -163,10 +165,14 @@ const AdminSystemMonitoring = () => {
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="errors" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="errors">Recent Errors</TabsTrigger>
           <TabsTrigger value="alerts">System Alerts</TabsTrigger>
           <TabsTrigger value="patterns">Error Patterns</TabsTrigger>
+          <TabsTrigger value="edge-functions">
+            <Zap className="h-4 w-4 mr-2" />
+            Edge Functions
+          </TabsTrigger>
           <TabsTrigger value="logs">
             <FileText className="h-4 w-4 mr-2" />
             Logs
@@ -191,6 +197,10 @@ const AdminSystemMonitoring = () => {
 
         <TabsContent value="patterns">
           <ErrorPatternsAnalysis />
+        </TabsContent>
+
+        <TabsContent value="edge-functions">
+          <EdgeFunctionHealthPanel />
         </TabsContent>
 
         <TabsContent value="logs">
