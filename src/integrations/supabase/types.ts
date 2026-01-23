@@ -2232,6 +2232,42 @@ export type Database = {
           },
         ]
       }
+      llm_health_check_logs: {
+        Row: {
+          check_type: string
+          created_at: string
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          new_status: string
+          previous_status: string | null
+          provider_key: string
+          response_time_ms: number | null
+        }
+        Insert: {
+          check_type?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          new_status: string
+          previous_status?: string | null
+          provider_key: string
+          response_time_ms?: number | null
+        }
+        Update: {
+          check_type?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          new_status?: string
+          previous_status?: string | null
+          provider_key?: string
+          response_time_ms?: number | null
+        }
+        Relationships: []
+      }
       llm_provider_status: {
         Row: {
           cooldown_until: string | null

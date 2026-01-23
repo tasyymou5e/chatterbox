@@ -57,3 +57,12 @@ verify_jwt = false
 
 [functions.update-site-settings]
 verify_jwt = false
+
+[functions.scheduled-health-check]
+verify_jwt = false
+
+[functions.manage-llm-provider]
+verify_jwt = false
+
+[functions.llm-with-failover]
+verify_jwt = false

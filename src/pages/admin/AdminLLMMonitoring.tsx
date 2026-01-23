@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthStore } from "@/stores/authStore";
-import { AlertCircle, AlertTriangle, Brain, DollarSign, Clock, TrendingUp, Zap, RefreshCw, Bell, Bot, Shield } from "lucide-react";
+import { AlertCircle, AlertTriangle, Brain, DollarSign, Clock, TrendingUp, Zap, RefreshCw, Bell, Bot, Shield, Activity } from "lucide-react";
 import { AdminRoute } from "@/components/admin/AdminRoute";
 import { LazyLLMUsageTrendsChart } from "@/components/admin/lazy";
 import { LLMCostAlerts } from "@/components/admin/LLMCostAlerts";
@@ -16,6 +16,7 @@ import { LLMCostThresholdSettings } from "@/components/admin/LLMCostThresholdSet
 import { LLMProvidersPanel } from "@/components/admin/llm/LLMProvidersPanel";
 import { LLMCostComparisonChart } from "@/components/admin/llm/LLMCostComparisonChart";
 import { LLMFailoverPanel } from "@/components/admin/llm/LLMFailoverPanel";
+import { LLMHealthCheckLogs } from "@/components/admin/llm/LLMHealthCheckLogs";
 
 interface LLMStats {
   total_calls: number;
@@ -370,6 +371,10 @@ const AdminLLMMonitoring = () => {
               <Shield className="h-4 w-4 mr-1" />
               Failover
             </TabsTrigger>
+            <TabsTrigger value="health-logs">
+              <Activity className="h-4 w-4 mr-1" />
+              Health Logs
+            </TabsTrigger>
             <TabsTrigger value="usage-breakdown">Usage Breakdown</TabsTrigger>
           </TabsList>
 
@@ -383,6 +388,10 @@ const AdminLLMMonitoring = () => {
 
           <TabsContent value="failover" className="space-y-4">
             <LLMFailoverPanel />
+          </TabsContent>
+
+          <TabsContent value="health-logs" className="space-y-4">
+            <LLMHealthCheckLogs />
           </TabsContent>
 
           <TabsContent value="recent" className="space-y-4">
