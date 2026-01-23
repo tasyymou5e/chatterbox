@@ -5,12 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Activity,
   AlertTriangle,
   CheckCircle,
   Clock,
   RefreshCw,
+  RotateCw,
   Settings,
   TrendingUp,
   XCircle,
@@ -25,8 +27,10 @@ export function EdgeFunctionHealthDashboard() {
   const {
     summaries,
     alertConfigs,
+    criticalFunctions,
     loading,
     triggerHealthCheck,
+    triggerManualRecovery,
     isCheckRunning,
   } = useEdgeFunctionHealthHistory();
 
@@ -47,7 +51,11 @@ export function EdgeFunctionHealthDashboard() {
     ? Math.round(summaries.reduce((sum, s) => sum + s.avgResponseTime, 0) / summaries.length)
     : 0;
 
-  const criticalFunctions = summaries.filter(s => s.consecutiveFailures >= 2);
+  // Critical functions with 5+ consecutive failures
+  const criticalFunctionsList = summaries.filter(s => s.isCritical);
+  
+  // Functions needing recovery (3-4 failures)
+  const warningFunctions = summaries.filter(s => s.consecutiveFailures >= 3 && s.consecutiveFailures < 5);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -91,12 +99,34 @@ export function EdgeFunctionHealthDashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Critical Functions Alert */}
+      {criticalFunctionsList.length > 0 && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription className="flex items-center justify-between">
+            <span>
+              <strong>{criticalFunctionsList.length} critical function(s)</strong> have 5+ consecutive failures and require attention: {criticalFunctionsList.map(f => f.functionName).join(', ')}
+            </span>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Warning Alert for functions needing recovery */}
+      {warningFunctions.length > 0 && (
+        <Alert>
+          <RotateCw className="h-4 w-4" />
+          <AlertDescription>
+            <strong>{warningFunctions.length} function(s)</strong> are experiencing issues and automatic recovery is in progress: {warningFunctions.map(f => f.functionName).join(', ')}
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Edge Function Health</h2>
           <p className="text-muted-foreground">
-            Automated health monitoring with hourly checks and alerts
+            Automated health monitoring with hourly checks and auto-recovery
           </p>
         </div>
         <Button
@@ -183,11 +213,11 @@ export function EdgeFunctionHealthDashboard() {
           <CardContent>
             {criticalFunctions.length > 0 ? (
               <p className="text-xs text-destructive">
-                {criticalFunctions.map(f => f.functionName).join(', ')}
+                {criticalFunctions.join(', ')}
               </p>
             ) : (
               <p className="text-xs text-muted-foreground">
-                No functions with consecutive failures
+                No functions with 5+ consecutive failures
               </p>
             )}
           </CardContent>
@@ -259,6 +289,18 @@ export function EdgeFunctionHealthDashboard() {
                             <AlertTriangle className="h-3 w-3" />
                             {summary.consecutiveFailures} failures
                           </Badge>
+                        )}
+                        {summary.isCritical && (
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={() => triggerManualRecovery(summary.functionName)}
+                            disabled={isCheckRunning}
+                            className="gap-1"
+                          >
+                            <RotateCw className="h-3 w-3" />
+                            Recover
+                          </Button>
                         )}
                       </div>
                     </div>
