@@ -1,5 +1,6 @@
 /**
  * Comprehensive security monitoring dashboard with robust error handling
+ * and automatic retry with exponential backoff for edge function calls
  */
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { invokeWithRetry } from '@/hooks/useRetryWithBackoff';
 import { Shield, AlertTriangle, Activity, Lock, Users, Database, RefreshCw } from 'lucide-react';
 import type { SecurityMetrics, SecurityTest } from '@/types/security';
 
@@ -34,13 +36,21 @@ export const SecurityDashboard: React.FC = () => {
     try {
       setError(null);
       
-      const { data, error: fetchError } = await supabase.functions.invoke('security-monitoring', {
-        body: { action: 'generate_security_report' }
-      });
-
-      if (fetchError) {
-        throw fetchError;
-      }
+      // Use retry with exponential backoff for resilience
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const data = await invokeWithRetry<any>(
+        () => supabase.functions.invoke('security-monitoring', {
+          body: { action: 'generate_security_report' }
+        }),
+        {
+          maxRetries: 3,
+          initialDelayMs: 1000,
+          backoffMultiplier: 2,
+          onRetry: (attempt, err, nextDelay) => {
+            console.warn(`Security metrics fetch attempt ${attempt} failed, retrying in ${nextDelay}ms...`, err);
+          }
+        }
+      );
       
       // Handle the nested response structure from the edge function
       const newMetrics: SecurityMetrics = {
@@ -66,10 +76,10 @@ export const SecurityDashboard: React.FC = () => {
         });
       }
     } catch (err) {
-      console.error('Failed to load security metrics:', err);
+      console.error('Failed to load security metrics after retries:', err);
       // Use default metrics on error, don't block UI
       setMetrics(DEFAULT_METRICS);
-      setError('Unable to load live metrics. Showing defaults.');
+      setError('Unable to load live metrics after multiple attempts. Showing defaults.');
       
       // Only show toast on manual retry
       if (showToast) {
@@ -116,11 +126,20 @@ export const SecurityDashboard: React.FC = () => {
   const runSecurityTests = async () => {
     setIsRunningTests(true);
     try {
-      const { data, error: testError } = await supabase.functions.invoke('security-testing', {
-        body: { action: 'run_security_tests' }
-      });
-
-      if (testError) throw testError;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const data = await invokeWithRetry<any>(
+        () => supabase.functions.invoke('security-testing', {
+          body: { action: 'run_security_tests' }
+        }),
+        {
+          maxRetries: 3,
+          initialDelayMs: 1000,
+          backoffMultiplier: 2,
+          onRetry: (attempt, err, nextDelay) => {
+            console.warn(`Security tests attempt ${attempt} failed, retrying in ${nextDelay}ms...`, err);
+          }
+        }
+      );
       
       setTests(data?.tests || []);
       toast({
@@ -129,10 +148,10 @@ export const SecurityDashboard: React.FC = () => {
         variant: (data?.summary?.critical_failures || 0) > 0 ? 'destructive' : 'default'
       });
     } catch (err) {
-      console.error('Failed to run security tests:', err);
+      console.error('Failed to run security tests after retries:', err);
       toast({
         title: "Tests Unavailable",
-        description: "Security testing service is currently unavailable",
+        description: "Security testing service is currently unavailable after multiple attempts",
         variant: "destructive"
       });
     } finally {
@@ -142,11 +161,20 @@ export const SecurityDashboard: React.FC = () => {
 
   const analyzeAccessPatterns = async () => {
     try {
-      const { data, error: analysisError } = await supabase.functions.invoke('security-monitoring', {
-        body: { action: 'analyze_access_patterns' }
-      });
-
-      if (analysisError) throw analysisError;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const data = await invokeWithRetry<any>(
+        () => supabase.functions.invoke('security-monitoring', {
+          body: { action: 'analyze_access_patterns' }
+        }),
+        {
+          maxRetries: 3,
+          initialDelayMs: 1000,
+          backoffMultiplier: 2,
+          onRetry: (attempt, err, nextDelay) => {
+            console.warn(`Pattern analysis attempt ${attempt} failed, retrying in ${nextDelay}ms...`, err);
+          }
+        }
+      );
       
       toast({
         title: "Pattern Analysis Complete",
@@ -156,10 +184,10 @@ export const SecurityDashboard: React.FC = () => {
       
       loadSecurityMetrics();
     } catch (err) {
-      console.error('Failed to analyze patterns:', err);
+      console.error('Failed to analyze patterns after retries:', err);
       toast({
         title: "Analysis Unavailable",
-        description: "Pattern analysis service is currently unavailable",
+        description: "Pattern analysis service is currently unavailable after multiple attempts",
         variant: "destructive"
       });
     }
