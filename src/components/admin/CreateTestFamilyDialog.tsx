@@ -266,15 +266,55 @@ export default function CreateTestFamilyDialog({ open, onOpenChange, onSuccess }
       return;
     }
     
-    // Detailed session diagnostics
-    cLog('[CreateTestFamily] Session diagnostics:', {
+    // ============ COMPREHENSIVE SESSION DIAGNOSTICS ============
+    cLog('[CreateTestFamily] === SESSION DIAGNOSTIC START ===');
+    
+    // Source 1: Zustand store (from useAdminAuth hook)
+    cLog('[CreateTestFamily] Source 1 - Zustand Store:', {
       hasUser: !!user,
-      userId: user?.id || 'MISSING',
+      userId: user?.id ? `${user.id.substring(0, 8)}...` : 'MISSING',
       userEmail: user?.email || 'MISSING',
       hasSession: !!session,
-      sessionExpiry: session?.expires_at || 'MISSING',
-      sessionAccessToken: session?.access_token ? `${session.access_token.substring(0, 20)}...` : 'MISSING'
+      sessionUserId: session?.user?.id ? `${session.user.id.substring(0, 8)}...` : 'MISSING',
+      accessTokenPreview: session?.access_token ? `${session.access_token.substring(0, 20)}...` : 'MISSING',
+      accessTokenLength: session?.access_token?.length || 0,
+      expiresAt: session?.expires_at 
+        ? new Date(session.expires_at * 1000).toISOString() 
+        : 'MISSING',
+      refreshTokenPresent: !!session?.refresh_token,
     });
+
+    // Source 2: Direct Supabase client check (early check for comparison)
+    const { data: { session: directSession } } = await supabase.auth.getSession();
+    cLog('[CreateTestFamily] Source 2 - Supabase Client Direct:', {
+      hasSession: !!directSession,
+      userId: directSession?.user?.id ? `${directSession.user.id.substring(0, 8)}...` : 'MISSING',
+      userEmail: directSession?.user?.email || 'MISSING',
+      accessTokenPreview: directSession?.access_token ? `${directSession.access_token.substring(0, 20)}...` : 'MISSING',
+      accessTokenLength: directSession?.access_token?.length || 0,
+      expiresAt: directSession?.expires_at 
+        ? new Date(directSession.expires_at * 1000).toISOString() 
+        : 'MISSING',
+      refreshTokenPresent: !!directSession?.refresh_token,
+    });
+
+    // Source 3: Session consistency check
+    const tokensMatch = session?.access_token === directSession?.access_token;
+    const userIdsMatch = session?.user?.id === directSession?.user?.id;
+    cLog('[CreateTestFamily] Session Consistency Check:', {
+      tokensMatch,
+      userIdsMatch,
+      zustandTokenLength: session?.access_token?.length || 0,
+      supabaseTokenLength: directSession?.access_token?.length || 0,
+      recommendation: tokensMatch && userIdsMatch ? 'OK - Sessions in sync' : 'WARNING: Session mismatch detected!',
+      mismatchDetails: !tokensMatch || !userIdsMatch ? {
+        tokenLengthDiff: (session?.access_token?.length || 0) - (directSession?.access_token?.length || 0),
+        zustandUserId: session?.user?.id?.substring(0, 8) || 'none',
+        supabaseUserId: directSession?.user?.id?.substring(0, 8) || 'none',
+      } : null
+    });
+
+    cLog('[CreateTestFamily] === SESSION DIAGNOSTIC END ===');
     
     // Verify we have a valid session
     if (!user?.id || !session) {
@@ -288,12 +328,23 @@ export default function CreateTestFamilyDialog({ open, onOpenChange, onSuccess }
     if (session.expires_at) {
       const expiresAt = new Date(session.expires_at * 1000);
       const now = new Date();
+      const minutesRemaining = Math.round((expiresAt.getTime() - now.getTime()) / 60000);
+      
       if (expiresAt < now) {
-        cError('[CreateTestFamily] Session expired', { expiresAt: expiresAt.toISOString(), now: now.toISOString() });
+        cError('[CreateTestFamily] Session expired', { 
+          expiresAt: expiresAt.toISOString(), 
+          now: now.toISOString(),
+          expiredAgo: `${Math.abs(minutesRemaining)} minutes`
+        });
         toast({ variant: "destructive", title: "Session expired", description: "Your session has expired. Please log in again." });
         return;
       }
-      cLog('[CreateTestFamily] Session valid until:', expiresAt.toISOString());
+      
+      cLog('[CreateTestFamily] Session validity:', {
+        validUntil: expiresAt.toISOString(),
+        minutesRemaining,
+        status: minutesRemaining < 5 ? 'WARNING: Expiring soon!' : 'OK'
+      });
     }
 
     setLoading('createTestFamily', true);
@@ -354,14 +405,63 @@ export default function CreateTestFamilyDialog({ open, onOpenChange, onSuccess }
         throw new Error('No active session. Please log in again.');
       }
 
-      cLog('[CreateTestFamily] Invoking edge function with explicit auth...');
+      // ============ TOKEN VALIDITY ANALYSIS ============
+      cLog('[CreateTestFamily] === TOKEN ANALYSIS START ===');
+      
+      const tokenParts = currentSession.access_token.split('.');
+      if (tokenParts.length === 3) {
+        try {
+          const payload = JSON.parse(atob(tokenParts[1]));
+          const tokenExp = payload.exp ? payload.exp * 1000 : null;
+          const now = Date.now();
+          const isExpired = tokenExp ? now > tokenExp : false;
+          const timeToExpiry = tokenExp ? Math.round((tokenExp - now) / 60000) : null;
+          
+          cLog('[CreateTestFamily] JWT Claims Analysis:', {
+            issuer: payload.iss,
+            subject: payload.sub ? `${payload.sub.substring(0, 8)}...` : 'MISSING',
+            role: payload.role,
+            audience: payload.aud,
+            issuedAt: payload.iat ? new Date(payload.iat * 1000).toISOString() : 'MISSING',
+            expiresAt: payload.exp ? new Date(payload.exp * 1000).toISOString() : 'MISSING',
+            isExpired,
+            timeToExpiry: timeToExpiry !== null ? `${timeToExpiry} minutes` : 'unknown',
+            tokenAge: payload.iat ? `${Math.round((now - payload.iat * 1000) / 60000)} minutes` : 'unknown',
+          });
+          
+          if (isExpired) {
+            cError('[CreateTestFamily] TOKEN IS EXPIRED! This will cause auth failure.');
+          } else if (timeToExpiry !== null && timeToExpiry < 5) {
+            cWarn('[CreateTestFamily] Token expiring soon - may cause race condition.');
+          }
+        } catch (parseError) {
+          cWarn('[CreateTestFamily] Failed to parse JWT payload:', parseError);
+        }
+      } else {
+        cError('[CreateTestFamily] Invalid JWT format - expected 3 parts, got:', tokenParts.length);
+      }
+      
+      cLog('[CreateTestFamily] === TOKEN ANALYSIS END ===');
+
+      // ============ EDGE FUNCTION REQUEST LOGGING ============
+      const authHeader = `Bearer ${currentSession.access_token}`;
       const invokeStartTime = Date.now();
+      
+      cLog('[CreateTestFamily] === EDGE FUNCTION REQUEST ===', {
+        endpoint: 'create-test-family',
+        method: 'POST',
+        authHeaderSet: true,
+        authHeaderLength: authHeader.length,
+        authHeaderPreview: `Bearer ${currentSession.access_token.substring(0, 15)}...`,
+        bodyKeys: Object.keys(familyData),
+        timestamp: new Date().toISOString(),
+      });
       
       // Explicitly pass auth token to ensure it's included
       const { data, error } = await supabase.functions.invoke('create-test-family', {
         body: familyData,
         headers: {
-          Authorization: `Bearer ${currentSession.access_token}`
+          Authorization: authHeader
         }
       });
 
@@ -375,11 +475,23 @@ export default function CreateTestFamilyDialog({ open, onOpenChange, onSuccess }
       });
 
       if (error) {
-        cError('[CreateTestFamily] Edge function error:', {
-          message: error.message,
-          name: error.name,
-          context: error.context,
-          status: error.status
+        // ============ DETAILED ERROR CONTEXT ============
+        cError('[CreateTestFamily] === EDGE FUNCTION FAILURE ===', {
+          errorMessage: error.message,
+          errorName: error.name,
+          errorContext: error.context || 'none',
+          errorStatus: error.status,
+          sessionStateAtFailure: {
+            zustandHasSession: !!session,
+            supabaseHasSession: !!currentSession,
+            tokenWasSent: true,
+            tokenLength: currentSession?.access_token?.length || 0,
+            tokensWereInSync: session?.access_token === currentSession?.access_token,
+          },
+          timingInfo: {
+            requestDuration: `${invokeDuration}ms`,
+            timestamp: new Date().toISOString(),
+          }
         });
         secureLog.error('Edge function create-test-family failed', error, 'CreateTestFamily');
         throw error;
