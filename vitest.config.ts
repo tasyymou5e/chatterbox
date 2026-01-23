@@ -17,6 +17,8 @@ export default defineConfig({
       'tests/component/**/*.test.{ts,tsx}',
       'tests/rls/**/*.test.ts',
       'tests/workflows/**/*.test.ts',
+      'tests/schema/**/*.test.ts',
+      'tests/security/**/*.test.ts',
     ],
     testTimeout: 30000,
     hookTimeout: 30000,
