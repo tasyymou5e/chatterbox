@@ -25,6 +25,9 @@ import {
   validateRegistryIntegrity,
   getAllReferencedTables,
   getAllReferencedRPCs,
+  getAllColumnsForTable,
+  getFunctionsDependingOnTable,
+  getFunctionsByCategory,
   type EdgeFunctionDependency,
 } from './edgeFunctionDependencies';
 
@@ -216,6 +219,253 @@ describe.skipIf(!hasSupabaseCredentials)('Edge Function Schema Validation', () =
       if (profilesDep) {
         // If profiles is used, ensure 'email' is NOT in required columns
         expect(profilesDep.requiredColumns).not.toContain('email');
+      }
+    });
+  });
+
+  describe('Critical Function Validation', () => {
+    it('should validate admin-create-user does not expect profiles.email', async () => {
+      const adminCreateUser = EDGE_FUNCTION_DEPENDENCIES.find(
+        (d) => d.name === 'admin-create-user'
+      );
+      
+      expect(adminCreateUser).toBeDefined();
+      
+      const profilesDep = adminCreateUser?.tables.find((t) => t.name === 'profiles');
+      expect(profilesDep).toBeDefined();
+      
+      // Ensure 'email' is NOT in required columns
+      expect(profilesDep?.requiredColumns).not.toContain('email');
+    });
+
+    it('should validate create-test-family does not expect profiles.email', async () => {
+      const createTestFamily = EDGE_FUNCTION_DEPENDENCIES.find(
+        (d) => d.name === 'create-test-family'
+      );
+      
+      expect(createTestFamily).toBeDefined();
+      
+      const profilesDep = createTestFamily?.tables.find((t) => t.name === 'profiles');
+      
+      if (profilesDep) {
+        // If profiles is used, ensure 'email' is NOT in required columns
+        expect(profilesDep.requiredColumns).not.toContain('email');
+      }
+    });
+  });
+
+  describe('LLM/AI Table Validation', () => {
+    const llmTables = [
+      'llm_providers',
+      'llm_api_calls',
+      'llm_failover_config',
+      'llm_provider_status',
+      'llm_failover_events',
+      'llm_health_check_logs',
+    ];
+
+    it('should have all LLM tables in database', () => {
+      for (const table of llmTables) {
+        expect(
+          schemaSnapshot.tables[table],
+          `LLM table "${table}" not found in schema`
+        ).toBeDefined();
+      }
+    });
+
+    it('should validate llm_providers has required columns', () => {
+      const columns = schemaSnapshot.tables['llm_providers'];
+      const columnNames = columns?.map((c) => c.column_name) || [];
+
+      const required = ['provider_key', 'display_name', 'api_endpoint', 'is_active', 'is_custom'];
+      for (const col of required) {
+        expect(columnNames, `llm_providers missing column: ${col}`).toContain(col);
+      }
+    });
+
+    it('should validate llm_api_calls has required columns', () => {
+      const columns = schemaSnapshot.tables['llm_api_calls'];
+      const columnNames = columns?.map((c) => c.column_name) || [];
+
+      const required = ['provider', 'model', 'function_name', 'status', 'response_time_ms'];
+      for (const col of required) {
+        expect(columnNames, `llm_api_calls missing column: ${col}`).toContain(col);
+      }
+    });
+
+    it('should validate llm_failover_config has required columns', () => {
+      const columns = schemaSnapshot.tables['llm_failover_config'];
+      const columnNames = columns?.map((c) => c.column_name) || [];
+
+      const required = ['id', 'primary_provider_key', 'backup_provider_key', 'priority', 'is_active'];
+      for (const col of required) {
+        expect(columnNames, `llm_failover_config missing column: ${col}`).toContain(col);
+      }
+    });
+
+    it('should validate llm_provider_status has required columns', () => {
+      const columns = schemaSnapshot.tables['llm_provider_status'];
+      const columnNames = columns?.map((c) => c.column_name) || [];
+
+      const required = ['provider_key', 'is_healthy', 'failure_count', 'updated_at'];
+      for (const col of required) {
+        expect(columnNames, `llm_provider_status missing column: ${col}`).toContain(col);
+      }
+    });
+  });
+
+  describe('Monitoring Table Validation', () => {
+    const monitoringTables = [
+      'edge_function_alert_config',
+      'edge_function_health_logs',
+      'edge_function_recovery_attempts',
+      'system_alerts',
+    ];
+
+    it('should have all monitoring tables in database', () => {
+      for (const table of monitoringTables) {
+        expect(
+          schemaSnapshot.tables[table],
+          `Monitoring table "${table}" not found in schema`
+        ).toBeDefined();
+      }
+    });
+
+    it('should validate edge_function_health_logs has required columns', () => {
+      const columns = schemaSnapshot.tables['edge_function_health_logs'];
+      const columnNames = columns?.map((c) => c.column_name) || [];
+
+      const required = ['function_name', 'status', 'response_time_ms', 'check_type'];
+      for (const col of required) {
+        expect(columnNames, `edge_function_health_logs missing column: ${col}`).toContain(col);
+      }
+    });
+
+    it('should validate edge_function_recovery_attempts has required columns', () => {
+      const columns = schemaSnapshot.tables['edge_function_recovery_attempts'];
+      const columnNames = columns?.map((c) => c.column_name) || [];
+
+      const required = ['function_name', 'attempt_number', 'attempt_type', 'status', 'triggered_by', 'consecutive_failures_before'];
+      for (const col of required) {
+        expect(columnNames, `edge_function_recovery_attempts missing column: ${col}`).toContain(col);
+      }
+    });
+
+    it('should validate edge_function_alert_config has required columns', () => {
+      const columns = schemaSnapshot.tables['edge_function_alert_config'];
+      const columnNames = columns?.map((c) => c.column_name) || [];
+
+      const required = ['function_name', 'response_time_threshold_ms', 'consecutive_failures_threshold', 'is_enabled'];
+      for (const col of required) {
+        expect(columnNames, `edge_function_alert_config missing column: ${col}`).toContain(col);
+      }
+    });
+  });
+
+  describe('Security Table Validation', () => {
+    const securityTables = [
+      'security_events',
+      'security_audit_logs',
+      'system_errors',
+      'admin_audit_logs',
+      'user_activity_logs',
+    ];
+
+    it('should have all security tables in database', () => {
+      for (const table of securityTables) {
+        expect(
+          schemaSnapshot.tables[table],
+          `Security table "${table}" not found in schema`
+        ).toBeDefined();
+      }
+    });
+
+    it('should validate security_audit_logs has required columns', () => {
+      const columns = schemaSnapshot.tables['security_audit_logs'];
+      const columnNames = columns?.map((c) => c.column_name) || [];
+
+      const required = ['user_id', 'event_type', 'severity', 'event_details'];
+      for (const col of required) {
+        expect(columnNames, `security_audit_logs missing column: ${col}`).toContain(col);
+      }
+    });
+
+    it('should validate admin_audit_logs has required columns', () => {
+      const columns = schemaSnapshot.tables['admin_audit_logs'];
+      const columnNames = columns?.map((c) => c.column_name) || [];
+
+      const required = ['admin_user_id', 'operation_type', 'target_table', 'target_id'];
+      for (const col of required) {
+        expect(columnNames, `admin_audit_logs missing column: ${col}`).toContain(col);
+      }
+    });
+
+    it('should validate user_activity_logs has required columns', () => {
+      const columns = schemaSnapshot.tables['user_activity_logs'];
+      const columnNames = columns?.map((c) => c.column_name) || [];
+
+      const required = ['user_id', 'activity_type', 'success'];
+      for (const col of required) {
+        expect(columnNames, `user_activity_logs missing column: ${col}`).toContain(col);
+      }
+    });
+  });
+
+  describe('Child Account Table Validation', () => {
+    it('should have child_accounts table with required columns', () => {
+      const columns = schemaSnapshot.tables['child_accounts'];
+      expect(columns, 'child_accounts table not found').toBeDefined();
+
+      const columnNames = columns?.map((c) => c.column_name) || [];
+      const required = ['family_id', 'created_by', 'first_name', 'last_name', 'status', 'family_code', 'generated_email'];
+
+      for (const col of required) {
+        expect(columnNames, `child_accounts missing column: ${col}`).toContain(col);
+      }
+    });
+  });
+
+  describe('Category-Based Validation', () => {
+    it.each(['admin', 'test', 'child', 'communication', 'ai', 'system'] as const)(
+      'should validate all %s category functions have required tables',
+      (category) => {
+        const functions = getFunctionsByCategory(category);
+        const allTables = functions.flatMap((f) => f.tables.map((t) => t.name));
+        const uniqueTables = [...new Set(allTables)];
+
+        for (const table of uniqueTables) {
+          expect(
+            schemaSnapshot.tables[table],
+            `Category "${category}" requires table "${table}" which doesn't exist`
+          ).toBeDefined();
+        }
+      }
+    );
+  });
+
+  describe('Complete Table Coverage', () => {
+    it('should have complete coverage of all referenced tables', () => {
+      const allReferencedTables = getAllReferencedTables();
+      const actualTables = Object.keys(schemaSnapshot.tables);
+
+      const coverage: { table: string; exists: boolean; functions: string[] }[] = [];
+
+      for (const table of allReferencedTables) {
+        coverage.push({
+          table,
+          exists: actualTables.includes(table),
+          functions: getFunctionsDependingOnTable(table),
+        });
+      }
+
+      const missing = coverage.filter((c) => !c.exists);
+
+      if (missing.length > 0) {
+        const report = missing
+          .map((m) => `- ${m.table} (used by: ${m.functions.join(', ')})`)
+          .join('\n');
+
+        throw new Error(`Missing ${missing.length} table(s):\n${report}`);
       }
     });
   });
