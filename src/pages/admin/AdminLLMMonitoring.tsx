@@ -8,13 +8,14 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthStore } from "@/stores/authStore";
-import { AlertCircle, AlertTriangle, Brain, DollarSign, Clock, TrendingUp, Zap, RefreshCw, Bell, Bot } from "lucide-react";
+import { AlertCircle, AlertTriangle, Brain, DollarSign, Clock, TrendingUp, Zap, RefreshCw, Bell, Bot, Shield } from "lucide-react";
 import { AdminRoute } from "@/components/admin/AdminRoute";
 import { LazyLLMUsageTrendsChart } from "@/components/admin/lazy";
 import { LLMCostAlerts } from "@/components/admin/LLMCostAlerts";
 import { LLMCostThresholdSettings } from "@/components/admin/LLMCostThresholdSettings";
 import { LLMProvidersPanel } from "@/components/admin/llm/LLMProvidersPanel";
 import { LLMCostComparisonChart } from "@/components/admin/llm/LLMCostComparisonChart";
+import { LLMFailoverPanel } from "@/components/admin/llm/LLMFailoverPanel";
 
 interface LLMStats {
   total_calls: number;
@@ -365,6 +366,10 @@ const AdminLLMMonitoring = () => {
               <DollarSign className="h-4 w-4 mr-1" />
               Comparison
             </TabsTrigger>
+            <TabsTrigger value="failover">
+              <Shield className="h-4 w-4 mr-1" />
+              Failover
+            </TabsTrigger>
             <TabsTrigger value="usage-breakdown">Usage Breakdown</TabsTrigger>
           </TabsList>
 
@@ -374,6 +379,10 @@ const AdminLLMMonitoring = () => {
 
           <TabsContent value="comparison" className="space-y-4">
             <LLMCostComparisonChart />
+          </TabsContent>
+
+          <TabsContent value="failover" className="space-y-4">
+            <LLMFailoverPanel />
           </TabsContent>
 
           <TabsContent value="recent" className="space-y-4">

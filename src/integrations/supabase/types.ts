@@ -2140,6 +2140,125 @@ export type Database = {
         }
         Relationships: []
       }
+      llm_failover_config: {
+        Row: {
+          backup_provider_key: string
+          cooldown_seconds: number
+          created_at: string
+          id: string
+          is_active: boolean
+          max_retries_before_failover: number
+          primary_provider_key: string
+          priority: number
+          timeout_threshold_ms: number
+          trigger_on_error: boolean
+          trigger_on_rate_limit: boolean
+          trigger_on_timeout: boolean
+          updated_at: string
+        }
+        Insert: {
+          backup_provider_key: string
+          cooldown_seconds?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          max_retries_before_failover?: number
+          primary_provider_key: string
+          priority?: number
+          timeout_threshold_ms?: number
+          trigger_on_error?: boolean
+          trigger_on_rate_limit?: boolean
+          trigger_on_timeout?: boolean
+          updated_at?: string
+        }
+        Update: {
+          backup_provider_key?: string
+          cooldown_seconds?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          max_retries_before_failover?: number
+          primary_provider_key?: string
+          priority?: number
+          timeout_threshold_ms?: number
+          trigger_on_error?: boolean
+          trigger_on_rate_limit?: boolean
+          trigger_on_timeout?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      llm_failover_events: {
+        Row: {
+          backup_provider: string
+          backup_success: boolean
+          config_id: string | null
+          created_at: string
+          id: string
+          original_error: string | null
+          primary_provider: string
+          response_time_ms: number | null
+          trigger_reason: string
+        }
+        Insert: {
+          backup_provider: string
+          backup_success?: boolean
+          config_id?: string | null
+          created_at?: string
+          id?: string
+          original_error?: string | null
+          primary_provider: string
+          response_time_ms?: number | null
+          trigger_reason: string
+        }
+        Update: {
+          backup_provider?: string
+          backup_success?: boolean
+          config_id?: string | null
+          created_at?: string
+          id?: string
+          original_error?: string | null
+          primary_provider?: string
+          response_time_ms?: number | null
+          trigger_reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "llm_failover_events_config_id_fkey"
+            columns: ["config_id"]
+            isOneToOne: false
+            referencedRelation: "llm_failover_config"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      llm_provider_status: {
+        Row: {
+          cooldown_until: string | null
+          failure_count: number
+          is_healthy: boolean
+          last_failure_at: string | null
+          provider_key: string
+          updated_at: string
+        }
+        Insert: {
+          cooldown_until?: string | null
+          failure_count?: number
+          is_healthy?: boolean
+          last_failure_at?: string | null
+          provider_key: string
+          updated_at?: string
+        }
+        Update: {
+          cooldown_until?: string | null
+          failure_count?: number
+          is_healthy?: boolean
+          last_failure_at?: string | null
+          provider_key?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       llm_providers: {
         Row: {
           api_endpoint: string
