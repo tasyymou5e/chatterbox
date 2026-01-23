@@ -4024,6 +4024,10 @@ export type Database = {
           users_deleted: number
         }[]
       }
+      column_exists: {
+        Args: { p_column_name: string; p_table_name: string }
+        Returns: boolean
+      }
       complete_child_account_secure: {
         Args: {
           p_account_id: string
@@ -4118,6 +4122,17 @@ export type Database = {
           difficulty_override: string
           due_date: string
           is_required: boolean
+        }[]
+      }
+      get_column_details: {
+        Args: { p_column_name: string; p_table_name: string }
+        Returns: {
+          character_maximum_length: number
+          column_default: string
+          column_name: string
+          data_type: string
+          is_nullable: boolean
+          is_primary_key: boolean
         }[]
       }
       get_consecutive_failures: {
@@ -4281,6 +4296,15 @@ export type Database = {
           status: string
         }[]
       }
+      get_table_columns: {
+        Args: { p_table_name: string }
+        Returns: {
+          column_default: string
+          column_name: string
+          data_type: string
+          is_nullable: boolean
+        }[]
+      }
       get_uptime_stats: {
         Args: { p_days?: number }
         Returns: {
@@ -4363,6 +4387,28 @@ export type Database = {
       is_family_member_secure: {
         Args: { family_id_param: string; user_id_param: string }
         Returns: boolean
+      }
+      list_public_tables: {
+        Args: never
+        Returns: {
+          table_name: string
+        }[]
+      }
+      list_rpc_functions: {
+        Args: never
+        Returns: {
+          function_name: string
+          return_type: string
+        }[]
+      }
+      list_triggers: {
+        Args: never
+        Returns: {
+          action_timing: string
+          event_manipulation: string
+          table_name: string
+          trigger_name: string
+        }[]
       }
       log_admin_operation: {
         Args: {
