@@ -34,6 +34,18 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Health check endpoint - no auth required
+  const url = new URL(req.url);
+  if (req.method === 'GET' && (url.pathname.endsWith('/health') || url.searchParams.get('health') === 'true')) {
+    return new Response(JSON.stringify({ 
+      status: 'ok', 
+      function: 'security-monitoring',
+      timestamp: new Date().toISOString() 
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+
   // Apply rate limiting
   const rateCheck = adminActionLimiter.check(req);
   if (!rateCheck.allowed) {
