@@ -2140,6 +2140,45 @@ export type Database = {
         }
         Relationships: []
       }
+      llm_providers: {
+        Row: {
+          api_endpoint: string
+          created_at: string | null
+          display_name: string
+          id: string
+          is_active: boolean | null
+          is_custom: boolean | null
+          models: Json | null
+          pricing_config: Json | null
+          provider_key: string
+          updated_at: string | null
+        }
+        Insert: {
+          api_endpoint: string
+          created_at?: string | null
+          display_name: string
+          id?: string
+          is_active?: boolean | null
+          is_custom?: boolean | null
+          models?: Json | null
+          pricing_config?: Json | null
+          provider_key: string
+          updated_at?: string | null
+        }
+        Update: {
+          api_endpoint?: string
+          created_at?: string | null
+          display_name?: string
+          id?: string
+          is_active?: boolean | null
+          is_custom?: boolean | null
+          models?: Json | null
+          pricing_config?: Json | null
+          provider_key?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       llm_usage_summaries: {
         Row: {
           avg_response_time_ms: number | null

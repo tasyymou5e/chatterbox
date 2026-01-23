@@ -8,11 +8,12 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthStore } from "@/stores/authStore";
-import { AlertCircle, AlertTriangle, Brain, DollarSign, Clock, TrendingUp, Zap, RefreshCw, Bell } from "lucide-react";
+import { AlertCircle, AlertTriangle, Brain, DollarSign, Clock, TrendingUp, Zap, RefreshCw, Bell, Plus } from "lucide-react";
 import { AdminRoute } from "@/components/admin/AdminRoute";
 import { LazyLLMUsageTrendsChart } from "@/components/admin/lazy";
 import { LLMCostAlerts } from "@/components/admin/LLMCostAlerts";
 import { LLMCostThresholdSettings } from "@/components/admin/LLMCostThresholdSettings";
+import { AddLLMProviderDialog } from "@/components/admin/llm/AddLLMProviderDialog";
 
 interface LLMStats {
   total_calls: number;
@@ -46,10 +47,25 @@ const AdminLLMMonitoring = () => {
   const [selectedProvider, setSelectedProvider] = useState<string>("all");
   const [error, setError] = useState<string | null>(null);
   const [unacknowledgedAlerts, setUnacknowledgedAlerts] = useState(0);
+  const [showAddProviderDialog, setShowAddProviderDialog] = useState(false);
+  const [customProviders, setCustomProviders] = useState<Array<{ provider_key: string; display_name: string; is_active: boolean | null }>>([]);
   const { toast } = useToast();
   
   // Wait for session readiness before fetching
   const { sessionReady, isAdmin } = useAuthStore();
+
+  // Fetch custom providers
+  const fetchCustomProviders = useCallback(async () => {
+    try {
+      const { data } = await supabase
+        .from('llm_providers')
+        .select('provider_key, display_name, is_active')
+        .eq('is_custom', true);
+      if (data) setCustomProviders(data);
+    } catch (err) {
+      console.error('Failed to fetch custom providers:', err);
+    }
+  }, []);
 
   const fetchStats = useCallback(async () => {
     // Don't fetch if session isn't ready or user isn't admin
@@ -243,6 +259,10 @@ const AdminLLMMonitoring = () => {
             <h1 className="text-2xl font-bold">LLM Monitoring</h1>
           </div>
           <div className="flex gap-2">
+            <Button onClick={() => setShowAddProviderDialog(true)} variant="outline" size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Provider
+            </Button>
             <Select value={selectedProvider} onValueChange={setSelectedProvider}>
               <SelectTrigger className="w-32">
                 <SelectValue />
@@ -253,6 +273,9 @@ const AdminLLMMonitoring = () => {
                 <SelectItem value="openai">OpenAI</SelectItem>
                 <SelectItem value="anthropic">Anthropic</SelectItem>
                 <SelectItem value="google">Google (Gemini)</SelectItem>
+                {customProviders.filter(p => p.is_active === true).map(p => (
+                  <SelectItem key={p.provider_key} value={p.provider_key}>{p.display_name}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <Select value={timeframe} onValueChange={setTimeframe}>
@@ -538,6 +561,16 @@ const AdminLLMMonitoring = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Add Provider Dialog */}
+        <AddLLMProviderDialog
+          open={showAddProviderDialog}
+          onOpenChange={setShowAddProviderDialog}
+          onProviderAdded={() => {
+            fetchCustomProviders();
+            toast({ title: 'Provider Added', description: 'New LLM provider has been configured' });
+          }}
+        />
       </div>
     </AdminRoute>
   );

@@ -44,6 +44,7 @@ export interface UseSystemMonitoringResult {
   isCircuitBreakerOpen: () => boolean;
   refreshData: () => Promise<void>;
   resolveError: (errorId: string) => Promise<void>;
+  resolveAllErrors: () => Promise<void>;
   acknowledgeAlert: (alertId: string) => Promise<void>;
   resetCircuitBreaker: () => void;
   circuitBreakerState: CircuitBreakerState;
@@ -280,6 +281,26 @@ export const useSystemMonitoring = (): UseSystemMonitoringResult => {
     }
   }, [stableRefreshData, toast]);
 
+  const resolveAllErrors = useCallback(async () => {
+    const unresolvedIds = errors.filter(e => !e.resolved).map(e => e.id);
+    if (unresolvedIds.length === 0) return;
+
+    try {
+      const { error } = await supabase
+        .from('system_errors')
+        .update({ resolved: true, resolved_at: new Date().toISOString() })
+        .in('id', unresolvedIds);
+
+      if (error) throw error;
+
+      toast({ title: 'Success', description: `Resolved ${unresolvedIds.length} errors` });
+      await stableRefreshData();
+    } catch (error) {
+      console.error('Failed to resolve all errors:', error);
+      toast({ title: 'Error', description: 'Failed to resolve errors', variant: 'destructive' });
+    }
+  }, [errors, stableRefreshData, toast]);
+
   const acknowledgeAlert = useCallback(async (alertId: string) => {
     try {
       const { error } = await supabase
@@ -370,6 +391,7 @@ export const useSystemMonitoring = (): UseSystemMonitoringResult => {
     isCircuitBreakerOpen,
     refreshData: stableRefreshData,
     resolveError,
+    resolveAllErrors,
     acknowledgeAlert,
     resetCircuitBreaker,
     circuitBreakerState: circuitBreakerRef.current

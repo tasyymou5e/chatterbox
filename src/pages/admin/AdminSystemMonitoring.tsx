@@ -9,17 +9,14 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
   RefreshCw, 
   Wifi,
   WifiOff,
   User,
   FileText,
-  AlertTriangle,
-  BarChart3
+  AlertTriangle
 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useSystemMonitoring } from '@/hooks/useSystemMonitoring';
 import { 
@@ -30,8 +27,9 @@ import {
   CircuitBreakerAlert,
   LogsTabContent
 } from '@/components/admin/monitoring';
+import { ErrorPatternsAnalysis } from '@/components/admin/monitoring/ErrorPatternsAnalysis';
 import type { SystemError } from '@/types/systemHealth';
-import { cLog, cError } from '@/utils/conditionalLogger';
+import { cLog } from '@/utils/conditionalLogger';
 
 const AdminSystemMonitoring = () => {
   const [selectedError, setSelectedError] = useState<SystemError | null>(null);
@@ -48,6 +46,7 @@ const AdminSystemMonitoring = () => {
     isCircuitBreakerOpen,
     refreshData,
     resolveError,
+    resolveAllErrors,
     acknowledgeAlert,
     resetCircuitBreaker,
     circuitBreakerState
@@ -67,29 +66,6 @@ const AdminSystemMonitoring = () => {
       </div>
     );
   }
-
-  const handleCreateTestError = async () => {
-    try {
-      await supabase.functions.invoke('error-collector', {
-        body: {
-          errorType: 'test_error',
-          severity: 'low',
-          message: 'Test error for monitoring dashboard',
-          componentName: 'AdminSystemMonitoring',
-          metadata: {
-            source: 'manual_test',
-            timestamp: new Date().toISOString()
-          }
-        }
-      });
-      toast({
-        title: 'Test Error Created',
-        description: 'A test error has been logged to the system',
-      });
-    } catch (error) {
-      cError('Failed to create test error:', error);
-    }
-  };
 
   const handleForceReset = () => {
     resetCircuitBreaker();
@@ -202,6 +178,7 @@ const AdminSystemMonitoring = () => {
             errors={errors}
             onViewError={setSelectedError}
             onResolveError={resolveError}
+            onResolveAllErrors={resolveAllErrors}
           />
         </TabsContent>
 
@@ -213,27 +190,7 @@ const AdminSystemMonitoring = () => {
         </TabsContent>
 
         <TabsContent value="patterns">
-          <Card>
-            <CardHeader>
-              <CardTitle>Error Patterns Analysis</CardTitle>
-              <CardDescription>
-                Identify trends and patterns in system errors
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
-                <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">Error pattern analysis coming soon...</p>
-                <Button 
-                  variant="outline" 
-                  className="mt-4"
-                  onClick={handleCreateTestError}
-                >
-                  Create Test Error
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <ErrorPatternsAnalysis />
         </TabsContent>
 
         <TabsContent value="logs">

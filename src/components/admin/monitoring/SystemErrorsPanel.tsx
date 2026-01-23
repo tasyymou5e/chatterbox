@@ -23,14 +23,15 @@ interface SystemErrorsPanelProps {
   errors: SystemError[];
   onViewError: (error: SystemError) => void;
   onResolveError: (errorId: string) => void;
+  onResolveAllErrors?: () => void;
 }
 
 const getSeverityColor = (severity: string) => {
   switch (severity) {
     case 'critical': return 'bg-destructive text-destructive-foreground';
-    case 'high': return 'bg-orange-500 text-white';
-    case 'medium': return 'bg-yellow-500 text-black';
-    case 'low': return 'bg-blue-500 text-white';
+    case 'high': return 'bg-orange-500/90 text-primary-foreground';
+    case 'medium': return 'bg-yellow-500/90 text-primary-foreground';
+    case 'low': return 'bg-blue-500/90 text-primary-foreground';
     default: return 'bg-secondary text-secondary-foreground';
   }
 };
@@ -48,15 +49,28 @@ const getSeverityIcon = (severity: string) => {
 export const SystemErrorsPanel = ({ 
   errors, 
   onViewError, 
-  onResolveError 
+  onResolveError,
+  onResolveAllErrors
 }: SystemErrorsPanelProps) => {
+  const unresolvedCount = errors.filter(e => !e.resolved).length;
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Recent System Errors</CardTitle>
-        <CardDescription>
-          Latest errors and exceptions from the application
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>Recent System Errors</CardTitle>
+            <CardDescription>
+              Latest errors and exceptions from the application
+            </CardDescription>
+          </div>
+          {unresolvedCount > 0 && onResolveAllErrors && (
+            <Button variant="outline" onClick={onResolveAllErrors}>
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Resolve All ({unresolvedCount})
+            </Button>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         <ScrollArea className="h-[600px]">
