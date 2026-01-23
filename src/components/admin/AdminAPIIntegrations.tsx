@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,127 +8,118 @@ import {
   RefreshCw, 
   ExternalLink,
   Key,
-  Bot
+  Bot,
+  Sparkles,
+  Settings
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { cWarn } from '@/utils/conditionalLogger';
 import { secureLog } from '@/utils/secureLogging';
-interface IntegrationStatus {
-  provider: string;
-  displayName: string;
-  configured: boolean;
-  lastChecked: string | null;
-  healthy: boolean | null;
+import { useNavigate } from 'react-router-dom';
+
+interface LLMProviderStatus {
+  id: string;
+  provider_key: string;
+  display_name: string;
+  api_endpoint: string;
   models: string[];
+  is_active: boolean | null;
+  api_key_configured: boolean;
+  health_status: string | null;
+  last_health_check: string | null;
 }
 
 export default function AdminAPIIntegrations() {
-  const [integrations, setIntegrations] = useState<IntegrationStatus[]>([]);
+  const [providers, setProviders] = useState<LLMProviderStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [testing, setTesting] = useState<string | null>(null);
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    fetchIntegrationStatus();
-  }, []);
-
-  const fetchIntegrationStatus = async () => {
-    const defaultIntegrations: IntegrationStatus[] = [
-      {
-        provider: 'grok',
-        displayName: 'Grok (xAI)',
-        configured: false,
-        lastChecked: null,
-        healthy: null,
-        models: ['grok-3', 'grok-3-mini', 'grok-2-audio'],
-      },
-      {
-        provider: 'openai',
-        displayName: 'OpenAI',
-        configured: false,
-        lastChecked: null,
-        healthy: null,
-        models: ['gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo'],
-      },
-      {
-        provider: 'lovable',
-        displayName: 'Lovable AI Gateway',
-        configured: false,
-        lastChecked: null,
-        healthy: null,
-        models: ['google/gemini-2.5-flash', 'openai/gpt-5'],
-      },
-    ];
-
+  const fetchProviders = useCallback(async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('api-integration-status', {
-        body: { action: 'status' },
-      });
+      const { data, error } = await supabase
+        .from('llm_providers')
+        .select('id, provider_key, display_name, api_endpoint, models, is_active, api_key_configured, health_status, last_health_check')
+        .order('display_name');
 
-      if (error) {
-        cWarn('Integration status unavailable', error);
-        setIntegrations(defaultIntegrations);
-        return;
-      }
+      if (error) throw error;
 
-      setIntegrations(data?.integrations || defaultIntegrations);
+      // Parse models from JSONB
+      const parsed = (data || []).map(p => ({
+        ...p,
+        models: Array.isArray(p.models) ? p.models : JSON.parse(p.models as string || '[]')
+      })) as LLMProviderStatus[];
+
+      setProviders(parsed);
     } catch (error: unknown) {
-      secureLog.error('Failed to fetch integration status', error, 'AdminAPIIntegrations');
-      setIntegrations(defaultIntegrations);
+      secureLog.error('Failed to fetch providers', error, 'AdminAPIIntegrations');
+      // Fallback to empty list
+      setProviders([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const testIntegration = async (provider: string) => {
-    setTesting(provider);
+  useEffect(() => {
+    fetchProviders();
+  }, [fetchProviders]);
+
+  const testIntegration = async (providerKey: string) => {
+    setTesting(providerKey);
     try {
-      const { data, error } = await supabase.functions.invoke('api-integration-status', {
-        body: { action: 'test', provider }
+      const { data, error } = await supabase.functions.invoke('manage-llm-provider', {
+        body: { action: 'health_check', provider: { providerKey } }
       });
 
       if (error) throw error;
 
       if (data.healthy) {
-        toast.success(`${provider} integration is working correctly`);
+        toast.success(`${providerKey} integration is working correctly`);
       } else {
-        toast.error(`${provider} integration test failed: ${data.error}`);
+        toast.error(`${providerKey} integration test failed: ${data.error}`);
       }
 
-      // Refresh status after test
-      await fetchIntegrationStatus();
+      await fetchProviders();
     } catch (error: unknown) {
       secureLog.error('Integration test failed', error, 'AdminAPIIntegrations');
-      toast.error(`Failed to test ${provider} integration`);
+      toast.error(`Failed to test ${providerKey} integration`);
     } finally {
       setTesting(null);
     }
   };
 
-  const getStatusBadge = (integration: IntegrationStatus) => {
-    if (!integration.configured) {
-      return <Badge variant="secondary" className="bg-muted text-muted-foreground">Not Configured</Badge>;
+  const getStatusBadge = (provider: LLMProviderStatus) => {
+    if (!provider.is_active) {
+      return <Badge variant="secondary" className="bg-muted text-muted-foreground">Disabled</Badge>;
     }
-    if (integration.healthy === null) {
-      return <Badge variant="outline" className="border-warning text-warning">Unchecked</Badge>;
+    if (!provider.api_key_configured) {
+      return <Badge variant="outline" className="border-amber-500 text-amber-600">Not Configured</Badge>;
     }
-    if (integration.healthy) {
-      return <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Healthy</Badge>;
+    switch (provider.health_status) {
+      case 'healthy':
+        return <Badge className="bg-green-500/20 text-green-600 border-green-500/30">Healthy</Badge>;
+      case 'unhealthy':
+        return <Badge variant="destructive">Unhealthy</Badge>;
+      default:
+        return <Badge variant="outline">Unchecked</Badge>;
     }
-    return <Badge variant="destructive">Unhealthy</Badge>;
   };
 
-  const getProviderIcon = (provider: string) => {
-    switch (provider) {
+  const getProviderIcon = (providerKey: string) => {
+    switch (providerKey) {
       case 'grok':
-        return <Zap className="h-5 w-5 text-purple-400" />;
+        return <Zap className="h-5 w-5 text-purple-500" />;
       case 'openai':
-        return <Bot className="h-5 w-5 text-green-400" />;
+        return <Bot className="h-5 w-5 text-green-500" />;
+      case 'anthropic':
+        return <Sparkles className="h-5 w-5 text-orange-500" />;
+      case 'google':
+        return <Sparkles className="h-5 w-5 text-blue-500" />;
       case 'lovable':
-        return <Zap className="h-5 w-5 text-pink-400" />;
+        return <Zap className="h-5 w-5 text-pink-500" />;
       default:
-        return <Key className="h-5 w-5 text-blue-400" />;
+        return <Key className="h-5 w-5 text-muted-foreground" />;
     }
   };
 
@@ -142,19 +133,30 @@ export default function AdminAPIIntegrations() {
               API Integrations
             </CardTitle>
             <CardDescription className="text-muted-foreground">
-              Manage LLM provider connections and API keys
+              LLM provider connections and status
             </CardDescription>
           </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={fetchIntegrationStatus}
-            disabled={loading}
-            className="border-border"
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => navigate('/admin/llm-monitoring')}
+              className="border-border"
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              Manage
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={fetchProviders}
+              disabled={loading}
+              className="border-border"
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -165,32 +167,45 @@ export default function AdminAPIIntegrations() {
                 <div key={i} className="h-16 bg-muted/50 rounded-lg animate-pulse" />
               ))}
             </div>
+          ) : providers.length === 0 ? (
+            <div className="text-center py-6 text-muted-foreground">
+              <Bot className="h-10 w-10 mx-auto mb-2 opacity-50" />
+              <p>No LLM providers configured</p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="mt-3"
+                onClick={() => navigate('/admin/llm-monitoring')}
+              >
+                Configure Providers
+              </Button>
+            </div>
           ) : (
-            integrations.map((integration) => (
+            providers.slice(0, 5).map((provider) => (
               <div 
-                key={integration.provider}
+                key={provider.id}
                 className="flex items-center justify-between p-4 bg-background/50 rounded-lg border border-border"
               >
                 <div className="flex items-center gap-3">
-                  {getProviderIcon(integration.provider)}
+                  {getProviderIcon(provider.provider_key)}
                   <div>
-                    <div className="font-medium text-foreground">{integration.displayName}</div>
+                    <div className="font-medium text-foreground">{provider.display_name}</div>
                     <div className="text-xs text-muted-foreground">
-                      {integration.models.slice(0, 2).join(', ')}
-                      {integration.models.length > 2 && ` +${integration.models.length - 2} more`}
+                      {provider.models.slice(0, 2).join(', ')}
+                      {provider.models.length > 2 && ` +${provider.models.length - 2} more`}
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  {getStatusBadge(integration)}
-                  {integration.configured && (
+                  {getStatusBadge(provider)}
+                  {provider.api_key_configured && provider.is_active && (
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => testIntegration(integration.provider)}
-                      disabled={testing === integration.provider}
+                      onClick={() => testIntegration(provider.provider_key)}
+                      disabled={testing === provider.provider_key}
                     >
-                      {testing === integration.provider ? (
+                      {testing === provider.provider_key ? (
                         <RefreshCw className="h-4 w-4 animate-spin" />
                       ) : (
                         <CheckCircle2 className="h-4 w-4" />
@@ -201,12 +216,22 @@ export default function AdminAPIIntegrations() {
               </div>
             ))
           )}
+          
+          {providers.length > 5 && (
+            <Button 
+              variant="ghost" 
+              className="w-full text-muted-foreground"
+              onClick={() => navigate('/admin/llm-monitoring')}
+            >
+              View all {providers.length} providers
+            </Button>
+          )}
         </div>
 
         <div className="mt-6 p-4 bg-muted/30 rounded-lg border border-border">
-          <h4 className="text-sm font-medium text-foreground mb-2">Adding API Keys</h4>
+          <h4 className="text-sm font-medium text-foreground mb-2">Managing API Keys</h4>
           <p className="text-xs text-muted-foreground mb-3">
-            API keys are managed through Lovable's secure secrets system. Keys are encrypted and never exposed to the frontend.
+            API keys are managed through the LLM Monitoring page. Keys are encrypted and stored securely.
           </p>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" className="text-xs" asChild>
