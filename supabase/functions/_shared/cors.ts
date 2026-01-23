@@ -1,9 +1,15 @@
 // Allowed origins for CORS - add your production domains here
 const ALLOWED_ORIGINS = [
+  // Lovable domains
   'https://lovable.dev',
   'https://*.lovable.dev',
   'https://*.lovableproject.com',
+  'https://*.lovable.app',
+  // Supabase project
   'https://lxuqfgbukrrickanmmic.supabase.co',
+  // Custom production domain
+  'https://chatterbox.life',
+  'https://www.chatterbox.life',
 ];
 
 // Development origins (only active in non-production)
