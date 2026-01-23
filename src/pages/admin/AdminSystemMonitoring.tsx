@@ -29,7 +29,7 @@ import {
   LogsTabContent
 } from '@/components/admin/monitoring';
 import { ErrorPatternsAnalysis } from '@/components/admin/monitoring/ErrorPatternsAnalysis';
-import { EdgeFunctionHealthPanel } from '@/components/admin/monitoring/EdgeFunctionHealthPanel';
+import { EdgeFunctionHealthDashboard } from '@/components/admin/monitoring/EdgeFunctionHealthDashboard';
 import type { SystemError } from '@/types/systemHealth';
 import { cLog } from '@/utils/conditionalLogger';
 
@@ -200,7 +200,7 @@ const AdminSystemMonitoring = () => {
         </TabsContent>
 
         <TabsContent value="edge-functions">
-          <EdgeFunctionHealthPanel />
+          <EdgeFunctionHealthDashboard />
         </TabsContent>
 
         <TabsContent value="logs">
