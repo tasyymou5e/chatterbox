@@ -354,11 +354,15 @@ export default function CreateTestFamilyDialog({ open, onOpenChange, onSuccess }
         throw new Error('No active session. Please log in again.');
       }
 
-      cLog('[CreateTestFamily] Invoking edge function...');
+      cLog('[CreateTestFamily] Invoking edge function with explicit auth...');
       const invokeStartTime = Date.now();
       
+      // Explicitly pass auth token to ensure it's included
       const { data, error } = await supabase.functions.invoke('create-test-family', {
-        body: familyData
+        body: familyData,
+        headers: {
+          Authorization: `Bearer ${currentSession.access_token}`
+        }
       });
 
       const invokeDuration = Date.now() - invokeStartTime;
