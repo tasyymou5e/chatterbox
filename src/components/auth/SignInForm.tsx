@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
-import { useAuthLogging } from '@/hooks/useAuthLogging';
+
 import { useLoginRateLimiter } from '@/hooks/useLoginRateLimiter';
 import { toast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
@@ -24,7 +24,6 @@ export const SignInForm = ({ onForgotPassword, onChildSignup }: SignInFormProps)
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { signIn } = useAuth();
-  const { logActivity, createSession } = useAuthLogging();
   const { checkAttempt, formattedTimeRemaining, refreshStatus } = useLoginRateLimiter('user');
 
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -65,12 +64,7 @@ export const SignInForm = ({ onForgotPassword, onChildSignup }: SignInFormProps)
       const { error, user, userRole } = await signIn(email, password);
 
       if (error) {
-        await logActivity('unknown', 'failed_login', false, error.message, {
-          email,
-          errorType: error.name || 'SigninError',
-          attemptedAt: new Date().toISOString()
-        });
-        
+        // Failed login is already logged by authActionsStore
         refreshStatus(email);
         
         const errorDetails = getAuthErrorMessage(error);
@@ -80,16 +74,6 @@ export const SignInForm = ({ onForgotPassword, onChildSignup }: SignInFormProps)
           variant: 'destructive',
         });
       } else if (user) {
-        const sessionId = await logActivity(user.id, 'login', true, undefined, {
-          email,
-          loginMethod: 'email_password',
-          loginAt: new Date().toISOString()
-        });
-        
-        if (sessionId) {
-          await createSession(user.id);
-        }
-        
         toast({
           title: 'Welcome Back!',
           description: 'You have been signed in successfully.',
