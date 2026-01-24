@@ -36,6 +36,19 @@ export interface SecurityAlertData {
   actionRequired?: string;
 }
 
+export interface DataHealthAlertData {
+  alertType: 'warning' | 'critical';
+  score: number;
+  grade: string;
+  timestamp: string;
+  topFactors: Array<{
+    category: string;
+    severity: string;
+    description: string;
+  }>;
+  dashboardUrl: string;
+}
+
 // ============================================================================
 // Base Template Wrapper
 // ============================================================================
@@ -288,7 +301,7 @@ export function securityAlertTemplate(data: SecurityAlertData): string {
 /**
  * Escape HTML to prevent XSS in email content
  */
-function escapeHtml(text: string): string {
+export function escapeHtml(text: string): string {
   const htmlEscapes: Record<string, string> = {
     '&': '&amp;',
     '<': '&lt;',
@@ -297,4 +310,108 @@ function escapeHtml(text: string): string {
     "'": '&#39;'
   };
   return text.replace(/[&<>"']/g, char => htmlEscapes[char]);
+}
+
+// ============================================================================
+// Data Health Alert Template (Admin Notifications)
+// ============================================================================
+
+export function dataHealthAlertTemplate(data: DataHealthAlertData): string {
+  const isWarning = data.alertType === 'warning';
+  const headerGradient = isWarning 
+    ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
+    : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+  const emoji = isWarning ? '⚠️' : '🚨';
+  const title = isWarning ? 'Data Health Warning' : 'Critical System Health Alert';
+  const headerColor = isWarning ? '#92400e' : '#991b1b';
+  const borderColor = isWarning ? '#fde68a' : '#fecaca';
+  const bgColor = isWarning ? '#fffbeb' : '#fef2f2';
+
+  // Build factors list HTML
+  const factorsHtml = data.topFactors.length > 0 
+    ? data.topFactors.slice(0, 5).map(factor => `
+        <tr>
+          <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
+            <span style="display: inline-block; background-color: ${
+              factor.severity === 'critical' ? '#fef2f2' : 
+              factor.severity === 'high' ? '#fff7ed' : 
+              factor.severity === 'medium' ? '#fffbeb' : '#f0fdf4'
+            }; color: ${
+              factor.severity === 'critical' ? '#dc2626' : 
+              factor.severity === 'high' ? '#ea580c' : 
+              factor.severity === 'medium' ? '#ca8a04' : '#16a34a'
+            }; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; text-transform: uppercase; margin-right: 8px;">
+              ${escapeHtml(factor.severity)}
+            </span>
+            <span style="color: #6b7280; font-size: 12px;">${escapeHtml(factor.category)}</span>
+            <p style="margin: 4px 0 0 0; color: #374151; font-size: 14px;">${escapeHtml(factor.description)}</p>
+          </td>
+        </tr>
+      `).join('')
+    : '<tr><td style="padding: 8px 0; color: #6b7280; font-style: italic;">No specific factors identified</td></tr>';
+
+  const content = `
+    <!-- Header -->
+    <tr>
+      <td style="background: ${headerGradient}; padding: 32px 40px; border-radius: 12px 12px 0 0;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+          <tr>
+            <td>
+              <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 600;">
+                ${emoji} ${title}
+              </h1>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+    <!-- Body -->
+    <tr>
+      <td style="padding: 32px 40px;">
+        <p style="margin: 0 0 16px 0; font-size: 16px;">
+          The system data health score has dropped to a ${isWarning ? 'concerning' : 'critical'} level that requires attention.
+        </p>
+        
+        <!-- Score Box -->
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin: 24px 0;">
+          <tr>
+            <td style="background-color: ${bgColor}; border: 2px solid ${borderColor}; border-radius: 12px; padding: 24px; text-align: center;">
+              <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">Current Score</p>
+              <p style="margin: 0; color: ${headerColor}; font-size: 48px; font-weight: 700; line-height: 1;">
+                ${data.score}<span style="font-size: 24px; color: #9ca3af;">/100</span>
+              </p>
+              <p style="margin: 8px 0 0 0; color: ${headerColor}; font-size: 18px; font-weight: 600;">
+                ${escapeHtml(data.grade.toUpperCase())}
+              </p>
+            </td>
+          </tr>
+        </table>
+        
+        <!-- Factors Section -->
+        <h3 style="margin: 24px 0 12px 0; color: #374151; font-size: 16px; font-weight: 600;">
+          Top Issues Impacting Score:
+        </h3>
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin: 0 0 24px 0;">
+          ${factorsHtml}
+        </table>
+        
+        <!-- CTA Button -->
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin: 24px 0;">
+          <tr>
+            <td align="center">
+              <a href="${escapeHtml(data.dashboardUrl)}" style="display: inline-block; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+                View Dashboard →
+              </a>
+            </td>
+          </tr>
+        </table>
+        
+        <p style="margin: 24px 0 0 0; color: #6b7280; font-size: 14px;">
+          Detected at: ${escapeHtml(data.timestamp)}
+        </p>
+      </td>
+    </tr>
+  `;
+  
+  return baseTemplate(content);
 }

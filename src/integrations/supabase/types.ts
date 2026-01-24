@@ -1296,6 +1296,42 @@ export type Database = {
           },
         ]
       }
+      data_health_alerts: {
+        Row: {
+          alert_type: string
+          created_at: string
+          email_errors: string[] | null
+          emails_sent: number
+          factors_summary: Json | null
+          grade: string
+          id: string
+          recipients: string[]
+          score: number
+        }
+        Insert: {
+          alert_type: string
+          created_at?: string
+          email_errors?: string[] | null
+          emails_sent?: number
+          factors_summary?: Json | null
+          grade: string
+          id?: string
+          recipients?: string[]
+          score: number
+        }
+        Update: {
+          alert_type?: string
+          created_at?: string
+          email_errors?: string[] | null
+          emails_sent?: number
+          factors_summary?: Json | null
+          grade?: string
+          id?: string
+          recipients?: string[]
+          score?: number
+        }
+        Relationships: []
+      }
       data_health_scores: {
         Row: {
           calculated_at: string

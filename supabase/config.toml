@@ -72,3 +72,6 @@ verify_jwt = false
 
 [functions.family-integrity-check]
 verify_jwt = false
+
+[functions.data-health-alerter]
+verify_jwt = false
