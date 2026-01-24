@@ -1998,6 +1998,157 @@ export type Database = {
         }
         Relationships: []
       }
+      integrity_check_logs: {
+        Row: {
+          check_duration_ms: number | null
+          check_type: string
+          created_at: string
+          error_message: string | null
+          id: string
+          issues_auto_fixable: number
+          issues_found: number
+          status: string
+          triggered_by: string | null
+        }
+        Insert: {
+          check_duration_ms?: number | null
+          check_type: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          issues_auto_fixable?: number
+          issues_found?: number
+          status: string
+          triggered_by?: string | null
+        }
+        Update: {
+          check_duration_ms?: number | null
+          check_type?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          issues_auto_fixable?: number
+          issues_found?: number
+          status?: string
+          triggered_by?: string | null
+        }
+        Relationships: []
+      }
+      integrity_fix_audit: {
+        Row: {
+          action: string
+          admin_id: string
+          created_at: string
+          id: string
+          issue_id: string
+          new_data: Json | null
+          notes: string | null
+          old_data: Json | null
+        }
+        Insert: {
+          action: string
+          admin_id: string
+          created_at?: string
+          id?: string
+          issue_id: string
+          new_data?: Json | null
+          notes?: string | null
+          old_data?: Json | null
+        }
+        Update: {
+          action?: string
+          admin_id?: string
+          created_at?: string
+          id?: string
+          issue_id?: string
+          new_data?: Json | null
+          notes?: string | null
+          old_data?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integrity_fix_audit_issue_id_fkey"
+            columns: ["issue_id"]
+            isOneToOne: false
+            referencedRelation: "integrity_issues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      integrity_issues: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          auto_fix_available: boolean
+          check_log_id: string | null
+          created_at: string
+          description: string
+          entity_id: string
+          entity_type: string
+          family_id: string | null
+          fix_preview: string | null
+          fixed_at: string | null
+          id: string
+          issue_type: string
+          metadata: Json | null
+          proposed_fix: Json | null
+          rejection_reason: string | null
+          severity: string
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          auto_fix_available?: boolean
+          check_log_id?: string | null
+          created_at?: string
+          description: string
+          entity_id: string
+          entity_type: string
+          family_id?: string | null
+          fix_preview?: string | null
+          fixed_at?: string | null
+          id?: string
+          issue_type: string
+          metadata?: Json | null
+          proposed_fix?: Json | null
+          rejection_reason?: string | null
+          severity: string
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          auto_fix_available?: boolean
+          check_log_id?: string | null
+          created_at?: string
+          description?: string
+          entity_id?: string
+          entity_type?: string
+          family_id?: string | null
+          fix_preview?: string | null
+          fixed_at?: string | null
+          id?: string
+          issue_type?: string
+          metadata?: Json | null
+          proposed_fix?: Json | null
+          rejection_reason?: string | null
+          severity?: string
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integrity_issues_check_log_id_fkey"
+            columns: ["check_log_id"]
+            isOneToOne: false
+            referencedRelation: "integrity_check_logs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lesson_history: {
         Row: {
           answered_at: string
@@ -4159,6 +4310,14 @@ export type Database = {
         }[]
       }
       end_user_session: { Args: { session_id: string }; Returns: undefined }
+      find_duplicate_family_memberships: {
+        Args: never
+        Returns: {
+          count: number
+          family_id: string
+          user_id: string
+        }[]
+      }
       generate_behavioral_insights: {
         Args: { p_days_back?: number; p_user_id: string }
         Returns: {

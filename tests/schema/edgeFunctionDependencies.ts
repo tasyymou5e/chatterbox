@@ -637,6 +637,62 @@ export const EDGE_FUNCTION_DEPENDENCIES: EdgeFunctionDependency[] = [
     requiresAdmin: true,
     lastUpdated: '2026-01-23',
   },
+  // === Data Integrity ===
+  {
+    name: 'family-integrity-check',
+    description: 'Automated integrity check for family data with auto-fix and admin approval workflow',
+    tables: [
+      {
+        name: 'child_accounts',
+        operations: ['select'],
+        requiredColumns: ['id', 'user_id', 'family_id', 'display_name'],
+      },
+      {
+        name: 'family_members',
+        operations: ['select', 'delete'],
+        requiredColumns: ['id', 'user_id', 'family_id', 'role', 'created_at'],
+      },
+      {
+        name: 'families',
+        operations: ['select'],
+        requiredColumns: ['id', 'family_name'],
+      },
+      {
+        name: 'user_roles',
+        operations: ['select', 'insert', 'update'],
+        requiredColumns: ['user_id', 'role'],
+      },
+      {
+        name: 'profiles',
+        operations: ['select'],
+        requiredColumns: ['user_id', 'email'],
+      },
+      {
+        name: 'integrity_check_logs',
+        operations: ['select', 'insert'],
+        requiredColumns: ['id', 'check_type', 'status', 'issues_found', 'issues_auto_fixable', 'check_duration_ms', 'triggered_by', 'created_at'],
+      },
+      {
+        name: 'integrity_issues',
+        operations: ['select', 'insert', 'update'],
+        requiredColumns: ['id', 'check_log_id', 'issue_type', 'severity', 'entity_type', 'entity_id', 'description', 'auto_fix_available', 'proposed_fix', 'fix_preview', 'status', 'approved_by', 'approved_at', 'fixed_at', 'metadata', 'created_at'],
+      },
+      {
+        name: 'integrity_fix_audit',
+        operations: ['select', 'insert'],
+        requiredColumns: ['id', 'issue_id', 'action', 'admin_id', 'old_data', 'new_data', 'notes', 'created_at'],
+      },
+      {
+        name: 'system_alerts',
+        operations: ['insert'],
+        requiredColumns: ['alert_type', 'severity', 'title', 'message', 'source', 'metadata'],
+      },
+    ],
+    rpcs: ['check_admin_role_secure', 'find_duplicate_family_memberships'],
+    requiresAuth: true,
+    requiresAdmin: true,
+    lastUpdated: '2026-01-24',
+  },
 ];
 
 // ============ Utility Functions ============
