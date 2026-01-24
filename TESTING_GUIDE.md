@@ -1,12 +1,14 @@
 # Testing Documentation
 
-> **Last Updated:** 2026-01-21  
+> **Last Updated:** 2026-01-24  
 > **Test Framework:** Vitest (unit/component), Playwright (E2E)  
 > **Coverage Target:** 80%+
 
 ## Overview
 
 This document provides comprehensive guidance for testing the Chatterbox platform, including unit tests, component tests, integration tests, E2E tests, and RLS policy tests.
+
+> 📊 **See Also:** [AUTH_E2E_COVERAGE_REPORT.md](./AUTH_E2E_COVERAGE_REPORT.md) for detailed authentication flow test coverage (162 tests across 5 suites).
 
 ---
 
@@ -78,12 +80,17 @@ tests/
 tests-e2e/                        # Playwright E2E tests
 ├── fixtures/
 │   └── auth.fixture.ts           # Auth fixtures
+├── admin-auth.spec.ts            # Admin authentication (15 tests)
+├── admin-login-flow.spec.ts      # Admin login flow (15 tests)
 ├── admin-workflows.spec.ts       # Admin workflow tests
-├── auth.spec.ts                  # Authentication tests
+├── auth.spec.ts                  # General auth page (8 tests)
+├── child-signup-flow.spec.ts     # Child signup flow (46 tests)
 ├── games-catalog.spec.ts         # Games catalog tests
 ├── homepage.spec.ts              # Homepage tests
 ├── navigation.spec.ts            # Navigation tests
-└── parent-dashboard.spec.ts      # Parent dashboard tests
+├── parent-dashboard.spec.ts      # Parent dashboard tests
+├── parent-signup-flow.spec.ts    # Parent signup flow (33 tests)
+└── signin-flow.spec.ts           # Sign-in flow (45 tests)
 ```
 
 ### Configuration Files
