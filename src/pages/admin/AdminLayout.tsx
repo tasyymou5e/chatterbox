@@ -15,7 +15,8 @@ import {
   Activity,
   Brain,
   Loader2,
-  TrendingUp
+  TrendingUp,
+  Wrench
 } from 'lucide-react';
 
 export default function AdminLayout() {
@@ -159,6 +160,17 @@ export default function AdminLayout() {
                 >
                   <TrendingUp className="h-4 w-4" />
                   <span>Uptime Report</span>
+                </Link>
+                <Link 
+                  to="/admin/auto-repair-logs" 
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    location.pathname === '/admin/auto-repair-logs' 
+                      ? 'text-white bg-gray-700' 
+                      : 'text-gray-300 hover:text-white hover:bg-gray-700'
+                  }`}
+                >
+                  <Wrench className="h-4 w-4" />
+                  <span>Auto-Repair</span>
                 </Link>
               </div>
             </div>

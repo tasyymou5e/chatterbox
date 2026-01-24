@@ -36,6 +36,7 @@ const AdminUptimeReportLazy = React.lazy(() => import('@/pages/admin/UptimeRepor
 const AdminSecurityCenterLazy = React.lazy(() => 
   import('@/pages/admin/AdminSecurityCenter').then(m => ({ default: m.AdminSecurityCenter }))
 );
+const AdminAutoRepairLogsLazy = React.lazy(() => import('@/pages/admin/AdminAutoRepairLogs'));
 
 // Lazy loaded pages - Parent
 const ParentDashboardLazy = React.lazy(() => import('@/pages/ParentDashboard'));
@@ -254,6 +255,14 @@ export const adminChildRoutes: RouteConfig[] = [
     element: (
       <ErrorBoundary componentName="AdminUptimeReport">
         <LazyRoute variant="dashboard"><AdminUptimeReportLazy /></LazyRoute>
+      </ErrorBoundary>
+    )
+  },
+  { 
+    path: 'auto-repair-logs', 
+    element: (
+      <ErrorBoundary componentName="AdminAutoRepairLogs">
+        <LazyRoute variant="dashboard"><AdminAutoRepairLogsLazy /></LazyRoute>
       </ErrorBoundary>
     )
   },
