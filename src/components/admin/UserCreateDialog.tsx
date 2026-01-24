@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { UserPlus, Shield, Eye, Users, Baby, Loader2, Copy, Check, AlertTriangle, Key, Mail } from 'lucide-react';
 import { validateAndSanitizeFormData, commonSchemas } from '@/utils/enhancedInputValidation';
 import { useAdminRateLimiter } from '@/utils/adminRateLimiter';
+import { invokeEdgeFunction } from '@/utils/secureEdgeFunctionInvoke';
 import { z } from 'zod';
 
 interface UserCreateDialogProps {
@@ -231,14 +232,7 @@ export const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
 
     try {
       const userRoles = [formData.adminRole, formData.familyRole].filter(Boolean);
-      interface CreateUserRequest {
-        email: string;
-        firstName: string;
-        lastName: string;
-        roles: string[];
-        customPassword?: string;
-      }
-      const requestBody: CreateUserRequest = {
+      const requestBody: Record<string, unknown> = {
         email: formData.email,
         firstName: formData.firstName,
         lastName: formData.lastName,
@@ -249,20 +243,18 @@ export const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
         requestBody.customPassword = formData.customPassword;
       }
 
-      const { data, error } = await supabase.functions.invoke('admin-create-user', {
-        body: requestBody
-      });
+      const { data, error } = await invokeEdgeFunction<{ password?: string; error?: string }>('admin-create-user', requestBody);
 
       if (error) {
         throw error;
       }
 
-      if (data.error) {
+      if (data?.error) {
         throw new Error(data.error);
       }
 
       // Only show password if it was generated (not custom)
-      if (!formData.useCustomPassword) {
+      if (!formData.useCustomPassword && data?.password) {
         setGeneratedPassword(data.password);
       }
       
