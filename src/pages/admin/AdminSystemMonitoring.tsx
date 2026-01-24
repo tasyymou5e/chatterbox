@@ -3,7 +3,7 @@
  * 
  * @description Refactored system monitoring dashboard using modular components
  * and a custom hook for state management. Displays error statistics, recent
- * errors, system alerts, and logs with real-time updates.
+ * errors, system alerts, logs, and E2E test coverage with real-time updates.
  */
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,8 @@ import {
   User,
   FileText,
   AlertTriangle,
-  Zap
+  Zap,
+  TestTube2
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSystemMonitoring } from '@/hooks/useSystemMonitoring';
@@ -30,6 +31,7 @@ import {
 } from '@/components/admin/monitoring';
 import { ErrorPatternsAnalysis } from '@/components/admin/monitoring/ErrorPatternsAnalysis';
 import { EdgeFunctionHealthDashboard } from '@/components/admin/monitoring/EdgeFunctionHealthDashboard';
+import { AuthE2ETestCoverage } from '@/components/admin/testing';
 import type { SystemError } from '@/types/systemHealth';
 import { cLog } from '@/utils/conditionalLogger';
 
@@ -165,7 +167,7 @@ const AdminSystemMonitoring = () => {
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="errors" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="errors">Recent Errors</TabsTrigger>
           <TabsTrigger value="alerts">System Alerts</TabsTrigger>
           <TabsTrigger value="patterns">Error Patterns</TabsTrigger>
@@ -176,6 +178,10 @@ const AdminSystemMonitoring = () => {
           <TabsTrigger value="logs">
             <FileText className="h-4 w-4 mr-2" />
             Logs
+          </TabsTrigger>
+          <TabsTrigger value="e2e-tests">
+            <TestTube2 className="h-4 w-4 mr-2" />
+            E2E Tests
           </TabsTrigger>
         </TabsList>
 
@@ -205,6 +211,10 @@ const AdminSystemMonitoring = () => {
 
         <TabsContent value="logs">
           <LogsTabContent />
+        </TabsContent>
+
+        <TabsContent value="e2e-tests">
+          <AuthE2ETestCoverage />
         </TabsContent>
       </Tabs>
 
