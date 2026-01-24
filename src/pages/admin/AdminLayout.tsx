@@ -16,7 +16,8 @@ import {
   Brain,
   Loader2,
   TrendingUp,
-  Wrench
+  Wrench,
+  ShieldCheck
 } from 'lucide-react';
 
 export default function AdminLayout() {
@@ -160,6 +161,17 @@ export default function AdminLayout() {
                 >
                   <TrendingUp className="h-4 w-4" />
                   <span>Uptime Report</span>
+                </Link>
+                <Link 
+                  to="/admin/integrity" 
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    location.pathname === '/admin/integrity' 
+                      ? 'text-white bg-gray-700' 
+                      : 'text-gray-300 hover:text-white hover:bg-gray-700'
+                  }`}
+                >
+                  <ShieldCheck className="h-4 w-4" />
+                  <span>Integrity</span>
                 </Link>
                 <Link 
                   to="/admin/auto-repair-logs" 

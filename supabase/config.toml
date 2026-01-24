@@ -69,3 +69,6 @@ verify_jwt = false
 
 [functions.edge-function-health-check]
 verify_jwt = false
+
+[functions.family-integrity-check]
+verify_jwt = false
