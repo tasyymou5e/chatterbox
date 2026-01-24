@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Users, UserPlus, UserMinus, Mail, Search, Trash2, AlertTriangle, Key } from 'lucide-react';
 import { UserPasswordResetDialog } from '@/components/admin/UserPasswordResetDialog';
+import { invokeEdgeFunction } from '@/utils/secureEdgeFunctionInvoke';
 
 interface FamilyMember {
   id: string;
@@ -135,14 +136,12 @@ export default function AdminMemberManagementDialog({
   const handleAddMember = async (userToAdd: { user_id: string; first_name?: string; last_name?: string }) => {
     setLoading(true);
     try {
-      const { error } = await supabase.functions.invoke('admin-add-family-member', {
-        body: {
-          familyId: family.id,
-          userId: userToAdd.user_id,
-          role: selectedRole,
-          userEmail: '', // Email removed from profiles for security
-          userName: `${userToAdd.first_name || ''} ${userToAdd.last_name || ''}`.trim()
-        }
+      const { error } = await invokeEdgeFunction('admin-add-family-member', {
+        familyId: family.id,
+        userId: userToAdd.user_id,
+        role: selectedRole,
+        userEmail: '', // Email removed from profiles for security
+        userName: `${userToAdd.first_name || ''} ${userToAdd.last_name || ''}`.trim()
       });
 
       if (error) throw error;
@@ -177,13 +176,11 @@ export default function AdminMemberManagementDialog({
     setLoading(true);
     try {
       const userName = `${selectedMemberToRemove.first_name || ''} ${selectedMemberToRemove.last_name || ''}`.trim() || 'User';
-      const { error } = await supabase.functions.invoke('admin-remove-family-member', {
-        body: {
-          familyId: family.id,
-          userId: selectedMemberToRemove.user_id,
-          userEmail: '', // Email removed from profiles for security
-          userName
-        }
+      const { error } = await invokeEdgeFunction('admin-remove-family-member', {
+        familyId: family.id,
+        userId: selectedMemberToRemove.user_id,
+        userEmail: '', // Email removed from profiles for security
+        userName
       });
 
       if (error) throw error;

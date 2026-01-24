@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, Copy, RefreshCw, Key, Loader2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { invokeEdgeFunction } from '@/utils/secureEdgeFunctionInvoke';
 import { cLog, cError } from '@/utils/conditionalLogger';
 import { getErrorMessage } from '@/types/interfaces';
 
@@ -123,22 +123,13 @@ export const UserPasswordResetDialog: React.FC<UserPasswordResetDialogProps> = (
     setIsLoading(true);
 
     try {
-      // Verify session exists (for early error detection)
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        throw new Error('No active session. Please log in again.');
-      }
-
       cLog('Calling admin-update-user for user:', user.id);
 
-      // Call edge function - SDK handles auth automatically
-      const { data, error } = await supabase.functions.invoke('admin-update-user', {
-        body: {
-          userId: user.id,
-          newPassword: password,
-          forcePasswordChange
-        }
+      // Call edge function with automatic session refresh
+      const { data, error } = await invokeEdgeFunction<{ error?: string }>('admin-update-user', {
+        userId: user.id,
+        newPassword: password,
+        forcePasswordChange
       });
 
       cLog('Edge function response:', { data, error });
