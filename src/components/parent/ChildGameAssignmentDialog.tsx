@@ -88,25 +88,41 @@ export function ChildGameAssignmentDialog({
     
     setLoading(true);
     try {
-      // Fetch children in family
+      // Fetch children in the family (two-query pattern to avoid PostgREST join issues)
       const { data: familyMembers, error: membersError } = await supabase
         .from('family_members')
-        .select('user_id, profiles!inner(id, first_name, last_name)')
+        .select('user_id, role')
         .eq('family_id', familyId)
         .eq('role', 'child');
 
       if (membersError) {
+        console.error('Error fetching family members:', membersError);
         throw membersError;
       }
 
-      const childProfiles: ChildProfile[] = (familyMembers || []).map(fm => {
-        const profile = fm.profiles as unknown as { id: string; first_name: string; last_name?: string };
-        return {
-          id: profile.id,
-          first_name: profile.first_name,
-          last_name: profile.last_name,
-        };
-      });
+      // Get profiles for child user_ids
+      const userIds = familyMembers?.map(fm => fm.user_id) || [];
+      let childProfiles: ChildProfile[] = [];
+      
+      if (userIds.length > 0) {
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('user_id, first_name, last_name')
+          .in('user_id', userIds);
+
+        if (profilesError) {
+          console.error('Error fetching profiles:', profilesError);
+          throw profilesError;
+        }
+
+        // Merge data - use user_id as the child identifier (matches RPC expectations)
+        childProfiles = (profiles || []).map(p => ({
+          id: p.user_id,  // Use user_id, not profile.id - this is what assignment RPCs expect
+          first_name: p.first_name || 'Child',
+          last_name: p.last_name ?? undefined,  // Convert null to undefined
+        }));
+      }
+
       setChildren(childProfiles);
 
       // Fetch available games (autism-friendly games for ages 6-12)
@@ -124,8 +140,8 @@ export function ChildGameAssignmentDialog({
       }
       setGames(gamesData || []);
 
-      // Select first child by default
-      if (childProfiles.length > 0) {
+      // Select first child by default if available
+      if (childProfiles.length > 0 && !selectedChild) {
         setSelectedChild(childProfiles[0].id);
       }
     } catch (error) {

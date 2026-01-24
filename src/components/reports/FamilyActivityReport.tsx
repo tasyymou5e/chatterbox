@@ -13,7 +13,6 @@ interface FamilyMemberActivity {
   user_id: string;
   first_name?: string;
   last_name?: string;
-  email?: string;
   role: string;
   activity_count: number;
   last_login?: string;
@@ -68,8 +67,7 @@ const FamilyActivityReport = () => {
             role,
             profiles!family_members_user_id_fkey (
               first_name,
-              last_name,
-              email
+              last_name
             )
           `)
           .eq('family_id', family.id);
@@ -107,7 +105,6 @@ const FamilyActivityReport = () => {
             user_id: member.user_id,
             first_name: profile?.first_name,
             last_name: profile?.last_name,
-            email: profile?.email,
             role: member.role,
             activity_count: memberActivities.length,
             last_login: lastLogin?.timestamp
@@ -259,14 +256,11 @@ const FamilyActivityReport = () => {
                             <div className="font-medium">
                               {member.first_name || member.last_name ? 
                                 `${member.first_name || ''} ${member.last_name || ''}`.trim() : 
-                                member.email
+                                'Unknown Member'
                               }
                             </div>
                             <div className="text-sm text-muted-foreground flex items-center gap-2">
                               <Badge variant="outline">{member.role}</Badge>
-                              {member.email && (
-                                <span>{member.email}</span>
-                              )}
                             </div>
                           </div>
                           <div className="text-right">
