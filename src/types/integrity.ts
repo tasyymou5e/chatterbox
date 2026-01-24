@@ -9,7 +9,8 @@ export type IntegrityIssueType =
   | 'role_mismatch'
   | 'orphaned_family_member'
   | 'missing_parent_link'
-  | 'invalid_family_reference';
+  | 'invalid_family_reference'
+  | 'missing_profile_record';
 
 export type IntegrityIssueStatus =
   | 'pending_review'
@@ -131,7 +132,8 @@ export const ISSUE_TYPE_LABELS: Record<IntegrityIssueType, string> = {
   role_mismatch: 'Role Mismatch',
   orphaned_family_member: 'Orphaned Family Member',
   missing_parent_link: 'Missing Parent Link',
-  invalid_family_reference: 'Invalid Family Reference'
+  invalid_family_reference: 'Invalid Family Reference',
+  missing_profile_record: 'Missing Profile Record'
 };
 
 export const ISSUE_TYPE_DESCRIPTIONS: Record<IntegrityIssueType, string> = {
@@ -141,5 +143,6 @@ export const ISSUE_TYPE_DESCRIPTIONS: Record<IntegrityIssueType, string> = {
   role_mismatch: 'User role in family_members differs from user_roles table',
   orphaned_family_member: 'Family member record references a deleted family',
   missing_parent_link: 'Family has children but no parent member',
-  invalid_family_reference: 'Child account references a non-existent family'
+  invalid_family_reference: 'Child account references a non-existent family',
+  missing_profile_record: 'Family member exists but has no corresponding profile record'
 };

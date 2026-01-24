@@ -512,6 +512,79 @@ async function runIntegrityChecks(supabase: ReturnType<typeof createClient>): Pr
       }
     }
 
+    // Check 8: Missing profile records for family members
+    const { data: membersWithoutProfiles } = await supabase
+      .from('family_members')
+      .select(`
+        id,
+        user_id,
+        family_id,
+        role,
+        families(name)
+      `);
+    
+    if (membersWithoutProfiles) {
+      for (const member of membersWithoutProfiles) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('user_id', member.user_id)
+          .maybeSingle();
+        
+        if (!profile) {
+          // Try to get data to create the profile
+          const { data: childAccount } = await supabase
+            .from('child_accounts')
+            .select('first_name, last_name')
+            .eq('user_id', member.user_id)
+            .maybeSingle();
+          
+          const { data: authUser } = await supabase.auth.admin.getUserById(member.user_id);
+          
+          const firstName = childAccount?.first_name || 
+            authUser?.user?.user_metadata?.first_name || 
+            authUser?.user?.email?.split('@')[0] || 
+            'Unknown';
+          const lastName = childAccount?.last_name || 
+            authUser?.user?.user_metadata?.last_name || 
+            '';
+          
+          const familyName = (member.families as { name?: string } | null)?.name || 'Unknown';
+          
+          issues.push({
+            issue_type: 'missing_profile_record',
+            severity: 'high',
+            entity_type: 'family_member',
+            entity_id: member.id,
+            family_id: member.family_id,
+            user_id: member.user_id,
+            description: `Family member in "${familyName}" (${member.role}) has no profile record - prevents game assignments and other features`,
+            auto_fix_available: true,
+            proposed_fix: {
+              action: 'insert',
+              table: 'profiles',
+              data: { 
+                id: crypto.randomUUID(),
+                user_id: member.user_id, 
+                first_name: firstName,
+                last_name: lastName,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              },
+              reason: 'Create missing profile record from available user data'
+            },
+            fix_preview: `Create profile for user ${member.user_id} with name "${firstName} ${lastName}"`,
+            metadata: { 
+              role: member.role,
+              email: authUser?.user?.email,
+              first_name: firstName,
+              last_name: lastName
+            }
+          });
+        }
+      }
+    }
+
     return {
       status: issues.length > 0 ? 'issues_found' : 'healthy',
       issues,
