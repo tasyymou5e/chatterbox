@@ -3849,6 +3849,65 @@ export type Database = {
       }
     }
     Views: {
+      auto_repair_logs: {
+        Row: {
+          completed_at: string | null
+          device_info: Json | null
+          failure_reason: string | null
+          family_repair_details: Json | null
+          id: string | null
+          profile_repair_details: Json | null
+          repaired_fields: Json | null
+          role_repair_details: Json | null
+          started_at: string | null
+          success: boolean | null
+          timestamp: string | null
+          total_fields_repaired: number | null
+          trigger_source: string | null
+          user_id: string | null
+        }
+        Insert: {
+          completed_at?: never
+          device_info?: Json | null
+          failure_reason?: string | null
+          family_repair_details?: never
+          id?: string | null
+          profile_repair_details?: never
+          repaired_fields?: never
+          role_repair_details?: never
+          started_at?: never
+          success?: boolean | null
+          timestamp?: string | null
+          total_fields_repaired?: never
+          trigger_source?: never
+          user_id?: string | null
+        }
+        Update: {
+          completed_at?: never
+          device_info?: Json | null
+          failure_reason?: string | null
+          family_repair_details?: never
+          id?: string | null
+          profile_repair_details?: never
+          repaired_fields?: never
+          role_repair_details?: never
+          started_at?: never
+          success?: boolean | null
+          timestamp?: string | null
+          total_fields_repaired?: never
+          trigger_source?: never
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_activity_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       child_accounts_self_view: {
         Row: {
           completed_at: string | null

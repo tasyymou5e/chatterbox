@@ -19,7 +19,7 @@ class AuthLoggingService {
 
   async logActivity(
     userId: string,
-    activityType: 'login' | 'logout' | 'signup' | 'failed_login' | 'password_reset' | 'session_expired',
+    activityType: 'login' | 'logout' | 'signup' | 'failed_login' | 'password_reset' | 'session_expired' | 'data_auto_repair',
     success: boolean = true,
     failureReason?: string,
     metadata: Record<string, unknown> = {}
