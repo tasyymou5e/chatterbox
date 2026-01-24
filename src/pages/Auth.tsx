@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { AlertCircle, Loader2 } from 'lucide-react';
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { useAuthNavigation } from '@/hooks/useAuthNavigation';
+import { useAuth } from '@/hooks/useAuth';
+import { getDashboardPath } from '@/utils/authHelpers';
 import {
   AuthLayout,
   SignUpForm,
@@ -24,11 +27,13 @@ const Auth = () => {
   const [activeTab, setActiveTab] = useState<AuthTab>('signup');
   const [childAccountCode, setChildAccountCode] = useState('');
   const { settings } = useSiteSettings();
+  const navigate = useNavigate();
+  const { user, loading, sessionReady, userRole } = useAuth();
   
   // Set up navigation for auth context
   useAuthNavigation();
 
-  // Handle URL-based tab switching
+  // Handle URL-based tab switching - must be before early returns
   useEffect(() => {
     const tab = searchParams.get('tab') as AuthTab;
     const code = searchParams.get('code');
@@ -42,6 +47,33 @@ const Auth = () => {
       setActiveTab(tab);
     }
   }, [searchParams]);
+
+  // Early return: Show loading state while checking session
+  if (loading || !sessionReady) {
+    return (
+      <AuthLayout description="Checking your session...">
+        <div className="flex flex-col items-center justify-center py-8 space-y-3">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <span className="text-muted-foreground">Loading...</span>
+        </div>
+      </AuthLayout>
+    );
+  }
+
+  // Early return: If already authenticated, show redirect message
+  if (user && userRole) {
+    const dashboardPath = getDashboardPath(userRole);
+    return (
+      <AuthLayout description="You're already signed in">
+        <div className="flex flex-col items-center justify-center py-8 space-y-4">
+          <p className="text-muted-foreground">Redirecting to your dashboard...</p>
+          <Button onClick={() => navigate(dashboardPath)}>
+            Go to Dashboard
+          </Button>
+        </div>
+      </AuthLayout>
+    );
+  }
 
   const getDescription = () => {
     switch (activeTab) {
