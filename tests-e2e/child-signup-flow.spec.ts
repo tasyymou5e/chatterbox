@@ -304,6 +304,56 @@ test.describe('Child Signup Flow - PIN Verification', () => {
     }
   });
 
+  test('PIN input accepts only numeric characters', async ({ page }) => {
+    // Trigger PIN field visibility
+    await mockChildAccountCompletion(page, pinRequiredResponse, 200);
+    
+    await fillChildSignupForm(page, {
+      code: 'FAM-TEST-123',
+      password: 'SecurePass123!',
+      confirmPassword: 'SecurePass123!'
+    });
+    
+    await page.getByRole('button', { name: /complete.*account|set.*up|submit/i }).click();
+    
+    const pinInput = page.locator('#verification-pin').or(page.getByPlaceholder(/pin/i));
+    await expect(pinInput).toBeVisible({ timeout: 5000 });
+    
+    // Type mixed characters - only numbers should be accepted
+    await pinInput.fill('abc123def456');
+    const value = await pinInput.inputValue();
+    
+    // Should only contain numeric characters (the component strips non-numeric)
+    expect(value).toMatch(/^\d*$/);
+  });
+
+  test('PIN input enforces 6-digit maximum length', async ({ page }) => {
+    // Trigger PIN field visibility
+    await mockChildAccountCompletion(page, pinRequiredResponse, 200);
+    
+    await fillChildSignupForm(page, {
+      code: 'FAM-TEST-123',
+      password: 'SecurePass123!',
+      confirmPassword: 'SecurePass123!'
+    });
+    
+    await page.getByRole('button', { name: /complete.*account|set.*up|submit/i }).click();
+    
+    const pinInput = page.locator('#verification-pin').or(page.getByPlaceholder(/pin/i));
+    await expect(pinInput).toBeVisible({ timeout: 5000 });
+    
+    // Check maxLength attribute
+    const maxLength = await pinInput.getAttribute('maxlength');
+    expect(maxLength).toBe('6');
+    
+    // Try to type more than 6 digits
+    await pinInput.fill('12345678');
+    const value = await pinInput.inputValue();
+    
+    // Should be limited to 6 characters
+    expect(value.length).toBeLessThanOrEqual(6);
+  });
+
   test('displays PIN help text when PIN field is shown', async ({ page }) => {
     await mockChildAccountCompletion(page, pinRequiredResponse, 200);
     
