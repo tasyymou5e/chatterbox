@@ -129,7 +129,7 @@ export default function AdminLogin() {
       <div className="w-full max-w-md">
         {/* Rate Limit Lockout Alert */}
         {isLocked && (
-          <div className="mb-6 p-4 bg-red-900/40 border border-red-500/50 rounded-lg animate-pulse">
+          <div data-testid="lockout-timer" className="mb-6 p-4 bg-red-900/40 border border-red-500/50 rounded-lg animate-pulse">
             <div className="flex items-center space-x-2 text-red-300">
               <Clock className="h-5 w-5" />
               <span className="text-sm font-medium">Account Temporarily Locked</span>

@@ -181,7 +181,7 @@ export function PasswordStrengthIndicator({ password, className = '' }: Password
   const strengthColor = getStrengthColor(validation.score);
 
   return (
-    <div className={`space-y-3 ${className}`}>
+    <div data-testid="password-strength" className={`space-y-3 ${className}`}>
       {/* Strength Progress Bar */}
       <div className="space-y-2">
         <div className="flex justify-between items-center">

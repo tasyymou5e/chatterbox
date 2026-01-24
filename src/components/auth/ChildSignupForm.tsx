@@ -207,7 +207,7 @@ export const ChildSignupForm = ({ initialCode = '', onBackToSignIn }: ChildSignu
       </div>
 
       {lockInfo?.isLocked && (
-        <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-center">
+        <div data-testid="lock-timer" className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-center">
           <Lock className="h-5 w-5 text-destructive mx-auto mb-2" />
           <p className="text-sm text-destructive font-medium">
             Account temporarily locked

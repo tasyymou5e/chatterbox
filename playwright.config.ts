@@ -17,6 +17,23 @@ export default defineConfig({
     ['list'],
   ],
   
+  /* Visual regression snapshot settings */
+  expect: {
+    toHaveScreenshot: {
+      maxDiffPixels: 100,        // Allow small pixel differences
+      maxDiffPixelRatio: 0.01,   // 1% pixel difference tolerance
+      threshold: 0.2,            // Color difference threshold
+      animations: 'disabled',    // Disable animations for consistency
+    },
+    toMatchSnapshot: {
+      maxDiffPixelRatio: 0.01,
+    },
+  },
+  
+  /* Snapshot directory for baseline screenshots */
+  snapshotDir: './tests-e2e/__screenshots__',
+  snapshotPathTemplate: '{snapshotDir}/{projectName}/{testFilePath}/{arg}{ext}',
+  
   use: {
     baseURL: 'http://localhost:8080',
     trace: 'on-first-retry',

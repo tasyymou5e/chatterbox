@@ -257,6 +257,65 @@ graph TD
 
 ---
 
+## Visual Regression Tests
+
+**File:** `tests-e2e/auth-visual.spec.ts`  
+**Tests:** 24
+
+Visual regression tests capture screenshots of authentication forms in various states and compare them against baseline images to detect unintended UI changes.
+
+### Coverage
+
+| UI State | Screenshot Name | Viewport |
+|----------|-----------------|----------|
+| Sign-in default | `signin-default.png` | Desktop |
+| Sign-in filled | `signin-filled.png` | Desktop |
+| Sign-in loading | `signin-loading.png` | Desktop |
+| Sign-in error toast | `signin-error-toast.png` | Desktop |
+| Sign-up default | `signup-default.png` | Desktop |
+| Sign-up filled | `signup-filled.png` | Desktop |
+| Password weak | `password-strength-weak.png` | Desktop |
+| Password medium | `password-strength-medium.png` | Desktop |
+| Password strong | `password-strength-strong.png` | Desktop |
+| Admin login default | `admin-login-default.png` | Desktop |
+| Admin lockout alert | `admin-login-lockout-alert.png` | Desktop |
+| Admin rate warning | `admin-login-rate-warning.png` | Desktop |
+| Child signup default | `child-signup-default.png` | Desktop |
+| Child PIN required | `child-signup-pin-required.png` | Desktop |
+| Child locked | `child-signup-locked.png` | Desktop |
+| Forgot password | `forgot-password-default.png` | Desktop |
+| Sign-in mobile | `signin-mobile.png` | 375x812 |
+| Sign-up mobile | `signup-mobile.png` | 375x812 |
+| Admin login mobile | `admin-login-mobile.png` | 375x812 |
+| Sign-up tablet | `signup-tablet.png` | 768x1024 |
+| Sign-in dark mode | `signin-dark-mode.png` | Desktop |
+| Admin dark mode | `admin-login-dark-mode.png` | Desktop |
+
+### Running Visual Tests
+
+```bash
+# Generate/update baseline screenshots
+npx playwright test auth-visual.spec.ts --update-snapshots
+
+# Run visual comparison tests
+npx playwright test auth-visual.spec.ts
+
+# Run only on chromium (faster)
+npx playwright test auth-visual.spec.ts --project=chromium
+
+# Run specific visual test category
+npx playwright test auth-visual.spec.ts -g "Password Strength"
+```
+
+### CI/CD Integration
+
+Visual regression tests run automatically on pull requests via `.github/workflows/security-tests.yml`:
+- Baselines stored in `tests-e2e/__screenshots__/`
+- Diff images uploaded as artifacts on failure
+- Uses Chromium for consistent cross-platform results
+
+---
+
 ## Running the Tests
 
 ```bash
