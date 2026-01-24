@@ -17,7 +17,8 @@ import {
   Loader2,
   TrendingUp,
   Wrench,
-  ShieldCheck
+  ShieldCheck,
+  HeartPulse
 } from 'lucide-react';
 
 export default function AdminLayout() {
@@ -183,6 +184,17 @@ export default function AdminLayout() {
                 >
                   <Wrench className="h-4 w-4" />
                   <span>Auto-Repair</span>
+                </Link>
+                <Link 
+                  to="/admin/data-health" 
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    location.pathname === '/admin/data-health' 
+                      ? 'text-white bg-gray-700' 
+                      : 'text-gray-300 hover:text-white hover:bg-gray-700'
+                  }`}
+                >
+                  <HeartPulse className="h-4 w-4" />
+                  <span>Data Health</span>
                 </Link>
               </div>
             </div>
