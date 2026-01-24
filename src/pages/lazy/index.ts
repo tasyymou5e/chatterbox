@@ -7,6 +7,7 @@ export { default as AdminContentLazy } from './AdminContentLazy';
 export { default as AdminSystemMonitoringLazy } from './AdminSystemMonitoringLazy';
 export { default as AdminLLMMonitoringLazy } from './AdminLLMMonitoringLazy';
 export { default as AdminSecurityCenterLazy } from './AdminSecurityCenterLazy';
+export { default as AdminAutoRepairLogsLazy } from './AdminAutoRepairLogsLazy';
 
 // Parent lazy routes
 export { default as ParentDashboardLazy } from './ParentDashboardLazy';
