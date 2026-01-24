@@ -45,6 +45,72 @@ const ParentDashboard = () => {
   const [familyMembers, setFamilyMembers] = useState<FamilyMemberInfo[]>([]);
   const [familyLoading, setFamilyLoading] = useState(false);
 
+  // Auto-repair missing profile/role data when user accesses dashboard
+  useEffect(() => {
+    const repairUserData = async () => {
+      if (!user) return;
+      
+      try {
+        // Check if profile exists
+        const { data: existingProfile, error: profileCheckError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        
+        if (profileCheckError) {
+          console.warn('Error checking profile:', profileCheckError);
+        }
+        
+        if (!existingProfile) {
+          // Create missing profile
+          const { error: insertError } = await supabase.from('profiles').insert({
+            user_id: user.id,
+            first_name: user.user_metadata?.first_name || user.email?.split('@')[0] || 'User',
+            last_name: user.user_metadata?.last_name || ''
+          });
+          
+          if (insertError) {
+            console.warn('Error creating profile:', insertError);
+          } else {
+            console.log('Auto-created missing profile for user:', user.id);
+          }
+        }
+        
+        // Check if role exists
+        const { data: existingRole, error: roleCheckError } = await supabase
+          .from('user_roles')
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        
+        if (roleCheckError) {
+          console.warn('Error checking role:', roleCheckError);
+        }
+        
+        if (!existingRole) {
+          // Assign parent role
+          const { error: roleInsertError } = await supabase.from('user_roles').insert({
+            user_id: user.id,
+            role: 'parent'
+          });
+          
+          if (roleInsertError) {
+            console.warn('Error creating role:', roleInsertError);
+          } else {
+            console.log('Auto-assigned parent role to user:', user.id);
+          }
+        }
+      } catch (error) {
+        console.warn('Error in data repair:', error);
+      }
+    };
+    
+    if (user) {
+      repairUserData();
+    }
+  }, [user]);
+
   useEffect(() => {
     if (isAuthorized && user) {
       fetchProfile();
