@@ -366,6 +366,24 @@ Cards showing:
 - Recovery monitoring
 - Manual reset option
 
+#### 7. E2E Test Coverage
+
+**Component:** `AuthE2ETestCoverage.tsx`
+
+Dashboard for authentication E2E test coverage:
+- Test suite summary cards (162 tests across 5 suites)
+- Coverage matrix (components, hooks, stores, edge functions)
+- Gap analysis with priority indicators
+- CLI commands to run tests locally
+
+**Related Files:**
+- `src/components/admin/testing/TestSuiteSummaryCards.tsx`
+- `src/components/admin/testing/TestCoverageMatrix.tsx`
+- `src/components/admin/testing/RunTestsPanel.tsx`
+- `src/components/admin/testing/CoverageGapAnalysis.tsx`
+
+See `AUTH_E2E_COVERAGE_REPORT.md` for detailed coverage data.
+
 ---
 
 ## Security Center

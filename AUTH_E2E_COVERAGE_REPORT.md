@@ -277,6 +277,30 @@ npx playwright test -g "Rate Limiting"
 
 ---
 
+## Admin Dashboard Integration
+
+The test coverage data is visualized in the admin portal at:
+
+**Route:** `/admin/system-monitoring` → **E2E Tests** tab
+
+### Features
+
+| Feature | Description |
+|---------|-------------|
+| Overview Stats | Total tests (162), suites (5), components covered |
+| Test Suite Cards | Expandable cards with category breakdowns |
+| Coverage Matrix | Component, hook, store, and edge function mapping |
+| Gap Analysis | Prioritized list of testing improvements |
+| Run Tests Panel | CLI commands to run tests locally with Playwright |
+
+### Access
+
+1. Navigate to `/admin/system-monitoring`
+2. Click the **E2E Tests** tab
+3. View coverage metrics, copy CLI commands, and analyze gaps
+
+---
+
 ## Maintenance Notes
 
 - **Review quarterly:** Update coverage counts when tests are added/removed
