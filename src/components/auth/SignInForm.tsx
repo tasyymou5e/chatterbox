@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,6 +10,7 @@ import { toast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { getAuthErrorMessage } from './authErrorUtils';
 import { validateAndSanitizeFormData, validationSchemas } from '@/utils/enhancedInputValidation';
+import { getDashboardPath } from '@/utils/authHelpers';
 
 interface SignInFormProps {
   onForgotPassword: () => void;
@@ -20,6 +22,7 @@ interface SignInFormProps {
  */
 export const SignInForm = ({ onForgotPassword, onChildSignup }: SignInFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
   const { signIn } = useAuth();
   const { logActivity, createSession } = useAuthLogging();
   const { checkAttempt, formattedTimeRemaining, refreshStatus } = useLoginRateLimiter('user');
@@ -59,7 +62,7 @@ export const SignInForm = ({ onForgotPassword, onChildSignup }: SignInFormProps)
     setIsLoading(true);
 
     try {
-      const { error, user } = await signIn(email, password);
+      const { error, user, userRole } = await signIn(email, password);
 
       if (error) {
         await logActivity('unknown', 'failed_login', false, error.message, {
@@ -91,6 +94,10 @@ export const SignInForm = ({ onForgotPassword, onChildSignup }: SignInFormProps)
           title: 'Welcome Back!',
           description: 'You have been signed in successfully.',
         });
+        
+        // Navigate explicitly using the role returned from signIn
+        const dashboardPath = getDashboardPath(userRole || 'parent');
+        navigate(dashboardPath, { replace: true });
       }
     } catch (err) {
       refreshStatus(email);
