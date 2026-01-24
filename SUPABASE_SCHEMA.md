@@ -8,7 +8,7 @@
 **Security Functions**: 30+  
 **Custom Types**: 8 PostgreSQL enums  
 **Security Grade**: A (Excellent - fully hardened)  
-**Last Updated**: 2026-01-21
+**Last Updated**: 2026-01-24
 
 ## 🗄️ Table Categories
 
@@ -56,7 +56,17 @@
 
 ## 🔒 Security Architecture
 
-### **Recent Security Updates (2026-01-22)**
+### **Recent Security Updates (2026-01-24)**
+- **RLS Policy Hardening**: Fixed 5 overly permissive INSERT policies (TO public → TO service_role)
+- **Service Role Restriction**: System monitoring tables now restricted to `service_role` only:
+  - `edge_function_health_logs` - Edge function health metrics
+  - `edge_function_recovery_attempts` - Recovery attempt logging
+  - `llm_failover_events` - LLM failover tracking
+  - `llm_health_check_logs` - LLM health monitoring
+- **Redundant Policy Cleanup**: Removed duplicate "Service role can insert profiles" policy
+- **Security Linter**: All RLS policy warnings resolved
+
+### **Previous Security Updates (2026-01-22)**
 - **RLS Policy Hardening**: `child_accounts_secure_select` updated to remove direct child access
 - **New Safe View**: `child_accounts_self_view` created with SECURITY INVOKER for child self-access
 - **Child Account Hardening**: `generated_email` never exposed to client via updated RLS + secure RPCs
@@ -97,6 +107,8 @@ check_child_account_lookup_rate_limit(identifier)        -- Rate limiting for lo
 - **CORS**: Dynamic origin validation (no wildcard `*`)
 - **CSP**: Hardened Content Security Policy
 - **PIN Verification**: Optional two-factor for child accounts
+- **Service Role Isolation**: System monitoring INSERT policies restricted to service_role
+- **Manual Config Required**: Leaked Password Protection (enable in Supabase Dashboard)
 
 ## 🚀 Performance Features
 
@@ -108,8 +120,8 @@ check_child_account_lookup_rate_limit(identifier)        -- Rate limiting for lo
 ---
 
 **Database Health**: ✅ Excellent  
-**Security Rating**: A+ (Fully hardened with child account protection)  
+**Security Rating**: A+ (Fully hardened - all RLS warnings resolved)  
 **RLS Policies**: 65+ (consolidated from 130+)  
 **Edge Functions**: 15 with dynamic CORS validation  
-**Last Security Review**: 2026-01-22  
-**Next Review**: 2026-04-22
+**Last Security Review**: 2026-01-24  
+**Next Review**: 2026-04-24
