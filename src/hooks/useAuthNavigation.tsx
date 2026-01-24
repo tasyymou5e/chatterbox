@@ -65,7 +65,7 @@ export const useAuthNavigation = () => {
         cInfo('Redirecting from auth page', { attempt: navigationAttempts + 1, userRole });
         setNavigationAttempts(prev => prev + 1);
         
-        // Enhanced debounce navigation to prevent race conditions
+        // Fast debounce navigation - session state is already confirmed
         const timeout = setTimeout(() => {
           cInfo('Executing navigation', { userRole });
           switch (userRole) {
@@ -82,7 +82,7 @@ export const useAuthNavigation = () => {
               navigate('/parent-dashboard');
               break;
           }
-        }, 200); // Increased delay for better stability
+        }, 50); // Fast redirect since session is confirmed
         
         setNavigationDebounce(timeout);
       }
