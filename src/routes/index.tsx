@@ -38,6 +38,7 @@ const AdminSecurityCenterLazy = React.lazy(() =>
 );
 const AdminAutoRepairLogsLazy = React.lazy(() => import('@/pages/admin/AdminAutoRepairLogs'));
 const AdminIntegrityManagementLazy = React.lazy(() => import('@/pages/admin/AdminIntegrityManagement'));
+const AdminDataHealthLazy = React.lazy(() => import('@/pages/admin/AdminDataHealth'));
 
 // Lazy loaded pages - Parent
 const ParentDashboardLazy = React.lazy(() => import('@/pages/ParentDashboard'));
@@ -272,6 +273,14 @@ export const adminChildRoutes: RouteConfig[] = [
     element: (
       <ErrorBoundary componentName="AdminIntegrityManagement">
         <LazyRoute variant="dashboard"><AdminIntegrityManagementLazy /></LazyRoute>
+      </ErrorBoundary>
+    )
+  },
+  { 
+    path: 'data-health', 
+    element: (
+      <ErrorBoundary componentName="AdminDataHealth">
+        <LazyRoute variant="dashboard"><AdminDataHealthLazy /></LazyRoute>
       </ErrorBoundary>
     )
   },

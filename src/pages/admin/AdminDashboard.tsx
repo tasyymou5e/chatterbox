@@ -29,6 +29,7 @@ import { DashboardErrorBoundary } from '@/components/admin/DashboardErrorBoundar
 import { FallbackCard, DEFAULT_KPI_DATA, DEFAULT_SYSTEM_HEALTH } from '@/components/admin/DashboardFallback';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { IntegrityDashboardWidget } from '@/components/admin/monitoring/IntegrityDashboardWidget';
+import { DataHealthScoreCard } from '@/components/admin/health/DataHealthScoreCard';
 
 interface DashboardStats {
   totalFamilies: number;
@@ -289,8 +290,19 @@ export default function AdminDashboard() {
         </DashboardErrorBoundary>
       </div>
 
-      {/* System Health, Settings, API Integrations, and Quick Actions */}
-      <div className="grid gap-6 lg:grid-cols-3">
+      {/* System Health, Data Health Score, and Integrity */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <DashboardErrorBoundary 
+          componentName="Data Health Score"
+          fallbackComponent={
+            <FallbackCard 
+              title="Data Health Score" 
+              description="Health score temporarily unavailable"
+            />
+          }
+        >
+          <DataHealthScoreCard />
+        </DashboardErrorBoundary>
         <DashboardErrorBoundary 
           componentName="System Health"
           fallbackComponent={
@@ -303,6 +315,10 @@ export default function AdminDashboard() {
         >
           <SystemHealthWidget data={systemMetrics?.length ? systemMetrics : DEFAULT_SYSTEM_HEALTH} loading={!sessionReady} />
         </DashboardErrorBoundary>
+      </div>
+
+      {/* Integrity and Site Settings */}
+      <div className="grid gap-6 lg:grid-cols-2">
         <DashboardErrorBoundary componentName="Integrity Check">
           <IntegrityDashboardWidget />
         </DashboardErrorBoundary>

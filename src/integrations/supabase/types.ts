@@ -1296,6 +1296,51 @@ export type Database = {
           },
         ]
       }
+      data_health_scores: {
+        Row: {
+          calculated_at: string
+          created_at: string
+          factors_impacting: Json | null
+          grade: string
+          id: string
+          integrity_details: Json | null
+          integrity_score: number
+          overall_score: number
+          repair_details: Json | null
+          repair_score: number
+          system_details: Json | null
+          system_score: number
+        }
+        Insert: {
+          calculated_at?: string
+          created_at?: string
+          factors_impacting?: Json | null
+          grade: string
+          id?: string
+          integrity_details?: Json | null
+          integrity_score: number
+          overall_score: number
+          repair_details?: Json | null
+          repair_score: number
+          system_details?: Json | null
+          system_score: number
+        }
+        Update: {
+          calculated_at?: string
+          created_at?: string
+          factors_impacting?: Json | null
+          grade?: string
+          id?: string
+          integrity_details?: Json | null
+          integrity_score?: number
+          overall_score?: number
+          repair_details?: Json | null
+          repair_score?: number
+          system_details?: Json | null
+          system_score?: number
+        }
+        Relationships: []
+      }
       edge_function_alert_config: {
         Row: {
           consecutive_failures_threshold: number
@@ -4140,6 +4185,21 @@ export type Database = {
           streak_count?: number
         }
         Returns: number
+      }
+      calculate_data_health_score: {
+        Args: never
+        Returns: {
+          calculated_at: string
+          factors_impacting: Json
+          grade: string
+          integrity_details: Json
+          integrity_score: number
+          overall_score: number
+          repair_details: Json
+          repair_score: number
+          system_details: Json
+          system_score: number
+        }[]
       }
       calculate_level_progression: {
         Args: { current_xp: number }
