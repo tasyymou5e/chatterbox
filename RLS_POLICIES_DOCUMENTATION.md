@@ -5,11 +5,11 @@
 This document provides a comprehensive review of all Row Level Security (RLS) policies implemented in the Chatterbox Platform. RLS policies ensure data isolation and access control at the database level, providing defense-in-depth security.
 
 **Security Status**: ✅ **SECURE** - All critical tables have proper RLS policies
-**Last Review**: 2026-01-22
+**Last Review**: 2026-01-24
 **Total Tables**: 59
 **Tables with RLS**: 59 (100% coverage)
 **Policy Count**: 65+ (consolidated from 130+ redundant policies)
-**Security Grade**: A+ (Excellent - child email protection hardened)
+**Security Grade**: A+ (Excellent - all RLS linter warnings resolved)
 
 ## Security Architecture
 
@@ -24,6 +24,29 @@ This document provides a comprehensive review of all Row Level Security (RLS) po
 - `has_family_access(family_id, user_id)` - Family membership check
 - `is_family_creator_secure(family_id, user_id)` - Family ownership verification
 - `is_family_member_secure(family_id, user_id)` - Secure family membership check
+
+---
+
+## RLS Policy Hardening (2026-01-24)
+
+### Service Role Restriction Update
+Fixed 5 overly permissive INSERT policies that were incorrectly assigned to `TO public` instead of `TO service_role`. This ensures only edge functions using the service key can write to system monitoring tables.
+
+**Tables Hardened:**
+| Table | Policy Name | Change |
+|-------|-------------|--------|
+| `edge_function_health_logs` | Service role can insert health logs | `TO public` → `TO service_role` |
+| `edge_function_recovery_attempts` | Service role can insert recovery attempts | `TO public` → `TO service_role` |
+| `llm_failover_events` | Service can log failover events | `TO public` → `TO service_role` |
+| `llm_health_check_logs` | Service role can insert health check logs | `TO public` → `TO service_role` |
+
+**Redundant Policy Removed:**
+- Dropped `"Service role can insert profiles"` on `public.profiles` (duplicate of existing `profiles_insert` policy)
+
+**Security Impact:**
+- ✅ All RLS linter warnings resolved
+- ✅ System monitoring tables now properly isolated
+- ✅ No authenticated user can insert into monitoring tables directly
 
 ---
 
@@ -138,6 +161,22 @@ USING (
 
 ### 5. System Monitoring Tables
 
+#### **edge_function_health_logs** (HARDENED 2026-01-24)
+- **`Service role can insert health logs`** - INSERT restricted to `service_role` only
+- Admin SELECT access for monitoring
+
+#### **edge_function_recovery_attempts** (HARDENED 2026-01-24)
+- **`Service role can insert recovery attempts`** - INSERT restricted to `service_role` only
+- Admin SELECT access for monitoring
+
+#### **llm_failover_events** (HARDENED 2026-01-24)
+- **`Service can log failover events`** - INSERT restricted to `service_role` only
+- Admin SELECT access for monitoring
+
+#### **llm_health_check_logs** (HARDENED 2026-01-24)
+- **`Service role can insert health check logs`** - INSERT restricted to `service_role` only
+- Admin SELECT access for monitoring
+
 #### **system_errors**
 - **`system_errors_access`** - Consolidated admin-only access
 - Service role can insert errors for logging
@@ -147,6 +186,8 @@ USING (
 
 #### **error_patterns**
 - **`error_patterns_access`** - Admin-only access to error analysis
+
+**Security Level**: ✅ **HIGH** - Service role isolation prevents unauthorized writes
 
 ### 6. Analytics Tables
 
@@ -222,6 +263,7 @@ is_family_member_secure(family_id, user_id) → Boolean
 6. **Privacy Compliance** - User privacy settings and behavioral data controls
 7. **Performance Optimization** - Subquery wrapping for `auth.uid()` and `auth.role()`
 8. **Policy Consolidation** - Reduced from 130+ to 65+ optimized policies
+9. **Service Role Isolation** - System monitoring INSERT policies restricted to service_role (2026-01-24)
 
 ### ⚠️ **Remaining Considerations**
 1. **Leaked Password Protection** - Manual configuration required in Supabase dashboard
@@ -281,7 +323,8 @@ is_family_member_secure(family_id, user_id) → Boolean
 **Security Rating**: A+ 🛡️
 **Policy Coverage**: 100% ✅  
 **Critical Issues**: 0 ✅
-**Manual Config Needed**: 1 (Password protection)
+**Linter Warnings**: 0 ✅
+**Manual Config Needed**: 1 (Leaked Password Protection)
 
 The RLS implementation provides comprehensive security through:
 - **65+ optimized policies** across **59 tables**
@@ -292,5 +335,6 @@ The RLS implementation provides comprehensive security through:
 - **Complete audit trail** for administrative actions
 - **Privacy-first design** with user consent management
 - **Performance optimized** with subquery-wrapped auth functions
+- **Service role isolation** for system monitoring tables (2026-01-24)
 
 All critical vulnerabilities have been resolved, and the system maintains strong security posture while enabling necessary functionality.
