@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { ParentNavigation } from '@/components/parent/ParentNavigation';
 import { WeeklyProgressSummary } from '@/components/parent/WeeklyProgressSummary';
 import { logSupabaseQuery, logDataAccessIssue, logDataFetchSuccess, createQueryTimer } from '@/utils/parentPortalLogger';
+import { authLoggingService } from '@/services/authLoggingService';
 
 interface Profile {
   id: string;
@@ -50,6 +51,12 @@ const ParentDashboard = () => {
     const repairUserData = async () => {
       if (!user) return;
       
+      const repairedFields: string[] = [];
+      const repairDetails: Record<string, unknown> = {
+        trigger: 'parent_dashboard_access',
+        startedAt: new Date().toISOString()
+      };
+      
       try {
         // Check if profile exists
         const { data: existingProfile, error: profileCheckError } = await supabase
@@ -64,16 +71,24 @@ const ParentDashboard = () => {
         
         if (!existingProfile) {
           // Create missing profile
-          const { error: insertError } = await supabase.from('profiles').insert({
+          const profileData = {
             user_id: user.id,
             first_name: user.user_metadata?.first_name || user.email?.split('@')[0] || 'User',
             last_name: user.user_metadata?.last_name || ''
-          });
+          };
+          
+          const { error: insertError } = await supabase.from('profiles').insert(profileData);
           
           if (insertError) {
             console.warn('Error creating profile:', insertError);
           } else {
-            console.log('Auto-created missing profile for user:', user.id);
+            repairedFields.push('profile');
+            repairDetails.profile = {
+              created: true,
+              firstName: profileData.first_name,
+              lastName: profileData.last_name,
+              source: user.user_metadata?.first_name ? 'user_metadata' : 'email_fallback'
+            };
           }
         }
         
@@ -98,7 +113,11 @@ const ParentDashboard = () => {
           if (roleInsertError) {
             console.warn('Error creating role:', roleInsertError);
           } else {
-            console.log('Auto-assigned parent role to user:', user.id);
+            repairedFields.push('role');
+            repairDetails.role = {
+              created: true,
+              assignedRole: 'parent'
+            };
           }
         }
 
@@ -172,13 +191,49 @@ const ParentDashboard = () => {
             if (memberInsertError) {
               console.warn('Error adding family member:', memberInsertError);
             } else {
-              console.log('Auto-created family for user:', user.id, 'Family code:', familyCode);
+              repairedFields.push('family');
+              repairDetails.family = {
+                created: true,
+                familyId: newFamily.id,
+                familyCode: familyCode,
+                displayName: displayName
+              };
               // Refresh family data after creating
               fetchProfile();
             }
           }
         }
+        
+        // Log the repair event if anything was repaired
+        if (repairedFields.length > 0) {
+          repairDetails.completedAt = new Date().toISOString();
+          repairDetails.repairedFields = repairedFields;
+          repairDetails.totalFieldsRepaired = repairedFields.length;
+          
+          await authLoggingService.logActivity(
+            user.id,
+            'data_auto_repair',
+            true,
+            undefined,
+            repairDetails
+          );
+          
+          console.log('Auto-repair completed for user:', user.id, 'Fields repaired:', repairedFields);
+        }
       } catch (error) {
+        // Log failed repair attempt
+        await authLoggingService.logActivity(
+          user.id,
+          'data_auto_repair',
+          false,
+          error instanceof Error ? error.message : 'Unknown error',
+          {
+            ...repairDetails,
+            failedAt: new Date().toISOString(),
+            attemptedFields: repairedFields,
+            error: error instanceof Error ? error.message : String(error)
+          }
+        );
         console.warn('Error in data repair:', error);
       }
     };
