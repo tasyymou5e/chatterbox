@@ -20,6 +20,7 @@ interface AuthResult {
   error: AuthError | null;
   user?: User;
   isAdmin?: boolean;
+  userRole?: string | null;
 }
 
 /**
@@ -183,7 +184,7 @@ export const useAuthActionsStore = create<AuthActionsState>()(
               });
             }, 0);
 
-            return { error: null, user: data.user, isAdmin: hasAdminAccess };
+            return { error: null, user: data.user, isAdmin: hasAdminAccess, userRole };
           }
 
           sessionStore.setLoading(false);

@@ -38,7 +38,7 @@ export interface AuthContextType {
   loading: boolean;
   sessionReady: boolean;
   signUp: (email: string, password: string, firstName?: string, lastName?: string) => Promise<{ error: SupabaseError | null }>;
-  signIn: (email: string, password: string) => Promise<{ error: SupabaseError | null; user?: User | null; isAdmin?: boolean }>;
+  signIn: (email: string, password: string) => Promise<{ error: SupabaseError | null; user?: User | null; isAdmin?: boolean; userRole?: string | null }>;
   signOut: () => Promise<{ error: SupabaseError | null }>;
   resetPassword: (email: string, userType?: 'admin' | 'user') => Promise<{ error: SupabaseError | null }>;
 }
@@ -96,7 +96,7 @@ export const useAuth = (): AuthContextType => {
     loading: loading || !isHydrated, // Include hydration state in loading
     sessionReady: sessionReady && isHydrated, // Only ready when fully hydrated
     signUp: storeSignUp as (email: string, password: string, firstName?: string, lastName?: string) => Promise<{ error: SupabaseError | null }>,
-    signIn: storeSignIn as (email: string, password: string) => Promise<{ error: SupabaseError | null; user?: User | null; isAdmin?: boolean }>,
+    signIn: storeSignIn as (email: string, password: string) => Promise<{ error: SupabaseError | null; user?: User | null; isAdmin?: boolean; userRole?: string | null }>,
     signOut: storeSignOut as () => Promise<{ error: SupabaseError | null }>,
     resetPassword: useAuthStore.getState().resetPassword as (email: string, userType?: 'admin' | 'user') => Promise<{ error: SupabaseError | null }>
   };
