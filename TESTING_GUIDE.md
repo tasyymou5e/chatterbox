@@ -779,8 +779,96 @@ expect(screen.getByText('Loaded')).toBeInTheDocument();
 
 ---
 
+## Visual Regression Testing
+
+Visual regression tests use Playwright's screenshot comparison to detect unintended UI changes in authentication forms.
+
+### Configuration
+
+The Playwright config (`playwright.config.ts`) includes visual comparison settings:
+
+```typescript
+expect: {
+  toHaveScreenshot: {
+    maxDiffPixels: 100,        // Allow small pixel differences
+    maxDiffPixelRatio: 0.01,   // 1% pixel difference tolerance
+    threshold: 0.2,            // Color difference threshold
+    animations: 'disabled',    // Disable animations for consistency
+  },
+},
+snapshotDir: './tests-e2e/__screenshots__',
+```
+
+### Test Structure
+
+```typescript
+// tests-e2e/auth-visual.spec.ts
+import { test, expect } from '@playwright/test';
+import { captureFormScreenshot, waitForStableUI } from './fixtures/visual-utils';
+
+test.describe('Visual Regression - Sign-In Form', () => {
+  test('default state', async ({ page }) => {
+    await page.goto('/auth');
+    await page.getByRole('tab', { name: /sign in/i }).click();
+    await captureFormScreenshot(page, 'signin-default');
+  });
+
+  test('loading state', async ({ page }) => {
+    // Mock slow response to capture loading spinner
+    await mockSlowAuthResponse(page);
+    await fillSignInForm(page, 'test@example.com', 'password');
+    await page.getByRole('button', { name: /sign in/i }).click();
+    await captureFormScreenshot(page, 'signin-loading');
+  });
+});
+```
+
+### Utilities
+
+The `tests-e2e/fixtures/visual-utils.ts` file provides:
+
+| Function | Purpose |
+|----------|---------|
+| `waitForStableUI()` | Wait for fonts, network, and CSS transitions |
+| `captureFormScreenshot()` | Capture full form with masking options |
+| `captureElementScreenshot()` | Capture specific component |
+| `mockAuthError()` | Simulate authentication errors |
+| `mockSlowAuthResponse()` | Simulate slow network for loading states |
+| `maskDynamicContent()` | Hide timers and timestamps |
+
+### Running Visual Tests
+
+```bash
+# Generate baseline screenshots (first run or after intentional changes)
+npx playwright test auth-visual.spec.ts --update-snapshots
+
+# Run visual comparison
+npx playwright test auth-visual.spec.ts --project=chromium
+
+# Run with debug UI to inspect failures
+npx playwright test auth-visual.spec.ts --ui
+```
+
+### Best Practices
+
+1. **Disable animations**: Set `animations: 'disabled'` to avoid flaky comparisons
+2. **Mask dynamic content**: Use `data-testid` attributes for timers and mask them
+3. **Wait for stability**: Always call `waitForStableUI()` before screenshots
+4. **Use component-level tests**: Prefer `captureElementScreenshot()` for isolated components
+5. **Update baselines intentionally**: Only use `--update-snapshots` after reviewing changes
+
+### CI Integration
+
+Visual tests run in GitHub Actions on pull requests:
+- Baselines stored in `tests-e2e/__screenshots__/chromium/`
+- Failed diffs uploaded as artifacts for review
+- Uses Chromium only for cross-platform consistency
+
+---
+
 ## Version History
 
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0.0 | 2026-01-21 | Initial documentation |
+| 1.1.0 | 2026-01-24 | Added visual regression testing section |
