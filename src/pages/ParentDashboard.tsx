@@ -101,6 +101,83 @@ const ParentDashboard = () => {
             console.log('Auto-assigned parent role to user:', user.id);
           }
         }
+
+        // Step 3: Check if user has a family membership
+        const { data: existingMembership, error: membershipCheckError } = await supabase
+          .from('family_members')
+          .select('id, family_id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (membershipCheckError) {
+          console.warn('Error checking family membership:', membershipCheckError);
+        }
+
+        if (!existingMembership) {
+          // Generate a unique family code
+          const year = new Date().getFullYear();
+          const { data: maxCode } = await supabase
+            .from('families')
+            .select('family_code')
+            .like('family_code', `FAM-${year}-%`)
+            .order('family_code', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          
+          let nextNumber = 1;
+          if (maxCode?.family_code) {
+            const parts = maxCode.family_code.split('-');
+            nextNumber = parseInt(parts[2], 10) + 1;
+          }
+          const familyCode = `FAM-${year}-${String(nextNumber).padStart(3, '0')}`;
+          
+          // Get user's name for family display name
+          const firstName = user.user_metadata?.first_name || user.email?.split('@')[0] || 'My';
+          const displayName = `${firstName}'s Family`;
+          
+          // Create the family
+          const { data: newFamily, error: familyInsertError } = await supabase
+            .from('families')
+            .insert({
+              name: `${displayName} (${familyCode})`,
+              display_name: displayName,
+              created_by: user.id,
+              family_code: familyCode,
+              metadata: {
+                auto_created: true,
+                created_reason: 'parent_dashboard_repair',
+                created_at: new Date().toISOString()
+              }
+            })
+            .select('id')
+            .single();
+          
+          if (familyInsertError) {
+            console.warn('Error creating family:', familyInsertError);
+          } else if (newFamily) {
+            // Add user as family member
+            const { error: memberInsertError } = await supabase
+              .from('family_members')
+              .insert({
+                family_id: newFamily.id,
+                user_id: user.id,
+                role: 'parent',
+                joined_at: new Date().toISOString(),
+                connection_metadata: {
+                  auto_joined: true,
+                  is_creator: true
+                }
+              });
+            
+            if (memberInsertError) {
+              console.warn('Error adding family member:', memberInsertError);
+            } else {
+              console.log('Auto-created family for user:', user.id, 'Family code:', familyCode);
+              // Refresh family data after creating
+              fetchProfile();
+            }
+          }
+        }
       } catch (error) {
         console.warn('Error in data repair:', error);
       }
