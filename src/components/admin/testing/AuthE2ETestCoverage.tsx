@@ -4,25 +4,57 @@
  * @description Main dashboard for authentication E2E test coverage
  */
 
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { 
   TestTube2, 
   FileCheck,
   PieChart,
-  BarChart3
+  BarChart3,
+  FileJson,
+  BookOpen
 } from 'lucide-react';
 import { useAuthE2ECoverage } from '@/hooks/useAuthE2ECoverage';
 import { TestSuiteSummaryCards } from './TestSuiteSummaryCards';
 import { TestCoverageMatrix } from './TestCoverageMatrix';
 import { RunTestsPanel } from './RunTestsPanel';
 import { CoverageGapAnalysis } from './CoverageGapAnalysis';
+import { TestResultsDashboard } from './TestResultsDashboard';
+
+type ViewMode = 'coverage' | 'results';
 
 export function AuthE2ETestCoverage() {
+  const [activeView, setActiveView] = useState<ViewMode>('coverage');
   const coverage = useAuthE2ECoverage();
 
   return (
     <div className="space-y-6">
+      {/* View Toggle */}
+      <div className="flex gap-2">
+        <Button
+          variant={activeView === 'coverage' ? 'default' : 'outline'}
+          onClick={() => setActiveView('coverage')}
+          className="flex items-center gap-2"
+        >
+          <BookOpen className="h-4 w-4" />
+          Coverage Overview
+        </Button>
+        <Button
+          variant={activeView === 'results' ? 'default' : 'outline'}
+          onClick={() => setActiveView('results')}
+          className="flex items-center gap-2"
+        >
+          <FileJson className="h-4 w-4" />
+          Import Results
+        </Button>
+      </div>
+
+      {activeView === 'results' ? (
+        <TestResultsDashboard />
+      ) : (
+        <>
       {/* Overview Stats */}
       <div className="grid gap-4 md:grid-cols-4">
         <Card className="bg-card border-border">
@@ -120,6 +152,8 @@ export function AuthE2ETestCoverage() {
 
       {/* Run Tests Panel */}
       <RunTestsPanel suites={coverage.suites} />
+        </>
+      )}
     </div>
   );
 }

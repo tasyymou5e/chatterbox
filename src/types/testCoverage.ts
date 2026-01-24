@@ -116,3 +116,84 @@ export interface TestRunSummary {
   totalSkipped: number;
   totalDuration: number;
 }
+
+// Playwright JSON Report Types
+export interface PlaywrightTestResult {
+  title: string;
+  ok: boolean;
+  status: 'passed' | 'failed' | 'timedOut' | 'skipped' | 'interrupted' | 'expected' | 'unexpected';
+  duration: number;
+  errors: Array<{ message?: string; stack?: string }>;
+  retry: number;
+  annotations?: Array<{ type: string; description?: string }>;
+}
+
+export interface PlaywrightSpec {
+  title: string;
+  ok: boolean;
+  tests: PlaywrightTestResult[];
+  line: number;
+  column: number;
+  file: string;
+}
+
+export interface PlaywrightSuiteResult {
+  title: string;
+  file?: string;
+  specs: PlaywrightSpec[];
+  suites?: PlaywrightSuiteResult[];
+}
+
+export interface PlaywrightJSONReport {
+  config?: Record<string, unknown>;
+  suites: PlaywrightSuiteResult[];
+  stats?: {
+    expected?: number;
+    unexpected?: number;
+    flaky?: number;
+    skipped?: number;
+    startTime?: string;
+    duration?: number;
+  };
+  errors?: Array<{ message: string }>;
+}
+
+export interface ParsedTestRun {
+  id: string;
+  importedAt: string;
+  fileName: string;
+  stats: {
+    total: number;
+    passed: number;
+    failed: number;
+    skipped: number;
+    flaky: number;
+    duration: number;
+  };
+  suiteResults: SuiteRunResult[];
+  failedTests: FailedTestDetail[];
+}
+
+export interface SuiteRunResult {
+  suiteId: string;
+  suiteName: string;
+  fileName: string;
+  total: number;
+  passed: number;
+  failed: number;
+  skipped: number;
+  duration: number;
+  status: TestStatus;
+}
+
+export interface FailedTestDetail {
+  testId: string;
+  title: string;
+  fullTitle: string;
+  file: string;
+  line: number;
+  duration: number;
+  error: string;
+  stack?: string;
+  retries: number;
+}
