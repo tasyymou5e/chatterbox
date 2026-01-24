@@ -59,6 +59,15 @@ export const useParentPortalGuard = (options: ParentPortalGuardOptions = {}) => 
           return;
         }
 
+        // If user has no role at all, they may have corrupted data
+        // Allow access and let the dashboard attempt data repair
+        if (!isAdmin && !userRole) {
+          cWarn('ParentPortalGuard: User has no role assigned - allowing access for data repair');
+          setIsAuthorized(true);
+          setChecking(false);
+          return;
+        }
+
         // For non-admin users, check they have parent role
         if (!isAdmin && userRole !== UserRoles.PARENT) {
           cLog('ParentPortalGuard: User role is not parent: ' + userRole);
