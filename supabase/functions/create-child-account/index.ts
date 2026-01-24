@@ -222,15 +222,14 @@ serve(async (req) => {
 
     console.log('Created child account record:', childAccount.id);
 
-    // Create profile for the child
+    // Create/update profile for the child (upsert to handle trigger race condition)
     const { error: childProfileError } = await supabase
       .from('profiles')
-      .insert({
+      .upsert({
         user_id: createdAuthUser.id,
-        email: childEmail,
         first_name: firstName,
         last_name: lastName
-      });
+      }, { onConflict: 'user_id' });
 
     if (childProfileError) {
       console.error('Error creating child profile:', childProfileError);
