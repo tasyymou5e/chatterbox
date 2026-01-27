@@ -6,7 +6,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { KidsPortalLayout, KidsContentCard, AgeGroupMenu, KidsProgressHeader, KidsGameLauncher, MascotGuide, useMascotGuide } from '@/components/kids';
+import { KidsPortalLayout, KidsContentCard, AgeGroupMenu, KidsProgressHeader, EmbeddedGameViewer, MascotGuide, useMascotGuide } from '@/components/kids';
 import { useKidsContentLoader } from '@/hooks/useKidsContentLoader';
 import { useChildProfile } from '@/hooks/useChildProfile';
 import { useChildAvatar } from '@/hooks/useChildAvatar';
@@ -84,13 +84,8 @@ export default function KidsPortal() {
   const handleLaunch = (item: KidContentItem) => {
     recordLaunch(item);
     if (item.type === 'game' && item.launchUrl) {
-      // For internal game routes (starting with /), navigate directly
-      // For external games, use the iframe launcher
-      if (item.launchUrl.startsWith('/')) {
-        navigate(item.launchUrl);
-      } else {
-        setActiveGame(item);
-      }
+      // All games (internal and external) open in the embedded viewer
+      setActiveGame(item);
     }
   };
 
@@ -161,13 +156,16 @@ export default function KidsPortal() {
         />
       </KidsPortalLayout>
 
-      <KidsGameLauncher
-        game={activeGame}
-        childProfile={childProfile}
-        familyId={familyId || undefined}
-        onClose={() => setActiveGame(null)}
-        onComplete={handleGameComplete}
-      />
+      {/* Embedded Game Viewer - Full screen inline game experience */}
+      {activeGame && (
+        <EmbeddedGameViewer
+          game={activeGame}
+          childProfile={childProfile}
+          familyId={familyId || undefined}
+          onClose={() => setActiveGame(null)}
+          onComplete={handleGameComplete}
+        />
+      )}
 
       {/* Mascot Guide */}
       {mascot.visible && (
