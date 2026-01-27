@@ -84,7 +84,13 @@ export default function KidsPortal() {
   const handleLaunch = (item: KidContentItem) => {
     recordLaunch(item);
     if (item.type === 'game' && item.launchUrl) {
-      setActiveGame(item);
+      // For internal game routes (starting with /), navigate directly
+      // For external games, use the iframe launcher
+      if (item.launchUrl.startsWith('/')) {
+        navigate(item.launchUrl);
+      } else {
+        setActiveGame(item);
+      }
     }
   };
 
