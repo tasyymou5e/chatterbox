@@ -55,6 +55,7 @@ export const EmbeddedGameViewer: React.FC<EmbeddedGameViewerProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [showCelebration, setShowCelebration] = useState(false);
   const [celebrationType, setCelebrationType] = useState<'confetti' | 'stars' | 'hearts'>('stars');
+  const [embedError, setEmbedError] = useState(false);
 
   const breakIntervalMinutes = childProfile?.breakIntervalMinutes || 15;
   const breakIntervalSeconds = breakIntervalMinutes * 60;
@@ -95,10 +96,20 @@ export const EmbeddedGameViewer: React.FC<EmbeddedGameViewerProps> = ({
       setIsPaused(false);
       setShowBreakReminder(false);
       setIsLoading(true);
+      setEmbedError(false);
       // For internal games, set loading to false after a brief delay
       if (isInternalGame) {
         const timer = setTimeout(() => setIsLoading(false), 500);
         return () => clearTimeout(timer);
+      } else {
+        // For external iframes, set a timeout to detect if it failed to load
+        const embedTimeout = setTimeout(() => {
+          if (isLoading) {
+            setEmbedError(true);
+            setIsLoading(false);
+          }
+        }, 8000); // 8 second timeout for external sites
+        return () => clearTimeout(embedTimeout);
       }
     }
     return undefined;
@@ -183,6 +194,13 @@ export const EmbeddedGameViewer: React.FC<EmbeddedGameViewerProps> = ({
   // Handle iframe load
   const handleIframeLoad = useCallback(() => {
     setIsLoading(false);
+    setEmbedError(false);
+  }, []);
+
+  // Handle iframe error
+  const handleIframeError = useCallback(() => {
+    setIsLoading(false);
+    setEmbedError(true);
   }, []);
 
   // Format time for display
@@ -313,7 +331,7 @@ export const EmbeddedGameViewer: React.FC<EmbeddedGameViewerProps> = ({
           )}
 
           {/* External game iframe */}
-          {!isInternalGame && game.launchUrl && (
+          {!isInternalGame && game.launchUrl && !embedError && (
             <iframe
               src={game.launchUrl}
               className={cn(
@@ -322,9 +340,36 @@ export const EmbeddedGameViewer: React.FC<EmbeddedGameViewerProps> = ({
                 isPaused && "pointer-events-none"
               )}
               onLoad={handleIframeLoad}
+              onError={handleIframeError}
               title={game.title}
               sandbox="allow-scripts allow-same-origin allow-forms"
             />
+          )}
+
+          {/* Embed error fallback - shown when external site blocks embedding */}
+          {!isInternalGame && embedError && (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center p-8 max-w-md">
+                <span className="text-6xl mb-4 block">🔒</span>
+                <h3 className="text-xl font-bold text-foreground mb-2">This site cannot be embedded</h3>
+                <p className="text-muted-foreground mb-6">
+                  This game doesn't allow playing inside our app. You can try opening it in a new window!
+                </p>
+                <div className="flex gap-3 justify-center">
+                  <Button onClick={handleClose} size="lg">
+                    <ArrowLeft className="h-5 w-5 mr-2" />
+                    Back to Games
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="lg"
+                    onClick={() => window.open(game.launchUrl, '_blank')}
+                  >
+                    Open in New Tab
+                  </Button>
+                </div>
+              </div>
+            </div>
           )}
 
           {/* No game URL fallback */}
