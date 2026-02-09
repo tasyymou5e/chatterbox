@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { getCorsHeaders } from '../_shared/cors.ts';
+import { validateJWT, createUnauthorizedResponse } from '../_shared/auth-validator.ts';
 
 interface FailoverConfig {
   id: string;
@@ -40,12 +41,19 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Health check endpoint
+  // Health check endpoint (unauthenticated for monitoring)
   const url = new URL(req.url);
   if (url.pathname.endsWith('/health')) {
     return new Response(JSON.stringify({ status: 'healthy' }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
+  }
+
+  // Require authentication for LLM calls (prevents abuse/cost exposure)
+  const authResult = await validateJWT(req);
+  if (!authResult.success) {
+    console.warn('LLM call rejected: unauthorized access attempt');
+    return createUnauthorizedResponse(authResult.error || 'Authentication required', corsHeaders);
   }
 
   const json = (payload: unknown, status = 200) =>
@@ -62,6 +70,8 @@ serve(async (req) => {
     if (!provider || !model || !messages) {
       return json({ error: 'Missing required fields: provider, model, messages' }, 400);
     }
+
+    console.log(`User ${authResult.userId} calling LLM provider: ${provider}, model: ${model}`);
 
     // Get failover configurations for this provider
     const { data: failoverConfigs } = await supabase

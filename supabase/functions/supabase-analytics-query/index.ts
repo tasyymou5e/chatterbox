@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.0'
 import { analyticsQueryLimiter, RateLimiter } from '../_shared/rate-limiter.ts'
 import { getCorsHeaders } from '../_shared/cors.ts'
-import { getServiceClient } from '../_shared/auth-validator.ts'
+import { validateAdminJWT, getServiceClient, createUnauthorizedResponse, createForbiddenResponse } from '../_shared/auth-validator.ts'
 
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req.headers.get('origin'));
@@ -10,6 +10,18 @@ serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // CRITICAL: Validate admin authentication before allowing analytics queries
+  const authResult = await validateAdminJWT(req);
+  if (!authResult.success) {
+    console.warn('Analytics query rejected: unauthorized access attempt');
+    return createUnauthorizedResponse(authResult.error || 'Authentication required', corsHeaders);
+  }
+  
+  if (!authResult.isAdmin) {
+    console.warn(`Analytics query rejected: non-admin user ${authResult.userId} attempted access`);
+    return createForbiddenResponse('Admin access required for analytics queries', corsHeaders);
   }
 
   // Apply rate limiting for analytics queries
@@ -32,9 +44,9 @@ serve(async (req) => {
       )
     }
 
-    console.log('Executing analytics query:', query, 'with filters:', filters)
+    console.log(`Admin ${authResult.userId} executing analytics query:`, query, 'with filters:', filters)
 
-    // Use service client for analytics queries
+    // Use service client for analytics queries (admin already verified)
     const supabase = getServiceClient();
 
     let result = []
