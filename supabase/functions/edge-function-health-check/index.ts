@@ -114,7 +114,7 @@ serve(async (req) => {
     // Get alert configurations
     const { data: alertConfigs } = await supabase
       .from('edge_function_alert_config')
-      .select('*');
+      .select('function_name, is_enabled, critical_threshold, warmup_threshold, consecutive_failures_threshold, response_time_threshold_ms, max_recovery_attempts, recovery_cooldown_minutes');
 
     const configMap = new Map<string, AlertConfig>();
     const defaultConfig = alertConfigs?.find((c: AlertConfig) => c.function_name === '_default');
