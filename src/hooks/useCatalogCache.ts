@@ -20,9 +20,6 @@ export const useCatalogCache = (userFamily?: string) => {
       }
 
       // Fetch from database
-      // Check authentication status for appropriate field selection
-      await supabase.auth.getUser();
-      
       const { data, error } = await supabase
         .from('content_items')
         .select(`

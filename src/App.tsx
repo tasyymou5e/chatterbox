@@ -1,5 +1,3 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Routes, Route } from "react-router-dom";
 import { useEffect } from "react";
@@ -28,25 +26,24 @@ const App = () => {
   useAutoErrorLogging();
   
   const { measurePageLoad, measureMemoryUsage } = usePerformanceMonitoringSafe();
-  const ENABLE_PERFORMANCE_MONITORING = true;
-  
   useEffect(() => {
-    if (!ENABLE_PERFORMANCE_MONITORING) return;
-    
     const timer = setTimeout(() => {
       measurePageLoad();
       measureMemoryUsage();
     }, 1000);
     
-    const memoryInterval = setInterval(() => {
-      measureMemoryUsage();
-    }, 60000);
+    // Only run memory interval if performance.memory is available (Chrome only)
+    // This avoids unnecessary intervals on Firefox/Safari where it returns undefined
+    const hasMemoryAPI = 'memory' in performance;
+    const memoryInterval = hasMemoryAPI 
+      ? setInterval(() => measureMemoryUsage(), 60000)
+      : undefined;
     
     return () => {
       clearTimeout(timer);
-      clearInterval(memoryInterval);
+      if (memoryInterval) clearInterval(memoryInterval);
     };
-  }, [ENABLE_PERFORMANCE_MONITORING, measurePageLoad, measureMemoryUsage]);
+  }, [measurePageLoad, measureMemoryUsage]);
 
   const adminLayoutRoute = getAdminLayoutRoute();
 
@@ -55,8 +52,6 @@ const App = () => {
       <ProductionSecurityWrapper>
         <SecurityMonitoringProvider>
           <ErrorBoundary componentName="App">
-            <Toaster />
-            <Sonner />
             <OfflineIndicator />
             <PWAInstallPrompt />
             <Routes>

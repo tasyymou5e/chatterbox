@@ -11,18 +11,24 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 import { AdminRoute } from '@/components/admin/AdminRoute';
 import AdminLayout from '@/pages/admin/AdminLayout';
 
-// Eagerly loaded pages
+// Eagerly loaded pages (critical path only)
 import Index from '@/pages/Index';
 import Auth from '@/pages/Auth';
-import About from '@/pages/About';
 import NotFound from '@/pages/NotFound';
-import AdminLogin from '@/pages/admin/AdminLogin';
-import PasswordReset from '@/components/admin/PasswordReset';
-import ResetPasswordConfirm from '@/pages/admin/ResetPasswordConfirm';
-import { AdminDebugPanel } from '@/components/admin/AdminDebugPanel';
-import { AdminBootstrap } from '@/components/admin/AdminBootstrap';
 import { AdminBootstrapRoute } from '@/components/admin/AdminBootstrapRoute';
 import GamesCatalogLazy from '@/pages/GamesCatalogLazy';
+
+// Lazy loaded pages - Non-critical (reduces initial bundle)
+const AboutLazy = React.lazy(() => import('@/pages/About'));
+const AdminLoginLazy = React.lazy(() => import('@/pages/admin/AdminLogin'));
+const PasswordResetLazy = React.lazy(() => import('@/components/admin/PasswordReset'));
+const ResetPasswordConfirmLazy = React.lazy(() => import('@/pages/admin/ResetPasswordConfirm'));
+const AdminDebugPanelLazy = React.lazy(() => 
+  import('@/components/admin/AdminDebugPanel').then(m => ({ default: m.AdminDebugPanel }))
+);
+const AdminBootstrapLazy = React.lazy(() => 
+  import('@/components/admin/AdminBootstrap').then(m => ({ default: m.AdminBootstrap }))
+);
 
 // Lazy loaded pages - Admin
 const AdminDashboardLazy = React.lazy(() => import('@/pages/admin/AdminDashboard'));
@@ -99,7 +105,7 @@ interface RouteConfig {
 export const coreRoutes: RouteConfig[] = [
   { path: '/', element: <Index /> },
   { path: '/auth', element: <Auth /> },
-  { path: '/about', element: <About /> },
+  { path: '/about', element: <LazyRoute><AboutLazy /></LazyRoute> },
   { path: '/parent-dashboard', element: <Navigate to="/parent" replace /> },
 ];
 
@@ -153,25 +159,39 @@ export const gameRoutes: RouteConfig[] = [
   { path: '/games/sounds-match', element: <LazyRoute variant="game"><SoundsMatchGameLazy onClose={() => window.history.back()} /></LazyRoute> },
 ];
 
-// Admin auth routes (not protected)
+// Admin auth routes (not protected, lazy-loaded for bundle optimization)
 export const adminAuthRoutes: RouteConfig[] = [
   { 
     path: '/admin/login', 
-    element: <ErrorBoundary componentName="AdminLogin"><AdminLogin /></ErrorBoundary> 
+    element: (
+      <ErrorBoundary componentName="AdminLogin">
+        <LazyRoute><AdminLoginLazy /></LazyRoute>
+      </ErrorBoundary>
+    )
   },
   { 
     path: '/admin/reset-password', 
-    element: <ErrorBoundary componentName="PasswordReset"><PasswordReset /></ErrorBoundary> 
+    element: (
+      <ErrorBoundary componentName="PasswordReset">
+        <LazyRoute><PasswordResetLazy /></LazyRoute>
+      </ErrorBoundary>
+    )
   },
   { 
     path: '/admin/reset-password-confirm', 
-    element: <ErrorBoundary componentName="ResetPasswordConfirm"><ResetPasswordConfirm /></ErrorBoundary> 
+    element: (
+      <ErrorBoundary componentName="ResetPasswordConfirm">
+        <LazyRoute><ResetPasswordConfirmLazy /></LazyRoute>
+      </ErrorBoundary>
+    )
   },
   { 
     path: '/admin/debug', 
     element: (
       <ErrorBoundary componentName="AdminDebug">
-        <AdminRoute><AdminDebugPanel /></AdminRoute>
+        <AdminRoute>
+          <LazyRoute><AdminDebugPanelLazy /></LazyRoute>
+        </AdminRoute>
       </ErrorBoundary>
     )
   },
@@ -179,7 +199,9 @@ export const adminAuthRoutes: RouteConfig[] = [
     path: '/admin/bootstrap', 
     element: (
       <ErrorBoundary componentName="AdminBootstrap">
-        <AdminBootstrapRoute><AdminBootstrap /></AdminBootstrapRoute>
+        <AdminBootstrapRoute>
+          <LazyRoute><AdminBootstrapLazy /></LazyRoute>
+        </AdminBootstrapRoute>
       </ErrorBoundary>
     )
   },
