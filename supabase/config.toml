@@ -1,77 +1,120 @@
 project_id = "lxuqfgbukrrickanmmic"
 
-# JWT Signing Keys Migration: All functions now use verify_jwt = false
-# Authentication is handled in code using getClaims() for local JWT verification
-# This enables asymmetric key verification without network calls to auth server
+# JWT Authentication Configuration
+# ---------------------------------
+# Functions are grouped by their authentication requirements:
+# 
+# 1. AUTHENTICATED (verify_jwt = true) - Gateway verifies JWT, code does additional validation
+#    These functions have both gateway JWT verification AND in-code auth checks for defense-in-depth.
+#
+# 2. UNAUTHENTICATED (verify_jwt = false) - Auth handled entirely in code or not required
+#    - System/cron functions (no user context)
+#    - Special auth flows (PIN-based child accounts)
+#    - Public endpoints (error collector, health checks)
+
+# ============================================
+# AUTHENTICATED FUNCTIONS (verify_jwt = true)
+# Gateway JWT verification + in-code auth validation
+# ============================================
 
 [functions.create-test-family]
-verify_jwt = false
+# Admin only - uses validateAdminJWT in code
+verify_jwt = true
 
 [functions.create-child-account]
-verify_jwt = false
+# Parent auth required - uses validateJWT in code
+verify_jwt = true
 
 [functions.admin-update-user]
-verify_jwt = false
+# Admin only - uses validateJWT + admin check in code
+verify_jwt = true
 
 [functions.delete-family-comprehensive]
-verify_jwt = false
+# Admin only - uses validateAdminJWT in code
+verify_jwt = true
 
 [functions.security-testing]
+# Admin only - uses validateAdminJWT, has unauthenticated /health endpoint
 verify_jwt = false
 
 [functions.security-monitoring]
+# Admin only - uses validateAdminJWT, has unauthenticated /health endpoint
 verify_jwt = false
 
 [functions.text-to-speech]
-verify_jwt = false
+# User auth (optional) - uses validateJWT in code
+verify_jwt = true
 
 [functions.api-integration-status]
-verify_jwt = false
+# User auth required - uses validateJWT in code
+verify_jwt = true
 
 [functions.grok-chat]
-verify_jwt = false
+# User auth (optional) - uses validateJWT in code
+verify_jwt = true
 
 [functions.send-family-email]
-verify_jwt = false
-
-[functions.process-recurring-chores]
-verify_jwt = false
+# User auth required - uses validateJWT in code
+verify_jwt = true
 
 [functions.admin-create-user]
-verify_jwt = false
+# Admin only - uses validateJWT + admin check in code
+verify_jwt = true
 
 [functions.admin-add-family-member]
-verify_jwt = false
+# Admin only - uses validateJWT + admin check in code
+verify_jwt = true
 
 [functions.admin-remove-family-member]
-verify_jwt = false
+# Admin only - uses validateJWT + admin check in code
+verify_jwt = true
 
 [functions.cleanup-test-families]
-verify_jwt = false
-
-[functions.error-collector]
-verify_jwt = false
-
-[functions.supabase-analytics-query]
-verify_jwt = false
+# Admin only - uses validateAdminJWT in code
+verify_jwt = true
 
 [functions.update-site-settings]
-verify_jwt = false
-
-[functions.scheduled-health-check]
-verify_jwt = false
+# User auth required - uses validateJWT in code
+verify_jwt = true
 
 [functions.manage-llm-provider]
-verify_jwt = false
+# User auth required - uses validateJWT in code
+verify_jwt = true
+
+[functions.supabase-analytics-query]
+# Admin only - uses validateAdminJWT in code (SECURED - previously missing auth)
+verify_jwt = true
 
 [functions.llm-with-failover]
-verify_jwt = false
-
-[functions.edge-function-health-check]
+# User auth required - uses validateJWT in code (SECURED - previously missing auth)
+# Has unauthenticated /health endpoint for monitoring
 verify_jwt = false
 
 [functions.family-integrity-check]
+# Admin only for actions, runs integrity checks - uses validateAdminJWT in code
+verify_jwt = true
+
+# ============================================
+# UNAUTHENTICATED FUNCTIONS (verify_jwt = false)
+# These functions intentionally skip gateway JWT verification
+# ============================================
+
+[functions.scheduled-health-check]
+# System cron job - no user context, called by scheduler
+verify_jwt = false
+
+[functions.edge-function-health-check]
+# System cron job - no user context, called by scheduler
+verify_jwt = false
+
+[functions.process-recurring-chores]
+# System cron job - no user context, called by scheduler
 verify_jwt = false
 
 [functions.data-health-alerter]
+# System cron job - alerting function, called by scheduler
+verify_jwt = false
+
+[functions.error-collector]
+# Public endpoint - client error reporting (rate-limited, no sensitive data)
 verify_jwt = false

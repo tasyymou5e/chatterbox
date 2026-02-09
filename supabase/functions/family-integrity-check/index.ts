@@ -1,9 +1,6 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { getCorsHeaders } from '../_shared/cors.ts';
+import { validateAdminJWT, getServiceClient, createUnauthorizedResponse, createForbiddenResponse } from '../_shared/auth-validator.ts';
 
 interface IntegrityIssue {
   issue_type: string;
@@ -35,15 +32,14 @@ interface CheckResult {
 }
 
 Deno.serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req.headers.get('origin'));
+  
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-  
-  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  const supabase = getServiceClient();
 
   try {
     // Parse request
@@ -51,28 +47,9 @@ Deno.serve(async (req) => {
     const action = url.searchParams.get('action');
     const issueId = url.searchParams.get('issueId');
     
-    // Validate admin auth for all operations
-    const authHeader = req.headers.get('Authorization');
-    let adminId: string | null = null;
-    
-    if (authHeader) {
-      const token = authHeader.replace('Bearer ', '');
-      const userClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
-        global: { headers: { Authorization: `Bearer ${token}` } }
-      });
-      
-      const { data: { user } } = await userClient.auth.getUser();
-      if (user) {
-        // Check if user is admin
-        const { data: isAdmin } = await supabase.rpc('check_admin_role_secure', { 
-          check_user_id: user.id 
-        });
-        
-        if (isAdmin) {
-          adminId = user.id;
-        }
-      }
-    }
+    // Use shared auth validator for admin authentication
+    const authResult = await validateAdminJWT(req);
+    const adminId = authResult.success && authResult.isAdmin ? authResult.userId : null;
 
     // Handle execute-fix action
     if (action === 'execute-fix' && issueId) {
