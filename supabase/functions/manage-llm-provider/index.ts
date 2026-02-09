@@ -89,7 +89,7 @@ serve(async (req) => {
         // Get provider details
         const { data: providerData, error: providerError } = await adminClient
           .from('llm_providers')
-          .select('*')
+          .select('provider_key, api_endpoint, display_name, health_status, api_key_configured')
           .eq('provider_key', provider.providerKey)
           .single();
 
@@ -305,7 +305,7 @@ serve(async (req) => {
     if (action === 'list') {
       const { data: providers, error: listError } = await adminClient
         .from('llm_providers')
-        .select('*')
+        .select('id, provider_key, display_name, api_endpoint, models, is_active, is_custom, health_status, last_health_check, api_key_configured, pricing_config, created_at, updated_at')
         .order('is_custom', { ascending: true })
         .order('display_name', { ascending: true });
 

@@ -103,7 +103,7 @@ async function analyzeAccessPatterns(supabase: any, corsHeaders: Record<string, 
   // Analyze user activity patterns for the last hour
   const { data: activities, error } = await supabase
     .from('user_activity_logs')
-    .select('*')
+    .select('id, user_id, activity_type, ip_address, metadata, created_at')
     .gte('created_at', new Date(Date.now() - 3600000).toISOString());
 
   if (error) throw error;
@@ -175,7 +175,7 @@ async function detectRLSViolations(supabase: any, corsHeaders: Record<string, st
   // Check for potential RLS policy violations in security audit logs
   const { data: violations, error } = await supabase
     .from('security_audit_logs')
-    .select('*')
+    .select('id, user_id, event_type, event_details, severity, created_at')
     .eq('event_type', 'rls_violation')
     .gte('created_at', new Date(Date.now() - 3600000).toISOString());
 
@@ -217,7 +217,7 @@ async function checkSuspiciousActivity(supabase: any, data: any, corsHeaders: Re
   // Check for rapid repeated actions
   const { data: recentActivity, error } = await supabase
     .from('user_activity_logs')
-    .select('*')
+    .select('id, user_id, activity_type, created_at')
     .eq('user_id', userId)
     .eq('activity_type', activityType)
     .gte('created_at', new Date(Date.now() - 60000).toISOString()); // Last minute
@@ -263,10 +263,10 @@ async function generateSecurityReport(supabase: any, corsHeaders: Record<string,
     { data: activities },
     { data: errors }
   ] = await Promise.all([
-    supabase.from('security_audit_logs').select('*').gte('created_at', last24Hours.toISOString()),
-    supabase.from('security_audit_logs').select('*').eq('event_type', 'rls_violation').gte('created_at', last24Hours.toISOString()),
-    supabase.from('user_activity_logs').select('*').eq('success', false).gte('created_at', last24Hours.toISOString()),
-    supabase.from('system_errors').select('*').gte('created_at', last24Hours.toISOString())
+    supabase.from('security_audit_logs').select('id, severity, created_at').gte('created_at', last24Hours.toISOString()),
+    supabase.from('security_audit_logs').select('id, created_at').eq('event_type', 'rls_violation').gte('created_at', last24Hours.toISOString()),
+    supabase.from('user_activity_logs').select('id, created_at').eq('success', false).gte('created_at', last24Hours.toISOString()),
+    supabase.from('system_errors').select('id, created_at').gte('created_at', last24Hours.toISOString())
   ]);
 
   const report = {

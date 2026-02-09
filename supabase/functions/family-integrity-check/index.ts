@@ -588,7 +588,7 @@ async function approveIssue(
   // Get the issue
   const { data: issue, error: fetchError } = await supabase
     .from('integrity_issues')
-    .select('*')
+    .select('id, entity_id, entity_type, issue_type, description, severity, status, auto_fix_available, proposed_fix, fix_preview, family_id, user_id, check_log_id, metadata, approved_by, approved_at, rejection_reason, fixed_at, created_at')
     .eq('id', issueId)
     .single();
   
@@ -633,7 +633,7 @@ async function rejectIssue(
 ): Promise<{ success: boolean; error?: string }> {
   const { data: issue, error: fetchError } = await supabase
     .from('integrity_issues')
-    .select('*')
+    .select('id, entity_id, entity_type, issue_type, description, severity, status, auto_fix_available, proposed_fix, fix_preview, family_id, user_id, check_log_id, metadata, approved_by, approved_at, rejection_reason, fixed_at, created_at')
     .eq('id', issueId)
     .single();
   
@@ -694,7 +694,7 @@ async function executeFix(
   // Get the issue
   const { data: issue, error: fetchError } = await supabase
     .from('integrity_issues')
-    .select('*')
+    .select('id, entity_id, entity_type, issue_type, description, severity, status, auto_fix_available, proposed_fix, fix_preview, family_id, user_id, check_log_id, metadata, approved_by, approved_at, rejection_reason, fixed_at, created_at')
     .eq('id', issueId)
     .single();
   
