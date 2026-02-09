@@ -1,12 +1,13 @@
 /**
  * useKidsContentLoader - React hook for loading unified content
  * Combines games, chores, and activities with caching and real-time updates
+ * Uses RealtimeManager for connection pooling and reconnection handling
  */
 
 import { useEffect, useCallback, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { UnifiedContentService } from '@/services/UnifiedContentService';
+import { realtimeManager } from '@/services/RealtimeManager';
 import type { KidContentItem, ContentType, AgeGroup, ContentQueryOptions } from '@/types/kidsPortal';
 
 interface UseKidsContentLoaderOptions {
@@ -124,42 +125,30 @@ export function useKidsContentLoader({
     );
   }, [childId, familyId, queryOptions, queryClient]);
 
-  // Real-time subscription for content updates
+  // Real-time subscription for content updates using RealtimeManager
+  // This provides connection pooling, subscriber deduplication, and reconnection handling
   useEffect(() => {
     if (!childId || !familyId) return;
 
-    const channel = supabase
-      .channel(`kids-content-${childId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'child_content_preferences',
-          filter: `child_id=eq.${childId}`
-        },
-        () => {
-          // Refetch on any preference changes
-          refetch();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'chore_assignments',
-          filter: `child_id=eq.${childId}`
-        },
-        () => {
-          // Refetch when chore assignments change
-          refetch();
-        }
-      )
-      .subscribe();
+    // Subscribe to preference changes via RealtimeManager (pooled connection)
+    const unsubscribePreferences = realtimeManager.subscribeFamilyChannel(
+      familyId,
+      'child_content_preferences',
+      () => refetch(),
+      `child_id=eq.${childId}`
+    );
+
+    // Subscribe to chore assignment changes via RealtimeManager (pooled connection)
+    const unsubscribeChores = realtimeManager.subscribeFamilyChannel(
+      familyId,
+      'chore_assignments',
+      () => refetch(),
+      `assigned_to=eq.${childId}`
+    );
 
     return () => {
-      supabase.removeChannel(channel);
+      unsubscribePreferences();
+      unsubscribeChores();
     };
   }, [childId, familyId, refetch]);
 
