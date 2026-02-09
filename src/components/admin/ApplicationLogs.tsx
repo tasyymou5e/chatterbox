@@ -24,7 +24,7 @@ export const ApplicationLogs = () => {
       
       let query = supabase
         .from('system_errors')
-        .select('*')
+        .select('id, error_type, message, stack_trace, component_name, route_path, severity, user_id, session_id, browser_info, device_info, metadata, resolved, resolved_at, resolved_by, created_at')
         .order('created_at', { ascending: false })
         .limit(100);
 

@@ -172,7 +172,7 @@ export const useSystemMonitoring = (): UseSystemMonitoringResult => {
       activeRequestsRef.current.add(requestId);
       const { data, error } = await supabase
         .from('system_errors')
-        .select('*')
+        .select('id, error_type, message, stack_trace, component_name, route_path, severity, user_id, session_id, browser_info, device_info, metadata, resolved, resolved_at, resolved_by, created_at')
         .order('created_at', { ascending: false })
         .limit(50);
       
@@ -207,7 +207,7 @@ export const useSystemMonitoring = (): UseSystemMonitoringResult => {
       activeRequestsRef.current.add(requestId);
       const { data, error } = await supabase
         .from('system_alerts')
-        .select('*')
+        .select('id, alert_type, title, description, severity, triggered_by, metadata, resolved, resolved_at, acknowledged, acknowledged_at, acknowledged_by, created_at, updated_at')
         .eq('resolved', false)
         .order('created_at', { ascending: false });
       

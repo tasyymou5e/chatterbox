@@ -36,7 +36,7 @@ export const SystemHealthLogs = () => {
       
       let query = supabase
         .from('performance_metrics')
-        .select('*')
+        .select('id, metric_type, value, component_name, route_path, user_id, threshold_exceeded, metadata, created_at')
         .order('created_at', { ascending: false })
         .limit(100);
 

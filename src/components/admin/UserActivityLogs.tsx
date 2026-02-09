@@ -39,7 +39,7 @@ export const UserActivityLogs = () => {
       
       let query = supabase
         .from('user_activity_logs')
-        .select('*')
+        .select('id, user_id, activity_type, success, failure_reason, ip_address, user_agent, session_id, device_info, metadata, created_at, timestamp')
         .order('created_at', { ascending: false })
         .limit(100);
 

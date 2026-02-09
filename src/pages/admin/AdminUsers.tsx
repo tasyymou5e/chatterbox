@@ -143,7 +143,7 @@ export default function AdminUsers() {
         // Fall back to profiles if RPC fails (e.g., non-admin user)
         const { data: profiles, error: profilesError } = await supabase
           .from('profiles')
-          .select('*')
+          .select('id, user_id, first_name, last_name, created_at, updated_at')
           .order('created_at', { ascending: false });
         
         if (profilesError) {

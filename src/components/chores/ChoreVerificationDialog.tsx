@@ -91,7 +91,7 @@ export const ChoreVerificationDialog: React.FC<ChoreVerificationDialogProps> = (
     try {
       const { data, error } = await supabase
         .from('chore_completions')
-        .select('*')
+        .select('id, chore_id, user_id, assignment_id, completion_date, time_started, time_completed, points_earned, completion_notes, completion_photos, difficulty_rating, satisfaction_rating, actual_duration, mini_game_scores, created_at')
         .eq('assignment_id', assignment.id)
         .order('created_at', { ascending: false })
         .limit(1)

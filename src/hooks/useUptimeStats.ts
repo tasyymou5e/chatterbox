@@ -62,7 +62,7 @@ export function useUptimeStats(period: UptimePeriod) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('sla_configurations')
-        .select('*')
+        .select('id, name, uptime_target, max_response_time_ms, is_default, created_at, updated_at')
         .order('uptime_target', { ascending: false });
 
       if (error) throw error;

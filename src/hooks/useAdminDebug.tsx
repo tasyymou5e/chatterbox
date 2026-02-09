@@ -47,7 +47,7 @@ export const useAdminDebug = () => {
       try {
         const { data, error } = await supabase
           .from('user_roles')
-          .select('*')
+          .select('id, user_id, role, created_at')
           .limit(1);
         if (error) {
           logs.push(`❌ User Roles Error: ${error.message}`);

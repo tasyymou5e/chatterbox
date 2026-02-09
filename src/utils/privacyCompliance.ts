@@ -21,20 +21,20 @@ export const exportUserData = async (): Promise<UserDataExport | null> => {
       familyResult,
       errorResult
     ] = await Promise.allSettled([
-      supabase.from('profiles').select('*').eq('user_id', user.id).single(),
-      supabase.from('user_privacy_settings').select('*').eq('user_id', user.id).single(),
-      supabase.from('behavioral_events').select('*').eq('user_id', user.id).limit(1000),
-      supabase.from('chore_completions').select('*').eq('user_id', user.id).limit(1000),
-      supabase.from('user_achievements').select('*').eq('user_id', user.id),
+      supabase.from('profiles').select('id, user_id, first_name, last_name, created_at, updated_at').eq('user_id', user.id).single(),
+      supabase.from('user_privacy_settings').select('id, user_id, behavioral_tracking_consent, analytics_sharing_consent, data_retention_days, created_at, updated_at').eq('user_id', user.id).single(),
+      supabase.from('behavioral_events').select('id, user_id, family_id, event_type, event_category, event_data, page_path, session_id, device_type, interaction_element, duration_seconds, timestamp').eq('user_id', user.id).limit(1000),
+      supabase.from('chore_completions').select('id, chore_id, user_id, assignment_id, family_id, completion_date, time_started, time_completed, points_earned, completion_notes, completion_photos, difficulty_rating, satisfaction_rating, actual_duration, mini_game_scores, metadata, created_at').eq('user_id', user.id).limit(1000),
+      supabase.from('user_achievements').select('id, user_id, achievement_id, family_id, unlocked_at, progress, metadata').eq('user_id', user.id),
       supabase.from('family_members').select(`
-        *,
+        id, user_id, family_id, role, invited_by, joined_at, connection_metadata, created_at,
         families:family_id (
           id,
           display_name,
           created_at
         )
       `).eq('user_id', user.id),
-      supabase.from('system_errors').select('*').eq('user_id', user.id).limit(100)
+      supabase.from('system_errors').select('id, error_type, message, stack_trace, severity, component_name, route_path, user_id, session_id, browser_info, device_info, metadata, resolved, resolved_at, resolved_by, created_at, updated_at').eq('user_id', user.id).limit(100)
     ]);
 
     return {

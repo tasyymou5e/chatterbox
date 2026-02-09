@@ -122,7 +122,7 @@ export const useAuthLogging = () => {
 
       const { data: activities, error } = await supabase
         .from('user_activity_logs')
-        .select('*')
+        .select('id, user_id, activity_type, success, failure_reason, ip_address, user_agent, session_id, device_info, metadata, created_at, timestamp')
         .eq('user_id', userId)
         .gte('timestamp', startDate.toISOString())
         .lte('timestamp', endDate.toISOString());

@@ -286,7 +286,7 @@ const ParentDashboard = () => {
       // Keep existing profile fetch for other data
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, user_id, first_name, last_name, created_at, updated_at')
         .eq('user_id', user.id)
         .single();
 

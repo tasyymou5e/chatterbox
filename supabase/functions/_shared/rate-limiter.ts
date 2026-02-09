@@ -144,23 +144,45 @@ export const analyticsQueryLimiter = new RateLimiter({
   }
 });
 
-// LLM/AI operation limiter (expensive operations)
+// LLM/AI operation limiter (expensive operations) - for authenticated users
 export const llmLimiter = new RateLimiter({
   windowMs: 60 * 1000, // 1 minute window
-  maxRequests: 5, // Max 5 LLM calls per minute per user
+  maxRequests: 10, // Max 10 LLM calls per minute per authenticated user
   keyGenerator: (req) => {
     const auth = req.headers.get('authorization') || 'anonymous';
     return `llm:${auth}`;
   }
 });
 
-// Text-to-speech limiter
+// LLM/AI limiter for anonymous users (more restrictive)
+export const llmAnonymousLimiter = new RateLimiter({
+  windowMs: 60 * 1000, // 1 minute window
+  maxRequests: 2, // Max 2 LLM calls per minute per anonymous client
+  keyGenerator: (req) => {
+    const forwarded = req.headers.get('x-forwarded-for');
+    const ip = forwarded ? forwarded.split(',')[0] : req.headers.get('x-real-ip') || 'unknown';
+    return `llm-anon:${ip}`;
+  }
+});
+
+// Text-to-speech limiter - for authenticated users
 export const ttsLimiter = new RateLimiter({
   windowMs: 60 * 1000, // 1 minute window
-  maxRequests: 10, // Max 10 TTS requests per minute per user
+  maxRequests: 15, // Max 15 TTS requests per minute per authenticated user
   keyGenerator: (req) => {
     const auth = req.headers.get('authorization') || 'anonymous';
     return `tts:${auth}`;
+  }
+});
+
+// Text-to-speech limiter for anonymous users (more restrictive)
+export const ttsAnonymousLimiter = new RateLimiter({
+  windowMs: 60 * 1000, // 1 minute window
+  maxRequests: 3, // Max 3 TTS requests per minute per anonymous client
+  keyGenerator: (req) => {
+    const forwarded = req.headers.get('x-forwarded-for');
+    const ip = forwarded ? forwarded.split(',')[0] : req.headers.get('x-real-ip') || 'unknown';
+    return `tts-anon:${ip}`;
   }
 });
 
