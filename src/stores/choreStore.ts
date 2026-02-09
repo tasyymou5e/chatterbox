@@ -154,7 +154,7 @@ export const useChoreStore = create<ChoreState>()(
         try {
           const { data, error } = await supabase
             .from('chore_categories')
-            .select('*')
+            .select('id, name, description, icon, color, autism_friendly_features, sort_order, is_active')
             .eq('is_active', true)
             .order('sort_order');
 
@@ -241,7 +241,7 @@ export const useChoreStore = create<ChoreState>()(
           // Fetch assignments first
           const { data: assignmentsData, error: assignError } = await supabase
             .from('chore_assignments')
-            .select('*')
+            .select('id, chore_id, family_id, assigned_to, assigned_by, due_date, recurrence_pattern, status, points_earned, time_bonus, streak_bonus, completion_notes, parent_feedback, is_verified, verified_by, verified_at, assigned_at, started_at, completed_at, created_at, updated_at')
             .eq('family_id', familyId)
             .order('assigned_at', { ascending: false });
 

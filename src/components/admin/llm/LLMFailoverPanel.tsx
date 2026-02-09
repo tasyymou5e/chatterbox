@@ -63,19 +63,19 @@ export const LLMFailoverPanel = () => {
       const [configsRes, eventsRes, statusRes, providersRes] = await Promise.all([
         supabase
           .from('llm_failover_config')
-          .select('*')
+          .select('id, primary_provider_key, backup_provider_key, priority, trigger_on_rate_limit, trigger_on_timeout, trigger_on_error, timeout_threshold_ms, max_retries_before_failover, cooldown_seconds, is_active, created_at, updated_at')
           .order('priority', { ascending: true }),
         supabase
           .from('llm_failover_events')
-          .select('*')
+          .select('id, config_id, primary_provider, backup_provider, trigger_reason, original_error, backup_success, response_time_ms, created_at')
           .order('created_at', { ascending: false })
           .limit(50),
         supabase
           .from('llm_provider_status')
-          .select('*'),
+          .select('provider_key, is_healthy, last_failure_at, failure_count, cooldown_until, updated_at'),
         supabase
           .from('llm_providers')
-          .select('*')
+          .select('provider_key, display_name, is_active, models, pricing_config')
           .eq('is_active', true)
       ]);
 

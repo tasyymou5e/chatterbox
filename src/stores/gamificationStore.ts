@@ -182,7 +182,7 @@ export const useGamificationStore = create<GamificationState>()(
         try {
           const { data, error } = await supabase
             .from('user_levels')
-            .select('*')
+            .select('id, user_id, family_id, current_level, current_xp, total_xp, level_name, next_level_xp, level_up_date')
             .eq('user_id', userId)
             .eq('family_id', familyId)
             .maybeSingle();
@@ -205,7 +205,7 @@ export const useGamificationStore = create<GamificationState>()(
         try {
           const { data, error } = await supabase
             .from('user_points')
-            .select('*')
+            .select('id, user_id, family_id, current_points, lifetime_points, points_spent, weekly_points, monthly_points, last_reset_date')
             .eq('user_id', userId)
             .eq('family_id', familyId)
             .maybeSingle();
@@ -225,7 +225,7 @@ export const useGamificationStore = create<GamificationState>()(
         try {
           const { data, error } = await supabase
             .from('achievements')
-            .select('*')
+            .select('id, name, description, icon, achievement_type, unlock_criteria, point_reward, xp_reward, rarity, is_secret, is_active')
             .eq('is_active', true)
             .order('rarity', { ascending: false });
 
@@ -285,7 +285,7 @@ export const useGamificationStore = create<GamificationState>()(
         try {
           const { data, error } = await supabase
             .from('wishlist_items')
-            .select('*')
+            .select('id, user_id, family_id, item_name, description, point_cost, reward_type, image_url, is_approved, approved_by, approved_at, is_redeemed, redeemed_at, created_at')
             .eq('user_id', userId)
             .eq('family_id', familyId)
             .order('created_at', { ascending: false });
@@ -308,7 +308,7 @@ export const useGamificationStore = create<GamificationState>()(
         try {
           const { data, error } = await supabase
             .from('daily_streaks')
-            .select('*')
+            .select('id, user_id, family_id, streak_type, current_streak, longest_streak, last_activity_date, streak_start_date, bonus_multiplier')
             .eq('user_id', userId)
             .eq('family_id', familyId)
             .order('current_streak', { ascending: false });

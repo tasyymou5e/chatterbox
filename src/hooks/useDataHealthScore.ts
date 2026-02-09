@@ -128,7 +128,7 @@ export function useDataHealthScore(): UseDataHealthScoreResult {
     try {
       const { data, error: fetchError } = await supabase
         .from('data_health_scores')
-        .select('*')
+        .select('overall_score, integrity_score, repair_score, system_score, grade, integrity_details, repair_details, system_details, factors_impacting, calculated_at')
         .order('calculated_at', { ascending: false })
         .limit(1)
         .single();

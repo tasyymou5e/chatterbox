@@ -124,7 +124,7 @@ const AdminLLMMonitoring = () => {
       // Get recent API calls
       let query = supabase
         .from('llm_api_calls')
-        .select('*')
+        .select('id, provider, model, function_name, prompt_tokens, completion_tokens, total_tokens, cost_usd, status, response_time_ms, error_message, created_at')
         .order('created_at', { ascending: false })
         .limit(50);
 
