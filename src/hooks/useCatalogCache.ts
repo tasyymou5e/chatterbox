@@ -1,25 +1,25 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { cacheManager } from '@/utils/CacheManager';
 import { useAuth } from './useAuth';
 import type { CatalogContentItem, CatalogCategory } from '@/components/games/types/catalog';
 
+/**
+ * useCatalogCache - Unified caching for catalog content using React Query
+ * 
+ * This hook relies solely on React Query's built-in caching mechanism.
+ * No manual cache layer is needed - React Query handles:
+ * - Stale time management
+ * - Garbage collection
+ * - Background refetching
+ * - Cache invalidation
+ */
 export const useCatalogCache = (userFamily?: string) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  // Fetch family content with optimized caching and error handling
-  const fetchFamilyContent = async (familyId?: string): Promise<CatalogContentItem[]> => {
-  try {
-      const cacheKey = `content_items_family_${familyId || 'global'}`;
-      
-      // Try cache first
-      const cached = cacheManager.get<CatalogContentItem[]>(cacheKey);
-      if (cached) {
-        return cached;
-      }
-
-      // Fetch from database
+  // Fetch family content with optimized error handling
+  const fetchFamilyContent = async (_familyId?: string): Promise<CatalogContentItem[]> => {
+    try {
       const { data, error } = await supabase
         .from('content_items')
         .select(`
@@ -32,23 +32,16 @@ export const useCatalogCache = (userFamily?: string) => {
 
       if (error) {
         console.warn('Error fetching content items:', error);
-        // If authentication error, provide helpful context
         if (error.code === 'PGRST116' || error.message.includes('auth')) {
           console.warn('Authentication may be required for full content access');
         }
-        return []; // Return empty array instead of throwing
+        return [];
       }
 
-      // Cast to our type - autism_features from DB is JSON which we map to AutismFeatures
-      const contentItems = (data || []) as unknown as CatalogContentItem[];
-      
-      // Cache the results with 5 minute TTL
-      cacheManager.set(cacheKey, contentItems, { ttl: 5 * 60 * 1000 });
-      
-      return contentItems;
+      return (data || []) as unknown as CatalogContentItem[];
     } catch (error) {
       console.error('Fetch family content error:', error);
-      return []; // Graceful fallback
+      return [];
     }
   };
 
@@ -57,14 +50,6 @@ export const useCatalogCache = (userFamily?: string) => {
     queryKey: ['content_categories'],
     queryFn: async () => {
       try {
-        const cacheKey = 'content_categories';
-        
-        // Try cache first
-        const cached = cacheManager.get<CatalogCategory[]>(cacheKey);
-        if (cached) {
-          return cached;
-        }
-
         const { data, error } = await supabase
           .from('content_categories')
           .select('*')
@@ -73,23 +58,17 @@ export const useCatalogCache = (userFamily?: string) => {
 
         if (error) {
           console.warn('Error fetching categories:', error);
-          return []; // Return empty array instead of throwing
+          return [];
         }
 
-        // Cast to our category type
-        const categoryData = (data || []) as unknown as CatalogCategory[];
-        
-        // Cache categories for 30 minutes (they change rarely)
-        cacheManager.set(cacheKey, categoryData, { ttl: 30 * 60 * 1000 });
-        
-        return categoryData;
+        return (data || []) as unknown as CatalogCategory[];
       } catch (error) {
         console.error('Fetch categories error:', error);
-        return []; // Graceful fallback
+        return [];
       }
     },
     staleTime: 10 * 60 * 1000, // 10 minutes
-    gcTime: 30 * 60 * 1000,    // 30 minutes (renamed from cacheTime)
+    gcTime: 30 * 60 * 1000,    // 30 minutes
     refetchOnWindowFocus: false
   });
 
@@ -98,9 +77,9 @@ export const useCatalogCache = (userFamily?: string) => {
     queryKey: ['content_items', userFamily || 'global'],
     queryFn: () => fetchFamilyContent(userFamily),
     staleTime: 2 * 60 * 1000,   // 2 minutes
-    gcTime: 10 * 60 * 1000,     // 10 minutes (renamed from cacheTime)
+    gcTime: 10 * 60 * 1000,     // 10 minutes
     refetchOnWindowFocus: false,
-    enabled: true // Always enable, don't depend on user auth
+    enabled: true
   });
 
   // Cache user favorites with error handling
@@ -110,14 +89,6 @@ export const useCatalogCache = (userFamily?: string) => {
       if (!user) return [];
       
       try {
-        const cacheKey = `favorites_${user.id}`;
-        
-        // Try cache first
-        const cached = cacheManager.get<string[]>(cacheKey);
-        if (cached) {
-          return cached;
-        }
-
         const { data, error } = await supabase
           .from('content_favorites')
           .select('content_item_id')
@@ -125,19 +96,14 @@ export const useCatalogCache = (userFamily?: string) => {
 
         if (error) {
           console.warn('Error fetching favorites:', error);
-          return []; // Return empty array instead of throwing
+          return [];
         }
 
-        const favoriteIds = (data?.map((fav) => fav.content_item_id) || [])
+        return (data?.map((fav) => fav.content_item_id) || [])
           .filter((id): id is string => id !== null);
-        
-        // Cache favorites for 5 minutes
-        cacheManager.set(cacheKey, favoriteIds, { ttl: 5 * 60 * 1000 });
-        
-        return favoriteIds;
       } catch (error) {
         console.error('Fetch favorites error:', error);
-        return []; // Graceful fallback
+        return [];
       }
     },
     staleTime: 2 * 60 * 1000,
@@ -145,59 +111,41 @@ export const useCatalogCache = (userFamily?: string) => {
     enabled: !!user
   });
 
-  // Invalidate cache functions with better error handling
+  // Invalidate cache functions - now just React Query invalidation
   const invalidateContentCache = () => {
-    try {
-      const cacheKey = `content_items_family_${userFamily || 'global'}`;
-      cacheManager.delete(cacheKey);
-      queryClient.invalidateQueries({ queryKey: ['content_items'] });
-    } catch (error) {
-      console.error('Error invalidating content cache:', error);
-    }
+    queryClient.invalidateQueries({ queryKey: ['content_items'] });
   };
 
   const invalidateCategoriesCache = () => {
-    try {
-      cacheManager.delete('content_categories');
-      queryClient.invalidateQueries({ queryKey: ['content_categories'] });
-    } catch (error) {
-      console.error('Error invalidating categories cache:', error);
-    }
+    queryClient.invalidateQueries({ queryKey: ['content_categories'] });
   };
 
   const invalidateFavoritesCache = () => {
-    try {
-      if (user) {
-        const cacheKey = `favorites_${user.id}`;
-        cacheManager.delete(cacheKey);
-        queryClient.invalidateQueries({ queryKey: ['user_favorites', user.id] });
-      }
-    } catch (error) {
-      console.error('Error invalidating favorites cache:', error);
+    if (user) {
+      queryClient.invalidateQueries({ queryKey: ['user_favorites', user.id] });
     }
   };
 
-  // Performance optimization: preload popular content with error handling
+  // Performance optimization: preload popular content using React Query's prefetch
   const preloadPopularContent = async () => {
     try {
-      const { data } = await supabase.rpc('get_popular_content');
-      if (data) {
-        cacheManager.set('popular_content', data, { ttl: 15 * 60 * 1000 }); // 15 minutes
-      }
+      await queryClient.prefetchQuery({
+        queryKey: ['popular_content'],
+        queryFn: async () => {
+          const { data } = await supabase.rpc('get_popular_content');
+          return data;
+        },
+        staleTime: 15 * 60 * 1000 // 15 minutes
+      });
     } catch (error) {
       // Silent fail - this is just a performance optimization
       console.warn('Failed to preload popular content:', error);
     }
   };
 
-  // Cache reset strategy for when things go wrong
+  // Cache reset strategy using React Query
   const resetAllCache = () => {
-    try {
-      cacheManager.clear();
-      queryClient.invalidateQueries();
-    } catch (error) {
-      console.error('Error resetting cache:', error);
-    }
+    queryClient.invalidateQueries();
   };
 
   return {
@@ -210,14 +158,14 @@ export const useCatalogCache = (userFamily?: string) => {
     invalidateCategoriesCache,
     invalidateFavoritesCache,
     preloadPopularContent,
-    resetAllCache, // New function for emergency cache reset
-    cacheStats: (() => {
-      try {
-        return cacheManager.getStats();
-      } catch (error) {
-        console.error('Error getting cache stats:', error);
-        return { memoryItems: 0, totalSize: 0, size: 0, hits: 0, misses: 0 };
-      }
-    })()
+    resetAllCache,
+    cacheStats: {
+      // React Query cache stats mapped to CatalogCacheStats interface
+      memoryItems: queryClient.getQueryCache().getAll().length,
+      totalSize: queryClient.getQueryCache().getAll().length,
+      size: queryClient.getQueryCache().getAll().length,
+      hits: 0, // React Query doesn't expose hit/miss stats directly
+      misses: 0
+    }
   };
 };
