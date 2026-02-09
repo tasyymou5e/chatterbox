@@ -66,7 +66,7 @@ export const useLessonProgressStore = create<LessonProgressState>()(
 
       const { data, error } = await supabase
         .from('lesson_progress')
-        .select('*')
+        .select('id, user_id, family_id, category_id, current_stars, stars_to_moon, moons_earned, current_level, unlocked_levels, correct_answers, total_attempts, accuracy_percentage, last_activity_at, created_at')
         .eq('user_id', userId)
         .eq('category_id', categoryId)
         .maybeSingle();
@@ -125,7 +125,7 @@ export const useLessonProgressStore = create<LessonProgressState>()(
 
       const { data, error } = await supabase
         .from('lesson_progress')
-        .select('*')
+        .select('id, user_id, family_id, category_id, current_stars, stars_to_moon, moons_earned, current_level, unlocked_levels, correct_answers, total_attempts, accuracy_percentage, last_activity_at, created_at')
         .eq('user_id', userId);
 
       if (error) throw error;

@@ -23,7 +23,7 @@ export const useCatalogCache = (userFamily?: string) => {
       const { data, error } = await supabase
         .from('content_items')
         .select(`
-          *,
+          id, title, description, url, content_type, category_id, skill_levels, age_min, age_max, thumbnail_url, is_active, is_free, platform, tags, autism_features, approval_status, sort_order, content_rating,
           content_categories (name, icon)
         `)
         .eq('approval_status', 'approved')
@@ -52,7 +52,7 @@ export const useCatalogCache = (userFamily?: string) => {
       try {
         const { data, error } = await supabase
           .from('content_categories')
-          .select('*')
+          .select('id, name, description, icon, is_active, sort_order')
           .eq('is_active', true)
           .order('sort_order');
 

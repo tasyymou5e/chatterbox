@@ -73,7 +73,7 @@ export function useIntegrityManagement(): UseIntegrityManagementResult {
     try {
       const { data, error } = await supabase
         .from('integrity_issues')
-        .select('*')
+        .select('id, check_log_id, issue_type, severity, entity_type, entity_id, family_id, user_id, description, auto_fix_available, proposed_fix, fix_preview, status, approved_by, approved_at, rejection_reason, fixed_at, metadata, created_at')
         .order('created_at', { ascending: false })
         .limit(500);
 
@@ -112,7 +112,7 @@ export function useIntegrityManagement(): UseIntegrityManagementResult {
     try {
       const { data, error } = await supabase
         .from('integrity_check_logs')
-        .select('*')
+        .select('id, check_type, status, issues_found, issues_auto_fixable, check_duration_ms, error_message, triggered_by, created_at')
         .order('created_at', { ascending: false })
         .limit(50);
 
@@ -304,7 +304,7 @@ export function useIntegrityManagement(): UseIntegrityManagementResult {
     try {
       const { data, error } = await supabase
         .from('integrity_fix_audit')
-        .select('*')
+        .select('id, issue_id, action, admin_id, old_data, new_data, notes, created_at')
         .eq('issue_id', issueId)
         .order('created_at', { ascending: false });
 

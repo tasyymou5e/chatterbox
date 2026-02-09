@@ -20,7 +20,7 @@ export const getUserPrivacySettings = async (): Promise<PrivacySettings | null> 
 
     const { data, error } = await supabase
       .from('user_privacy_settings')
-      .select('*')
+      .select('id, user_id, behavioral_tracking_consent, data_retention_days, analytics_sharing_consent, created_at, updated_at')
       .eq('user_id', user.id)
       .single();
 

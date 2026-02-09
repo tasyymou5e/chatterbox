@@ -66,7 +66,7 @@ export const useSystemHealthStore = create<SystemHealthState>()(
           // Fetch system health metrics from database
           const { data: healthData, error: healthError } = await supabase
             .from('system_health_metrics')
-            .select('*')
+            .select('id, service_name, status, response_time, uptime_percentage, error_rate, metadata, timestamp')
             .order('timestamp', { ascending: false });
 
           if (healthError) {

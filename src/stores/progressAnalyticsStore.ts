@@ -102,7 +102,7 @@ export const useProgressAnalyticsStore = create<ProgressAnalyticsState>()(
           
           let query = supabase
             .from('progress_snapshots')
-            .select('*')
+            .select('id, user_id, family_id, snapshot_date, total_points, total_xp, current_level, achievements_unlocked, chores_completed_today, chores_completed_week, chores_completed_month, streak_count, metadata, created_at')
             .eq('family_id', familyId)
             .gte('snapshot_date', new Date(Date.now() - daysBack * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
             .order('snapshot_date', { ascending: false });
@@ -136,7 +136,7 @@ export const useProgressAnalyticsStore = create<ProgressAnalyticsState>()(
           
           let query = supabase
             .from('milestone_tracking')
-            .select('*')
+            .select('id, user_id, family_id, milestone_type, milestone_name, milestone_value, achieved_at, metadata')
             .eq('family_id', familyId)
             .order('achieved_at', { ascending: false })
             .limit(50);
@@ -187,7 +187,7 @@ export const useProgressAnalyticsStore = create<ProgressAnalyticsState>()(
           // Get progress snapshots and calculate trends
           const { data: snapshots, error } = await supabase
             .from('progress_snapshots')
-            .select('*')
+            .select('snapshot_date, total_points, total_xp, current_level, achievements_unlocked, streak_count')
             .eq('family_id', familyId)
             .gte('snapshot_date', new Date(Date.now() - daysBack * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
             .order('snapshot_date', { ascending: true });
@@ -248,7 +248,7 @@ export const useProgressAnalyticsStore = create<ProgressAnalyticsState>()(
           // Get latest progress snapshots for all members
           const { data: latestSnapshots, error: snapshotsError } = await supabase
             .from('progress_snapshots')
-            .select('*')
+            .select('user_id, total_points, total_xp, current_level, achievements_unlocked, streak_count')
             .eq('family_id', familyId)
             .eq('snapshot_date', new Date().toISOString().split('T')[0]);
 
@@ -293,7 +293,7 @@ export const useProgressAnalyticsStore = create<ProgressAnalyticsState>()(
           
           const { data: snapshots, error } = await supabase
             .from('progress_snapshots')
-            .select('*')
+            .select('snapshot_date, total_points, total_xp, current_level, achievements_unlocked, streak_count')
             .eq('user_id', userId)
             .eq('family_id', familyId)
             .gte('snapshot_date', new Date(Date.now() - daysBack * 24 * 60 * 60 * 1000).toISOString().split('T')[0])

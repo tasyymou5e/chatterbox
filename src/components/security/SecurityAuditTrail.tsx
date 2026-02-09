@@ -116,7 +116,7 @@ export const SecurityAuditTrail: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('security_audit_logs')
-        .select('*')
+        .select('id, user_id, event_type, severity, event_details, ip_address, created_at')
         .order('created_at', { ascending: false })
         .limit(10000); // Export last 10k events
 

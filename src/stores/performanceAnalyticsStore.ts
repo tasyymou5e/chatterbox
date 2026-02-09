@@ -103,7 +103,7 @@ export const usePerformanceAnalyticsStore = create<PerformanceAnalyticsState>()(
           
           let query = supabase
             .from('task_performance_metrics')
-            .select('*')
+            .select('id, user_id, family_id, chore_id, assignment_id, completion_date, start_time, completion_time, estimated_duration, actual_duration, difficulty_level, efficiency_score, quality_rating, time_of_day, day_of_week, seasonal_period, performance_category, metadata, created_at')
             .eq('family_id', familyId)
             .gte('completion_date', new Date(Date.now() - daysBack * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
             .order('completion_date', { ascending: false });
@@ -168,7 +168,7 @@ export const usePerformanceAnalyticsStore = create<PerformanceAnalyticsState>()(
           
           let query = supabase
             .from('task_performance_metrics')
-            .select('*')
+            .select('time_of_day, efficiency_score')
             .eq('family_id', familyId);
 
           if (userId) {
@@ -214,7 +214,7 @@ export const usePerformanceAnalyticsStore = create<PerformanceAnalyticsState>()(
           
           let query = supabase
             .from('task_performance_metrics')
-            .select('*')
+            .select('difficulty_level, efficiency_score, actual_duration')
             .eq('family_id', familyId);
 
           if (userId) {

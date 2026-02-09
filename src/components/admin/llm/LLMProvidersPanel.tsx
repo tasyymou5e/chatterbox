@@ -55,7 +55,7 @@ export const LLMProvidersPanel = () => {
     try {
       const { data, error } = await supabase
         .from('llm_providers')
-        .select('*')
+        .select('id, provider_key, display_name, api_endpoint, models, pricing_config, is_active, is_custom, api_key_configured, health_status, last_health_check, created_at, updated_at')
         .order('is_custom', { ascending: true })
         .order('display_name', { ascending: true });
 

@@ -88,7 +88,7 @@ export function useEdgeFunctionHealthHistory(): UseEdgeFunctionHealthHistoryResu
       
       let query = supabase
         .from('edge_function_health_logs')
-        .select('*')
+        .select('id, function_name, status, response_time_ms, error_message, check_type, previous_status, http_status_code, metadata, created_at')
         .gte('created_at', since)
         .order('created_at', { ascending: false })
         .limit(500);
@@ -112,7 +112,7 @@ export function useEdgeFunctionHealthHistory(): UseEdgeFunctionHealthHistoryResu
       // Get the latest status for each function
       const { data: latestLogs, error: logsError } = await supabase
         .from('edge_function_health_logs')
-        .select('*')
+        .select('id, function_name, status, response_time_ms, error_message, check_type, previous_status, http_status_code, metadata, created_at')
         .order('created_at', { ascending: false })
         .limit(500);
 
@@ -196,7 +196,7 @@ export function useEdgeFunctionHealthHistory(): UseEdgeFunctionHealthHistoryResu
     try {
       const { data, error: fetchError } = await supabase
         .from('edge_function_alert_config')
-        .select('*')
+        .select('id, function_name, response_time_threshold_ms, consecutive_failures_threshold, warmup_threshold, critical_threshold, max_recovery_attempts, recovery_cooldown_minutes, is_enabled, created_at, updated_at')
         .order('function_name');
 
       if (fetchError) throw fetchError;
@@ -242,7 +242,7 @@ export function useEdgeFunctionHealthHistory(): UseEdgeFunctionHealthHistoryResu
       
       const { data, error: fetchError } = await supabase
         .from('edge_function_recovery_attempts')
-        .select('*')
+        .select('id, function_name, attempt_number, attempt_type, status, response_time_ms, error_message, triggered_by, consecutive_failures_before, metadata, created_at')
         .gte('created_at', since)
         .order('created_at', { ascending: false })
         .limit(100);

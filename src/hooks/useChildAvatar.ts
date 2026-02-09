@@ -84,7 +84,7 @@ export function useChildAvatar(userId: string | undefined, familyId?: string): U
 
       const { data, error } = await supabase
         .from('child_avatars')
-        .select('*')
+        .select('id, user_id, family_id, avatar_type, base_character, skin_tone, hair_color, hair_style, eye_color, accessory, outfit_color, uploaded_url, created_at, updated_at')
         .eq('user_id', userId)
         .maybeSingle();
 
