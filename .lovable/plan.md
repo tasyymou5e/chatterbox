@@ -1,164 +1,138 @@
-# Edge Function `select('*')` Optimization - COMPLETED ✅
 
-## Summary
 
-All 15 optimizable `select('*')` instances across 5 edge functions have been replaced with explicit column lists.
+# TECHSTACK.md -- Comprehensive Tech Stack Overview
 
-| Category | Document Claimed | Actual State |
-|----------|------------------|--------------|
-| Package.json fixes | 3 issues | 0 - All already done |
-| File cleanup (bun.lockb) | 3 items | 0 - Already deleted |
-| Frontend select('*') | 8 instances | 0 - Only 2 in comments/non-executable |
-| Edge function select('*') | 15+ instances | **19 instances in 6 files** |
-| Console logs | ~12 | Low priority, code quality |
+## Plan
 
-## Actual Remaining Work: Edge Function Optimization
-
-**19 `select('*')` instances across 6 edge functions:**
-
-### 1. `llm-with-failover/index.ts` (2 instances)
-
-| Line | Table | Current | Replace With |
-|------|-------|---------|--------------|
-| 79 | `llm_failover_config` | `select('*')` | `select('backup_provider_key, cooldown_seconds, max_retries_before_failover, priority, trigger_on_error, trigger_on_rate_limit, trigger_on_timeout, timeout_threshold_ms')` |
-| 87 | `llm_provider_status` | `select('*')` | `select('provider_key, is_healthy, failure_count, cooldown_until, last_failure_at')` |
-
-### 2. `security-monitoring/index.ts` (8 instances)
-
-| Line | Table | Columns Needed |
-|------|-------|----------------|
-| 106 | `user_activity_logs` | `id, user_id, activity_type, ip_address, metadata, created_at` |
-| 178 | `security_audit_logs` | `id, user_id, event_type, event_details, severity, created_at` |
-| 220 | `user_activity_logs` | `id, user_id, activity_type, created_at` |
-| 266 | `security_audit_logs` | `id, created_at` (count only) |
-| 267 | `security_audit_logs` | `id` (count only) |
-| 268 | `user_activity_logs` | `id` (count only) |
-| 269 | `system_errors` | `id` (count only) |
-
-### 3. `family-integrity-check/index.ts` (4 instances)
-
-| Line | Table | Usage Pattern |
-|------|-------|---------------|
-| 591 | `integrity_issues` | Full issue details for approval flow |
-| 636 | `integrity_issues` | Full issue details for rejection flow |
-| 697 | `integrity_issues` | Full issue details for fix execution |
-| 724 | Dynamic table | Audit capture before fix - **keep as-is** (dynamic table) |
-
-**Note**: Line 724 uses a dynamic table name (`fix.table`) and must remain `select('*')` since the table isn't known at compile time.
-
-### 4. `manage-llm-provider/index.ts` (2 instances)
-
-| Line | Table | Usage |
-|------|-------|-------|
-| 92 | `llm_providers` | Health check - needs `api_endpoint, provider_key` (already optimized at line 168) |
-| 308 | `llm_providers` | List all - needs full row for admin display |
-
-### 5. `edge-function-health-check/index.ts` (1 instance)
-
-| Line | Table | Columns Needed |
-|------|-------|----------------|
-| 117 | `edge_function_alert_config` | `function_name, is_enabled, critical_threshold, warmup_threshold, consecutive_failures_threshold, response_time_threshold_ms, max_recovery_attempts, recovery_cooldown_minutes` |
-
-### 6. `security-testing/index.ts` (3 instances)
-
-| Line | Table | Context |
-|------|-------|---------|
-| 353 | `profiles` | RLS test - intentionally tests access patterns |
-| 419 | `admin_audit_logs` | RLS test - intentionally tests access patterns |
-| 463 | `profiles` | Auth test - intentionally tests access patterns |
-
-**Note**: `security-testing` instances are **intentional** - they test RLS behavior and need to request full rows to verify policies are working. Changing these could break the security tests.
+Create a single `TECHSTACK.md` file at the project root that serves as the authoritative reference for every technology used across the Chatterbox application. The file will be organized by layer (frontend, backend, tooling, CI/CD) with version numbers sourced directly from `package.json`, configuration details from actual config files, and cross-references to existing knowledge files for deeper dives.
 
 ---
 
-## Implementation Plan
+## Document Structure
 
-### Phase 1: High-Impact Functions (3 functions)
+### 1. Header & Metadata
+- Title, last updated date (2026-02-09), purpose statement
+- Quick-reference table: category, technology, version, config file
 
-**llm-with-failover/index.ts**
-```typescript
-// Line 79: llm_failover_config
-.select('backup_provider_key, cooldown_seconds, max_retries_before_failover, priority, trigger_on_error, trigger_on_rate_limit, trigger_on_timeout, timeout_threshold_ms, is_active')
+### 2. Frontend Runtime
+- **React 18.3.1** -- Component library, StrictMode enabled, JSX transform
+- **React DOM 18.3.1** -- DOM renderer
+- **React Router DOM 7.12.0** -- Client-side routing with lazy-loaded route groups (core, parent, kids, admin, feature, support, connect, game)
+- **TypeScript 5.8.3** -- Strict mode (`noImplicitAny`, `strictNullChecks`, `noImplicitReturns`, `noFallthroughCasesInSwitch`), ES2020 target, bundler module resolution
+- Cross-ref: `PAGES_DOCUMENTATION.md`, `SITE_FLOW.md`
 
-// Line 87: llm_provider_status  
-.select('provider_key, is_healthy, failure_count, cooldown_until, last_failure_at')
-```
+### 3. Build Toolchain
+- **Vite 6.0.14** -- Dev server (port 8080), SWC-based React plugin (`@vitejs/plugin-react-swc 3.11.0`)
+- **Manual chunks**: vendor, ui, charts, forms, supabase, utils, carousel (7 chunks)
+- **PWA**: `vite-plugin-pwa 0.21.2` with Workbox (NetworkFirst for API, CacheFirst for storage, NetworkOnly for auth/edge functions)
+- **Bundle analysis**: `rollup-plugin-visualizer 6.0.5`
+- Cross-ref: `BUNDLE_OPTIMIZATION.md`
 
-**security-monitoring/index.ts**
-```typescript
-// Line 106: user_activity_logs (pattern analysis)
-.select('id, user_id, activity_type, ip_address, metadata, created_at')
+### 4. Styling & Design System
+- **Tailwind CSS 3.4.19** -- Utility-first, dark mode via `class` strategy, custom HSL color tokens, semantic gradients/shadows
+- **tailwindcss-animate 1.0.7** -- Animation utilities (accordion, celebration, shimmer, firework, star-twinkle)
+- **PostCSS 8.5.6 + Autoprefixer 10.4.21** -- CSS processing pipeline
+- **Font**: Nunito (primary sans-serif)
+- **class-variance-authority 0.7.1** -- Type-safe component variants
+- **clsx 2.1.1 + tailwind-merge 3.4.0** -- Conditional class composition via `cn()` utility
+- Cross-ref: `GRAPHICS_TECH_STACK.md`, `COMPONENT_DOCUMENTATION.md`
 
-// Line 178: security_audit_logs (violations)
-.select('id, user_id, event_type, event_details, severity, created_at')
+### 5. UI Component Library
+- **shadcn/ui** (configured via `components.json`, default style, slate base, CSS variables)
+- **Radix UI Primitives** -- 24 packages (accordion through tooltip), all ^1.x-2.x
+- **Lucide React 0.562.0** -- Icon library
+- **cmdk 1.1.1** -- Command palette
+- **vaul 1.1.2** -- Drawer component
+- **embla-carousel-react 8.6.0** -- Carousel
+- **react-day-picker 8.10.1** -- Calendar/date picker
+- **input-otp 1.4.2** -- OTP input
+- **react-resizable-panels 4.4.0** -- Resizable layouts
+- **react-window 2.2.5** -- Virtualized lists
+- **sonner 2.0.7** -- Toast notifications (alongside Radix toast)
+- Cross-ref: `COMPONENT_DOCUMENTATION.md`, `STORYBOOK_GUIDE.md`
 
-// Line 220: user_activity_logs (suspicious check)
-.select('id, user_id, activity_type, created_at')
+### 6. State Management
+- **Zustand 5.0.10** -- 13 stores (auth, ui, admin, chore, gamification, analytics, progressAnalytics, performanceAnalytics, behaviorAnalytics, connection, lessonProgress, systemHealth, gameSession) plus 3 auth sub-stores
+- **TanStack React Query 5.90.16** -- Server state, retry logic, 5min stale time, 10min GC
+- Cross-ref: `STORES_DOCUMENTATION.md`, `ZUSTAND_DESIGN.md`
 
-// Lines 266-269: Report generation (count only)
-.select('id, created_at')  // for each table
-```
+### 7. Forms & Validation
+- **React Hook Form 7.71.0** -- Form state management
+- **@hookform/resolvers 5.2.2** -- Schema resolver bridge
+- **Zod 4.3.5** -- Schema validation
+- Cross-ref: `COMPONENT_DOCUMENTATION.md`
 
-**edge-function-health-check/index.ts**
-```typescript
-// Line 117: edge_function_alert_config
-.select('function_name, is_enabled, critical_threshold, warmup_threshold, consecutive_failures_threshold, response_time_threshold_ms, max_recovery_attempts, recovery_cooldown_minutes')
-```
+### 8. Data Visualization
+- **Recharts 3.6.0** -- Charts with HSL theming
+- Cross-ref: `GRAPHICS_TECH_STACK.md`
 
-### Phase 2: Admin Functions (2 functions)
+### 9. Utilities
+- **date-fns 4.1.0** -- Date manipulation
+- **DOMPurify 3.3.1** -- HTML sanitization (XSS prevention)
+- **jsPDF 4.0.0** -- PDF generation (certificates, reports)
+- **web-vitals 5.1.0** -- Core Web Vitals monitoring
+- **next-themes 0.4.6** -- Dark/light mode switching
+- **react-error-boundary 6.0.3** -- Error boundary components
 
-**manage-llm-provider/index.ts**
-```typescript
-// Line 92: llm_providers (health check)
-.select('provider_key, api_endpoint, display_name, health_status, api_key_configured')
+### 10. Backend: Supabase
+- **@supabase/supabase-js 2.90.1** -- Client SDK (PKCE auth flow)
+- **Database**: PostgreSQL with RLS (59 tables, 100+ security policies, 30+ security definer functions)
+- **Auth**: Email/password, PKCE flow, JWT tokens, PIN-based child auth
+- **Edge Functions**: 25 Deno functions (13 authenticated, 12 unauthenticated/system)
+- **Shared modules**: `_shared/` with auth-validator, rate-limiter (tiered: auth vs anonymous), CORS, email-sender, security-headers, password-validator
+- **Real-time**: PostgreSQL change streams via RealtimeManager service
+- **Storage**: File storage with CacheFirst PWA strategy
+- Cross-ref: `EDGE_FUNCTIONS_GUIDE.md`, `SUPABASE_SCHEMA.md`, `RLS_POLICIES_COMPREHENSIVE_GUIDE.md`, `SECURITY_FRAMEWORK.md`, `API_DOCUMENTATION.md`
 
-// Line 308: llm_providers (list)
-.select('id, provider_key, display_name, api_endpoint, models, is_active, is_custom, health_status, last_health_check, api_key_configured, pricing_config, created_at, updated_at')
-```
+### 11. Testing
+- **Vitest 4.0.8** -- Unit/component/integration tests (jsdom environment)
+- **@vitest/coverage-v8 4.0.18** -- Coverage (thresholds: 80/70/80/80)
+- **@testing-library/react 16.3.1 + jest-dom 6.9.1 + user-event 14.6.1** -- Component testing
+- **Playwright 1.57.0** -- E2E tests (Chromium, Firefox, WebKit, Mobile Chrome, Mobile Safari), visual regression with screenshot diffing
+- Cross-ref: `TESTING_GUIDE.md`, `RLS_TEST_SUITE_DOCUMENTATION.md`, `AUTH_E2E_COVERAGE_REPORT.md`
 
-**family-integrity-check/index.ts**
-```typescript
-// Lines 591, 636, 697: integrity_issues
-.select('id, entity_id, entity_type, issue_type, description, severity, status, auto_fix_available, proposed_fix, fix_preview, family_id, user_id, check_log_id, metadata, approved_by, approved_at, rejection_reason, fixed_at, created_at')
+### 12. Visual Documentation
+- **Storybook 8.6.14** -- Component catalog with a11y addon, interactions addon
+- Cross-ref: `STORYBOOK_GUIDE.md`
 
-// Line 724: Dynamic table - KEEP AS-IS
-// This queries a dynamic table name for audit purposes
-```
+### 13. Code Quality
+- **ESLint 9.32.0** -- Flat config with typescript-eslint, react-hooks, react-refresh plugins
+- **Key rules**: `no-console: error` (production), `@typescript-eslint/no-explicit-any: error`, `complexity: 15`, `max-depth: 4`, `max-lines-per-function: 150`
+- **Overrides**: Relaxed rules for tests, stories, edge functions, scripts, logging utilities
+- Cross-ref: `JSDOC_STANDARDS.md`, `TYPESCRIPT_STRICTNESS.md`, `LOGGING_STANDARDS.md`
 
-### Phase 3: Skip (Intentional Wildcards)
+### 14. Security Tooling
+- **Snyk 1.1302.0** -- Dependency vulnerability scanning
+- **npm audit** -- Built-in audit (moderate threshold)
+- **DOMPurify** -- Runtime XSS prevention
+- **Custom**: `secureLogging.ts`, `enhancedInputValidation.ts`, `securityEnhancedMonitoring.ts`, `adminRateLimiter.ts`
+- Cross-ref: `SECURITY_FRAMEWORK.md`, `ENTERPRISE_SECURITY_PERFORMANCE.md`, `PROJECT_SECURITY_REVIEW.md`, `API_SECURITY_REVIEW.md`
 
-**security-testing/index.ts** - Leave all 3 instances unchanged:
-- These are RLS policy tests that intentionally query full rows
-- Changing them could cause false positives in security tests
+### 15. CI/CD
+- **GitHub Actions** -- 2 workflows (security-tests.yml, security.yml)
+- **Lovable** -- Preview and production deployment (`chatterboxlife.lovable.app`)
+- Cross-ref: `README.md`
+
+### 16. PWA Capabilities
+- **Workbox** (via vite-plugin-pwa) -- Service worker with runtime caching strategies per endpoint type
+- **Manifest**: Standalone display, portrait orientation, education category
+- Cross-ref: none (details self-contained in vite.config.ts)
+
+### 17. Cross-Reference Index
+A table mapping every knowledge file to which tech stack sections it covers, so readers can quickly navigate to detailed docs.
 
 ---
 
-## Summary of Changes
+## Technical Notes
 
-| Function | Instances | Action |
-|----------|-----------|--------|
-| llm-with-failover | 2 | Optimize |
-| security-monitoring | 8 | Optimize (7 + 1 already uses specific) |
-| family-integrity-check | 4 | Optimize 3, keep 1 (dynamic table) |
-| manage-llm-provider | 2 | Optimize |
-| edge-function-health-check | 1 | Optimize |
-| security-testing | 3 | **Skip** (intentional for tests) |
-| **Total** | **19** | **15 to optimize, 4 to skip** |
+- All versions sourced from `package.json` lines 32-131
+- TypeScript config split across `tsconfig.json` (base), `tsconfig.app.json` (app), `tsconfig.node.json` (build tools), `scripts/tsconfig.json` (CLI)
+- Edge functions use Deno runtime with separate import maps (not npm)
+- `react-is` pinned at `^19.2.3` in devDependencies (Storybook peer dep)
+- 7 manual chunks configured in `vite.config.ts` for optimal code splitting
+- 53 custom hooks in `src/hooks/`
+- 29 type definition files in `src/types/`
+- 25 utility modules in `src/utils/`
+- 4 service modules in `src/services/`
+- 15+ component directories under `src/components/`
 
----
-
-## Estimated Effort
-
-- **Time**: 45-60 minutes
-- **Risk**: Low (straightforward column selection based on verified schema)
-- **Testing**: Deploy and verify each function responds correctly
-
----
-
-## Low Priority Items (Not Blocking)
-
-These are code quality improvements, not functionality issues:
-
-1. **Console logs** (~12 instances): Debug logging in systemHealthStore, AdminLogin
-2. **`as any` casts** (3 instances): Type safety improvements
-3. **RLS Policy Audit**: Requires Supabase dashboard access, not codebase changes
