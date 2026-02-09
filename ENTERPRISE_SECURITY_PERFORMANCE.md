@@ -173,7 +173,7 @@ npm run security:snyk:monitor
 
 #### **Before Development**
 1. **Clone Repository**: `git clone <url>`
-2. **Install Dependencies**: `npm install --legacy-peer-deps`
+2. **Install Dependencies**: `npm install`
 3. **Security Setup**: `npx snyk auth` (one-time)
 
 #### **During Development**

@@ -36,7 +36,7 @@ jobs:
           cache: 'npm'
           
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+        run: npm ci
         
       - name: Run security unit tests
         run: npm run test -- --run tests/security/
@@ -70,7 +70,7 @@ jobs:
           cache: 'npm'
           
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+        run: npm ci
         
       - name: Run RLS policy tests
         run: npm run test -- --run tests/rls/
@@ -102,7 +102,7 @@ jobs:
           cache: 'npm'
           
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+        run: npm ci
         
       - name: Run schema validation tests
         run: npm run test -- --run tests/schema/
@@ -134,7 +134,7 @@ jobs:
           cache: 'npm'
           
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+        run: npm ci
         
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
@@ -183,7 +183,7 @@ jobs:
           cache: 'npm'
           
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+        run: npm ci
         
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
@@ -227,7 +227,7 @@ jobs:
           cache: 'npm'
           
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+        run: npm ci
         
       - name: Run npm audit
         run: npm audit --audit-level=moderate
@@ -257,7 +257,7 @@ jobs:
           cache: 'npm'
           
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+        run: npm ci
         
       - name: TypeScript type checking
         run: npm run typecheck

@@ -82,7 +82,7 @@ Creating a safe, engaging, and educational environment where children who have a
 ```sh
 git clone <YOUR_GIT_URL>
 cd chatterbox
-npm install --legacy-peer-deps
+npm install
 npm run dev
 ```
 
