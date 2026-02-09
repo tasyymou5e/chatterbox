@@ -49,36 +49,13 @@ export const ProductionSecurityWrapper: React.FC<ProductionSecurityWrapperProps>
       document.addEventListener('dragover', disableDragDrop);
       document.addEventListener('drop', disableDragDrop);
       
-      // Security headers check
-      const checkSecurityHeaders = () => {
-        // Check if running over HTTPS in production
-        if (window.location.protocol !== 'https:') {
-          secureLog.security('Application should be served over HTTPS in production', { protocol: window.location.protocol }, 'low');
-        }
-        
-        // Check for security headers (these would be set by server/CDN)
-        fetch(window.location.href, { method: 'HEAD' })
-          .then(response => {
-            const securityHeaders = [
-              'content-security-policy',
-              'x-frame-options',
-              'x-content-type-options',
-              'referrer-policy',
-              'permissions-policy'
-            ];
-            
-            securityHeaders.forEach(header => {
-              if (!response.headers.get(header)) {
-                secureLog.security('Missing security header', { header }, 'low');
-              }
-            });
-          })
-          .catch(() => {
-            // Silent fail - don't log network errors
-          });
-      };
+      // Security headers are verified via CSP meta tags in index.html
+      // No runtime check needed - headers are set at build time
       
-      checkSecurityHeaders();
+      // Check if running over HTTPS in production
+      if (window.location.protocol !== 'https:') {
+        secureLog.security('Application should be served over HTTPS in production', { protocol: window.location.protocol }, 'low');
+      }
       
       // Cleanup function
       return () => {
