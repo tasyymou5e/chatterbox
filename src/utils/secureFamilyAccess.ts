@@ -378,7 +378,7 @@ export const getSecurityAlerts = async (hoursBack: number = 24) => {
 
     const { data, error } = await supabase
       .from('security_audit_logs')
-      .select('*')
+      .select('id, event_type, severity, user_id, ip_address, user_agent, event_details, session_id, resolved, resolved_at, resolved_by, created_at')
       .eq('event_type', 'family_access_attempt')
       .eq('severity', 'high')
       .gte('created_at', new Date(Date.now() - hoursBack * 60 * 60 * 1000).toISOString())

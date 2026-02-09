@@ -83,7 +83,7 @@ const FamilyActivityReport = () => {
 
         const { data: activities, error: activitiesError } = await supabase
           .from('user_activity_logs')
-          .select('*')
+          .select('id, user_id, activity_type, success, failure_reason, ip_address, user_agent, session_id, device_info, metadata, created_at, timestamp')
           .in('user_id', memberIds)
           .gte('timestamp', startDate.toISOString())
           .lte('timestamp', endDate.toISOString());

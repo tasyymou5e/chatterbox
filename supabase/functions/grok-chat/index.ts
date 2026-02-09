@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders } from '../_shared/cors.ts';
-import { llmLimiter, RateLimiter } from '../_shared/rate-limiter.ts';
+import { llmLimiter, llmAnonymousLimiter, RateLimiter } from '../_shared/rate-limiter.ts';
 import { validateJWT, getServiceClient } from '../_shared/auth-validator.ts';
 
 interface ChatMessage {
@@ -25,15 +25,9 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Apply rate limiting for LLM calls (expensive operations)
-  const rateCheck = llmLimiter.check(req);
-  if (!rateCheck.allowed) {
-    console.warn('Rate limit exceeded for grok-chat');
-    return RateLimiter.createRateLimitResponse(rateCheck.resetTime);
-  }
-
   const startTime = Date.now();
   let userId: string | null = null;
+  let isAuthenticated = false;
 
   try {
     const GROK_API_KEY = Deno.env.get('GROK_API_KEY');
@@ -46,6 +40,15 @@ serve(async (req) => {
     const auth = await validateJWT(req);
     if (auth.success && auth.userId) {
       userId = auth.userId;
+      isAuthenticated = true;
+    }
+
+    // Apply tiered rate limiting: authenticated users get higher limits
+    const limiter = isAuthenticated ? llmLimiter : llmAnonymousLimiter;
+    const rateCheck = limiter.check(req);
+    if (!rateCheck.allowed) {
+      console.warn(`Rate limit exceeded for grok-chat (authenticated: ${isAuthenticated})`);
+      return RateLimiter.createRateLimitResponse(rateCheck.resetTime, corsHeaders);
     }
 
     const { 

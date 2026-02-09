@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders } from '../_shared/cors.ts';
-import { ttsLimiter, RateLimiter } from '../_shared/rate-limiter.ts';
+import { ttsLimiter, ttsAnonymousLimiter, RateLimiter } from '../_shared/rate-limiter.ts';
 import { validateJWT, getServiceClient } from '../_shared/auth-validator.ts';
 
 interface TTSRequest {
@@ -23,15 +23,9 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Apply rate limiting for TTS requests
-  const rateCheck = ttsLimiter.check(req);
-  if (!rateCheck.allowed) {
-    console.warn('Rate limit exceeded for text-to-speech');
-    return RateLimiter.createRateLimitResponse(rateCheck.resetTime);
-  }
-
   const startTime = Date.now();
   let userId: string | null = null;
+  let isAuthenticated = false;
 
   try {
     const { text, voice = 'Ara', speed = 1.0 }: TTSRequest = await req.json();
@@ -50,6 +44,15 @@ serve(async (req) => {
     const auth = await validateJWT(req);
     if (auth.success && auth.userId) {
       userId = auth.userId;
+      isAuthenticated = true;
+    }
+
+    // Apply tiered rate limiting: authenticated users get higher limits
+    const limiter = isAuthenticated ? ttsLimiter : ttsAnonymousLimiter;
+    const rateCheck = limiter.check(req);
+    if (!rateCheck.allowed) {
+      console.warn(`Rate limit exceeded for text-to-speech (authenticated: ${isAuthenticated})`);
+      return RateLimiter.createRateLimitResponse(rateCheck.resetTime, corsHeaders);
     }
 
     // Validate voice parameter

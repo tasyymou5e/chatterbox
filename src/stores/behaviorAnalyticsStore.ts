@@ -171,7 +171,7 @@ export const useBehaviorAnalyticsStore = create<BehaviorAnalyticsState>()(
           
           let query = supabase
             .from('behavioral_events')
-            .select('*')
+            .select('id, user_id, family_id, event_type, event_category, event_data, page_path, session_id, device_type, interaction_element, duration_seconds, timestamp')
             .eq('user_id', userId)
             .gte('timestamp', new Date(Date.now() - daysBack * 24 * 60 * 60 * 1000).toISOString())
             .order('timestamp', { ascending: false });
@@ -205,7 +205,7 @@ export const useBehaviorAnalyticsStore = create<BehaviorAnalyticsState>()(
           
           let query = supabase
             .from('gamification_effectiveness')
-            .select('*')
+            .select('id, family_id, user_id, date_tracked, points_earned, achievements_unlocked, mini_games_played, engagement_score, motivation_level, session_length_minutes, social_interactions, feature_usage, effectiveness_metrics, created_at')
             .eq('family_id', familyId)
             .gte('date_tracked', new Date(Date.now() - daysBack * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
             .order('date_tracked', { ascending: false });

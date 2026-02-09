@@ -42,16 +42,18 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.text-to-speech]
-# User auth (optional) - uses validateJWT in code
-verify_jwt = true
+# Supports anonymous access with tiered rate limiting in code
+# Authenticated users get higher limits, anonymous users get restricted limits
+verify_jwt = false
 
 [functions.api-integration-status]
 # User auth required - uses validateJWT in code
 verify_jwt = true
 
 [functions.grok-chat]
-# User auth (optional) - uses validateJWT in code
-verify_jwt = true
+# Supports anonymous access with tiered rate limiting in code
+# Authenticated users get higher limits, anonymous users get restricted limits
+verify_jwt = false
 
 [functions.send-family-email]
 # User auth required - uses validateJWT in code
@@ -98,6 +100,11 @@ verify_jwt = true
 # UNAUTHENTICATED FUNCTIONS (verify_jwt = false)
 # These functions intentionally skip gateway JWT verification
 # ============================================
+
+[functions.complete-child-account]
+# Child account completion - uses PIN-based auth, not JWT
+# Auth handled entirely in code with PIN verification and lockout logic
+verify_jwt = false
 
 [functions.scheduled-health-check]
 # System cron job - no user context, called by scheduler

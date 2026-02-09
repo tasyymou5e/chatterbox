@@ -86,7 +86,7 @@ export const useConnectionStore = create<ConnectionState>()(
             // Fetch connections first
             const { data: connectionsData, error: connError } = await supabase
               .from('family_connections')
-              .select('*')
+              .select('id, family_id, connected_user_id, connection_role, invited_by, status, permissions, connection_metadata, expires_at, connected_at, created_at, updated_at')
               .eq('family_id', familyId)
               .order('created_at', { ascending: false });
 
@@ -154,7 +154,7 @@ export const useConnectionStore = create<ConnectionState>()(
           try {
             const { data, error } = await supabase
               .from('family_invitations')
-              .select('*')
+              .select('id, family_id, invited_email, connection_role, invited_by, invitation_message, permissions, expires_at, accepted_at, created_at')
               .eq('family_id', familyId)
               .order('created_at', { ascending: false });
 
@@ -275,7 +275,7 @@ export const useConnectionStore = create<ConnectionState>()(
             // First get invitation details
             const { data: invitation, error: inviteError } = await supabase
               .from('family_invitations')
-              .select('*')
+              .select('id, family_id, invited_email, connection_role, invited_by, invitation_message, permissions, expires_at, accepted_at, created_at')
               .eq('id', invitationId)
               .single();
 
