@@ -1,123 +1,66 @@
 
 
-# Bulk Delete for Admin Portal: Users and Families
+# Fix: Data Integrity Edge Function Failures
 
-## Overview
+## Root Cause
 
-Add checkbox-based multi-select and bulk delete functionality to both the **AdminUsers** and **AdminFamilies** pages. Bulk operations will call the existing edge functions (`admin-delete-user` and `delete-family-comprehensive`) in sequence for each selected item, reusing the proven deletion logic.
+Two column-name mismatches in `family-integrity-check/index.ts` cause the edge function to fail against the actual database schema.
 
----
+### Bug 1: Check 1 (Orphaned Child Accounts) -- Lines 227-233
 
-## What Changes
+The query joins `profiles!inner(email)`, but the `profiles` table has **no `email` column**. Its columns are: `id`, `user_id`, `first_name`, `last_name`, `created_at`, `updated_at`.
 
-### 1. New Component: `BulkDeleteConfirmDialog.tsx`
+This `!inner` join with a non-existent column causes a PostgREST error, which either crashes the entire check or silently fails depending on error handling.
 
-A shared confirmation dialog used by both pages. It shows:
-- Count of selected items (e.g., "Delete 5 users")
-- Warning about what will be deleted
-- A typed confirmation (e.g., type `DELETE 5 USERS`)
-- Checkbox to confirm understanding
-- Progress indicator during deletion (e.g., "Deleting 3 of 5...")
-- Summary of results when complete (successes/failures)
+### Bug 2: Check 6 (Missing Parent Link) -- Lines 419-421
 
-### 2. AdminUsers Page Updates (`AdminUsers.tsx`)
-
-- Add `selectedUserIds` state (Set of user IDs)
-- Add a "Select All" checkbox in the table header
-- Add individual checkboxes per row
-- Show a floating action bar when items are selected: "{N} selected -- [Delete Selected]"
-- Wire "Delete Selected" to `BulkDeleteConfirmDialog`
-- On confirm, loop through selected IDs calling `admin-delete-user` for each
-- Clear selection and refresh list on completion
-
-### 3. AdminFamilies Page Updates (`AdminFamilies.tsx`)
-
-- Add `selectedFamilyIds` state (Set of family IDs)
-- Add a "Select All" checkbox next to the families header
-- Add individual checkboxes per family row (in the collapsible header)
-- Show a floating action bar when items are selected: "{N} selected -- [Delete Selected]"
-- Wire "Delete Selected" to `BulkDeleteConfirmDialog`
-- On confirm, loop through selected IDs calling `delete-family-comprehensive` for each (with `preserveUserAccounts` based on each family's `is_test_family` flag)
-- Clear selection and refresh list on completion
-
-### 4. No Edge Function Changes
-
-The existing `admin-delete-user` and `delete-family-comprehensive` functions already handle full cleanup comprehensively:
-
-**User deletion** cleans up: `user_roles`, `family_members`, `child_accounts`, `profiles`, `auth.users`
-
-**Family deletion** cleans up: all family members, child accounts, the family record (which cascades to 24+ dependent tables), user roles, and optionally auth user accounts
-
-Bulk delete simply calls these sequentially for each selected item.
+The query uses `select('id, family_name')` on the `families` table, but the column is named `name`, not `family_name`. Line 447 then references `family.family_name` which would be `undefined`.
 
 ---
 
-## Technical Details
+## Fix
 
-### Selection State Pattern
+### File: `supabase/functions/family-integrity-check/index.ts`
 
-```text
-const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+**Change 1 (Lines 227-233):** Remove the `profiles!inner(email)` join. The email is not needed for orphan detection -- the check only needs `id`, `user_id`, `family_id`, `display_name`. If email context is desired for metadata, fetch it from `auth.admin.getUserById()` (already used in Check 8).
 
-// Toggle single
-const toggleSelection = (id: string) => {
-  setSelectedIds(prev => {
-    const next = new Set(prev);
-    next.has(id) ? next.delete(id) : next.add(id);
-    return next;
-  });
-};
+```
+Before:
+  .select(`id, user_id, family_id, display_name, profiles!inner(email)`)
 
-// Select/deselect all (filtered only)
-const toggleAll = () => {
-  if (selectedIds.size === filteredItems.length) {
-    setSelectedIds(new Set());
-  } else {
-    setSelectedIds(new Set(filteredItems.map(i => i.id)));
-  }
-};
+After:
+  .select('id, user_id, family_id, display_name')
 ```
 
-### Bulk Delete Execution Pattern
+Also update line 255 to remove the `email: ca.profiles?.email` metadata reference.
 
-```text
-for (const item of selectedItems) {
-  try {
-    await supabase.functions.invoke('edge-function', { body: { ... } });
-    successCount++;
-  } catch {
-    failedItems.push(item);
-  }
-  // Update progress: "Deleting {current} of {total}..."
-}
+**Change 2 (Lines 419-421, 447):** Fix the column name from `family_name` to `name`.
+
+```
+Before:
+  .select('id, family_name')
+  ...
+  description: `Family "${family.family_name}" has ...`
+
+After:
+  .select('id, name')
+  ...
+  description: `Family "${family.name}" has ...`
 ```
 
-### Floating Action Bar
-
-When 1+ items are selected, a sticky bar appears at the bottom of the card:
-- Shows count: "3 users selected"
-- "Deselect All" button
-- "Delete Selected" button (red, destructive)
-- Only visible to admin role users
-
-### Safety Guards
-
-- Admin-only: checkboxes and bulk actions only render when `userRole === 'admin'`
-- Confirmation dialog requires typing `DELETE {N} USERS` or `DELETE {N} FAMILIES`
-- Checkbox acknowledgment required
-- Progress shown during deletion (cannot close dialog mid-operation)
-- Results summary shows successes and any failures
-- Self-deletion prevention: current admin user cannot be selected for deletion
+Also update line 449 metadata from `family_name: family.family_name` to `family_name: family.name`.
 
 ---
 
-## Files to Create/Modify
+## Files Modified
 
-| File | Action |
-|------|--------|
-| `src/components/admin/BulkDeleteConfirmDialog.tsx` | **Create** -- shared bulk delete confirmation dialog |
-| `src/pages/admin/AdminUsers.tsx` | **Modify** -- add selection state, checkboxes, floating bar |
-| `src/pages/admin/AdminFamilies.tsx` | **Modify** -- add selection state, checkboxes, floating bar |
+| File | Lines | Change |
+|------|-------|--------|
+| `supabase/functions/family-integrity-check/index.ts` | 228 | Remove `profiles!inner(email)` join |
+| `supabase/functions/family-integrity-check/index.ts` | 255 | Remove `email: ca.profiles?.email` |
+| `supabase/functions/family-integrity-check/index.ts` | 421 | Change `family_name` to `name` |
+| `supabase/functions/family-integrity-check/index.ts` | 447 | Change `family.family_name` to `family.name` |
+| `supabase/functions/family-integrity-check/index.ts` | 449 | Change `family_name: family.family_name` to `family_name: family.name` |
 
-No edge function or database changes required.
+No database migrations or new files required. Only the edge function code needs correcting.
 
