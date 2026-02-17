@@ -25,6 +25,10 @@ verify_jwt = true
 # Parent auth required - uses validateJWT in code
 verify_jwt = true
 
+[functions.admin-delete-user]
+# Admin only - uses validateAdminJWT in code
+verify_jwt = true
+
 [functions.admin-update-user]
 # Admin only - uses validateJWT + admin check in code
 verify_jwt = true
