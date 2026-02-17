@@ -59,32 +59,22 @@ export default function FamilyDeleteDialog({ family, open, onOpenChange, onSucce
     try {
       const isTestFamily = family.metadata?.is_test_family === true;
       
+      const { data, error } = await supabase.functions.invoke('delete-family-comprehensive', {
+        body: { familyId: family.id, preserveUserAccounts: !isTestFamily }
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
       if (isTestFamily) {
-        // Use comprehensive deletion for test families
-        const { data, error } = await supabase.functions.invoke('delete-family-comprehensive', {
-          body: { familyId: family.id }
-        });
-
-        if (error) throw error;
-        
-        if (data?.error) throw new Error(data.error);
-
         toast({
           title: 'Test Family Deleted',
           description: `Test family ${family.family_code} and all ${data.usersDeleted} user accounts have been completely removed.`
         });
       } else {
-        // Regular deletion for real families (preserves user accounts)
-        const { error } = await supabase
-          .from('families')
-          .delete()
-          .eq('id', family.id);
-
-        if (error) throw error;
-
         toast({
           title: 'Family Deleted',
-          description: `Family ${family.family_code} has been deleted. User accounts have been preserved.`
+          description: `Family ${family.family_code} and all related data deleted. ${data.usersDeleted} user accounts preserved.`
         });
       }
 

@@ -49,33 +49,16 @@ export function UserDeleteDialog({ open, onOpenChange, user, onSuccess }: UserDe
 
     setLoading(true);
     try {
-      // Delete user roles
-      const { error: rolesError } = await supabase
-        .from('user_roles')
-        .delete()
-        .eq('user_id', user.id);
+      const { data, error } = await supabase.functions.invoke('admin-delete-user', {
+        body: { userId: user.id, userEmail: user.email }
+      });
 
-      if (rolesError) throw rolesError;
-
-      // Delete family memberships
-      const { error: familyError } = await supabase
-        .from('family_members')
-        .delete()
-        .eq('user_id', user.id);
-
-      if (familyError) throw familyError;
-
-      // Delete user profile (this will cascade to other related records)
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('user_id', user.id);
-
-      if (profileError) throw profileError;
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
       toast({
         title: 'User Deleted',
-        description: 'User has been permanently deleted from the system'
+        description: `User has been permanently deleted. Auth account ${data?.deletedRecords?.authUser ? 'removed' : 'could not be removed'}.`
       });
       
       onSuccess();

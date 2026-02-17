@@ -10,6 +10,7 @@ import {
 
 interface DeleteFamilyRequest {
   familyId: string;
+  preserveUserAccounts?: boolean;
 }
 
 interface DeleteFamilyResponse {
@@ -50,7 +51,7 @@ serve(async (req) => {
     }
 
     const supabase = getServiceClient();
-    const { familyId }: DeleteFamilyRequest = await req.json();
+    const { familyId, preserveUserAccounts }: DeleteFamilyRequest = await req.json();
 
     if (!familyId) {
       throw new Error('Family ID is required');
@@ -116,20 +117,24 @@ serve(async (req) => {
       }
     }
 
-    // Delete auth users
+    // Delete auth users (skip if preserving user accounts)
     let authUsersDeleted = 0;
-    for (const userId of userIds) {
-      try {
-        const { error: deleteError } = await supabase.auth.admin.deleteUser(userId);
-        if (deleteError) {
-          console.error(`Failed to delete auth user ${userId}:`, deleteError);
-        } else {
-          authUsersDeleted++;
-          console.log(`Successfully deleted auth user: ${userId}`);
+    if (!preserveUserAccounts) {
+      for (const userId of userIds) {
+        try {
+          const { error: deleteError } = await supabase.auth.admin.deleteUser(userId);
+          if (deleteError) {
+            console.error(`Failed to delete auth user ${userId}:`, deleteError);
+          } else {
+            authUsersDeleted++;
+            console.log(`Successfully deleted auth user: ${userId}`);
+          }
+        } catch (authError) {
+          console.error(`Error deleting auth user ${userId}:`, authError);
         }
-      } catch (authError) {
-        console.error(`Error deleting auth user ${userId}:`, authError);
       }
+    } else {
+      console.log(`Preserving ${userIds.length} user accounts (preserveUserAccounts=true)`);
     }
 
     const response: DeleteFamilyResponse = {
