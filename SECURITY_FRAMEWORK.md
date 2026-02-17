@@ -5,7 +5,7 @@
 
 ## 📋 Executive Security Overview
 
-**Last Updated**: 2026-01-22
+**Last Updated**: 2026-02-17
 
 ### Current Security Posture
 - **Architecture**: Multi-layered security with role-based access control (Admin → Parent → Child)
@@ -14,7 +14,7 @@
 - **Data Protection**: Family-based data isolation with strict boundary enforcement
 - **Monitoring**: Comprehensive audit trail and real-time security monitoring with enhanced threat detection
 - **Type Safety**: 99% TypeScript coverage with type-safe error handling
-- **CORS**: Dynamic origin validation across all 14 edge functions
+- **CORS**: Dynamic origin validation across all 27 edge functions
 - **CSP**: Hardened Content Security Policy (no `unsafe-inline`/`unsafe-eval` in production)
 - **Input Validation**: Zod schema validation on all form components
 - **Vulnerability Scanning**: Professional security scanning with Snyk integration and npm audit automation
@@ -37,12 +37,18 @@
 - ✅ **Performance Monitoring**: Added Core Web Vitals tracking with automated optimization recommendations
 - ✅ **Automated Security Workflows**: Pre-commit hooks and GitHub Actions for continuous security validation
 - ✅ **Bundle Security Analysis**: Integrated webpack-bundle-analyzer for size optimization and security monitoring
-- ✅ CORS wildcard `*` replaced with dynamic `getCorsHeaders()` in all 14 edge functions
+- ✅ CORS wildcard `*` replaced with dynamic `getCorsHeaders()` in all 27 edge functions
 - ✅ CSP hardened: removed `unsafe-inline`/`unsafe-eval` for production environments
 - ✅ Zod validation added to 8 form components via `enhancedInputValidation.ts`
 - ✅ Environment variables supported for Supabase client configuration
 - ✅ Enhanced error logging in RealtimeManager and secureLogging
 - ✅ Dropped `child_accounts_safe` view (lacked RLS policies)
+
+### Recent Security Improvements (2026-02-17)
+- ✅ **Admin User Deletion**: `admin-delete-user` edge function with service role client bypassing RLS for complete cleanup including `auth.admin.deleteUser()`
+- ✅ **Family Deletion Hardened**: `delete-family-comprehensive` updated with `preserveUserAccounts` parameter, all family deletions now routed through edge function (no more client-side cascade failures)
+- ✅ **Bulk Delete Safety**: `BulkDeleteConfirmDialog` with typed confirmation, progress tracking, self-deletion prevention, and admin-only access
+- ✅ **Audit Logging**: All admin delete operations logged to `admin_audit_logs` via edge functions
 
 ---
 

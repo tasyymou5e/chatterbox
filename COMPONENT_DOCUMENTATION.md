@@ -317,14 +317,27 @@ Chatterbox features a comprehensive component architecture built with React, Typ
 - **Security**: Admin verification, audit logging, role change notifications
 
 **UserDeleteDialog.tsx**
-- **Purpose**: Safe user deletion with comprehensive data handling
-- **Props**: `open`, `onOpenChange`, `user`, `onSuccess`, `cascadeOptions`
+- **Purpose**: Safe user deletion with comprehensive data handling via `admin-delete-user` edge function
+- **Props**: `open`, `onOpenChange`, `user`, `onSuccess`
 - **Features**: 
-  - Multi-step confirmation with impact assessment
-  - Data preservation options for family continuity
-  - Cascade deletion configuration with safety checks
-  - Audit trail creation for compliance requirements
-- **Safety**: Multiple confirmation steps, data backup options
+  - Typed confirmation (type `DELETE {email}` to confirm)
+  - Checkbox acknowledgment of permanent action
+  - Calls `admin-delete-user` edge function for full cleanup including auth account removal
+  - Audit trail creation via edge function
+- **Safety**: Multiple confirmation steps, edge function handles cascade deletion
+
+**BulkDeleteConfirmDialog.tsx** 🆕
+- **Purpose**: Shared bulk delete confirmation dialog for users and families
+- **Props**: `open`, `onOpenChange`, `items`, `itemType`, `onExecuteDelete`, `onComplete`, `warningLines`
+- **Features**:
+  - Typed confirmation (e.g., `DELETE 5 USERS` or `DELETE 3 FAMILIES`)
+  - Checkbox acknowledgment required
+  - Real-time progress indicator during sequential deletion
+  - Results summary showing success/failure counts per item
+  - Cannot close dialog during active deletion
+  - Warning list showing what will be deleted
+- **Phases**: confirm → deleting → results
+- **Usage**: Used by both `AdminUsers.tsx` and `AdminFamilies.tsx`
 
 **UserPasswordResetDialog.tsx** 🆕
 - **Purpose**: Admin-controlled secure password reset functionality

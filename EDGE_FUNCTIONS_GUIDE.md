@@ -1,7 +1,7 @@
 # Edge Functions Developer Guide
 
-> **Last Updated:** 2026-01-22  
-> **Total Functions:** 19  
+> **Last Updated:** 2026-02-17  
+> **Total Functions:** 27  
 > **Runtime:** Deno  
 > **Location:** `supabase/functions/`
 
@@ -41,16 +41,24 @@ supabase/functions/
 │
 ├── admin-add-family-member/          # Add member to family
 ├── admin-create-user/                # Create new user
+├── admin-delete-user/                # Delete user with full cleanup
 ├── admin-remove-family-member/       # Remove family member
 ├── admin-update-user/                # Update user profile
 ├── api-integration-status/           # Check API status
 ├── cleanup-test-families/            # Remove test data
+├── complete-child-account/           # Complete child account setup
 ├── create-child-account/             # Create child account
 ├── create-test-family/               # Create test family
+├── data-health-alerter/              # Data health score alerting
 ├── delete-family-comprehensive/      # Delete family cascade
+├── edge-function-health-check/       # Edge function health monitoring
 ├── error-collector/                  # Collect frontend errors
+├── family-integrity-check/           # Family data integrity validation
 ├── grok-chat/                        # Grok AI integration
+├── llm-with-failover/                # LLM with provider failover
+├── manage-llm-provider/              # LLM provider management
 ├── process-recurring-chores/         # Process recurring chores
+├── scheduled-health-check/           # Scheduled health monitoring
 ├── security-monitoring/              # Security event logging
 ├── security-testing/                 # Security test suite
 ├── send-family-email/                # Send family emails
@@ -425,6 +433,46 @@ interface AdminCreateUserRequest {
 
 ---
 
+#### `admin-delete-user`
+
+Permanently deletes a user and all associated data using service role client.
+
+**Authorization:** Admin only (validated via `validateAdminJWT`)
+
+**Rate Limiting:** `cleanupLimiter`
+
+**Request:**
+```typescript
+interface AdminDeleteUserRequest {
+  userId: string;
+  userEmail: string;
+}
+```
+
+**Response:**
+```typescript
+interface AdminDeleteUserResponse {
+  success: boolean;
+  deletedRecords: {
+    userRoles: number;
+    familyMembers: number;
+    childAccounts: number;
+    profiles: number;
+    authUser: boolean;
+  };
+}
+```
+
+**Cleanup Order:**
+1. `user_roles` — removes all role assignments
+2. `family_members` — removes all family memberships
+3. `child_accounts` — removes child account records
+4. `profiles` — removes user profile
+5. `auth.admin.deleteUser()` — removes auth account
+6. Audit log entry created
+
+---
+
 #### `admin-update-user`
 
 Updates user profile and role.
@@ -481,15 +529,21 @@ interface RemoveFamilyMemberRequest {
 
 #### `delete-family-comprehensive`
 
-Deletes family and all associated data.
+Deletes family and all associated data. Supports preserving user accounts for non-test families.
 
 **Authorization:** Admin only
 
 **Request:**
 ```typescript
 interface DeleteFamilyRequest {
-  family_id: string;
-  confirm: boolean;
+  familyId: string;
+  preserveUserAccounts?: boolean; // true = keep auth accounts (for regular families)
+}
+```
+
+**Behavior:**
+- `preserveUserAccounts: false` (default): deletes all family data AND member auth accounts
+- `preserveUserAccounts: true`: deletes all family data but preserves member auth accounts
 }
 ```
 

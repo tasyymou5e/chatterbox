@@ -1,6 +1,6 @@
 # Admin Features Guide
 
-> **Last Updated:** 2026-01-21  
+> **Last Updated:** 2026-02-17  
 > **Admin Portal:** `/admin/*`  
 > **Authorization:** Requires `admin` role
 
@@ -127,8 +127,21 @@ This guide documents all administrative features, workflows, and capabilities av
 | View | Read-only user details | - |
 | Edit | Update profile, role | `admin-update-user` |
 | Create | Add new user | `admin-create-user` |
-| Delete | Remove user (soft delete) | - |
+| Delete | Remove user permanently | `admin-delete-user` |
 | Reset Password | Send password reset email | - |
+| Bulk Delete | Delete multiple selected users | `admin-delete-user` (sequential) |
+
+### Bulk Delete
+
+**Component:** `BulkDeleteConfirmDialog.tsx`
+
+- Checkbox-based multi-select in user table
+- Select All / Deselect All controls
+- Floating action bar shows selected count with "Delete Selected" button
+- Typed confirmation required (e.g., `DELETE 5 USERS`)
+- Progress indicator during sequential deletion
+- Results summary with success/failure counts
+- Self-deletion prevention: admin cannot select themselves
 
 ### User View Dialog
 
@@ -196,6 +209,20 @@ Required fields:
 | Delete | Remove family (cascade) | `delete-family-comprehensive` |
 | Add Member | Add user to family | `admin-add-family-member` |
 | Remove Member | Remove user from family | `admin-remove-family-member` |
+| Bulk Delete | Delete multiple selected families | `delete-family-comprehensive` (sequential) |
+
+### Bulk Delete
+
+**Component:** `BulkDeleteConfirmDialog.tsx` (shared with user bulk delete)
+
+- Checkbox-based multi-select per family row
+- Select All checkbox in family list header
+- Floating action bar with selected count and "Delete Selected" button
+- Typed confirmation required (e.g., `DELETE 3 FAMILIES`)
+- Progress indicator during sequential deletion
+- Test families: deletes all member auth accounts
+- Regular families: preserves member auth accounts (`preserveUserAccounts: true`)
+- Results summary with success/failure counts
 
 ### Family View Dialog
 
@@ -221,17 +248,19 @@ Editable fields:
 
 **Component:** `FamilyDeleteDialog.tsx`
 
-**Cascade Deletion:**
+**Cascade Deletion (via `delete-family-comprehensive` edge function):**
 1. Removes all family members
 2. Deletes child accounts
-3. Removes chore assignments
-4. Clears progress data
-5. Archives historical data
+3. Deletes family record (cascades to 24+ dependent tables)
+4. Removes user roles for all members
+5. Conditionally deletes auth user accounts (test families only)
 
 **Safety:**
-- Requires confirmation
+- Requires typed confirmation (family code)
 - Shows affected data count
-- Audit log entry
+- Test families: warns that all user accounts will be deleted
+- Regular families: confirms user accounts will be preserved
+- Audit log entry via edge function
 
 ### Member Management Dialog
 
@@ -581,3 +610,4 @@ Metrics:
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0.0 | 2026-01-21 | Initial documentation |
+| 1.1.0 | 2026-02-17 | Added admin-delete-user edge function, bulk delete for users and families, updated delete-family-comprehensive with preserveUserAccounts parameter |
