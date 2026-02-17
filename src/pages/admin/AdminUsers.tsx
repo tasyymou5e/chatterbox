@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Table,
@@ -32,6 +33,7 @@ import { UserEditDialog } from '@/components/admin/UserEditDialog';
 import { UserDeleteDialog } from '@/components/admin/UserDeleteDialog';
 import { UserPasswordResetDialog } from '@/components/admin/UserPasswordResetDialog';
 import { UserCreateDialog } from '@/components/admin/UserCreateDialog';
+import { BulkDeleteConfirmDialog, type BulkDeleteItem } from '@/components/admin/BulkDeleteConfirmDialog';
 import { AdminEmptyState } from '@/components/illustrations';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { cLog, cError, cWarn } from '@/utils/conditionalLogger';
@@ -47,7 +49,7 @@ interface User {
 }
 
 export default function AdminUsers() {
-  const { userRole } = useAuthStore();
+  const { userRole, user: currentUser } = useAuthStore();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -58,7 +60,25 @@ export default function AdminUsers() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [passwordResetDialogOpen, setPasswordResetDialogOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+  const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set());
   const { toast } = useToast();
+
+  const toggleUserSelection = (userId: string) => {
+    setSelectedUserIds(prev => {
+      const next = new Set(prev);
+      next.has(userId) ? next.delete(userId) : next.add(userId);
+      return next;
+    });
+  };
+
+  const toggleAllUsers = () => {
+    if (selectedUserIds.size === selectableUsers.length) {
+      setSelectedUserIds(new Set());
+    } else {
+      setSelectedUserIds(new Set(selectableUsers.map(u => u.id)));
+    }
+  };
 
   const processUsers = useCallback(async (usersData: { user_id: string; email: string; first_name: string; last_name: string; created_at: string }[]) => {
     // Get user roles
@@ -203,6 +223,27 @@ export default function AdminUsers() {
     
     return matchesSearch && matchesRole;
   });
+
+  // Exclude current admin from selection to prevent self-deletion
+  const selectableUsers = filteredUsers.filter(u => u.id !== currentUser?.id);
+
+  const bulkDeleteItems: BulkDeleteItem[] = selectableUsers
+    .filter(u => selectedUserIds.has(u.id))
+    .map(u => ({ id: u.id, label: `${u.first_name} ${u.last_name} (${u.email})` }));
+
+  const handleBulkDeleteUser = async (item: BulkDeleteItem) => {
+    const { data, error } = await supabase.functions.invoke('admin-delete-user', {
+      body: { userId: item.id, userEmail: '' }
+    });
+    if (error) throw error;
+    if (data?.error) throw new Error(data.error);
+  };
+
+  const handleBulkDeleteComplete = () => {
+    setSelectedUserIds(new Set());
+    fetchUsers();
+    toast({ title: 'Bulk Delete Complete', description: 'Selected users have been processed.' });
+  };
 
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
@@ -434,6 +475,15 @@ export default function AdminUsers() {
           <Table>
             <TableHeader>
               <TableRow className="border-gray-700">
+                {userRole === 'admin' && (
+                  <TableHead className="text-gray-300 w-10">
+                    <Checkbox
+                      checked={selectableUsers.length > 0 && selectedUserIds.size === selectableUsers.length}
+                      onCheckedChange={toggleAllUsers}
+                      className="border-gray-500"
+                    />
+                  </TableHead>
+                )}
                 <TableHead className="text-gray-300">Name</TableHead>
                 <TableHead className="text-gray-300">Email</TableHead>
                 <TableHead className="text-gray-300">Roles</TableHead>
@@ -444,7 +494,20 @@ export default function AdminUsers() {
             </TableHeader>
             <TableBody>
               {filteredUsers.map((user) => (
-                <TableRow key={user.id} className="border-gray-700">
+                <TableRow key={user.id} className={`border-gray-700 ${selectedUserIds.has(user.id) ? 'bg-red-900/10' : ''}`}>
+                  {userRole === 'admin' && (
+                    <TableCell>
+                      {user.id !== currentUser?.id ? (
+                        <Checkbox
+                          checked={selectedUserIds.has(user.id)}
+                          onCheckedChange={() => toggleUserSelection(user.id)}
+                          className="border-gray-500"
+                        />
+                      ) : (
+                        <span className="text-xs text-gray-500" title="Cannot delete yourself">—</span>
+                      )}
+                    </TableCell>
+                  )}
                   <TableCell className="text-white">
                     {user.first_name} {user.last_name}
                   </TableCell>
@@ -555,6 +618,34 @@ export default function AdminUsers() {
               }}
             />
           )}
+
+          {/* Floating action bar for bulk selection */}
+          {userRole === 'admin' && selectedUserIds.size > 0 && (
+            <div className="sticky bottom-0 mt-4 flex items-center justify-between bg-gray-700 border border-gray-600 rounded-lg p-3">
+              <span className="text-white text-sm font-medium">
+                {selectedUserIds.size} user{selectedUserIds.size !== 1 ? 's' : ''} selected
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedUserIds(new Set())}
+                  className="border-gray-500 text-gray-300 hover:bg-gray-600"
+                >
+                  Deselect All
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setBulkDeleteDialogOpen(true)}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Selected
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -590,6 +681,21 @@ export default function AdminUsers() {
         onOpenChange={setDeleteDialogOpen}
         user={selectedUser}
         onSuccess={handleDialogSuccess}
+      />
+
+      <BulkDeleteConfirmDialog
+        open={bulkDeleteDialogOpen}
+        onOpenChange={setBulkDeleteDialogOpen}
+        items={bulkDeleteItems}
+        itemType="users"
+        onExecuteDelete={handleBulkDeleteUser}
+        onComplete={handleBulkDeleteComplete}
+        warningLines={[
+          'User profiles and personal information',
+          'All assigned roles and family memberships',
+          'All activity logs and related data',
+          'Auth accounts will be permanently removed',
+        ]}
       />
     </div>
   );

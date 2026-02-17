@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { 
   Home, 
@@ -25,6 +26,7 @@ import FamilyEditDialog from '@/components/admin/FamilyEditDialog';
 import FamilyDeleteDialog from '@/components/admin/FamilyDeleteDialog';
 import AdminMemberManagementDialog from '@/components/admin/AdminMemberManagementDialog';
 import BulkEmailDialog from '@/components/admin/BulkEmailDialog';
+import { BulkDeleteConfirmDialog, type BulkDeleteItem } from '@/components/admin/BulkDeleteConfirmDialog';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { AdminEmptyState } from '@/components/illustrations';
 import { useAuthStore } from '@/stores/authStore';
@@ -67,7 +69,25 @@ export default function AdminFamilies() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [memberManagementDialogOpen, setMemberManagementDialogOpen] = useState(false);
   const [bulkEmailDialogOpen, setBulkEmailDialogOpen] = useState(false);
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+  const [selectedFamilyIds, setSelectedFamilyIds] = useState<Set<string>>(new Set());
   const { toast } = useToast();
+
+  const toggleFamilySelection = (familyId: string) => {
+    setSelectedFamilyIds(prev => {
+      const next = new Set(prev);
+      next.has(familyId) ? next.delete(familyId) : next.add(familyId);
+      return next;
+    });
+  };
+
+  const toggleAllFamilies = () => {
+    if (selectedFamilyIds.size === filteredFamilies.length) {
+      setSelectedFamilyIds(new Set());
+    } else {
+      setSelectedFamilyIds(new Set(filteredFamilies.map(f => f.id)));
+    }
+  };
 
   const fetchFamilies = useCallback(async () => {
     try {
@@ -185,7 +205,6 @@ export default function AdminFamilies() {
     }
   }, [sessionReady, fetchFamilies]);
 
-
   const handleViewFamily = (family: Family, e: React.MouseEvent) => {
     e.stopPropagation();
     cLog('Opening view dialog for family:', family);
@@ -244,6 +263,29 @@ export default function AdminFamilies() {
     family.display_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     family.family_code.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const bulkDeleteItems: BulkDeleteItem[] = filteredFamilies
+    .filter(f => selectedFamilyIds.has(f.id))
+    .map(f => ({
+      id: f.id,
+      label: `${f.display_name} (${f.family_code})`,
+      metadata: { isTestFamily: f.metadata?.is_test_family === true },
+    }));
+
+  const handleBulkDeleteFamily = async (item: BulkDeleteItem) => {
+    const isTestFamily = item.metadata?.isTestFamily === true;
+    const { data, error } = await supabase.functions.invoke('delete-family-comprehensive', {
+      body: { familyId: item.id, preserveUserAccounts: !isTestFamily }
+    });
+    if (error) throw error;
+    if (data?.error) throw new Error(data.error);
+  };
+
+  const handleBulkDeleteComplete = () => {
+    setSelectedFamilyIds(new Set());
+    fetchFamilies();
+    toast({ title: 'Bulk Delete Complete', description: 'Selected families have been processed.' });
+  };
 
   if (loading) {
     return (
@@ -365,7 +407,19 @@ export default function AdminFamilies() {
       {/* Families Table */}
       <Card className="bg-gray-800 border-gray-700">
         <CardHeader>
-          <CardTitle className="text-white">Families ({filteredFamilies.length})</CardTitle>
+          <CardTitle className="text-white flex items-center gap-3">
+            Families ({filteredFamilies.length})
+            {userRole === 'admin' && filteredFamilies.length > 0 && (
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={filteredFamilies.length > 0 && selectedFamilyIds.size === filteredFamilies.length}
+                  onCheckedChange={toggleAllFamilies}
+                  className="border-gray-500"
+                />
+                <span className="text-xs text-gray-400 font-normal">Select all</span>
+              </div>
+            )}
+          </CardTitle>
           <CardDescription className="text-gray-400">
             All registered family groups in the system
           </CardDescription>
@@ -379,6 +433,15 @@ export default function AdminFamilies() {
                   <CollapsibleTrigger asChild>
                     <div className="flex items-center justify-between p-4 hover:bg-gray-700/30 cursor-pointer transition-colors">
                       <div className="flex items-center space-x-4">
+                        {userRole === 'admin' && (
+                          <div onClick={(e) => e.stopPropagation()}>
+                            <Checkbox
+                              checked={selectedFamilyIds.has(family.id)}
+                              onCheckedChange={() => toggleFamilySelection(family.id)}
+                              className="border-gray-500"
+                            />
+                          </div>
+                        )}
                         <div className="flex items-center text-gray-400">
                           {family.expanded ? (
                             <ChevronDown className="h-4 w-4" />
@@ -530,6 +593,34 @@ export default function AdminFamilies() {
               onSecondaryAction={searchTerm ? () => setSearchTerm('') : undefined}
             />
           )}
+
+          {/* Floating action bar for bulk selection */}
+          {userRole === 'admin' && selectedFamilyIds.size > 0 && (
+            <div className="sticky bottom-0 mt-4 flex items-center justify-between bg-gray-700 border border-gray-600 rounded-lg p-3">
+              <span className="text-white text-sm font-medium">
+                {selectedFamilyIds.size} famil{selectedFamilyIds.size !== 1 ? 'ies' : 'y'} selected
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedFamilyIds(new Set())}
+                  className="border-gray-500 text-gray-300 hover:bg-gray-600"
+                >
+                  Deselect All
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setBulkDeleteDialogOpen(true)}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Selected
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -564,6 +655,22 @@ export default function AdminFamilies() {
           onOpenChange={setBulkEmailDialogOpen}
           familyName={selectedFamily?.display_name || ''}
           recipients={selectedFamily ? getEmailRecipients(selectedFamily) : []}
+        />
+
+        <BulkDeleteConfirmDialog
+          open={bulkDeleteDialogOpen}
+          onOpenChange={setBulkDeleteDialogOpen}
+          items={bulkDeleteItems}
+          itemType="families"
+          onExecuteDelete={handleBulkDeleteFamily}
+          onComplete={handleBulkDeleteComplete}
+          warningLines={[
+            'Family records and all family data',
+            'All family member relationships',
+            'All family activity logs and history',
+            'Family-specific content interactions',
+            'Test family user accounts will be deleted; regular family user accounts preserved',
+          ]}
         />
       </div>
     </ErrorBoundary>
