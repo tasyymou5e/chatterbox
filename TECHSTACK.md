@@ -1,6 +1,6 @@
 # TECHSTACK.md — Chatterbox Comprehensive Tech Stack
 
-> **Last Updated:** 2026-02-09  
+> **Last Updated:** 2026-02-17  
 > **Purpose:** Single authoritative reference for every technology used across the Chatterbox application. For deep dives on any topic, follow the cross-reference links to dedicated knowledge files.
 
 ---
@@ -288,11 +288,11 @@ Key modules:
 - PIN-based child account authentication (no email/password for children)
 - Session management via Supabase Auth hooks
 
-### Edge Functions (25 Deno Functions)
+### Edge Functions (27 Deno Functions)
 
 | Auth Type | Count | Examples |
 |-----------|-------|---------|
-| Authenticated (JWT) | 13 | family-integrity-check, manage-llm-provider, security-monitoring |
+| Authenticated (JWT) | 15 | admin-delete-user, family-integrity-check, manage-llm-provider, security-monitoring |
 | Unauthenticated / System | 12 | grok-chat, text-to-speech, error-collector, edge-function-health-check |
 
 **Shared Modules** (`supabase/functions/_shared/`):
@@ -446,7 +446,7 @@ tests/
 | Zustand stores | 13 + 3 sub-stores (`src/stores/`) |
 | Database tables | 59 |
 | RLS policies | 100+ |
-| Edge functions | 25 (`supabase/functions/`) |
+| Edge functions | 27 (`supabase/functions/`) |
 | Manual chunks | 7 |
 
 ---
@@ -492,3 +492,6 @@ tests/
 - 7 manual chunks configured in `vite.config.ts` for optimal code splitting
 - `select('*')` queries fully optimized across frontend and edge functions (2026-02-09)
 - Tiered rate limiting implemented for anonymous-accessible edge functions (2026-02-09)
+- Admin user deletion via `admin-delete-user` edge function with full auth cleanup (2026-02-17)
+- Bulk delete operations for users and families via `BulkDeleteConfirmDialog` component (2026-02-17)
+- `delete-family-comprehensive` supports `preserveUserAccounts` parameter for non-test families (2026-02-17)
