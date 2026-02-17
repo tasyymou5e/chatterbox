@@ -224,13 +224,7 @@ async function runIntegrityChecks(supabase: ReturnType<typeof createClient>): Pr
     // Check 1: Orphaned child accounts (child_accounts without family_members entry)
     const { data: orphanedChildAccounts } = await supabase
       .from('child_accounts')
-      .select(`
-        id,
-        user_id,
-        family_id,
-        display_name,
-        profiles!inner(email)
-      `)
+      .select('id, user_id, family_id, display_name')
       .not('family_id', 'is', null);
     
     if (orphanedChildAccounts) {
@@ -252,7 +246,7 @@ async function runIntegrityChecks(supabase: ReturnType<typeof createClient>): Pr
             user_id: ca.user_id,
             description: `Child account "${ca.display_name}" has no corresponding family membership`,
             auto_fix_available: false,
-            metadata: { display_name: ca.display_name, email: ca.profiles?.email }
+            metadata: { display_name: ca.display_name }
           });
         }
       }
@@ -418,7 +412,7 @@ async function runIntegrityChecks(supabase: ReturnType<typeof createClient>): Pr
     // Check 6: Missing parent link (child in family with no parent member)
     const { data: families } = await supabase
       .from('families')
-      .select('id, family_name');
+      .select('id, name');
     
     if (families) {
       for (const family of families) {
@@ -444,10 +438,10 @@ async function runIntegrityChecks(supabase: ReturnType<typeof createClient>): Pr
                 entity_id: family.id,
                 family_id: family.id,
                 user_id: child.user_id,
-                description: `Family "${family.family_name}" has ${children.length} child(ren) but no parent member`,
+                description: `Family "${family.name}" has ${children.length} child(ren) but no parent member`,
                 auto_fix_available: false,
                 metadata: { 
-                  family_name: family.family_name,
+                  family_name: family.name,
                   child_count: children.length
                 }
               });
