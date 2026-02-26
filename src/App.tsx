@@ -8,6 +8,9 @@ import { ProductionSecurityWrapper } from '@/components/security/ProductionSecur
 import { usePerformanceMonitoringSafe } from "@/hooks/usePerformanceMonitoringSafe";
 import { PWAInstallPrompt } from '@/components/pwa/PWAInstallPrompt';
 import { OfflineIndicator } from '@/components/pwa/OfflineIndicator';
+import { lazy, Suspense } from 'react';
+
+const AIAssistantChat = lazy(() => import('@/components/ai/AIAssistantChat'));
 import {
   coreRoutes,
   parentRoutes,
@@ -52,8 +55,11 @@ const App = () => {
       <ProductionSecurityWrapper>
         <SecurityMonitoringProvider>
           <ErrorBoundary componentName="App">
-            <OfflineIndicator />
-            <PWAInstallPrompt />
+              <OfflineIndicator />
+              <PWAInstallPrompt />
+              <Suspense fallback={null}>
+                <AIAssistantChat />
+              </Suspense>
             <Routes>
               {/* Core routes */}
               {coreRoutes.map(route => (
