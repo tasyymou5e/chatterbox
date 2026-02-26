@@ -1,66 +1,39 @@
 
 
-# Fix: Data Integrity Edge Function Failures
+# Add New LLM Providers to Database
 
-## Root Cause
+## Current State
 
-Two column-name mismatches in `family-integrity-check/index.ts` cause the edge function to fail against the actual database schema.
+Already configured: **Grok (xAI)**, **Anthropic (Claude)**, **OpenAI**, **Google (Gemini)**, **Lovable AI Gateway**
 
-### Bug 1: Check 1 (Orphaned Child Accounts) -- Lines 227-233
+## Providers to Add
 
-The query joins `profiles!inner(email)`, but the `profiles` table has **no `email` column**. Its columns are: `id`, `user_id`, `first_name`, `last_name`, `created_at`, `updated_at`.
+| Provider | Key | API Endpoint | Models |
+|---|---|---|---|
+| Kimi 2 (Moonshot AI) | `kimi` | `https://api.moonshot.cn/v1` | `kimi-2`, `moonshot-v1-8k`, `moonshot-v1-32k` |
+| Hugging Face (Ensemble) | `huggingface` | `https://api-inference.huggingface.co/v1` | `meta-llama/Llama-3-70b`, `mistralai/Mixtral-8x7B` |
+| Local Model (Ollama) | `local` | `http://localhost:11434/v1` | `llama3`, `mistral`, `codellama` |
 
-This `!inner` join with a non-existent column causes a PostgREST error, which either crashes the entire check or silently fails depending on error handling.
+**Note:** Grok and Claude (Anthropic) are already in the system -- no changes needed for those.
 
-### Bug 2: Check 6 (Missing Parent Link) -- Lines 419-421
+I'm interpreting "ansable" as **Hugging Face** (ensemble/open-source model hub). If you meant something else, let me know.
 
-The query uses `select('id, family_name')` on the `families` table, but the column is named `name`, not `family_name`. Line 447 then references `family.family_name` which would be `undefined`.
+## Changes
 
----
+### 1. Database Migration
 
-## Fix
+Insert 3 new rows into `llm_providers` with `is_active: false` (admin enables after configuring API keys).
 
-### File: `supabase/functions/family-integrity-check/index.ts`
+### 2. Update Provider Icon Mapping
 
-**Change 1 (Lines 227-233):** Remove the `profiles!inner(email)` join. The email is not needed for orphan detection -- the check only needs `id`, `user_id`, `family_id`, `display_name`. If email context is desired for metadata, fetch it from `auth.admin.getUserById()` (already used in Check 8).
-
-```
-Before:
-  .select(`id, user_id, family_id, display_name, profiles!inner(email)`)
-
-After:
-  .select('id, user_id, family_id, display_name')
-```
-
-Also update line 255 to remove the `email: ca.profiles?.email` metadata reference.
-
-**Change 2 (Lines 419-421, 447):** Fix the column name from `family_name` to `name`.
-
-```
-Before:
-  .select('id, family_name')
-  ...
-  description: `Family "${family.family_name}" has ...`
-
-After:
-  .select('id, name')
-  ...
-  description: `Family "${family.name}" has ...`
-```
-
-Also update line 449 metadata from `family_name: family.family_name` to `family_name: family.name`.
-
----
+In `AdminAPIIntegrations.tsx`, add icon cases for `kimi`, `huggingface`, and `local` in the `getProviderIcon` function.
 
 ## Files Modified
 
-| File | Lines | Change |
-|------|-------|--------|
-| `supabase/functions/family-integrity-check/index.ts` | 228 | Remove `profiles!inner(email)` join |
-| `supabase/functions/family-integrity-check/index.ts` | 255 | Remove `email: ca.profiles?.email` |
-| `supabase/functions/family-integrity-check/index.ts` | 421 | Change `family_name` to `name` |
-| `supabase/functions/family-integrity-check/index.ts` | 447 | Change `family.family_name` to `family.name` |
-| `supabase/functions/family-integrity-check/index.ts` | 449 | Change `family_name: family.family_name` to `family_name: family.name` |
+| File | Action |
+|---|---|
+| Migration SQL | **Create** -- insert 3 new providers |
+| `src/components/admin/AdminAPIIntegrations.tsx` | **Modify** -- add icon cases |
 
-No database migrations or new files required. Only the edge function code needs correcting.
+No edge function changes needed -- the existing `manage-llm-provider` and `llm-with-failover` functions already work dynamically with any provider in the database.
 
