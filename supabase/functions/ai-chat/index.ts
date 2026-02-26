@@ -20,8 +20,61 @@ serve(async (req) => {
 
     const userId = authResult.userId;
     const authHeader = req.headers.get("Authorization")!;
-    const userClient = getUserClient(authHeader);
     const serviceClient = getServiceClient();
+
+    // ── GET: lightweight quota check ──
+    if (req.method === "GET") {
+      const { data: roleData } = await serviceClient
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId)
+        .limit(1)
+        .single();
+
+      const userRole = roleData?.role || "user";
+
+      const { data: quotaData } = await serviceClient
+        .from("ai_usage_quotas")
+        .select("daily_message_limit, enabled")
+        .eq("role", userRole)
+        .single();
+
+      let limit = -1;
+      let remaining = -1;
+
+      if (quotaData && quotaData.enabled && quotaData.daily_message_limit !== -1) {
+        limit = quotaData.daily_message_limit;
+
+        const todayStart = new Date();
+        todayStart.setUTCHours(0, 0, 0, 0);
+
+        const { data: userConvs } = await serviceClient
+          .from("ai_conversations")
+          .select("id")
+          .eq("user_id", userId);
+
+        const convIds = userConvs?.map((c: { id: string }) => c.id) || [];
+
+        if (convIds.length > 0) {
+          const { count: todayCount } = await serviceClient
+            .from("ai_messages")
+            .select("id", { count: "exact", head: true })
+            .eq("role", "user")
+            .gte("created_at", todayStart.toISOString())
+            .in("conversation_id", convIds);
+
+          remaining = Math.max(0, limit - (todayCount || 0));
+        } else {
+          remaining = limit;
+        }
+      }
+
+      return new Response(JSON.stringify({ remaining, limit, role: roleData?.role || "user" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const userClient = getUserClient(authHeader);
 
     const { messages, conversationId, stream = true } = await req.json();
 
