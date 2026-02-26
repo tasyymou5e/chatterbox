@@ -236,7 +236,6 @@ serve(async (req) => {
         .maybeSingle();
 
       if (!profileExists) {
-        // Auto-create a minimal profile so the FK constraint is satisfied
         const { data: authUser } = await serviceClient.auth.admin.getUserById(userId);
         await serviceClient.from("profiles").insert({
           user_id: userId,
