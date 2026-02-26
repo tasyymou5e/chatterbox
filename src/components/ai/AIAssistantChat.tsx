@@ -36,8 +36,25 @@ export default function AIAssistantChat() {
   const [isOpen, setIsOpen] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
   const [input, setInput] = useState('');
+  const [quotaPulse, setQuotaPulse] = useState(false);
+  const prevQuotaRef = useRef<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Detect quota decrease and trigger pulse
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    if (
+      prevQuotaRef.current !== null &&
+      quotaRemaining !== null &&
+      quotaRemaining < prevQuotaRef.current
+    ) {
+      setQuotaPulse(true);
+      timer = setTimeout(() => setQuotaPulse(false), 700);
+    }
+    prevQuotaRef.current = quotaRemaining;
+    return () => { if (timer) clearTimeout(timer); };
+  }, [quotaRemaining]);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -195,9 +212,19 @@ export default function AIAssistantChat() {
 
       {/* Quota indicator */}
       {quotaLimit !== null && quotaLimit !== -1 && quotaRemaining !== null && (
-        <div className="px-3 pt-2">
-          <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
-            <span>
+        <div
+          className={cn(
+            'px-3 pt-2 transition-transform duration-500 ease-out',
+            quotaPulse && 'scale-105'
+          )}
+        >
+          <div className="flex items-center justify-between text-xs mb-1">
+            <span
+              className={cn(
+                'transition-colors duration-500',
+                quotaPulse ? 'text-foreground font-medium' : 'text-muted-foreground'
+              )}
+            >
               {quotaRemaining === 0
                 ? 'Daily limit reached'
                 : `${quotaRemaining}/${quotaLimit} messages remaining`}
