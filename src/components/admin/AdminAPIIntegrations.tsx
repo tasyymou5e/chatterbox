@@ -116,6 +116,12 @@ export default function AdminAPIIntegrations() {
         return <Sparkles className="h-5 w-5 text-orange-500" />;
       case 'google':
         return <Sparkles className="h-5 w-5 text-blue-500" />;
+      case 'kimi':
+        return <Bot className="h-5 w-5 text-cyan-500" />;
+      case 'huggingface':
+        return <Sparkles className="h-5 w-5 text-yellow-500" />;
+      case 'local':
+        return <Settings className="h-5 w-5 text-emerald-500" />;
       case 'lovable':
         return <Zap className="h-5 w-5 text-pink-500" />;
       default:
