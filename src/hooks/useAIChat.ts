@@ -24,6 +24,8 @@ export function useAIChat() {
   const [messages, setMessages] = useState<AIMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [quotaRemaining, setQuotaRemaining] = useState<number | null>(null);
+  const [quotaLimit, setQuotaLimit] = useState<number | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   // Fetch conversations list
@@ -139,6 +141,8 @@ export function useAIChat() {
       if (!resp.ok) {
         const errorData = await resp.json().catch(() => ({ error: 'Request failed' }));
         if (resp.status === 429 && errorData.limit) {
+          setQuotaRemaining(0);
+          setQuotaLimit(errorData.limit);
           toast({
             title: 'Quota Exceeded',
             description: `You've reached your daily limit of ${errorData.limit} AI messages. Try again tomorrow.`,
@@ -151,10 +155,14 @@ export function useAIChat() {
         throw new Error(errorData.error || `HTTP ${resp.status}`);
       }
 
-      // Check quota warnings
-      const quotaRemaining = resp.headers.get('X-Quota-Remaining');
-      if (quotaRemaining !== null) {
-        const remaining = parseInt(quotaRemaining, 10);
+      // Check quota from headers
+      const quotaRemainingHeader = resp.headers.get('X-Quota-Remaining');
+      const quotaLimitHeader = resp.headers.get('X-Quota-Limit');
+      if (quotaRemainingHeader !== null && quotaLimitHeader !== null) {
+        const remaining = parseInt(quotaRemainingHeader, 10);
+        const limit = parseInt(quotaLimitHeader, 10);
+        setQuotaRemaining(remaining);
+        setQuotaLimit(limit);
         if (remaining > 0 && remaining <= 5) {
           toast({
             title: 'Quota Warning',
@@ -244,10 +252,35 @@ export function useAIChat() {
     abortControllerRef.current?.abort();
   }, []);
 
+  // Fetch quota info
+  const fetchQuota = useCallback(async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) return;
+
+      const resp = await fetch(CHAT_URL, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+      });
+
+      if (resp.ok) {
+        const data = await resp.json();
+        setQuotaRemaining(data.remaining);
+        setQuotaLimit(data.limit);
+      }
+    } catch (err) {
+      console.error('Failed to fetch quota:', err);
+    }
+  }, []);
+
   // Initial load
   useEffect(() => {
     fetchConversations();
-  }, [fetchConversations]);
+    fetchQuota();
+  }, [fetchConversations, fetchQuota]);
 
   return {
     conversations,
@@ -255,11 +288,14 @@ export function useAIChat() {
     messages,
     isLoading,
     isSending,
+    quotaRemaining,
+    quotaLimit,
     selectConversation,
     createConversation,
     deleteConversation,
     sendMessage,
     cancelStream,
     fetchConversations,
+    fetchQuota,
   };
 }

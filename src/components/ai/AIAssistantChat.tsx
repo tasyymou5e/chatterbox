@@ -3,6 +3,7 @@ import { useAIChat } from '@/hooks/useAIChat';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Progress } from '@/components/ui/progress';
 import {
   MessageCircle,
   X,
@@ -23,6 +24,8 @@ export default function AIAssistantChat() {
     messages,
     isLoading,
     isSending,
+    quotaRemaining,
+    quotaLimit,
     selectConversation,
     createConversation,
     deleteConversation,
@@ -190,6 +193,28 @@ export default function AIAssistantChat() {
         </ScrollArea>
       </div>
 
+      {/* Quota indicator */}
+      {quotaLimit !== null && quotaLimit !== -1 && quotaRemaining !== null && (
+        <div className="px-3 pt-2">
+          <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+            <span>
+              {quotaRemaining === 0
+                ? 'Daily limit reached'
+                : `${quotaRemaining}/${quotaLimit} messages remaining`}
+            </span>
+          </div>
+          <Progress
+            value={quotaLimit > 0 ? (quotaRemaining / quotaLimit) * 100 : 0}
+            className={cn(
+              'h-1.5',
+              quotaRemaining === 0 && '[&>div]:bg-destructive',
+              quotaRemaining > 0 && quotaRemaining / quotaLimit <= 0.25 && '[&>div]:bg-destructive',
+              quotaRemaining / quotaLimit > 0.25 && quotaRemaining / quotaLimit <= 0.5 && '[&>div]:bg-yellow-500',
+            )}
+          />
+        </div>
+      )}
+
       {/* Input */}
       <form onSubmit={handleSubmit} className="px-3 py-3 border-t border-border flex gap-2">
         <Input
@@ -197,8 +222,8 @@ export default function AIAssistantChat() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Type a message..."
-          disabled={isSending}
+          placeholder={quotaRemaining === 0 ? 'Daily limit reached' : 'Type a message...'}
+          disabled={isSending || quotaRemaining === 0}
           className="flex-1 text-sm"
         />
         {isSending ? (
@@ -206,7 +231,7 @@ export default function AIAssistantChat() {
             <StopCircle className="h-4 w-4" />
           </Button>
         ) : (
-          <Button type="submit" size="icon" disabled={!input.trim()}>
+          <Button type="submit" size="icon" disabled={!input.trim() || quotaRemaining === 0}>
             <Send className="h-4 w-4" />
           </Button>
         )}
