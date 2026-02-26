@@ -1,9 +1,16 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAIChat } from '@/hooks/useAIChat';
+import { useAuthStore } from '@/stores/authStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Progress } from '@/components/ui/progress';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import {
   MessageCircle,
   X,
@@ -32,6 +39,8 @@ export default function AIAssistantChat() {
     sendMessage,
     cancelStream,
   } = useAIChat();
+
+  const userRole = useAuthStore((s) => s.userRole);
 
   const [isOpen, setIsOpen] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
@@ -212,34 +221,46 @@ export default function AIAssistantChat() {
 
       {/* Quota indicator */}
       {quotaLimit !== null && quotaLimit !== -1 && quotaRemaining !== null && (
-        <div
-          className={cn(
-            'px-3 pt-2 transition-transform duration-500 ease-out',
-            quotaPulse && 'scale-105'
-          )}
-        >
-          <div className="flex items-center justify-between text-xs mb-1">
-            <span
-              className={cn(
-                'transition-colors duration-500',
-                quotaPulse ? 'text-foreground font-medium' : 'text-muted-foreground'
-              )}
-            >
-              {quotaRemaining === 0
-                ? 'Daily limit reached'
-                : `${quotaRemaining}/${quotaLimit} messages remaining`}
-            </span>
-          </div>
-          <Progress
-            value={quotaLimit > 0 ? (quotaRemaining / quotaLimit) * 100 : 0}
-            className={cn(
-              'h-1.5',
-              quotaRemaining === 0 && '[&>div]:bg-destructive',
-              quotaRemaining > 0 && quotaRemaining / quotaLimit <= 0.25 && '[&>div]:bg-destructive',
-              quotaRemaining / quotaLimit > 0.25 && quotaRemaining / quotaLimit <= 0.5 && '[&>div]:bg-yellow-500',
-            )}
-          />
-        </div>
+        <TooltipProvider delayDuration={300}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div
+                className={cn(
+                  'px-3 pt-2 transition-transform duration-500 ease-out cursor-default',
+                  quotaPulse && 'scale-105'
+                )}
+              >
+                <div className="flex items-center justify-between text-xs mb-1">
+                  <span
+                    className={cn(
+                      'transition-colors duration-500',
+                      quotaPulse ? 'text-foreground font-medium' : 'text-muted-foreground'
+                    )}
+                  >
+                    {quotaRemaining === 0
+                      ? 'Daily limit reached'
+                      : `${quotaRemaining}/${quotaLimit} messages remaining`}
+                  </span>
+                </div>
+                <Progress
+                  value={quotaLimit > 0 ? (quotaRemaining / quotaLimit) * 100 : 0}
+                  className={cn(
+                    'h-1.5',
+                    quotaRemaining === 0 && '[&>div]:bg-destructive',
+                    quotaRemaining > 0 && quotaRemaining / quotaLimit <= 0.25 && '[&>div]:bg-destructive',
+                    quotaRemaining / quotaLimit > 0.25 && quotaRemaining / quotaLimit <= 0.5 && '[&>div]:bg-yellow-500',
+                  )}
+                />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-xs">
+              <p className="font-medium">
+                Role: {userRole ? userRole.charAt(0).toUpperCase() + userRole.slice(1) : 'Unknown'}
+              </p>
+              <p className="text-muted-foreground">Quota resets daily at midnight UTC</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       )}
 
       {/* Input */}
