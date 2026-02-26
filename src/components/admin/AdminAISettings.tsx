@@ -238,3 +238,5 @@ export default function AdminAISettings() {
     </Card>
   );
 }
+
+export { default as AdminAIQuotaSettings } from './AdminAIQuotaSettings';

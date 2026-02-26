@@ -177,6 +177,30 @@ export type Database = {
           },
         ]
       }
+      ai_usage_quotas: {
+        Row: {
+          daily_message_limit: number
+          enabled: boolean
+          id: string
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          daily_message_limit?: number
+          enabled?: boolean
+          id?: string
+          role: string
+          updated_at?: string
+        }
+        Update: {
+          daily_message_limit?: number
+          enabled?: boolean
+          id?: string
+          role?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       analytics_insights: {
         Row: {
           acknowledged: boolean | null
@@ -4498,6 +4522,13 @@ export type Database = {
       generate_progress_snapshot: {
         Args: { p_family_id: string; p_user_id: string }
         Returns: string
+      }
+      get_ai_usage_by_role_today: {
+        Args: never
+        Returns: {
+          count: number
+          role: string
+        }[]
       }
       get_child_game_assignments: {
         Args: { p_child_id: string; p_family_id: string }
