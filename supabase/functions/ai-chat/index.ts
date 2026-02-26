@@ -55,7 +55,68 @@ serve(async (req) => {
     const model = settings.ai_model || "google/gemini-3-flash-preview";
     const systemPrompt = settings.ai_system_prompt || "You are a helpful AI assistant.";
 
-    // Resolve API endpoint and key
+    // ── Quota enforcement ──
+    // Look up user's role
+    const { data: roleData } = await serviceClient
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .limit(1)
+      .single();
+
+    const userRole = roleData?.role || "user";
+
+    // Look up quota for this role
+    const { data: quotaData } = await serviceClient
+      .from("ai_usage_quotas")
+      .select("daily_message_limit, enabled")
+      .eq("role", userRole)
+      .single();
+
+    let quotaLimit = -1; // default unlimited
+    let quotaRemaining = -1;
+
+    if (quotaData && quotaData.enabled && quotaData.daily_message_limit !== -1) {
+      quotaLimit = quotaData.daily_message_limit;
+
+      // Get user's conversation IDs
+      const todayStart = new Date();
+      todayStart.setUTCHours(0, 0, 0, 0);
+
+      const { data: userConvs } = await serviceClient
+        .from("ai_conversations")
+        .select("id")
+        .eq("user_id", userId);
+
+      const convIds = userConvs?.map((c: { id: string }) => c.id) || [];
+
+      if (convIds.length > 0) {
+        const { count: todayCount } = await serviceClient
+          .from("ai_messages")
+          .select("id", { count: "exact", head: true })
+          .eq("role", "user")
+          .gte("created_at", todayStart.toISOString())
+          .in("conversation_id", convIds);
+
+        const usedToday = todayCount || 0;
+        quotaRemaining = Math.max(0, quotaLimit - usedToday);
+
+        if (usedToday >= quotaLimit) {
+          return new Response(JSON.stringify({
+            error: "Daily AI message quota exceeded. Please try again tomorrow.",
+            remaining: 0,
+            limit: quotaLimit,
+          }), {
+            status: 429,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      } else {
+        quotaRemaining = quotaLimit;
+      }
+    }
+
+    // ── Resolve API endpoint and key ──
     let apiEndpoint: string;
     let apiKey: string | undefined;
 
@@ -266,9 +327,16 @@ serve(async (req) => {
       // Don't await - let it run in background
       capturePromise.catch(console.error);
 
+      const quotaHeaders: Record<string, string> = {};
+      if (quotaLimit !== -1) {
+        quotaHeaders["X-Quota-Limit"] = String(quotaLimit);
+        quotaHeaders["X-Quota-Remaining"] = String(Math.max(0, quotaRemaining - 1));
+      }
+
       return new Response(streamForClient, {
         headers: {
           ...corsHeaders,
+          ...quotaHeaders,
           "Content-Type": "text/event-stream",
           "X-Conversation-Id": activeConversationId,
         },
@@ -310,11 +378,17 @@ serve(async (req) => {
         .update({ updated_at: new Date().toISOString() })
         .eq("id", activeConversationId);
 
+      const quotaHeaders: Record<string, string> = {};
+      if (quotaLimit !== -1) {
+        quotaHeaders["X-Quota-Limit"] = String(quotaLimit);
+        quotaHeaders["X-Quota-Remaining"] = String(Math.max(0, quotaRemaining - 1));
+      }
+
       return new Response(JSON.stringify({
         ...data,
         conversationId: activeConversationId,
       }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...corsHeaders, ...quotaHeaders, "Content-Type": "application/json" },
       });
     }
   } catch (err) {

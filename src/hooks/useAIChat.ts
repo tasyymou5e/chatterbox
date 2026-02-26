@@ -138,7 +138,29 @@ export function useAIChat() {
 
       if (!resp.ok) {
         const errorData = await resp.json().catch(() => ({ error: 'Request failed' }));
+        if (resp.status === 429 && errorData.limit) {
+          toast({
+            title: 'Quota Exceeded',
+            description: `You've reached your daily limit of ${errorData.limit} AI messages. Try again tomorrow.`,
+            variant: 'destructive',
+          });
+          setMessages(prev => prev.filter(m => m.id !== tempUserMsg.id));
+          setIsSending(false);
+          return;
+        }
         throw new Error(errorData.error || `HTTP ${resp.status}`);
+      }
+
+      // Check quota warnings
+      const quotaRemaining = resp.headers.get('X-Quota-Remaining');
+      if (quotaRemaining !== null) {
+        const remaining = parseInt(quotaRemaining, 10);
+        if (remaining > 0 && remaining <= 5) {
+          toast({
+            title: 'Quota Warning',
+            description: `You have ${remaining} AI message${remaining === 1 ? '' : 's'} remaining today.`,
+          });
+        }
       }
 
       // Capture conversation ID from header

@@ -31,6 +31,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { IntegrityDashboardWidget } from '@/components/admin/monitoring/IntegrityDashboardWidget';
 import { DataHealthScoreCard } from '@/components/admin/health/DataHealthScoreCard';
 import AdminAISettings from '@/components/admin/AdminAISettings';
+import AdminAIQuotaSettings from '@/components/admin/AdminAIQuotaSettings';
 
 interface DashboardStats {
   totalFamilies: number;
@@ -333,6 +334,11 @@ export default function AdminDashboard() {
         <DashboardErrorBoundary componentName="AI Settings">
           <AdminAISettings />
         </DashboardErrorBoundary>
+        <DashboardErrorBoundary componentName="AI Usage Quotas">
+          <AdminAIQuotaSettings />
+        </DashboardErrorBoundary>
+      </div>
+      <div className="grid gap-6 lg:grid-cols-2">
         <DashboardErrorBoundary componentName="API Integrations">
           <AdminAPIIntegrations />
         </DashboardErrorBoundary>
