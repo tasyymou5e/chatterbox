@@ -228,6 +228,23 @@ serve(async (req) => {
         ? firstUserMsg.content.substring(0, 50) + (firstUserMsg.content.length > 50 ? "..." : "")
         : "New conversation";
 
+      // Ensure user has a profile row (FK requirement)
+      const { data: profileExists } = await serviceClient
+        .from("profiles")
+        .select("id")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (!profileExists) {
+        // Auto-create a minimal profile so the FK constraint is satisfied
+        const { data: authUser } = await serviceClient.auth.admin.getUserById(userId);
+        await serviceClient.from("profiles").insert({
+          user_id: userId,
+          first_name: authUser?.user?.user_metadata?.first_name || "User",
+          last_name: authUser?.user?.user_metadata?.last_name || "",
+        });
+      }
+
       const { data: newConv, error: convError } = await userClient
         .from("ai_conversations")
         .insert({ user_id: userId, title })
