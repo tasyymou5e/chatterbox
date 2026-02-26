@@ -30,6 +30,7 @@ import { FallbackCard, DEFAULT_KPI_DATA, DEFAULT_SYSTEM_HEALTH } from '@/compone
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { IntegrityDashboardWidget } from '@/components/admin/monitoring/IntegrityDashboardWidget';
 import { DataHealthScoreCard } from '@/components/admin/health/DataHealthScoreCard';
+import AdminAISettings from '@/components/admin/AdminAISettings';
 
 interface DashboardStats {
   totalFamilies: number;
@@ -327,11 +328,18 @@ export default function AdminDashboard() {
         </DashboardErrorBoundary>
       </div>
 
-      {/* API Integrations and Quick Actions */}
+      {/* AI Settings */}
       <div className="grid gap-6 lg:grid-cols-2">
+        <DashboardErrorBoundary componentName="AI Settings">
+          <AdminAISettings />
+        </DashboardErrorBoundary>
         <DashboardErrorBoundary componentName="API Integrations">
           <AdminAPIIntegrations />
         </DashboardErrorBoundary>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="grid gap-6 lg:grid-cols-2">
         
         <Card className="bg-gradient-card border-border shadow-soft">
           <CardHeader>

@@ -129,3 +129,7 @@ verify_jwt = false
 [functions.error-collector]
 # Public endpoint - client error reporting (rate-limited, no sensitive data)
 verify_jwt = false
+
+[functions.ai-chat]
+# AI chat with tiered rate limiting - JWT validated in code
+verify_jwt = false
