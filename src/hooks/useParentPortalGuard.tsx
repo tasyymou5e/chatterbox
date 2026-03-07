@@ -60,12 +60,12 @@ export const useParentPortalGuard = (options: ParentPortalGuardOptions = {}) => 
           return;
         }
 
-        // If user has no role at all, they may have corrupted data
-        // Allow access and let the dashboard attempt data repair
+        // If user has no role at all, redirect to auth — do not grant access
         if (!isAdmin && !userRole) {
-          cWarn('ParentPortalGuard: User has no role assigned - allowing access for data repair');
-          setIsAuthorized(true);
+          cWarn('ParentPortalGuard: User has no role assigned - denying access');
+          setIsAuthorized(false);
           setChecking(false);
+          navigate('/auth', { state: { error: 'Account setup incomplete. Please contact support.' } });
           return;
         }
 

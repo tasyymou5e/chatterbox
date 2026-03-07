@@ -345,7 +345,9 @@ serve(async (req) => {
         last_name: lastName,
         roles
       },
-      password // Return password for admin to share with new user
+      // Password is intentionally NOT returned in the response for security.
+      // Admin should use the "send welcome email" flow or password reset.
+      passwordGenerated: true
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

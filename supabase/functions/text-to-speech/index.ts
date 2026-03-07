@@ -34,6 +34,12 @@ serve(async (req) => {
       throw new Error('Text is required');
     }
 
+    // Input validation: cap text length to prevent excessive API costs
+    const MAX_TEXT_LENGTH = 5000;
+    if (text.length > MAX_TEXT_LENGTH) {
+      throw new Error(`Text exceeds maximum length of ${MAX_TEXT_LENGTH} characters`);
+    }
+
     const GROK_API_KEY = Deno.env.get('GROK_API_KEY');
     if (!GROK_API_KEY) {
       throw new Error('GROK_API_KEY is not configured');

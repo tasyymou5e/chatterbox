@@ -90,7 +90,7 @@ serve(async (req) => {
         model,
         messages,
         temperature,
-        max_tokens,
+        max_tokens: safe_max_tokens,
         stream
       }),
     });
