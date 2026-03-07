@@ -26,12 +26,13 @@ export const useParentPortalGuard = (options: ParentPortalGuardOptions = {}) => 
     // Set up timeout protection - max 10 seconds for checking
     timeoutRef.current = setTimeout(() => {
       if (checking) {
-        cWarn('Parent portal guard timed out - allowing access');
+        cWarn('Parent portal guard timed out - denying access');
         logDataAccessIssue('ParentPortalGuard', 'Guard check timed out after 10 seconds', {
           userId: user?.id,
         });
-        setIsAuthorized(true);
+        setIsAuthorized(false);
         setChecking(false);
+        navigate('/auth', { state: { error: 'Authorization check timed out. Please log in again.' } });
       }
     }, 10000);
 
@@ -59,12 +60,12 @@ export const useParentPortalGuard = (options: ParentPortalGuardOptions = {}) => 
           return;
         }
 
-        // If user has no role at all, they may have corrupted data
-        // Allow access and let the dashboard attempt data repair
+        // If user has no role at all, redirect to auth — do not grant access
         if (!isAdmin && !userRole) {
-          cWarn('ParentPortalGuard: User has no role assigned - allowing access for data repair');
-          setIsAuthorized(true);
+          cWarn('ParentPortalGuard: User has no role assigned - denying access');
+          setIsAuthorized(false);
           setChecking(false);
+          navigate('/auth', { state: { error: 'Account setup incomplete. Please contact support.' } });
           return;
         }
 

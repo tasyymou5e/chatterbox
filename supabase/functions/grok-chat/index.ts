@@ -63,6 +63,21 @@ serve(async (req) => {
       throw new Error('Messages array is required');
     }
 
+    // Input validation: cap max_tokens and message sizes
+    const MAX_TOKENS_LIMIT = 4096;
+    const MAX_MESSAGES = 50;
+    const MAX_MESSAGE_LENGTH = 32000;
+    const safe_max_tokens = Math.min(Math.max(1, max_tokens ?? 1024), MAX_TOKENS_LIMIT);
+
+    if (messages.length > MAX_MESSAGES) {
+      throw new Error(`Too many messages (max ${MAX_MESSAGES})`);
+    }
+    for (const msg of messages) {
+      if (typeof msg.content !== 'string' || msg.content.length > MAX_MESSAGE_LENGTH) {
+        throw new Error(`Message content exceeds maximum length of ${MAX_MESSAGE_LENGTH} characters`);
+      }
+    }
+
     console.log(`Grok chat request: model=${model}, messages=${messages.length}, stream=${stream}`);
 
     const response = await fetch('https://api.x.ai/v1/chat/completions', {
@@ -75,7 +90,7 @@ serve(async (req) => {
         model,
         messages,
         temperature,
-        max_tokens,
+        max_tokens: safe_max_tokens,
         stream
       }),
     });

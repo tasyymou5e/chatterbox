@@ -243,7 +243,7 @@ export const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
         requestBody.customPassword = formData.customPassword;
       }
 
-      const { data, error } = await invokeEdgeFunction<{ password?: string; error?: string }>('admin-create-user', requestBody);
+      const { data, error } = await invokeEdgeFunction<{ passwordGenerated?: boolean; error?: string }>('admin-create-user', requestBody);
 
       if (error) {
         throw error;
@@ -253,10 +253,8 @@ export const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
         throw new Error(data.error);
       }
 
-      // Only show password if it was generated (not custom)
-      if (!formData.useCustomPassword && data?.password) {
-        setGeneratedPassword(data.password);
-      }
+      // Password is no longer returned from the API for security.
+      // Admin should instruct the user to use the password reset flow.
       
       toast({
         title: "User Created Successfully",
