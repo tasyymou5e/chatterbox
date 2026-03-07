@@ -26,12 +26,13 @@ export const useParentPortalGuard = (options: ParentPortalGuardOptions = {}) => 
     // Set up timeout protection - max 10 seconds for checking
     timeoutRef.current = setTimeout(() => {
       if (checking) {
-        cWarn('Parent portal guard timed out - allowing access');
+        cWarn('Parent portal guard timed out - denying access');
         logDataAccessIssue('ParentPortalGuard', 'Guard check timed out after 10 seconds', {
           userId: user?.id,
         });
-        setIsAuthorized(true);
+        setIsAuthorized(false);
         setChecking(false);
+        navigate('/auth', { state: { error: 'Authorization check timed out. Please log in again.' } });
       }
     }, 10000);
 
