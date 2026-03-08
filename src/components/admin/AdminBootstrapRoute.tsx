@@ -56,11 +56,11 @@ export const AdminBootstrapRoute = ({ children }: AdminBootstrapRouteProps) => {
     );
   }
 
-  // If admins exist and not in force mode, redirect to login
-  if (hasAdmins && !forceMode) {
+  // If admins already exist, always redirect to login — no bypass allowed
+  if (hasAdmins) {
     return <Navigate to="/admin/login" replace />;
   }
 
-  // Allow access to bootstrap if no admins exist OR if force mode is enabled
+  // Only allow access to bootstrap when no admins exist
   return <>{children}</>;
 };

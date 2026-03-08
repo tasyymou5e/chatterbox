@@ -80,7 +80,7 @@ serve(async (req) => {
       p_severity: errorReport.severity,
       p_message: errorReport.message,
       p_stack_trace: errorReport.stackTrace,
-      p_user_id: errorReport.userId,
+      p_user_id: verifiedUserId,
       p_session_id: errorReport.sessionId,
       p_component_name: errorReport.componentName,
       p_route_path: errorReport.routePath,
