@@ -425,6 +425,11 @@ const ParentDashboard = () => {
           </p>
         </div>
 
+        {/* Assessment History - prominently placed */}
+        <div className="mb-6">
+          <AssessmentHistoryCard />
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Family Overview Card */}
           <Card className="bg-gradient-card shadow-soft hover:shadow-medium transition-shadow">
@@ -583,10 +588,7 @@ const ParentDashboard = () => {
           </Card>
         </div>
 
-        {/* Assessment History */}
-        <div className="mt-6">
-          <AssessmentHistoryCard />
-        </div>
+        
 
         {/* AI Daily Plan */}
         <div className="mt-6">
