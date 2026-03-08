@@ -20,7 +20,7 @@ export const useParentPortalGuard = (options: ParentPortalGuardOptions = {}) => 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const checkInProgressRef = useRef(false);
 
-  const { requiredFamilyAccess = true, redirectPath = '/admin/dashboard' } = options;
+  const { requiredFamilyAccess = true, redirectPath = '/auth' } = options;
 
   useEffect(() => {
     // Set up timeout protection - max 10 seconds for checking
