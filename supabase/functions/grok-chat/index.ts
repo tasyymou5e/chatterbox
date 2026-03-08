@@ -97,8 +97,9 @@ serve(async (req) => {
 
     if (!response.ok) {
       const errorText = await response.text();
+      // Log full error server-side only; never expose to clients
       console.error('Grok API error:', response.status, errorText);
-      throw new Error(`Grok API error: ${response.status} - ${errorText}`);
+      throw new Error('AI service temporarily unavailable');
     }
 
     const responseTime = Date.now() - startTime;
