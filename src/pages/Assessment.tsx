@@ -194,7 +194,7 @@ const Assessment: React.FC = () => {
         {view === 'results' && selectedInstrument && scores && (
           <div className="space-y-6">
             <div className="flex justify-between">
-              <Button variant="outline" onClick={() => navigate('/parent/dashboard')}>
+              <Button variant="outline" onClick={() => navigate('/parent')}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Return to Dashboard
               </Button>
