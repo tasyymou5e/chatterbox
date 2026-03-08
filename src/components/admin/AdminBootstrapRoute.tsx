@@ -18,9 +18,6 @@ export const AdminBootstrapRoute = ({ children }: AdminBootstrapRouteProps) => {
   const loading = getLoading('adminBootstrapCheck');
   const [hasAdmins, setHasAdmins] = React.useState<boolean | null>(null);
   
-  // Check for force parameter to bypass admin existence check
-  const urlParams = new URLSearchParams(window.location.search);
-  const forceMode = urlParams.get('force') === 'true';
 
   useEffect(() => {
     const checkForAdmins = async () => {
