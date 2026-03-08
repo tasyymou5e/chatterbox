@@ -96,7 +96,7 @@ serve(async (req) => {
     if (logError) {
       console.error('Failed to log error to database:', logError);
       return new Response(
-        JSON.stringify({ error: 'Failed to store error', details: logError.message }),
+        JSON.stringify({ error: 'Failed to store error' }),
         { 
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
