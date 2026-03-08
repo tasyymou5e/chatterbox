@@ -6,6 +6,7 @@ import { ChildrenChoresDashboard } from '@/components/chores/ChildrenChoresDashb
 import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Heart, Home, Users, Gamepad2 } from 'lucide-react';
+import { DailyPlanWidget } from '@/components/daily-plan/DailyPlanWidget';
 
 interface Family {
   id: string;
