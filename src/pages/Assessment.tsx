@@ -213,7 +213,7 @@ const Assessment: React.FC = () => {
             />
             <div className="flex flex-col items-center gap-3 pt-4 border-t border-border">
               <p className="text-sm text-muted-foreground">Assessment complete — your results have been saved.</p>
-              <Button size="lg" className="w-full" onClick={() => navigate('/parent/dashboard')}>
+              <Button size="lg" className="w-full" onClick={() => navigate('/parent')}>
                 <Home className="w-4 h-4 mr-2" />
                 Return to Parent Dashboard
               </Button>
