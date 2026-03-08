@@ -62,6 +62,7 @@ const EducationalGamesLazy = React.lazy(() => import('@/pages/features/Education
 const CommunicationSupportLazy = React.lazy(() => import('@/pages/features/CommunicationSupport'));
 const ProgressTrackingLazy = React.lazy(() => import('@/pages/features/ProgressTracking'));
 const FamilyManagementLazy = React.lazy(() => import('@/pages/features/FamilyManagement'));
+const AssessmentLazy = React.lazy(() => import('@/pages/Assessment'));
 
 // Lazy loaded pages - Support
 const HelpCenterLazy = React.lazy(() => import('@/pages/support/HelpCenter'));
