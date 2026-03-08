@@ -133,3 +133,7 @@ verify_jwt = false
 [functions.ai-chat]
 # AI chat with tiered rate limiting - JWT validated in code
 verify_jwt = false
+
+[functions.ai-assessment-review]
+# Assessment AI review - public access, no JWT required
+verify_jwt = false

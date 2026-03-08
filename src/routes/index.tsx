@@ -133,6 +133,7 @@ export const featureRoutes: RouteConfig[] = [
   { path: '/features/communication-support', element: <LazyRoute><CommunicationSupportLazy /></LazyRoute> },
   { path: '/features/progress-tracking', element: <LazyRoute><ProgressTrackingLazy /></LazyRoute> },
   { path: '/features/family-management', element: <LazyRoute><FamilyManagementLazy /></LazyRoute> },
+  { path: '/assessment', element: <LazyRoute variant="form"><AssessmentLazy /></LazyRoute> },
 ];
 
 // Support routes
