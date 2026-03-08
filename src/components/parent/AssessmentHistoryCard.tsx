@@ -6,7 +6,7 @@ import { ClipboardCheck, Plus, Download, Users, ChevronRight, ChevronDown } from
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { getInstrumentById } from '@/data/assessmentInstruments';
+
 import type { AssessmentScores } from '@/utils/assessmentScoring';
 import { AssessmentResultDetail } from './AssessmentResultDetail';
 import { generateAssessmentPDF } from '@/utils/assessmentPdfGenerator';

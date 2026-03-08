@@ -1,8 +1,7 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { Download, X, ChevronDown } from 'lucide-react';
+import { Download, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { getInstrumentById } from '@/data/assessmentInstruments';
 import type { AssessmentScores, CategoryScore } from '@/utils/assessmentScoring';
