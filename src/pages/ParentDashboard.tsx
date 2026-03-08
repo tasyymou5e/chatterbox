@@ -582,6 +582,11 @@ const ParentDashboard = () => {
           </Card>
         </div>
 
+        {/* Assessment History */}
+        <div className="mt-6">
+          <AssessmentHistoryCard />
+        </div>
+
         {/* AI Daily Plan */}
         <div className="mt-6">
           <DailyPlanWidget />
