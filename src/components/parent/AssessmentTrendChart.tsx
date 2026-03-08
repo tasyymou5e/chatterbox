@@ -5,6 +5,8 @@ import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
   type ChartConfig,
 } from '@/components/ui/chart';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
@@ -25,30 +27,50 @@ interface Props {
   results: AssessmentResult[];
 }
 
-const chartConfig: ChartConfig = {
-  overall: {
-    label: 'Overall %',
-    color: 'hsl(var(--primary))',
-  },
-};
+const CHART_COLORS = [
+  'hsl(var(--primary))',
+  'hsl(var(--secondary))',
+  'hsl(var(--accent))',
+  'hsl(var(--destructive))',
+  'hsl(var(--warning))',
+];
 
 export const AssessmentTrendChart: React.FC<Props> = ({ results }) => {
-  const chartData = useMemo(() => {
+  const { chartData, subjects, config } = useMemo(() => {
     const withScores = results
       .filter((r) => r.scores)
       .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
-    if (withScores.length < 2) return null;
+    if (withScores.length < 2) return { chartData: null, subjects: [], config: {} };
 
-    return withScores.map((r) => ({
-      date: format(new Date(r.created_at), 'MMM d'),
-      overall: Math.round(r.scores!.overallPercentage),
-      type: r.assessment_type,
-      name: r.subject_name,
-    }));
+    // Group by date
+    const groupedByDate: Record<string, any> = {};
+    const uniqueSubjects = new Set<string>();
+
+    withScores.forEach((r) => {
+      const date = format(new Date(r.created_at), 'MMM d');
+      if (!groupedByDate[date]) {
+        groupedByDate[date] = { date };
+      }
+      groupedByDate[date][r.subject_name] = Math.round(r.scores!.overallPercentage);
+      uniqueSubjects.add(r.subject_name);
+    });
+
+    const data = Object.values(groupedByDate);
+    const subjectList = Array.from(uniqueSubjects);
+
+    const generatedConfig: ChartConfig = {};
+    subjectList.forEach((subject, index) => {
+      generatedConfig[subject] = {
+        label: subject,
+        color: CHART_COLORS[index % CHART_COLORS.length],
+      };
+    });
+
+    return { chartData: data, subjects: subjectList, config: generatedConfig };
   }, [results]);
 
-  if (!chartData) return null;
+  if (!chartData || chartData.length < 2) return null;
 
   return (
     <Card className="border-border shadow-sm mt-4">
@@ -59,7 +81,7 @@ export const AssessmentTrendChart: React.FC<Props> = ({ results }) => {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig} className="h-48 w-full">
+        <ChartContainer config={config} className="h-64 w-full">
           <LineChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
             <XAxis
@@ -78,14 +100,19 @@ export const AssessmentTrendChart: React.FC<Props> = ({ results }) => {
               width={30}
             />
             <ChartTooltip content={<ChartTooltipContent />} />
-            <Line
-              type="monotone"
-              dataKey="overall"
-              stroke="hsl(var(--primary))"
-              strokeWidth={2}
-              dot={{ fill: 'hsl(var(--primary))', r: 4 }}
-              activeDot={{ r: 6, fill: 'hsl(var(--primary))' }}
-            />
+            <ChartLegend content={<ChartLegendContent />} />
+            {subjects.map((subject, index) => (
+              <Line
+                key={subject}
+                type="monotone"
+                dataKey={subject}
+                stroke={CHART_COLORS[index % CHART_COLORS.length]}
+                strokeWidth={2}
+                connectNulls={true}
+                dot={{ fill: CHART_COLORS[index % CHART_COLORS.length], r: 4 }}
+                activeDot={{ r: 6, fill: CHART_COLORS[index % CHART_COLORS.length] }}
+              />
+            ))}
           </LineChart>
         </ChartContainer>
       </CardContent>
