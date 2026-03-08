@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { ArrowLeft, ClipboardCheck, Brain, FileText } from 'lucide-react';
+import { ArrowLeft, ClipboardCheck, Brain, FileText, Home } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { allInstruments, getInstrumentById } from '@/data/assessmentInstruments';
 import type { AssessmentInstrument } from '@/data/assessmentInstruments';
@@ -211,6 +211,13 @@ const Assessment: React.FC = () => {
               aiReview={aiReview}
               isLoadingAI={isLoadingAI}
             />
+            <div className="flex flex-col items-center gap-3 pt-4 border-t border-border">
+              <p className="text-sm text-muted-foreground">Assessment complete — your results have been saved.</p>
+              <Button size="lg" className="w-full" onClick={() => navigate('/parent/dashboard')}>
+                <Home className="w-4 h-4 mr-2" />
+                Return to Parent Dashboard
+              </Button>
+            </div>
           </div>
         )}
       </div>
