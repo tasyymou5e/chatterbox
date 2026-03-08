@@ -582,6 +582,11 @@ const ParentDashboard = () => {
           </Card>
         </div>
 
+        {/* AI Daily Plan */}
+        <div className="mt-6">
+          <DailyPlanWidget />
+        </div>
+
         {/* Weekly Progress Summary */}
         <div className="mt-6">
           <WeeklyProgressSummary />
