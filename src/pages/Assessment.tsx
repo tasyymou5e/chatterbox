@@ -98,7 +98,7 @@ const Assessment: React.FC = () => {
             if (results?.[0]) {
               await supabase
                 .from('assessment_results')
-                .update({ ai_review: data.review as unknown as Record<string, unknown> })
+                .update({ ai_review: data.review as any })
                 .eq('id', results[0].id);
             }
           }
