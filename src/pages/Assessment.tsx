@@ -29,7 +29,7 @@ const Assessment: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingAI, setIsLoadingAI] = useState(false);
   const [subjectName, setSubjectName] = useState('');
-  const [answers, setAnswers] = useState<Record<string, number>>({});
+  const [_answers, setAnswers] = useState<Record<string, number>>({});
 
   const selectInstrument = (id: string) => {
     const inst = getInstrumentById(id);
