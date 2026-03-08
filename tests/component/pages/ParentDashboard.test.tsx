@@ -46,16 +46,24 @@ vi.mock('@/utils/secureFamilyAccess', () => ({
   getSecureFamilyMembers: vi.fn(() => Promise.resolve([]))
 }));
 
-// Mock the auth store
+const mockAuthStore = {
+  user: { id: 'test-user-id', email: 'test@example.com' },
+  session: { user: { id: 'test-user-id' } },
+  userRole: 'parent',
+  loading: false,
+  isHydrated: true,
+  initialize: vi.fn(),
+  signUp: vi.fn(),
+  signIn: vi.fn(),
+  signOut: vi.fn(),
+  resetPassword: vi.fn(),
+};
+
 vi.mock('@/stores/authStore', () => ({
-  useAuthStore: vi.fn(() => ({
-    user: { id: 'test-user-id', email: 'test@example.com' },
-    session: { user: { id: 'test-user-id' } },
-    userRole: 'parent',
-    loading: false,
-    isHydrated: true,
-    initialize: vi.fn()
-  }))
+  useAuthStore: Object.assign(
+    vi.fn(() => mockAuthStore),
+    { getState: vi.fn(() => mockAuthStore) }
+  )
 }));
 
 const createTestQueryClient = () => new QueryClient({
