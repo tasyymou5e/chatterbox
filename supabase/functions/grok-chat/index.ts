@@ -97,8 +97,9 @@ serve(async (req) => {
 
     if (!response.ok) {
       const errorText = await response.text();
+      // Log full error server-side only; never expose to clients
       console.error('Grok API error:', response.status, errorText);
-      throw new Error(`Grok API error: ${response.status} - ${errorText}`);
+      throw new Error('AI service temporarily unavailable');
     }
 
     const responseTime = Date.now() - startTime;
@@ -168,8 +169,18 @@ serve(async (req) => {
       userId
     });
 
+    // Only return safe, known error messages; never leak internals
+    const safeMessages = [
+      'Messages array is required',
+      'AI service temporarily unavailable',
+      'GROK_API_KEY is not configured',
+    ];
+    const clientMessage = error instanceof Error && safeMessages.some(m => error.message.includes(m))
+      ? error.message
+      : 'Internal server error';
+
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
+      JSON.stringify({ error: clientMessage }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
