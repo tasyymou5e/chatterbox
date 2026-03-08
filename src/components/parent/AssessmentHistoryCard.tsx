@@ -161,6 +161,7 @@ export const AssessmentHistoryCard: React.FC = () => {
             ))}
           </div>
         )}
+        {results.length >= 2 && <AssessmentTrendChart results={results} />}
       </CardContent>
     </Card>
   );
