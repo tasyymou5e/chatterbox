@@ -16,6 +16,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { ParentNavigation } from '@/components/parent/ParentNavigation';
 import { WeeklyProgressSummary } from '@/components/parent/WeeklyProgressSummary';
+import { AssessmentHistoryCard } from '@/components/parent/AssessmentHistoryCard';
 import { logSupabaseQuery, logDataAccessIssue, logDataFetchSuccess, createQueryTimer } from '@/utils/parentPortalLogger';
 import { authLoggingService } from '@/services/authLoggingService';
 
@@ -580,6 +581,11 @@ const ParentDashboard = () => {
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Assessment History */}
+        <div className="mt-6">
+          <AssessmentHistoryCard />
         </div>
 
         {/* AI Daily Plan */}
