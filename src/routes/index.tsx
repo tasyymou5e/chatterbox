@@ -108,6 +108,7 @@ export const coreRoutes: RouteConfig[] = [
   { path: '/auth', element: <Auth /> },
   { path: '/about', element: <LazyRoute><AboutLazy /></LazyRoute> },
   { path: '/parent-dashboard', element: <Navigate to="/parent" replace /> },
+  { path: '/parent/dashboard', element: <Navigate to="/parent" replace /> },
 ];
 
 // Parent routes
