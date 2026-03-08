@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Heart, Home, ListTodo, Users, BarChart3, LogOut, Menu, X, Settings } from 'lucide-react';
+import { Heart, Home, ListTodo, Users, BarChart3, LogOut, Menu, X, Settings, ClipboardCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/stores/authStore';
 import { toast } from 'sonner';
@@ -10,6 +10,7 @@ const navItems = [
   { path: '/parent/chores', label: 'Tasks', icon: ListTodo },
   { path: '/parent/connections', label: 'Connections', icon: Users },
   { path: '/parent/reports', label: 'Reports', icon: BarChart3 },
+  { path: '/assessment', label: 'Assessment', icon: ClipboardCheck },
   { path: '/parent/settings', label: 'Settings', icon: Settings },
 ];
 
