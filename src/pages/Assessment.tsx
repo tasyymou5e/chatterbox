@@ -56,12 +56,12 @@ const Assessment: React.FC = () => {
       // Save to database
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        await supabase.from('assessment_results').insert({
+        await (supabase.from('assessment_results').insert as any)({
           user_id: user.id,
           assessment_type: selectedInstrument.id,
           subject_name: name,
-          answers: formAnswers,
-          scores: computed as unknown as Record<string, unknown>,
+          answers: formAnswers as any,
+          scores: computed as any,
           overall_grade: computed.overallGrade,
         });
       }
