@@ -9,6 +9,7 @@ import { format } from 'date-fns';
 
 import type { AssessmentScores } from '@/utils/assessmentScoring';
 import { AssessmentResultDetail } from './AssessmentResultDetail';
+import { AssessmentTrendChart } from './AssessmentTrendChart';
 import { generateAssessmentPDF } from '@/utils/assessmentPdfGenerator';
 
 interface AssessmentResult {
@@ -160,6 +161,7 @@ export const AssessmentHistoryCard: React.FC = () => {
             ))}
           </div>
         )}
+        {results.length >= 2 && <AssessmentTrendChart results={results} />}
       </CardContent>
     </Card>
   );
