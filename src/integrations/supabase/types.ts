@@ -2498,6 +2498,54 @@ export type Database = {
           },
         ]
       }
+      life_skill_catalog: {
+        Row: {
+          age_group: string
+          category: string
+          created_at: string
+          description: string | null
+          difficulty: string
+          estimated_duration_minutes: number | null
+          id: string
+          instructions: Json | null
+          is_active: boolean | null
+          sort_order: number | null
+          tags: string[] | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          age_group?: string
+          category: string
+          created_at?: string
+          description?: string | null
+          difficulty?: string
+          estimated_duration_minutes?: number | null
+          id?: string
+          instructions?: Json | null
+          is_active?: boolean | null
+          sort_order?: number | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          age_group?: string
+          category?: string
+          created_at?: string
+          description?: string | null
+          difficulty?: string
+          estimated_duration_minutes?: number | null
+          id?: string
+          instructions?: Json | null
+          is_active?: boolean | null
+          sort_order?: number | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       llm_api_calls: {
         Row: {
           completion_tokens: number | null
@@ -3947,6 +3995,105 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
         ]
+      }
+      user_daily_plan_items: {
+        Row: {
+          ai_reasoning: string | null
+          catalog_item_id: string | null
+          category: string
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          id: string
+          plan_id: string
+          priority: number
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          ai_reasoning?: string | null
+          catalog_item_id?: string | null
+          category: string
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          plan_id: string
+          priority?: number
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          ai_reasoning?: string | null
+          catalog_item_id?: string | null
+          category?: string
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          plan_id?: string
+          priority?: number
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_daily_plan_items_catalog_item_id_fkey"
+            columns: ["catalog_item_id"]
+            isOneToOne: false
+            referencedRelation: "life_skill_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_daily_plan_items_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "user_daily_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_daily_plans: {
+        Row: {
+          ai_summary: string | null
+          assessment_snapshot: Json | null
+          completed_at: string | null
+          created_at: string
+          generated_at: string
+          id: string
+          plan_date: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ai_summary?: string | null
+          assessment_snapshot?: Json | null
+          completed_at?: string | null
+          created_at?: string
+          generated_at?: string
+          id?: string
+          plan_date?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ai_summary?: string | null
+          assessment_snapshot?: Json | null
+          completed_at?: string | null
+          created_at?: string
+          generated_at?: string
+          id?: string
+          plan_date?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       user_levels: {
         Row: {

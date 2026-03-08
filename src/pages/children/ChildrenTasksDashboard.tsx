@@ -6,6 +6,7 @@ import { ChildrenChoresDashboard } from '@/components/chores/ChildrenChoresDashb
 import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Heart, Home, Users, Gamepad2 } from 'lucide-react';
+import { DailyPlanWidget } from '@/components/daily-plan/DailyPlanWidget';
 
 interface Family {
   id: string;
@@ -221,6 +222,11 @@ const ChildrenTasksDashboard = () => {
           </div>
         </div>
       </header>
+
+      {/* AI Daily Plan */}
+      <div className="px-4 mb-6">
+        <DailyPlanWidget />
+      </div>
 
       {/* Main Content */}
       <main className="pb-8">

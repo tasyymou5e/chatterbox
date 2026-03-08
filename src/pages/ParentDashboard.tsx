@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { getCurrentUserFamilies, getSecureFamilyMembers, FamilyMemberInfo } from '@/utils/secureFamilyAccess';
 import { toast } from '@/hooks/use-toast';
 import { Heart, Users, Plus, Target, User, Gamepad2 } from 'lucide-react';
+import { DailyPlanWidget } from '@/components/daily-plan/DailyPlanWidget';
 import CreateChildAccountDialog from '@/components/parent/CreateChildAccountDialog';
 import { ChildGameAssignmentDialog } from '@/components/parent/ChildGameAssignmentDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -579,6 +580,11 @@ const ParentDashboard = () => {
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        {/* AI Daily Plan */}
+        <div className="mt-6">
+          <DailyPlanWidget />
         </div>
 
         {/* Weekly Progress Summary */}
