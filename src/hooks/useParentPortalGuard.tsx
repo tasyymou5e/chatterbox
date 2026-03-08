@@ -20,7 +20,7 @@ export const useParentPortalGuard = (options: ParentPortalGuardOptions = {}) => 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const checkInProgressRef = useRef(false);
 
-  const { requiredFamilyAccess = true, redirectPath = '/admin/dashboard' } = options;
+  const { requiredFamilyAccess = true, redirectPath = '/auth' } = options;
 
   useEffect(() => {
     // Set up timeout protection - max 10 seconds for checking
@@ -151,7 +151,7 @@ export const useParentPortalGuard = (options: ParentPortalGuardOptions = {}) => 
             return;
           }
 
-          // If still no family after attempts, redirect with message
+          // If still no family after attempts, handle gracefully
           if (!hasFamily) {
             logDataAccessIssue('ParentPortalGuard', 'No family after all attempts', {
               userId: user.id,
@@ -159,14 +159,20 @@ export const useParentPortalGuard = (options: ParentPortalGuardOptions = {}) => 
               actualResult: 'none after 3 attempts'
             });
             
-            const message = isAdmin 
-              ? 'Access to parent portal requires creating or being assigned to a family. Use the admin interface to manage families.'
-              : 'Unable to set up your family account. Please contact support or try logging out and back in.';
-              
+            if (isAdmin) {
+              // Admins can go to admin dashboard to manage families
+              setChecking(false);
+              navigate('/admin/dashboard', { 
+                state: { message: 'Access to parent portal requires creating or being assigned to a family. Use the admin interface to manage families.' } 
+              });
+              return;
+            }
+            
+            // For parent users, still authorize them — the dashboard should handle 
+            // the no-family state with a family creation prompt instead of redirecting
+            cLog('ParentPortalGuard: No family found for parent, authorizing with no-family state');
+            setIsAuthorized(true);
             setChecking(false);
-            navigate(redirectPath, { 
-              state: { message } 
-            });
             return;
           }
         }
