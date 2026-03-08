@@ -223,6 +223,11 @@ const ChildrenTasksDashboard = () => {
         </div>
       </header>
 
+      {/* AI Daily Plan */}
+      <div className="px-4 mb-6">
+        <DailyPlanWidget />
+      </div>
+
       {/* Main Content */}
       <main className="pb-8">
         {selectedFamily && <ChildrenChoresDashboard familyId={selectedFamily} />}
