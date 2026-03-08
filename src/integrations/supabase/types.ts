@@ -405,6 +405,50 @@ export type Database = {
         }
         Relationships: []
       }
+      assessment_results: {
+        Row: {
+          ai_review: Json | null
+          answers: Json
+          assessment_type: string
+          created_at: string
+          id: string
+          overall_grade: string | null
+          scores: Json
+          subject_name: string
+          user_id: string
+        }
+        Insert: {
+          ai_review?: Json | null
+          answers?: Json
+          assessment_type: string
+          created_at?: string
+          id?: string
+          overall_grade?: string | null
+          scores?: Json
+          subject_name?: string
+          user_id: string
+        }
+        Update: {
+          ai_review?: Json | null
+          answers?: Json
+          assessment_type?: string
+          created_at?: string
+          id?: string
+          overall_grade?: string | null
+          scores?: Json
+          subject_name?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_results_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       behavioral_events: {
         Row: {
           device_type: string | null
