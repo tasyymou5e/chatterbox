@@ -188,13 +188,16 @@ export const AssessmentHistoryCard: React.FC = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setLoading(false); return; }
 
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('assessment_results')
         .select('id, assessment_type, subject_name, overall_grade, created_at, scores, ai_review')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(10);
 
+      if (error) {
+        console.error('Failed to fetch assessment results:', error);
+      }
       if (data) setResults(data as unknown as AssessmentResult[]);
       setLoading(false);
     };
