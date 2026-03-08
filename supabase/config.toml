@@ -137,3 +137,7 @@ verify_jwt = false
 [functions.ai-assessment-review]
 # Assessment AI review - public access, no JWT required
 verify_jwt = false
+
+[functions.generate-daily-plan]
+# AI daily plan generation - requires user JWT
+verify_jwt = true
