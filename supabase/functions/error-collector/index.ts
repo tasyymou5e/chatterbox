@@ -38,6 +38,14 @@ serve(async (req) => {
     const supabase = getServiceClient();
 
     const errorReport: ErrorReport = await req.json();
+
+    // Determine verified userId: use JWT if present, otherwise null
+    // Never trust client-supplied userId to prevent attribution spoofing
+    let verifiedUserId: string | null = null;
+    const auth = await validateJWT(req);
+    if (auth.success && auth.userId) {
+      verifiedUserId = auth.userId;
+    }
     
     console.log(`[${new Date().toISOString()}] Error received:`, {
       type: errorReport.errorType,
