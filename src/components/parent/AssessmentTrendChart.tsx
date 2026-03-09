@@ -44,7 +44,7 @@ export const AssessmentTrendChart: React.FC<Props> = ({ results }) => {
     if (withScores.length < 2) return { chartData: null, subjects: [], config: {} };
 
     // Group by date
-    const groupedByDate: Record<string, any> = {};
+    const groupedByDate: Record<string, Record<string, string | number>> = {};
     const uniqueSubjects = new Set<string>();
 
     withScores.forEach((r) => {
