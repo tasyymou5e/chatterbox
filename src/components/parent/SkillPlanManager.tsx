@@ -44,16 +44,6 @@ export function SkillPlanManager({ familyId, childId }: SkillPlanManagerProps) {
     setGeneratingType(null);
   };
 
-  const statusBadge = (status: string) => {
-    const map: Record<string, string> = {
-      draft: 'bg-muted text-muted-foreground',
-      pending_approval: 'bg-yellow-100 text-yellow-800',
-      approved: 'bg-green-100 text-green-800',
-      active: 'bg-primary/10 text-primary',
-      archived: 'bg-muted text-muted-foreground',
-    };
-    return <Badge className={map[status] || 'bg-muted'}>{status.replace('_', ' ')}</Badge>;
-  };
 
   return (
     <Card>
