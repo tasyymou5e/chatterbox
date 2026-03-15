@@ -39,7 +39,7 @@ export const handleError = (
   }
 
   if (error instanceof Error) {
-    logger.error(`${context}: ${error.message}`, error, { component: context });
+    logger.error({ message: `${context}: ${error.message}`, component: context, error: { name: error.name, message: error.message, stack: error.stack } });
     return {
       name: error.name,
       message: error.message,
