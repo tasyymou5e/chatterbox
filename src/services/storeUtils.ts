@@ -8,6 +8,7 @@
  */
 import { useAuthStore } from '@/stores/authStore';
 import { z } from 'zod';
+import { secureLog } from '@/utils/wideLogger';
 
 // ============================================
 // Input Validation Schemas
