@@ -115,6 +115,7 @@ export function AdminSidebar() {
               <SidebarGroup>
                 <SidebarGroupLabel asChild>
                   <CollapsibleTrigger className="flex w-full items-center justify-between text-gray-400 hover:text-gray-200">
+                  <CollapsibleTrigger className="flex w-full items-center justify-between text-gray-300 hover:text-gray-200">
                     <span>{group.label}</span>
                     {!collapsed && (
                       <ChevronRight className="h-3 w-3 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
