@@ -86,7 +86,7 @@ export function useCatalogRealtime({
       setRealtimeConnected(true);
     } else {
       // Global subscriptions for users without families
-      console.log('Setting up global realtime channels');
+      secureLog.dev('Setting up global realtime channels');
       
       unsubscribeContent = realtimeManager.subscribeGlobalChannel(
         'content_items',
