@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { supabase } from '@/integrations/supabase/client';
 import type { SystemHealthMetric } from '@/types/systemHealth';
+import { secureLog } from '@/utils/wideLogger';
 
 // Interface imported from types file - no local definition needed
 
@@ -49,7 +50,7 @@ export const useSystemHealthStore = create<SystemHealthState>()(
 
       fetchSystemHealth: async () => {
         try {
-          console.log('🏥 Fetching system health metrics...');
+          secureLog.dev('🏥 Fetching system health metrics...');
           set({ loading: true, error: null });
 
           // Check if we have cached metrics and they're still fresh (5 minutes)
@@ -58,7 +59,7 @@ export const useSystemHealthStore = create<SystemHealthState>()(
           const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
           
           if (cachedMetrics && lastUpdated && lastUpdated > fiveMinutesAgo) {
-            console.log('📱 Using cached system health metrics');
+            secureLog.dev('📱 Using cached system health metrics');
             set({ metrics: cachedMetrics, loading: false });
             return;
           }
@@ -151,10 +152,10 @@ export const useSystemHealthStore = create<SystemHealthState>()(
             loading: false 
           });
 
-          console.log('✅ System health metrics updated successfully');
+          secureLog.dev('✅ System health metrics updated successfully');
 
         } catch (err: unknown) {
-          console.error('❌ Error fetching system health:', err);
+          secureLog.dev('❌ Error fetching system health:', err);
           set({ 
             error: `System health check failed: ${err instanceof Error ? err.message : String(err)}`,
             loading: false 

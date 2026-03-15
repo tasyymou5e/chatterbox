@@ -20,7 +20,7 @@ import { AssessmentHistoryCard } from '@/components/parent/AssessmentHistoryCard
 import { SkillPlanManager } from '@/components/parent/SkillPlanManager';
 import { SkillPlanReports } from '@/components/parent/SkillPlanReports';
 import { DailyProgressReport } from '@/components/parent/DailyProgressReport';
-import { logSupabaseQuery, logDataAccessIssue, logDataFetchSuccess, createQueryTimer } from '@/utils/wideLogger';
+import { logSupabaseQuery, logDataAccessIssue, logDataFetchSuccess, createQueryTimer, secureLog } from '@/utils/wideLogger';
 import { authLoggingService } from '@/services/authLoggingService';
 
 interface Profile {
@@ -223,7 +223,7 @@ const ParentDashboard = () => {
             repairDetails
           );
           
-          console.log('Auto-repair completed for user:', user.id, 'Fields repaired:', repairedFields);
+          secureLog.dev('Auto-repair completed for user, fields repaired:', repairedFields);
         }
       } catch (error) {
         // Log failed repair attempt

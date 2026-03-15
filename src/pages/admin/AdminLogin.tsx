@@ -9,6 +9,8 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Shield, AlertTriangle, Clock } from 'lucide-react';
 import { getErrorMessage } from '@/utils/getErrorMessage';
+import { secureLog } from '@/utils/wideLogger';
+
 export default function AdminLogin() {
   const { signIn, loading, user, isAdmin } = useAdminAuth();
   const { toast } = useToast();
@@ -21,7 +23,7 @@ export default function AdminLogin() {
 
   // Enhanced redirect check - only if fully authenticated and admin status confirmed
   if (!loading && user && isAdmin && user.id && user.email) {
-    console.log('✅ AdminLogin: User already authenticated as admin, redirecting');
+    secureLog.dev('✅ AdminLogin: User already authenticated as admin, redirecting');
     return <Navigate to="/admin/dashboard" replace />;
   }
 
@@ -47,7 +49,7 @@ export default function AdminLogin() {
     
     // Check rate limit BEFORE attempting login
     if (!checkAttempt(email)) {
-      console.log('🚫 Admin login blocked by rate limiter for:', email);
+      secureLog.dev('🚫 Admin login blocked by rate limiter');
       toast({
         title: "Account Temporarily Locked",
         description: `Too many failed attempts. Please wait ${formattedTimeRemaining} before trying again.`,
@@ -57,13 +59,13 @@ export default function AdminLogin() {
     }
     
     setIsSigningIn(true);
-    console.log('🔐 Admin login attempt for:', email);
+    secureLog.dev('🔐 Admin login attempt');
 
     try {
       const result = await signIn(email, password);
       
       if (result.error) {
-        console.error('❌ Login failed:', result.error);
+        secureLog.dev('❌ Login failed');
         if (result.error.message?.includes('Invalid login credentials')) {
           toast({
             title: "Access Denied",
@@ -93,18 +95,18 @@ export default function AdminLogin() {
         refreshStatus(email);
         setIsSigningIn(false);
       } else if (result.isAdmin) {
-        console.log('✅ Admin login successful, navigating immediately...');
+        secureLog.dev('✅ Admin login successful, navigating immediately...');
         toast({
           title: "Welcome Admin",
           description: "Welcome back, Admin!",
         });
         
         // Navigate immediately since auth state is established atomically in signIn
-        console.log('🔄 Navigating to admin dashboard...');
+        secureLog.dev('🔄 Navigating to admin dashboard...');
         navigate('/admin/dashboard');
         setIsSigningIn(false);
       } else {
-        console.error('❌ User is not an admin');
+        secureLog.dev('❌ User is not an admin');
         refreshStatus(email);
         toast({
           title: "Access Denied",
@@ -114,7 +116,7 @@ export default function AdminLogin() {
         setIsSigningIn(false);
       }
     } catch (error: unknown) {
-      console.error('💥 Unexpected login error:', getErrorMessage(error));
+      secureLog.dev('💥 Unexpected login error:', getErrorMessage(error));
       toast({
         title: "Connection Error", 
         description: getErrorMessage(error),

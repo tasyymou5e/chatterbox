@@ -6,6 +6,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { realtimeManager } from '@/services/RealtimeManager';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
+import { secureLog } from '@/utils/wideLogger';
 
 interface UseCatalogRealtimeOptions {
   userId: string | undefined;
@@ -30,7 +31,7 @@ export function useCatalogRealtime({
 
   // Optimized realtime state updates handler
   const updateCatalogState = useCallback((payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
-    console.log('GamesCatalog: Received realtime update:', payload.eventType);
+    secureLog.dev('GamesCatalog: Received realtime update:', payload.eventType);
     
     // Type-safe access to payload properties
     const newRecord = payload.eventType !== 'DELETE' ? payload.new as Record<string, unknown> : null;
@@ -61,7 +62,7 @@ export function useCatalogRealtime({
 
     if (userFamily) {
       // Family-specific subscriptions
-      console.log(`Setting up family realtime for family: ${userFamily}`);
+      secureLog.dev(`Setting up family realtime for family: ${userFamily}`);
       
       unsubscribeContent = realtimeManager.subscribeFamilyChannel(
         userFamily,
@@ -85,7 +86,7 @@ export function useCatalogRealtime({
       setRealtimeConnected(true);
     } else {
       // Global subscriptions for users without families
-      console.log('Setting up global realtime channels');
+      secureLog.dev('Setting up global realtime channels');
       
       unsubscribeContent = realtimeManager.subscribeGlobalChannel(
         'content_items',
@@ -103,7 +104,7 @@ export function useCatalogRealtime({
 
     // Cleanup function
     return () => {
-      console.log('Cleaning up realtime subscriptions');
+      secureLog.dev('Cleaning up realtime subscriptions');
       unsubscribeContent?.();
       unsubscribeCategories?.();
       unsubscribeFamilyAccess?.();
