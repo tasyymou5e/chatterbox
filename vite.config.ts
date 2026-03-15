@@ -158,6 +158,9 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  define: {
+    'import.meta.env.VITE_APP_VERSION': JSON.stringify(version),
+  },
   build: {
     // Disable source maps in production to prevent code exposure
     sourcemap: mode !== 'production',
