@@ -76,7 +76,6 @@ export const useErrorTracking = () => {
     errorTimestamps.current.push(now);
 
     try {
-    try {
       const { data: { user } } = await supabase.auth.getUser();
       
       // Check privacy consent before logging detailed error info
