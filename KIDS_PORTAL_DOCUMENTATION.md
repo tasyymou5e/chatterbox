@@ -1,367 +1,194 @@
 # Kids Portal Documentation
 
-**Unified Portal for Children's Games, Tasks, and Activities**
+**Unified Portal for Children's Learning, Games & Activities**
 
 ---
 
 ## Overview
 
-The Kids Portal is a unified, child-friendly interface that consolidates games, chores, and activities into a single, age-appropriate experience. It features autism-friendly design principles, progress tracking integration, and break reminders.
+The Kids Portal is a child-friendly interface that orchestrates assessment, skill-based learning plans, games, chores, and activities into a single, age-appropriate experience. It features autism-friendly design, idle detection, session resume, and AI-powered skill plan management.
 
 **Route:** `/kids`  
 **Target Users:** Child accounts  
-**Status:** ✅ Complete (2026-01-21)
+**Status:** ✅ Complete (Phases 1-7, 2026-03-15)
 
 ---
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     KidsPortal.tsx                          │
-│  (Main page - orchestrates all components and state)        │
-└─────────────────────────────────────────────────────────────┘
-        │                    │                    │
-        ▼                    ▼                    ▼
-┌───────────────┐  ┌─────────────────┐  ┌──────────────────┐
-│ KidsPortal    │  │ useKidsContent  │  │ useLessonProgress│
-│ Layout        │  │ Loader          │  │ Store            │
-└───────────────┘  └─────────────────┘  └──────────────────┘
-        │                    │                    │
-        ▼                    ▼                    ▼
-┌───────────────┐  ┌─────────────────┐  ┌──────────────────┐
-│ Progress      │  │ UnifiedContent  │  │ gameSessionStore │
-│ Header        │  │ Service         │  │                  │
-└───────────────┘  └─────────────────┘  └──────────────────┘
-        │
-        ▼
-┌───────────────┐  ┌─────────────────┐  ┌──────────────────┐
-│ KidsContent   │  │ AgeGroupMenu    │  │ KidsGameLauncher │
-│ Card          │  │                 │  │                  │
-└───────────────┘  └─────────────────┘  └──────────────────┘
+┌───────────────────────────────────────────────────────────────┐
+│                       KidsPortal.tsx                           │
+│  (Orchestrator: auth, idle detection, assessment gate)         │
+└───────────────────────────────────────────────────────────────┘
+        │                    │                     │
+        ▼                    ▼                     ▼
+┌────────────────┐  ┌──────────────────┐  ┌────────────────────┐
+│ KidsAssessment │  │ SkillPlan        │  │ useIdleDetector    │
+│ Gate           │  │ Dashboard        │  │ (idle auto-pause)  │
+└────────────────┘  └──────────────────┘  └────────────────────┘
+        │                    │
+        ▼                    ▼
+┌────────────────┐  ┌──────────────────┐  ┌────────────────────┐
+│ Assessment     │  │ ActivityExecutor │  │ Session Resume     │
+│ Form/Results   │  │ (step-by-step)   │  │ Banner             │
+└────────────────┘  └──────────────────┘  └────────────────────┘
+```
+
+### Data Flow
+
+```
+Child login
+    │
+    ▼
+KidsAssessmentGate ─── Has assessment? ─── No ──→ AssessmentForm
+    │                                                    │
+    Yes                                                  ▼
+    │                                            AI generates plan
+    ▼                                            (manage-skill-plan)
+SkillPlanDashboard                                       │
+    │                                                    ▼
+    ├── Check plan_session_logs ──→ Resume banner (if in_progress/paused)
+    │
+    ├── Load daily activities from skill_plan catalog
+    │
+    └── Launch activity ──→ ActivityExecutor
+                                │
+                                ├── Step-by-step execution
+                                ├── Pause/Resume (manual or idle)
+                                ├── Progress tracking (ai-session-helper)
+                                └── Completion → celebration
 ```
 
 ---
 
-## Components
+## Key Components
+
+### KidsAssessmentGate (`src/components/kids/KidsAssessmentGate.tsx`)
+**Purpose:** Blocks portal access until an initial assessment is completed.
+
+- Checks `assessment_results` for the current child
+- If no assessment: renders `AssessmentForm` full-screen
+- On completion: AI generates a skill plan, portal unlocks
+
+### SkillPlanDashboard (`src/components/kids/SkillPlanDashboard.tsx`)
+**Purpose:** Main dashboard showing daily skill plan activities with session resume.
+
+**Props:**
+| Prop | Type | Description |
+|------|------|-------------|
+| `isIdle` | `boolean` | Whether the user is idle (from useIdleDetector) |
+
+**Features:**
+- Queries `plan_session_logs` for in-progress/paused sessions on mount
+- Shows "Resume" banner if an active session exists
+- Displays daily activity cards from the skill plan catalog
+- Launches `ActivityExecutor` for selected activities
+
+### ActivityExecutor (`src/components/kids/ActivityExecutor.tsx`)
+**Purpose:** Step-by-step activity runner with pause/resume, progress tracking, and celebrations.
+
+**Props:**
+| Prop | Type | Description |
+|------|------|-------------|
+| `catalogItem` | `SkillPlanCatalogItem` | The activity to execute |
+| `isIdle` | `boolean` | Auto-pauses session when true |
+| `onComplete` | `() => void` | Called when activity finishes |
+| `onClose` | `() => void` | Called when user exits |
+
+**Features:**
+- Multi-step activity execution with progress bar
+- Manual + idle auto-pause via `useEffect` on `isIdle` prop
+- Session tracking via `ai-session-helper` edge function
+- Celebration animations on completion
+- Star/moon progress rewards
 
 ### KidsPortalLayout (`src/components/kids/KidsPortalLayout.tsx`)
-
-**Purpose:** Age-appropriate layout wrapper with colorful header and navigation.
-
-**Props:**
-| Prop | Type | Description |
-|------|------|-------------|
-| `childProfile` | `ChildProfile \| null` | Child's profile data |
-| `activeTab` | `ContentType` | Currently selected content type |
-| `onTabChange` | `(tab: ContentType) => void` | Tab change handler |
-| `onLogout` | `() => void` | Logout handler |
-| `children` | `ReactNode` | Page content |
-
-**Features:**
-- Gradient header with avatar and welcome message
-- Tab navigation: Games | My Tasks | Activities
-- Stars and moons progress counters
-- Child-friendly icons and large touch targets
-
----
+**Purpose:** Age-appropriate layout wrapper with colorful header, tabs, and navigation.
 
 ### KidsContentCard (`src/components/kids/KidsContentCard.tsx`)
-
-**Purpose:** Unified content card for displaying games, chores, and tasks.
-
-**Props:**
-| Prop | Type | Description |
-|------|------|-------------|
-| `item` | `KidContentItem` | Content item data |
-| `onLaunch` | `(item: KidContentItem) => void` | Launch handler |
-| `onFavoriteToggle` | `(item: KidContentItem) => void` | Favorite toggle |
-
-**Features:**
-- Visual progress ring showing completion percentage
-- Favorite toggle with heart icon
-- Autism-friendly feature badges (sensory, visual supports)
-- Age group and difficulty indicators
-- Play statistics (count, best score, last played)
-
----
+**Purpose:** Unified content card for games, chores, and tasks.
 
 ### KidsGameLauncher (`src/components/kids/KidsGameLauncher.tsx`)
-
-**Purpose:** Dialog wrapper for launching games with autism-friendly features.
-
-**Props:**
-| Prop | Type | Description |
-|------|------|-------------|
-| `game` | `KidContentItem \| null` | Game to launch |
-| `childProfile` | `ChildProfile \| null` | Child's profile |
-| `familyId` | `string \| undefined` | Family ID for progress tracking |
-| `onClose` | `() => void` | Close handler |
-| `onComplete` | `(results: GameResults) => void` | Completion callback |
-
-**Features:**
-- Integration with `useGameSession` for progress tracking
-- Break reminders at configurable intervals (default: 15 min)
-- Session statistics (stars earned, streak, accuracy)
-- `CelebrationEffect` for achievements
-- Pause/resume controls with overlays
-- PostMessage listener for iframe game events
-
----
+**Purpose:** Launches and manages embedded game sessions.
 
 ### KidsProgressHeader (`src/components/kids/KidsProgressHeader.tsx`)
+**Purpose:** Progress bar with stars/moons counters.
 
-**Purpose:** Visual display of stars, moons, and skill level.
-
-**Props:**
-| Prop | Type | Description |
-|------|------|-------------|
-| `profile` | `ChildProfile \| null` | Child's profile with progress |
-| `starsToNextMoon` | `number` | Stars needed (default: 10) |
-| `className` | `string` | Additional CSS classes |
-
-**Features:**
-- Animated star counter with sparkle effects
-- Moon progress bar with fill animation
-- Individual star indicators (filled/empty)
-- Skill level badge with trophy icon
-- Optional daily streak display
-
----
-
-### AgeGroupMenu (`src/components/kids/AgeGroupMenu.tsx`)
-
-**Purpose:** Collapsible filter panel for age groups.
-
-**Props:**
-| Prop | Type | Description |
-|------|------|-------------|
-| `selectedAgeGroup` | `AgeGroup \| 'all'` | Currently selected filter |
-| `onAgeGroupChange` | `(group: AgeGroup \| 'all') => void` | Filter change handler |
-| `contentCounts` | `Record<AgeGroup \| 'all', number>` | Count badges |
-
-**Features:**
-- Age group buttons: 3-5, 6-8, 9-12, 13+, All
-- Content count badges per age group
-- Visual icons for each age group
-- Collapsible sidebar design
+### Mascot / MascotGuide (`src/components/kids/Mascot.tsx`, `MascotGuide.tsx`)
+**Purpose:** Animated mascot providing encouragement and guidance.
 
 ---
 
 ## Hooks
 
-### useChildProfile (`src/hooks/useChildProfile.ts`)
-
-**Purpose:** Reusable hook for fetching child profile with React Query caching.
-
-```typescript
-const { profile, familyId, isLoading, error, refetch } = useChildProfile(userId);
-```
-
-**Features:**
-- Automatic caching (5 minute stale time)
-- Fetches profile and family membership in one call
-- Type-safe return values
-
----
-
-### useKidsContentLoader (`src/hooks/useKidsContentLoader.ts`)
-
-**Purpose:** Unified content loading with real-time subscriptions.
-
-```typescript
-const { content, isLoading, toggleFavorite, recordLaunch, contentCounts } = useKidsContentLoader({
-  childId: user?.id,
-  familyId: familyId,
-  contentType: activeTab,
-  ageGroup: selectedAgeGroup,
-});
-```
-
-**Features:**
-- React Query integration with caching
-- Real-time Supabase subscriptions for updates
-- Optimistic updates for favorites
-- Content counts by age group
+| Hook | Purpose |
+|------|---------|
+| `useIdleDetector` | Detects user inactivity, returns `isIdle` boolean |
+| `useActivitySession` | Manages session state with ai-session-helper |
+| `useSkillPlanManager` | CRUD operations for skill plans |
+| `useDailyPlan` | Fetches and manages daily plan activities |
+| `useKidsContentLoader` | Loads content items for the portal |
+| `useGameSession` | Tracks game session state |
+| `useCelebration` | Triggers celebration animations |
+| `useStarProgress` | Star/moon progress tracking |
+| `useChildProfile` | Fetches child profile data |
+| `useChildAvatar` | Manages child avatar |
 
 ---
 
-## Services
+## Edge Functions
 
-### UnifiedContentService (`src/services/UnifiedContentService.ts`)
-
-**Purpose:** Central service for fetching all child content types.
-
-**Methods:**
-| Method | Description |
-|--------|-------------|
-| `getAllContentForChild(childId, familyId, options)` | Combined games + chores |
-| `getGamesForChild(childId, familyId, ageGroup?)` | Game content only |
-| `getChoresForChild(childId)` | Assigned chores only |
-| `toggleFavorite(childId, contentId, type)` | Toggle favorite status |
-| `recordInteraction(childId, contentId, type)` | Track content usage |
+| Function | Purpose |
+|----------|---------|
+| `ai-session-helper` | Start, pause, resume, complete activity sessions |
+| `ai-assessment-review` | AI review of assessment results |
+| `generate-daily-plan` | Generate daily activity plan from skill plan |
+| `manage-skill-plan` | CRUD for skill plans, catalog items, session logs |
 
 ---
 
-## Database Schema
+## Idle Detection & Auto-Pause
 
-### child_content_preferences
+The idle detection system prevents children from leaving activities running unattended.
 
-Stores child-specific preferences and statistics for content items.
+**Flow:**
+1. `KidsPortal` instantiates `useIdleDetector` (configurable timeout)
+2. `isIdle` prop flows: `KidsPortal` → `SkillPlanDashboard` → `ActivityExecutor`
+3. `ActivityExecutor` has a `useEffect` that auto-pauses when `isIdle && session.active && !session.paused`
+4. Calls `pauseSession('idle_timeout')` via ai-session-helper
+5. On return, child sees the existing pause UI and can resume
 
-```sql
-CREATE TABLE child_content_preferences (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  child_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  content_id UUID NOT NULL,
-  content_type VARCHAR(20) NOT NULL,
-  is_favorite BOOLEAN DEFAULT false,
-  difficulty_preference VARCHAR(20) DEFAULT 'auto',
-  last_played_at TIMESTAMPTZ,
-  play_count INTEGER DEFAULT 0,
-  best_score NUMERIC(5,2),
-  total_time_spent INTEGER DEFAULT 0,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(child_id, content_id, content_type)
-);
-```
-
-### RLS Policies
-- `children_manage_own_preferences`: Children can CRUD their own preferences
-- `parents_view_family_preferences`: Parents can view their family's children
-- `admins_view_all_preferences`: Admins have full access
+**When idle outside of activities** (just browsing), a simplified overlay shows with a reset callback — no page reload, preserving state.
 
 ---
 
-## Type Definitions
+## Session Resume
 
-### KidContentItem (`src/types/kidsPortal.ts`)
-
-```typescript
-interface KidContentItem {
-  id: string;
-  type: ContentType; // 'game' | 'chore' | 'task' | 'activity'
-  title: string;
-  description: string;
-  ageGroup: AgeGroup[];
-  familyAccess: AccessLevel;
-  autismFeatures?: AutismFeatures;
-  thumbnailUrl?: string;
-  launchUrl?: string;
-  categoryId?: string;
-  categoryName?: string;
-  estimatedDuration?: number;
-  difficultyLevel?: string;
-  isFavorite?: boolean;
-  lastPlayedAt?: string;
-  playCount?: number;
-  bestScore?: number;
-  completionPercentage?: number;
-}
-```
-
-### ChildProfile
-
-```typescript
-interface ChildProfile {
-  id: string;
-  firstName: string;
-  lastName?: string;
-  ageGroup: AgeGroup;
-  avatarUrl?: string;
-  totalStars?: number;
-  totalMoons?: number;
-  currentLevel?: SkillLevel;
-  breakIntervalMinutes?: number;
-}
-```
+On `SkillPlanDashboard` mount:
+1. Queries `plan_session_logs` for `completion_status IN ('in_progress', 'paused')`
+2. If found: displays a "Resume where you left off" banner with activity title
+3. Clicking resume opens `ActivityExecutor` with the session's catalog item pre-loaded
+4. `ActivityExecutor` calls `resumeSession()` to continue from the saved step
 
 ---
 
-## Integration Points
+## Assessment Components
 
-### Progress Tracking
+### AssessmentForm (`src/components/assessment/AssessmentForm.tsx`)
+Multi-step assessment form with age-appropriate questions.
 
-The Kids Portal integrates with the lesson progress system:
+### AssessmentResults (`src/components/assessment/AssessmentResults.tsx`)
+Displays assessment scores and AI-generated review.
 
-1. **lessonProgressStore**: Provides real stars/moons data
-2. **useGameSession**: Tracks game session progress
-3. **gameSessionStore**: Manages active game state
-
-```typescript
-// In KidsPortal.tsx
-const { progressByCategory, fetchAllProgress } = useLessonProgressStore();
-
-// Calculate totals from all categories
-const totalStars = useMemo(() => {
-  let sum = 0;
-  progressByCategory.forEach(p => sum += p.current_stars);
-  return sum;
-}, [progressByCategory]);
-```
-
-### Celebration Effects
-
-Games trigger celebrations via the `onCelebration` callback:
-
-```typescript
-const gameSession = useGameSession({
-  categoryId: game.categoryId,
-  contentItemId: game.id,
-  userId: childProfile.id,
-  familyId: familyId,
-  onCelebration: (event) => {
-    // Triggers CelebrationEffect component
-    setShowCelebration(true);
-  },
-});
-```
+### AssessmentPDFExport (`src/components/assessment/AssessmentPDFExport.tsx`)
+Generates downloadable PDF of assessment results.
 
 ---
 
-## Routing
+## Parent Integration
 
-| Path | Component | Description |
-|------|-----------|-------------|
-| `/kids` | `KidsPortal` | Main kids portal |
-| `/children/tasks` | `Navigate` | Redirects to `/kids` |
-
-The portal selection component routes children directly to `/kids`:
-
-```typescript
-// In PortalSelection.tsx
-case "child":
-  navigate("/kids");
-  break;
-```
-
----
-
-## Accessibility Features
-
-The Kids Portal implements autism-friendly design:
-
-- **Large Touch Targets**: Minimum 44x44px tap areas
-- **Visual Consistency**: Predictable layouts and navigation
-- **Break Reminders**: Configurable intervals (default 15 min)
-- **Reduced Motion**: Respects `prefers-reduced-motion`
-- **Clear Hierarchy**: Obvious visual structure
-- **Sensory Badges**: Indicates sensory-friendly content
-- **Progress Visibility**: Clear star/moon progress indicators
-
----
-
-## Testing Checklist
-
-| Test Case | Steps | Expected Result |
-|-----------|-------|-----------------|
-| Route access | Navigate to `/kids` as child | Portal loads |
-| Old route redirect | Navigate to `/children/tasks` | Redirects to `/kids` |
-| Tab switching | Click Games → My Tasks | Content filters |
-| Age filtering | Click age group buttons | Content filters |
-| Game launch | Click game card | Launcher opens |
-| Break reminder | Wait 15 min | Overlay appears |
-| Favorites | Click heart icon | Persists in DB |
-| Progress display | Complete game | Stars update |
-| Celebration | Earn a star | Animation plays |
+Parents interact with the Kids Portal system through:
+- **ParentReports → "Daily Progress" tab**: `DailyProgressReport` per child
+- **Skill plan review**: Parents can review/approve AI-generated plans
+- **ParentDashboard**: Family overview with child progress summaries

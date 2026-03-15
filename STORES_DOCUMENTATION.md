@@ -1,7 +1,7 @@
 # Zustand Stores Documentation
 
-> **Last Updated:** 2026-01-21  
-> **Total Stores:** 12  
+> **Last Updated:** 2026-03-15  
+> **Total Stores:** 18  
 > **Location:** `src/stores/`  
 > **State Management:** Zustand v5.0.10
 
@@ -29,21 +29,25 @@ Chatterbox uses Zustand for global state management, replacing the previous Reac
 
 ```
 src/stores/
-├── index.ts                    # Central exports
-├── _storeTemplate.ts           # Template for new stores
-├── authStore.ts                # Authentication state
-├── uiStore.ts                  # UI/Loading states
-├── adminStore.ts               # Admin operations
-├── choreStore.ts               # Chore management
-├── connectionStore.ts          # Family connections
-├── gamificationStore.ts        # Points/Achievements
-├── gameSessionStore.ts         # Active game sessions
-├── lessonProgressStore.ts      # Educational progress
-├── analyticsStore.ts           # System analytics
-├── behaviorAnalyticsStore.ts   # Behavioral tracking
-├── performanceAnalyticsStore.ts# Performance metrics
-├── progressAnalyticsStore.ts   # Progress insights
-└── systemHealthStore.ts        # Health monitoring
+├── index.ts                      # Central exports
+├── _storeTemplate.ts             # Template for new stores
+├── authStore.ts                  # Core authentication state
+├── authActionsStore.ts           # Auth action handlers
+├── authRoleStore.ts              # Role management state
+├── authSessionStore.ts           # Session management state
+├── uiStore.ts                    # UI/Loading states
+├── adminStore.ts                 # Admin operations
+├── choreStore.ts                 # Chore management
+├── connectionStore.ts            # Family connections
+├── gamificationStore.ts          # Points/Achievements
+├── gameSessionStore.ts           # Active game sessions
+├── lessonProgressStore.ts        # Educational progress
+├── testResultsStore.ts           # Assessment/test results
+├── analyticsStore.ts             # System analytics
+├── behaviorAnalyticsStore.ts     # Behavioral tracking
+├── performanceAnalyticsStore.ts  # Performance metrics
+├── progressAnalyticsStore.ts     # Progress insights
+└── systemHealthStore.ts          # Health monitoring
 ```
 
 ### Design Principles
