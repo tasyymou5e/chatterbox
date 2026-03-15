@@ -319,6 +319,14 @@ export const adminChildRoutes: RouteConfig[] = [
       </ErrorBoundary>
     )
   },
+  { 
+    path: 'logs-triage', 
+    element: (
+      <ErrorBoundary componentName="AdminLogsTriage">
+        <LazyRoute variant="dashboard"><AdminLogsTriageLazy /></LazyRoute>
+      </ErrorBoundary>
+    )
+  },
 ];
 
 // Create the protected admin layout route
