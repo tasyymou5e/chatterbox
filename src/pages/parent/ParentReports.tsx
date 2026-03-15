@@ -261,6 +261,24 @@ export default function ParentReports() {
             <ChildrenAchievementsPanel />
             <ChildrenContentUsage />
           </TabsContent>
+
+          <TabsContent value="daily" className="space-y-6">
+            {childMembers.length === 0 ? (
+              <Card>
+                <CardContent className="py-8 text-center text-muted-foreground">
+                  {loading ? 'Loading...' : 'No children found in your family.'}
+                </CardContent>
+              </Card>
+            ) : (
+              childMembers.map(child => (
+                <DailyProgressReport
+                  key={child.user_id}
+                  childId={child.user_id}
+                  childName={child.first_name || 'Child'}
+                />
+              ))
+            )}
+          </TabsContent>
         </Tabs>
       </main>
     </div>

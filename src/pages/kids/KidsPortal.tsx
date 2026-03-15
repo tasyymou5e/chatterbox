@@ -106,7 +106,7 @@ export default function KidsPortal() {
             <KidsProgressHeader profile={childProfile} className="mb-2" />
 
             {/* Skill Plan Dashboard - primary full view */}
-            <SkillPlanDashboard />
+            <SkillPlanDashboard isIdle={isIdle} />
           </div>
 
           <AgeGroupMenu

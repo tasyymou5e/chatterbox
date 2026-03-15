@@ -50,6 +50,13 @@ export function ActivityExecutor({ catalogItem, planItemId, isIdle, onComplete, 
     };
   }, [session.sessionId, session.isPaused, session.isCompleted]);
 
+  // Auto-pause on idle timeout
+  useEffect(() => {
+    if (isIdle && session.sessionId && !session.isPaused && !session.isCompleted) {
+      pauseSession('idle_timeout');
+    }
+  }, [isIdle, session.sessionId, session.isPaused, session.isCompleted, pauseSession]);
+
   // Periodic progress update every 30s
   useEffect(() => {
     if (timerSeconds > 0 && timerSeconds % 30 === 0 && !session.isPaused) {
