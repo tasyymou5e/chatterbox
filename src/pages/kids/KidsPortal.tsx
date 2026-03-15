@@ -9,14 +9,13 @@ import { useAuth } from '@/hooks/useAuth';
 import { KidsPortalLayout, KidsContentCard, AgeGroupMenu, KidsProgressHeader, EmbeddedGameViewer, MascotGuide, useMascotGuide } from '@/components/kids';
 import { SkillPlanDashboard } from '@/components/kids/SkillPlanDashboard';
 import { KidsAssessmentGate } from '@/components/kids/KidsAssessmentGate';
-import { useKidsContentLoader } from '@/hooks/useKidsContentLoader';
 import { useChildProfile } from '@/hooks/useChildProfile';
 import { useChildAvatar } from '@/hooks/useChildAvatar';
 import { useLessonProgressStore } from '@/stores/lessonProgressStore';
 import { useIdleDetector } from '@/hooks/useIdleDetector';
 import { cLog } from '@/utils/conditionalLogger';
 import type { KidContentItem, ContentType, AgeGroup, ChildProfile } from '@/types/kidsPortal';
-import { KidsLoadingState, KidsEmptyState } from '@/components/illustrations';
+import { KidsLoadingState } from '@/components/illustrations';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Play } from 'lucide-react';
@@ -27,24 +26,17 @@ export default function KidsPortal() {
   const [activeTab, setActiveTab] = useState<ContentType>('game');
   const [selectedAgeGroup, setSelectedAgeGroup] = useState<AgeGroup | 'all'>('all');
   const [activeGame, setActiveGame] = useState<KidContentItem | null>(null);
-  
-  // Mascot guide state
+
   const mascot = useMascotGuide();
   const { profile: baseProfile, familyId, isLoading: isLoadingProfile } = useChildProfile(user?.id);
-
-  // Avatar system
   const { avatar, saveAvatar, uploadAvatar, isSaving: isAvatarSaving } = useChildAvatar(user?.id, familyId || undefined);
-
-  // Progress store for real stars/moons
   const { progressByCategory, fetchAllProgress, setUser } = useLessonProgressStore();
 
-  // Idle detection - 30 minute timeout
   const { isIdle } = useIdleDetector({
     timeoutMs: 30 * 60 * 1000,
     enabled: !!user?.id,
   });
 
-  // Initialize progress store when user and family are available
   useEffect(() => {
     if (user?.id && familyId) {
       setUser(user.id, familyId);
@@ -54,7 +46,6 @@ export default function KidsPortal() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, familyId, setUser, fetchAllProgress]);
 
-  // Calculate total stars and moons from progress store
   const { totalStars, totalMoons } = useMemo(() => {
     let stars = 0;
     let moons = 0;
@@ -65,37 +56,16 @@ export default function KidsPortal() {
     return { totalStars: stars, totalMoons: moons };
   }, [progressByCategory]);
 
-  // Merge real progress data into profile
   const childProfile: ChildProfile | null = useMemo(() => {
     if (!baseProfile) return null;
-    return {
-      ...baseProfile,
-      totalStars,
-      totalMoons,
-    };
+    return { ...baseProfile, totalStars, totalMoons };
   }, [baseProfile, totalStars, totalMoons]);
 
-  // Redirect if not logged in
   useEffect(() => {
     if (!user?.id && !isLoadingProfile) {
       navigate('/auth');
     }
   }, [user?.id, isLoadingProfile, navigate]);
-
-  // Load content
-  const { content, isLoading, toggleFavorite, recordLaunch, contentCounts } = useKidsContentLoader({
-    childId: user?.id,
-    familyId: familyId || undefined,
-    contentType: activeTab,
-    ageGroup: selectedAgeGroup,
-  });
-
-  const handleLaunch = (item: KidContentItem) => {
-    recordLaunch(item);
-    if (item.type === 'game' && item.launchUrl) {
-      setActiveGame(item);
-    }
-  };
 
   const handleGameComplete = (results: { score: number; duration: number; completed: boolean }) => {
     cLog('Game completed', results);
@@ -117,7 +87,6 @@ export default function KidsPortal() {
     );
   }
 
-  // Idle screen - welcome back
   if (isIdle) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted">
@@ -139,7 +108,6 @@ export default function KidsPortal() {
 
   return (
     <>
-      {/* Gate behind assessments + approved plan */}
       <KidsAssessmentGate>
         <KidsPortalLayout
           childProfile={childProfile}
@@ -151,48 +119,21 @@ export default function KidsPortal() {
           onAvatarUpload={uploadAvatar}
           isAvatarSaving={isAvatarSaving}
         >
-          <div className="flex gap-6">
-            <div className="flex-1">
-              <KidsProgressHeader profile={childProfile} className="mb-6" />
+          <div className="flex flex-col gap-6">
+            <KidsProgressHeader profile={childProfile} className="mb-2" />
 
-              {/* Skill Plan Dashboard - primary view */}
-              <div className="mb-6">
-                <SkillPlanDashboard />
-              </div>
-
-              {/* Content grid below the plan */}
-              {isLoading ? (
-                <KidsLoadingState message="Finding fun stuff..." />
-              ) : content.length === 0 ? (
-                <KidsEmptyState
-                  illustration="exploring"
-                  title="No games here yet!"
-                  message="Try changing your filters to discover more fun activities."
-                />
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {content.map((item) => (
-                    <KidsContentCard
-                      key={item.id}
-                      item={item}
-                      onLaunch={handleLaunch}
-                      onFavoriteToggle={toggleFavorite}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
+            {/* Skill Plan Dashboard - primary full view */}
+            <SkillPlanDashboard />
           </div>
 
           <AgeGroupMenu
             selectedAgeGroup={selectedAgeGroup}
             onAgeGroupChange={setSelectedAgeGroup}
-            contentCounts={contentCounts}
+            contentCounts={{}}
           />
         </KidsPortalLayout>
       </KidsAssessmentGate>
 
-      {/* Embedded Game Viewer */}
       {activeGame && (
         <EmbeddedGameViewer
           game={activeGame}
@@ -203,7 +144,6 @@ export default function KidsPortal() {
         />
       )}
 
-      {/* Mascot Guide */}
       {mascot.visible && (
         <MascotGuide
           context={mascot.context}
