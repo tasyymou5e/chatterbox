@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { useErrorTracking } from "@/hooks/useErrorTracking";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
-import { secureLog } from "@/utils/secureLogging";
+import { secureLog } from "@/utils/wideLogger";
 
 const NotFound = () => {
   const location = useLocation();

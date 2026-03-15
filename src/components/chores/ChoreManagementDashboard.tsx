@@ -11,7 +11,7 @@ import { useChoreManagement } from '@/hooks/useChoreManagement';
 import { useAuthStore } from '@/stores/authStore';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { logSupabaseQuery, logDataAccessIssue, createQueryTimer } from '@/utils/parentPortalLogger';
+import { logSupabaseQuery, logDataAccessIssue, createQueryTimer } from '@/utils/wideLogger';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { 

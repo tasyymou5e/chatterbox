@@ -3,7 +3,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePrivacyConsent } from '@/hooks/usePrivacyConsent';
 import PrivacyConsentDialog from '@/components/privacy/PrivacyConsentDialog';
 import { initLogger } from '@/utils/initializationLogger';
-import { secureLog } from '@/utils/secureLogging';
+import { secureLog } from '@/utils/wideLogger';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, Trash2, AlertCircle } from 'lucide-react';
 

@@ -8,7 +8,7 @@ import { CelebrationEffect } from '@/components/aac/CelebrationEffect';
 import { StarBurstCelebration } from '@/components/progress/StarBurstCelebration';
 import { CompletionCelebrationModal } from '@/components/progress/CompletionCelebrationModal';
 import { isValidGameEvent, type GameEvent } from '@/types/gameEvents';
-import { secureLog } from '@/utils/secureLogging';
+import { secureLog } from '@/utils/wideLogger';
 import type { CelebrationEvent, SkillLevel, CategoryProgress } from '@/types/lessonProgress';
 
 interface ContentItem {

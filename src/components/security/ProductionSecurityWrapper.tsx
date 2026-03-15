@@ -2,7 +2,7 @@
  * Production security wrapper that removes development artifacts
  */
 import React, { useEffect } from 'react';
-import { initSecureLogging, secureLog } from '@/utils/secureLogging';
+import { initSecureLogging, secureLog } from '@/utils/wideLogger';
 
 interface ProductionSecurityWrapperProps {
   children: React.ReactNode;

@@ -20,7 +20,7 @@ import { AssessmentHistoryCard } from '@/components/parent/AssessmentHistoryCard
 import { SkillPlanManager } from '@/components/parent/SkillPlanManager';
 import { SkillPlanReports } from '@/components/parent/SkillPlanReports';
 import { DailyProgressReport } from '@/components/parent/DailyProgressReport';
-import { logSupabaseQuery, logDataAccessIssue, logDataFetchSuccess, createQueryTimer } from '@/utils/parentPortalLogger';
+import { logSupabaseQuery, logDataAccessIssue, logDataFetchSuccess, createQueryTimer } from '@/utils/wideLogger';
 import { authLoggingService } from '@/services/authLoggingService';
 
 interface Profile {

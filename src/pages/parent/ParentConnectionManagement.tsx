@@ -5,7 +5,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { supabase } from '@/integrations/supabase/client';
 import { ConnectionManagementDashboard } from '@/components/connections/ConnectionManagementDashboard';
 import { ParentNavigation } from '@/components/parent/ParentNavigation';
-import { logSupabaseQuery, logDataAccessIssue, logDataFetchSuccess, createQueryTimer } from '@/utils/parentPortalLogger';
+import { logSupabaseQuery, logDataAccessIssue, logDataFetchSuccess, createQueryTimer } from '@/utils/wideLogger';
 
 interface Family {
   id: string;

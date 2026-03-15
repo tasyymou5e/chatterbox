@@ -3,7 +3,7 @@ import { AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
-import { secureLog } from '@/utils/secureLogging';
+import { secureLog } from '@/utils/wideLogger';
 
 interface Props {
   children: ReactNode;

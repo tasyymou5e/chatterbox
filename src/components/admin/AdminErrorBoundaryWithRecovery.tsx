@@ -19,7 +19,7 @@ import {
   FileText
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { secureLog } from '@/utils/secureLogging';
+import { secureLog } from '@/utils/wideLogger';
 import type { LucideIcon } from 'lucide-react';
 
 export interface ErrorRecoveryActions {
