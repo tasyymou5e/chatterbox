@@ -75,7 +75,7 @@ export default defineConfig(({ mode }) => ({
         runtimeCaching: [
           // Supabase REST API - NetworkFirst with fallback
           {
-            urlPattern: /^https:\/\/lxuqfgbukrrickanmmic\.supabase\.co\/rest\/v1\/.*/i,
+            urlPattern: supabaseRegex('rest/v1'),
             handler: 'NetworkFirst',
             options: {
               cacheName: 'supabase-api-cache',
@@ -91,17 +91,17 @@ export default defineConfig(({ mode }) => ({
           },
           // Supabase Edge Functions - NetworkOnly (no caching for mutations)
           {
-            urlPattern: /^https:\/\/lxuqfgbukrrickanmmic\.supabase\.co\/functions\/.*/i,
+            urlPattern: supabaseRegex('functions'),
             handler: 'NetworkOnly'
           },
           // Supabase Auth - NetworkOnly (critical for security)
           {
-            urlPattern: /^https:\/\/lxuqfgbukrrickanmmic\.supabase\.co\/auth\/.*/i,
+            urlPattern: supabaseRegex('auth'),
             handler: 'NetworkOnly'
           },
           // Supabase Storage - CacheFirst for images
           {
-            urlPattern: /^https:\/\/lxuqfgbukrrickanmmic\.supabase\.co\/storage\/.*/i,
+            urlPattern: supabaseRegex('storage'),
             handler: 'CacheFirst',
             options: {
               cacheName: 'supabase-storage-cache',
