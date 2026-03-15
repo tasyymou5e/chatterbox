@@ -37,7 +37,7 @@ const queryClient = new QueryClient({
       retry: 1, // Retry mutations once on failure
       retryDelay: 1000,
       onError: (error) => {
-        logger.error('Mutation failed', error instanceof Error ? error : new Error(String(error)));
+        logger.error({ message: 'Mutation failed', error: error instanceof Error ? { name: (error as Error).name, message: (error as Error).message } : String(error) });
       },
     },
   },

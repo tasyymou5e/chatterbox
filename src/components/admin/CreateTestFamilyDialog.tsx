@@ -339,7 +339,7 @@ export default function CreateTestFamilyDialog({ open, onOpenChange, onSuccess }
       }
     } catch (error: unknown) {
       const totalDuration = Date.now() - submitStartTime;
-      cError('[CreateTestFamily] ERROR after', `${totalDuration}ms:`, error);
+      cError(`[CreateTestFamily] ERROR after ${totalDuration}ms`, error);
       secureLog.error('Test family creation failed', error, 'CreateTestFamily');
       toast({
         variant: "destructive",

@@ -48,7 +48,7 @@ export const ApplicationLogs = () => {
         metadata: (item.metadata as Record<string, unknown>) || {}
       })));
     } catch (error: unknown) {
-      logger.error('Error fetching application logs', error instanceof Error ? error : new Error(String(error)));
+      logger.error({ message: 'Error fetching application logs', component: 'ApplicationLogs', error: error instanceof Error ? { name: (error as Error).name, message: (error as Error).message } : String(error) });
       toast({
         title: "Error",
         description: "Failed to fetch application logs",

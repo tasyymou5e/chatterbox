@@ -144,9 +144,11 @@ export const retryOperation = async <T>(
       }
 
       const delay = initialDelay * Math.pow(2, attempt);
-      logger.warn(`${context} failed, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries + 1})`, {
+      logger.info({
+        message: `${context} failed, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries + 1})`,
         component: context,
-        metadata: { attempt, delay, error: getErrorMessage(error) }
+        level_hint: 'warn',
+        attempt, delay, retry_error: getErrorMessage(error)
       });
 
       await new Promise(resolve => setTimeout(resolve, delay));
