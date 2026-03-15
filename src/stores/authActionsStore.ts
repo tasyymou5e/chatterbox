@@ -15,6 +15,7 @@ import { type AuthError, type AuthMetadata, isAdminRole } from '@/types/auth';
 import { useAuthSessionStore } from './authSessionStore';
 import { useAuthRoleStore } from './authRoleStore';
 import { secureLog } from '@/utils/wideLogger';
+import { broadcastAuthEvent } from '@/hooks/useAuthSessionGuard';
 
 interface AuthResult {
   error: AuthError | null;
