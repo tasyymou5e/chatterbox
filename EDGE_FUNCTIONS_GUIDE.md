@@ -1,7 +1,7 @@
 # Edge Functions Developer Guide
 
-> **Last Updated:** 2026-02-17  
-> **Total Functions:** 27  
+> **Last Updated:** 2026-03-15  
+> **Total Functions:** 32  
 > **Runtime:** Deno  
 > **Location:** `supabase/functions/`
 
