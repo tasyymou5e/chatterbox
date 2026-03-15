@@ -7,6 +7,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { KidsPortalLayout, KidsContentCard, AgeGroupMenu, KidsProgressHeader, EmbeddedGameViewer, MascotGuide, useMascotGuide } from '@/components/kids';
+import { SkillPlanDashboard } from '@/components/kids/SkillPlanDashboard';
 import { useKidsContentLoader } from '@/hooks/useKidsContentLoader';
 import { useChildProfile } from '@/hooks/useChildProfile';
 import { useChildAvatar } from '@/hooks/useChildAvatar';
@@ -157,6 +158,11 @@ export default function KidsPortal() {
       </KidsPortalLayout>
 
       {/* Embedded Game Viewer - Full screen inline game experience */}
+      {/* Skill Plan Dashboard */}
+      <div className="px-4 pb-4">
+        <SkillPlanDashboard />
+      </div>
+
       {activeGame && (
         <EmbeddedGameViewer
           game={activeGame}

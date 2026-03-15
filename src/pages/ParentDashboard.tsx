@@ -17,6 +17,8 @@ import { Badge } from '@/components/ui/badge';
 import { ParentNavigation } from '@/components/parent/ParentNavigation';
 import { WeeklyProgressSummary } from '@/components/parent/WeeklyProgressSummary';
 import { AssessmentHistoryCard } from '@/components/parent/AssessmentHistoryCard';
+import { SkillPlanManager } from '@/components/parent/SkillPlanManager';
+import { SkillPlanReports } from '@/components/parent/SkillPlanReports';
 import { logSupabaseQuery, logDataAccessIssue, logDataFetchSuccess, createQueryTimer } from '@/utils/parentPortalLogger';
 import { authLoggingService } from '@/services/authLoggingService';
 
@@ -690,6 +692,16 @@ const ParentDashboard = () => {
           </ScrollArea>
         </DialogContent>
       </Dialog>
+
+      {/* Skill Plan Manager */}
+      {familyData.length > 0 && (
+        <div className="grid gap-6 md:grid-cols-2 mt-6">
+          <SkillPlanManager familyId={familyData[0]?.id || null} />
+          {familyMembers.filter(m => m.role === 'child').length > 0 && (
+            <SkillPlanReports childId={familyMembers.filter(m => m.role === 'child')[0].user_id} />
+          )}
+        </div>
+      )}
     </div>
   );
 };

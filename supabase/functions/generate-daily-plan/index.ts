@@ -39,6 +39,11 @@ serve(async (req) => {
 
     const adminClient = createClient(supabaseUrl, serviceKey);
 
+    // Parse request body for schedule_type
+    const requestBody = await req.json().catch(() => ({}));
+    const scheduleType = requestBody.schedule_type || "daily";
+    const childId = requestBody.child_id; // optional: generate plan for a specific child
+
     // Check if plan already exists for today
     const today = new Date().toISOString().split("T")[0];
     const { data: existingPlan } = await adminClient
@@ -112,35 +117,35 @@ serve(async (req) => {
       age_group: c.age_group,
       duration: c.estimated_duration_minutes,
       tags: c.tags,
+      skill_domain: c.skill_domain,
+      item_type: c.item_type,
+      autism_skill_tags: c.autism_skill_tags,
+      clinical_reference: c.clinical_reference,
     }));
 
     const userRole = profile?.user_role || "parent";
     const userName = profile?.first_name || "User";
 
-    const systemPrompt = `You are a life skills planning assistant specializing in autism support and daily living skills development. 
-Your job is to review assessment results and create a personalized daily plan from the available catalog of activities.
+    // Map assessment scores to skill domain weights
+    const domainWeights = mapAssessmentsToDomains(assessmentSummary);
+
+    const itemCount = scheduleType === "weekly" ? "15-25" : scheduleType === "monthly" ? "30-40" : "5-8";
+    const timeframe = scheduleType === "weekly" ? "7 days" : scheduleType === "monthly" ? "30 days" : "today";
+
+    const systemPrompt = `You are a life skills planning assistant specializing in autism support (ABA, TEACCH, ESDM frameworks).
+Review assessment results and create a personalized ${scheduleType} plan from the available catalog.
+
+Assessment-to-Domain Mapping:
+${JSON.stringify(domainWeights, null, 2)}
 
 Rules:
-- Select 5-8 items from the catalog that best match the user's needs based on their assessments.
-- Prioritize areas where assessments show the most need for improvement.
-- Balance the plan across different categories (don't overload one area).
-- Consider the user's role (${userRole}) and adjust complexity accordingly.
-- For each item, provide a brief reasoning for why it was selected.
-- Return a JSON object with this exact structure:
-
-{
-  "summary": "A 2-3 sentence personalized summary of today's plan and why these items were chosen",
-  "items": [
-    {
-      "catalog_item_id": "uuid-from-catalog",
-      "title": "Item title",
-      "description": "Brief description",
-      "category": "category",
-      "priority": 1,
-      "ai_reasoning": "Why this was recommended based on assessments"
-    }
-  ]
-}`;
+- Select ${itemCount} items from the catalog matching the user's needs based on assessments.
+- Weight selection toward domains with higher deficit scores (higher = more need).
+- Balance across different skill domains and item types (chore, game, study, activity).
+- ${scheduleType === "weekly" ? "Distribute items across 7 days with variety. Include a 'day' field (1-7) for each item." : ""}
+- ${scheduleType === "monthly" ? "Create progressive difficulty: easier items first week, harder later. Include a 'week' field (1-4) for each item." : ""}
+- For each item, explain why it was selected based on assessment deficits.
+- Consider the user's role (${userRole}).`;
 
     const userPrompt = `User: ${userName} (Role: ${userRole})
 
@@ -150,7 +155,7 @@ ${assessmentSummary.length > 0 ? JSON.stringify(assessmentSummary, null, 2) : "N
 Available Catalog Items:
 ${JSON.stringify(catalogSummary, null, 2)}
 
-Create a personalized daily plan for today. Select items from the catalog and explain why each is recommended.`;
+Create a personalized ${scheduleType} plan for ${timeframe}. Select items and explain why each is recommended.`;
 
     // Call Lovable AI Gateway with tool calling for structured output
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -301,3 +306,44 @@ Create a personalized daily plan for today. Select items from the catalog and ex
     );
   }
 });
+
+// Map assessment results to skill domain deficit weights
+function mapAssessmentsToDomains(assessments: any[]): Record<string, number> {
+  const weights: Record<string, number> = {
+    communication: 5,
+    social: 5,
+    sensory: 5,
+    executive_function: 5,
+    daily_living: 5,
+    emotional_regulation: 5,
+    motor_skills: 5,
+    academic: 5,
+  };
+
+  for (const assessment of assessments) {
+    const scores = assessment.scores || {};
+    const type = assessment.type?.toLowerCase() || "";
+
+    if (type.includes("atec")) {
+      // ATEC: higher scores = more deficit
+      if (scores.speech !== undefined) weights.communication = Math.max(weights.communication, scores.speech);
+      if (scores.sociability !== undefined) weights.social = Math.max(weights.social, scores.sociability);
+      if (scores.sensory !== undefined) weights.sensory = Math.max(weights.sensory, scores.sensory);
+      if (scores.health !== undefined) weights.daily_living = Math.max(weights.daily_living, scores.health);
+    }
+
+    if (type.includes("dsm")) {
+      // DSM-5: criteria met indicate areas of need
+      if (scores.social_communication !== undefined) {
+        weights.communication = Math.max(weights.communication, scores.social_communication * 3);
+        weights.social = Math.max(weights.social, scores.social_communication * 3);
+      }
+      if (scores.restricted_repetitive !== undefined) {
+        weights.sensory = Math.max(weights.sensory, scores.restricted_repetitive * 3);
+        weights.emotional_regulation = Math.max(weights.emotional_regulation, scores.restricted_repetitive * 2);
+      }
+    }
+  }
+
+  return weights;
+}
