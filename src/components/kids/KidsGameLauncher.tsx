@@ -12,6 +12,7 @@ import type { CelebrationEvent } from '@/types/lessonProgress';
 import { cn } from '@/lib/utils';
 import { useGameSession } from '@/hooks/useGameSession';
 import { CelebrationEffect } from '@/components/aac/CelebrationEffect';
+import { secureLog } from '@/utils/wideLogger';
 
 interface KidsGameLauncherProps {
   game: KidContentItem | null;
@@ -97,9 +98,16 @@ export const KidsGameLauncher: React.FC<KidsGameLauncherProps> = ({
   useEffect(() => {
     if (!game) return;
 
+    // SECURITY: Strict origin allowlist for postMessage
+    const ALLOWED_GAME_ORIGINS = [
+      window.location.origin,
+      // Add trusted external game domains here if needed
+    ];
+
     const handleMessage = async (event: MessageEvent) => {
-      // Validate origin for security
-      if (!event.origin.includes('lovable.app') && !event.origin.includes('localhost')) {
+      // SECURITY: Validate origin against strict allowlist
+      if (!ALLOWED_GAME_ORIGINS.includes(event.origin)) {
+        secureLog.security('Rejected postMessage from untrusted origin in KidsGameLauncher', { origin: event.origin }, 'high');
         return;
       }
 

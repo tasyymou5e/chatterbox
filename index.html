@@ -9,6 +9,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     
     <!-- Security Headers -->
+    <!-- NOTE: 'unsafe-inline' and 'unsafe-eval' in script-src are required for Vite HMR
+         and the Lovable preview environment. In a production deployment served via your own
+         infrastructure, replace these with nonce-based CSP delivered through HTTP headers. -->
     <meta http-equiv="Content-Security-Policy" content="
       default-src 'self';
       script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.gpteng.co;
