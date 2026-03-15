@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { supabase } from '@/integrations/supabase/client';
 import type { SystemHealthMetric } from '@/types/systemHealth';
+import { secureLog } from '@/utils/wideLogger';
 
 // Interface imported from types file - no local definition needed
 
