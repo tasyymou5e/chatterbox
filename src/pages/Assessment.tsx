@@ -31,6 +31,22 @@ const Assessment: React.FC = () => {
   const [subjectName, setSubjectName] = useState('');
   const [_answers, setAnswers] = useState<Record<string, number>>({});
 
+  // Read query params for child context
+  const searchParams = new URLSearchParams(window.location.search);
+  const childIdParam = searchParams.get('childId');
+  const typeParam = searchParams.get('type');
+
+  // Auto-select instrument if type param is provided
+  useEffect(() => {
+    if (typeParam && view === 'select') {
+      const inst = getInstrumentById(typeParam);
+      if (inst) {
+        setSelectedInstrument(inst);
+        setView('form');
+      }
+    }
+  }, [typeParam]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const selectInstrument = (id: string) => {
     const inst = getInstrumentById(id);
     if (inst) {
