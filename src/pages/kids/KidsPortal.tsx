@@ -129,7 +129,7 @@ export default function KidsPortal() {
           <AgeGroupMenu
             selectedAgeGroup={selectedAgeGroup}
             onAgeGroupChange={setSelectedAgeGroup}
-            contentCounts={{}}
+            contentCounts={{ 'all': 0, '3-5': 0, '6-8': 0, '9-12': 0, '13+': 0 }}
           />
         </KidsPortalLayout>
       </KidsAssessmentGate>

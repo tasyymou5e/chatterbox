@@ -50,7 +50,9 @@ export function SkillPlanDashboard() {
 
       const schedule = schedules[0];
       setPlanName(schedule.plan_name || "Today's Plan");
-      const items: PlanItem[] = Array.isArray(schedule.plan_items) ? schedule.plan_items : [];
+      const items: PlanItem[] = Array.isArray(schedule.plan_items)
+        ? (schedule.plan_items as unknown as PlanItem[])
+        : [];
 
       // Fetch session logs to determine completion status
       const { data: sessions } = await supabase
