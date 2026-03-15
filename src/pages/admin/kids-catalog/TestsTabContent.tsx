@@ -38,7 +38,7 @@ export function TestsTabContent({ testFiles, skillItems }: Props) {
         </h3>
         {testFiles.length === 0 ? (
           <div className="flex flex-col items-center gap-4 py-12">
-            <ProfessionalIllustration variant="analytics" size="md" />
+            <ProfessionalIllustration variant="content" size="md" />
             <p className="text-muted-foreground text-sm">No test files found for kids features.</p>
           </div>
         ) : (
