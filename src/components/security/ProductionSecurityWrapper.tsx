@@ -68,7 +68,7 @@ export const ProductionSecurityWrapper: React.FC<ProductionSecurityWrapperProps>
     return undefined;
   }, []);
 
-  // Content Security Policy meta tag injection
+  // Content Security Policy meta tag injection & violation reporting
   useEffect(() => {
     if (process.env.NODE_ENV === 'production') {
       // Check if CSP meta tag exists, if not warn
@@ -77,6 +77,22 @@ export const ProductionSecurityWrapper: React.FC<ProductionSecurityWrapperProps>
         secureLog.security('Content Security Policy meta tag not found. Consider adding CSP headers.', null, 'low');
       }
     }
+
+    // Capture CSP violations and log them via wide logger
+    const handleCSPViolation = (event: SecurityPolicyViolationEvent) => {
+      secureLog.security('CSP violation detected', {
+        blockedURI: event.blockedURI,
+        violatedDirective: event.violatedDirective,
+        effectiveDirective: event.effectiveDirective,
+        originalPolicy: event.originalPolicy,
+        sourceFile: event.sourceFile,
+        lineNumber: event.lineNumber,
+        columnNumber: event.columnNumber,
+      }, 'high');
+    };
+
+    document.addEventListener('securitypolicyviolation', handleCSPViolation);
+    return () => document.removeEventListener('securitypolicyviolation', handleCSPViolation);
   }, []);
 
   return <>{children}</>;
