@@ -17,8 +17,8 @@ import type { SkillPlanSchedule, PlanItem } from '@/types/skillPlan';
 
 interface FamilyMember {
   user_id: string;
-  first_name: string | null;
-  last_name: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
   role: string;
 }
 
