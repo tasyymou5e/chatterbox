@@ -11,7 +11,7 @@ import { Star, Play, CheckCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { ActivityExecutor } from './ActivityExecutor';
-import { getDomainInfo, getItemTypeInfo } from '@/types/skillPlan';
+import type { CatalogItem } from '@/types/skillPlan';
 import type { CatalogItem } from '@/types/skillPlan';
 
 interface DailyPlanItem {
