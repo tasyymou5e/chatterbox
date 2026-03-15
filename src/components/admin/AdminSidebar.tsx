@@ -13,6 +13,7 @@ import {
   HeartPulse,
   BookOpen,
   Bug,
+  FlaskConical,
   Gamepad2,
   ChevronRight,
 } from 'lucide-react';
