@@ -12,7 +12,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { ActivityExecutor } from './ActivityExecutor';
 import type { CatalogItem } from '@/types/skillPlan';
-import type { CatalogItem } from '@/types/skillPlan';
 
 interface DailyPlanItem {
   id: string;
