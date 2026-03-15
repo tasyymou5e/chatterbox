@@ -12,6 +12,11 @@ import { useAuthStore } from '@/stores/authStore';
 import { supabase } from '@/integrations/supabase/client';
 import { logSupabaseQuery, logDataAccessIssue, logDataFetchSuccess, createQueryTimer } from '@/utils/parentPortalLogger';
 
+interface ChildMember {
+  user_id: string;
+  first_name?: string;
+}
+
 interface FamilyStats {
   totalChildren: number;
   activeToday: number;
