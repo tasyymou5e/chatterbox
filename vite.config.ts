@@ -4,6 +4,13 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { visualizer } from "rollup-plugin-visualizer";
 import { VitePWA } from "vite-plugin-pwa";
+import { version } from "./package.json";
+
+// Supabase project ID — used to build PWA caching regexes.
+// If the project changes, update this AND the CSP connect-src in index.html.
+const SUPABASE_PROJECT_ID = 'lxuqfgbukrrickanmmic';
+const supabaseRegex = (path: string) =>
+  new RegExp(`^https:\\/\\/${SUPABASE_PROJECT_ID}\\.supabase\\.co\\/${path}\\/.*`, 'i');
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
