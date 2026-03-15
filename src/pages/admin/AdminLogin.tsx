@@ -59,7 +59,7 @@ export default function AdminLogin() {
     }
     
     setIsSigningIn(true);
-    console.log('🔐 Admin login attempt for:', email);
+    secureLog.dev('🔐 Admin login attempt');
 
     try {
       const result = await signIn(email, password);
