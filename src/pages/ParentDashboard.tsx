@@ -692,6 +692,16 @@ const ParentDashboard = () => {
           </ScrollArea>
         </DialogContent>
       </Dialog>
+
+      {/* Skill Plan Manager */}
+      {familyData.length > 0 && (
+        <div className="grid gap-6 md:grid-cols-2 mt-6">
+          <SkillPlanManager familyId={familyData[0]?.id || null} />
+          {familyMembers.filter(m => m.role === 'child').length > 0 && (
+            <SkillPlanReports childId={familyMembers.filter(m => m.role === 'child')[0].user_id} />
+          )}
+        </div>
+      )}
     </div>
   );
 };
