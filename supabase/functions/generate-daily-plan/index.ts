@@ -44,12 +44,15 @@ serve(async (req) => {
     const scheduleType = requestBody.schedule_type || "daily";
     const childId = requestBody.child_id; // optional: generate plan for a specific child
 
+    // Determine the target child: explicit child_id, or the calling user if they are a child
+    const targetChildId = childId || user.id;
+
     // Check if plan already exists for today
     const today = new Date().toISOString().split("T")[0];
     const { data: existingPlan } = await adminClient
       .from("user_daily_plans")
       .select("id")
-      .eq("user_id", user.id)
+      .eq("user_id", targetChildId)
       .eq("plan_date", today)
       .maybeSingle();
 
