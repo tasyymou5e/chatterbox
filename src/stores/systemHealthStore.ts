@@ -50,7 +50,7 @@ export const useSystemHealthStore = create<SystemHealthState>()(
 
       fetchSystemHealth: async () => {
         try {
-          console.log('🏥 Fetching system health metrics...');
+          secureLog.dev('🏥 Fetching system health metrics...');
           set({ loading: true, error: null });
 
           // Check if we have cached metrics and they're still fresh (5 minutes)
