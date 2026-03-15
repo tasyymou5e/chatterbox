@@ -49,7 +49,7 @@ export default function AdminLogin() {
     
     // Check rate limit BEFORE attempting login
     if (!checkAttempt(email)) {
-      console.log('🚫 Admin login blocked by rate limiter for:', email);
+      secureLog.dev('🚫 Admin login blocked by rate limiter');
       toast({
         title: "Account Temporarily Locked",
         description: `Too many failed attempts. Please wait ${formattedTimeRemaining} before trying again.`,
