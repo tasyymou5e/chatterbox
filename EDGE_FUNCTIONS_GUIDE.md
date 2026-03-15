@@ -54,9 +54,11 @@ supabase/functions/
 ├── edge-function-health-check/       # Edge function health monitoring
 ├── error-collector/                  # Collect frontend errors
 ├── family-integrity-check/           # Family data integrity validation
+├── generate-daily-plan/               # Generate daily skill plan
 ├── grok-chat/                        # Grok AI integration
 ├── llm-with-failover/                # LLM with provider failover
 ├── manage-llm-provider/              # LLM provider management
+├── manage-skill-plan/                # Skill plan CRUD operations
 ├── process-recurring-chores/         # Process recurring chores
 ├── scheduled-health-check/           # Scheduled health monitoring
 ├── security-monitoring/              # Security event logging

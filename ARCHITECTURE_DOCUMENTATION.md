@@ -88,12 +88,16 @@ src/
 - **Accessible for People on the Autism Spectrum**: Reduced motion, high contrast, calming colors, sensory accommodations
 
 #### State Management (✅ COMPLETED: Zustand-Based)
-- **Centralized Stores**: 12 Zustand stores with TypeScript support and DevTools
-  - `authStore`: Enhanced authentication with error diagnostics and activity logging
+- **Centralized Stores**: 18 Zustand stores with TypeScript support and DevTools
+  - `authStore` + `authActionsStore` + `authRoleStore` + `authSessionStore`: Auth domain
   - `uiStore`: Global UI state (loading, errors, modals) with component-specific tracking  
   - `adminStore`: Admin-specific state management and system metrics
   - `choreStore`: Chore management state and operations
   - `gamificationStore`: Points, levels, achievements, and leaderboards
+  - `gameSessionStore`: Active game session tracking
+  - `lessonProgressStore`: Educational lesson progress
+  - `testResultsStore`: Assessment and test results
+  - `connectionStore`: Family connection management
   - `analyticsStore`: Analytics data caching and session-aware operations
   - `connectionStore`: Family connection management
   - `behaviorAnalyticsStore`: Behavioral tracking and pattern analysis
