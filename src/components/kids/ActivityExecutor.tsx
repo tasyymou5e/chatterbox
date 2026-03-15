@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Play, Pause, SkipForward, CheckCircle, Coffee, ArrowRight } from 'lucide-react';
+import { Play, SkipForward, CheckCircle, Coffee, ArrowRight } from 'lucide-react';
 import { useActivitySession } from '@/hooks/useActivitySession';
 import { getDomainInfo, getItemTypeInfo } from '@/types/skillPlan';
 import type { CatalogItem } from '@/types/skillPlan';

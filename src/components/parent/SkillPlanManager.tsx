@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
-import { CheckCircle, XCircle, Clock, Sparkles, Play, Archive } from 'lucide-react';
+import { CheckCircle, XCircle, Sparkles, Play } from 'lucide-react';
 import { useSkillPlanManager } from '@/hooks/useSkillPlanManager';
 import { getDomainInfo, getItemTypeInfo } from '@/types/skillPlan';
 import type { SkillPlanSchedule, PlanItem } from '@/types/skillPlan';
