@@ -91,6 +91,17 @@ export default function ParentReports() {
 
       const childUserIds = childMembers?.map(m => m.user_id) || [];
 
+      // Store child members for Daily Progress tab
+      if (childMembers && childMembers.length > 0) {
+        // Fetch profile names for children
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, first_name')
+          .in('user_id', childUserIds);
+        
+        setChildMembers(profiles?.map(p => ({ user_id: p.user_id, first_name: p.first_name || undefined })) || []);
+      }
+
       if (childUserIds.length === 0) {
         logDataAccessIssue('Reports', 'No child members found', {
           userId: user.id,
