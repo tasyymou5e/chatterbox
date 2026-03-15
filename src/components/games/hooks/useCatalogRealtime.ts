@@ -31,7 +31,7 @@ export function useCatalogRealtime({
 
   // Optimized realtime state updates handler
   const updateCatalogState = useCallback((payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
-    console.log('GamesCatalog: Received realtime update:', payload.eventType);
+    secureLog.dev('GamesCatalog: Received realtime update:', payload.eventType);
     
     // Type-safe access to payload properties
     const newRecord = payload.eventType !== 'DELETE' ? payload.new as Record<string, unknown> : null;
