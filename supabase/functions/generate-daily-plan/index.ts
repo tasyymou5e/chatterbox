@@ -306,3 +306,44 @@ Create a personalized ${scheduleType} plan for ${timeframe}. Select items and ex
     );
   }
 });
+
+// Map assessment results to skill domain deficit weights
+function mapAssessmentsToDomains(assessments: any[]): Record<string, number> {
+  const weights: Record<string, number> = {
+    communication: 5,
+    social: 5,
+    sensory: 5,
+    executive_function: 5,
+    daily_living: 5,
+    emotional_regulation: 5,
+    motor_skills: 5,
+    academic: 5,
+  };
+
+  for (const assessment of assessments) {
+    const scores = assessment.scores || {};
+    const type = assessment.type?.toLowerCase() || "";
+
+    if (type.includes("atec")) {
+      // ATEC: higher scores = more deficit
+      if (scores.speech !== undefined) weights.communication = Math.max(weights.communication, scores.speech);
+      if (scores.sociability !== undefined) weights.social = Math.max(weights.social, scores.sociability);
+      if (scores.sensory !== undefined) weights.sensory = Math.max(weights.sensory, scores.sensory);
+      if (scores.health !== undefined) weights.daily_living = Math.max(weights.daily_living, scores.health);
+    }
+
+    if (type.includes("dsm")) {
+      // DSM-5: criteria met indicate areas of need
+      if (scores.social_communication !== undefined) {
+        weights.communication = Math.max(weights.communication, scores.social_communication * 3);
+        weights.social = Math.max(weights.social, scores.social_communication * 3);
+      }
+      if (scores.restricted_repetitive !== undefined) {
+        weights.sensory = Math.max(weights.sensory, scores.restricted_repetitive * 3);
+        weights.emotional_regulation = Math.max(weights.emotional_regulation, scores.restricted_repetitive * 2);
+      }
+    }
+  }
+
+  return weights;
+}
