@@ -410,6 +410,7 @@ export type Database = {
           ai_review: Json | null
           answers: Json
           assessment_type: string
+          child_id: string | null
           created_at: string
           id: string
           overall_grade: string | null
@@ -421,6 +422,7 @@ export type Database = {
           ai_review?: Json | null
           answers?: Json
           assessment_type: string
+          child_id?: string | null
           created_at?: string
           id?: string
           overall_grade?: string | null
@@ -432,6 +434,7 @@ export type Database = {
           ai_review?: Json | null
           answers?: Json
           assessment_type?: string
+          child_id?: string | null
           created_at?: string
           id?: string
           overall_grade?: string | null
@@ -440,6 +443,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "assessment_results_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
           {
             foreignKeyName: "assessment_results_user_id_fkey"
             columns: ["user_id"]
