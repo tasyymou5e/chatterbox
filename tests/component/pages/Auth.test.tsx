@@ -3,7 +3,7 @@ import { render, screen, waitFor } from '../test-utils';
 import userEvent from '@testing-library/user-event';
 import Auth from '@/pages/Auth';
 
-// Mock useAuth hook
+// Mock useAuth hook - sessionReady must be true to show tabs
 const mockSignIn = vi.fn();
 const mockSignUp = vi.fn();
 const mockResetPassword = vi.fn();
@@ -17,7 +17,7 @@ vi.mock('@/hooks/useAuth', () => ({
     user: null,
     session: null,
     userRole: null,
-    sessionReady: false,
+    sessionReady: true,
   }),
 }));
 
@@ -31,24 +31,12 @@ vi.mock('@/hooks/useSiteSettings', () => ({
 
 // Mock useAuthNavigation
 vi.mock('@/hooks/useAuthNavigation', () => ({
-  useAuthNavigation: () => ({
-    handleAuthRedirect: vi.fn(),
-  }),
+  useAuthNavigation: vi.fn(),
 }));
 
 // Mock utils
 vi.mock('@/utils/authHelpers', () => ({
   getDashboardPath: vi.fn(() => '/parent-dashboard'),
-}));
-
-// Mock auth components
-vi.mock('@/components/auth', () => ({
-  AuthLayout: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  SignUpForm: () => <div data-testid="signup-form">Sign Up Form</div>,
-  SignInForm: () => <div data-testid="signin-form">Sign In Form</div>,
-  ForgotPasswordForm: () => <div data-testid="forgot-form">Forgot Password</div>,
-  ResetPasswordConfirmForm: () => <div data-testid="reset-form">Reset Password</div>,
-  ChildSignupForm: () => <div data-testid="child-form">Child Signup</div>,
 }));
 
 describe('Auth Page', () => {

@@ -20,11 +20,6 @@ vi.mock('@/components/Hero', () => ({
   Hero: () => <section data-testid="hero">Hero Section</section>,
 }));
 
-// Mock PortalSelection (named export)
-vi.mock('@/components/PortalSelection', () => ({
-  PortalSelection: () => <section data-testid="portal-selection">Portal Selection</section>,
-}));
-
 describe('Index Page', () => {
   it('renders the page structure', () => {
     render(<Index />);
@@ -39,13 +34,10 @@ describe('Index Page', () => {
     expect(screen.getByText(/Privacy Policy/i)).toBeInTheDocument();
   });
 
-  it('renders quick links section', () => {
+  it('renders footer sections', () => {
     render(<Index />);
-    expect(screen.getByText(/Quick Links/i)).toBeInTheDocument();
-  });
-
-  it('renders social section placeholder', () => {
-    render(<Index />);
-    expect(screen.getByText(/Connect/i)).toBeInTheDocument();
+    expect(screen.getByText('Features')).toBeInTheDocument();
+    expect(screen.getByText('Support')).toBeInTheDocument();
+    expect(screen.getByText('Connect')).toBeInTheDocument();
   });
 });
