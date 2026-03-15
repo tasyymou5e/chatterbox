@@ -6,6 +6,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { realtimeManager } from '@/services/RealtimeManager';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
+import { secureLog } from '@/utils/wideLogger';
 
 interface UseCatalogRealtimeOptions {
   userId: string | undefined;
