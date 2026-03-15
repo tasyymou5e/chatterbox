@@ -15,7 +15,7 @@ export const handleError = (
 ): SupabaseError => {
   // Type guard and error processing
   if (isSupabaseError(error)) {
-    logger.error(`${context}: ${error.message}`, undefined, { component: context });
+    logger.error({ message: `${context}: ${error.message}`, component: context });
     return error;
   }
 
