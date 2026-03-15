@@ -95,6 +95,9 @@ export default function AppInitializer({ children }: AppInitializerProps) {
   } = usePrivacyConsent();
 
   const initStarted = useRef(false);
+  
+  // Mount session guard (cross-tab sync, proactive refresh, idle timeout, error recovery)
+  useAuthSessionGuard();
   const authPhaseLogged = useRef(false);
   const consentPhaseLogged = useRef(false);
   const fallbackTimeoutRef = useRef<NodeJS.Timeout | null>(null);

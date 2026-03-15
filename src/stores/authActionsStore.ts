@@ -241,6 +241,7 @@ export const useAuthActionsStore = create<AuthActionsState>()(
           const { error } = await signOutWithTimeout();
 
           set({ signingOut: false });
+          broadcastAuthEvent('SIGNED_OUT');
 
           // Log activity
           if (currentUserId) {
