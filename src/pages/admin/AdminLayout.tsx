@@ -19,7 +19,8 @@ import {
   Wrench,
   ShieldCheck,
   HeartPulse,
-  BookOpen
+  BookOpen,
+  Bug
 } from 'lucide-react';
 
 export default function AdminLayout() {
