@@ -102,6 +102,79 @@ export function TestsTabContent({ testFiles, skillItems }: Props) {
           </CardContent>
         </Card>
       </div>
+
+      {/* Accessibility Testing Summary */}
+      <div>
+        <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+          <div className="w-1 h-5 rounded-full bg-secondary" />
+          Accessibility Compliance (WCAG 2.1 AA)
+        </h3>
+        <Card className="rounded-xl">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Shield className="h-4 w-4 text-secondary" />
+              axe-core Scan Coverage
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Automated WCAG 2.1 AA checks across all portals via @axe-core/playwright
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[
+                { portal: 'Public', pages: ['/', '/auth'], icon: '🌐' },
+                { portal: 'Admin', pages: ['/admin/login', '/admin/dashboard', '/admin/kids-catalog'], icon: '🔧' },
+                { portal: 'Parent', pages: ['/parent-dashboard'], icon: '👨‍👩‍👧' },
+                { portal: 'Kids', pages: ['/kids', '/games'], icon: '🧒' },
+              ].map((group) => (
+                <div
+                  key={group.portal}
+                  className="flex items-start gap-3 p-3 rounded-xl bg-muted/30 border border-border/30 hover:bg-muted/50 transition-colors"
+                >
+                  <span className="text-2xl">{group.icon}</span>
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold text-foreground">{group.portal}</p>
+                    <p className="text-xs text-muted-foreground">{group.pages.length} page(s) scanned</p>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {group.pages.map((p) => (
+                        <Badge key={p} variant="outline" className="text-[10px] font-mono">
+                          {p}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Check types */}
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+              {[
+                { label: 'Full Page Scans', desc: '8 pages × full document axe analysis', icon: <CheckCircle2 className="h-4 w-4 text-secondary" /> },
+                { label: 'Main Content Scans', desc: '5 pages × context-limited <main> scan', icon: <Info className="h-4 w-4 text-primary" /> },
+                { label: 'Keyboard & Structure', desc: 'Tab navigation, heading order, alt text', icon: <AlertTriangle className="h-4 w-4 text-accent" /> },
+              ].map((check) => (
+                <div
+                  key={check.label}
+                  className="flex items-start gap-2 p-3 rounded-lg bg-card border border-border/40"
+                >
+                  {check.icon}
+                  <div>
+                    <p className="text-xs font-medium text-foreground">{check.label}</p>
+                    <p className="text-[11px] text-muted-foreground">{check.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <p className="mt-4 text-xs text-muted-foreground">
+              Run: <code className="bg-muted px-1.5 py-0.5 rounded text-[11px]">npx playwright test accessibility</code> · 
+              Fails on <span className="text-destructive font-medium">critical</span> / <span className="text-destructive font-medium">serious</span> violations only.
+              Import results via the Test Results Dashboard.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
