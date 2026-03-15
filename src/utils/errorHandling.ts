@@ -20,7 +20,7 @@ export const handleError = (
   }
 
   if (isAuthError(error)) {
-    logger.error(`${context}: Auth error - ${error.message}`, undefined, { component: context });
+    logger.error({ message: `${context}: Auth error - ${error.message}`, component: context });
     return {
       name: 'AuthError',
       message: error.message,
