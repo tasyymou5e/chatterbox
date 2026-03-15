@@ -95,7 +95,7 @@ export default function AdminLogin() {
         refreshStatus(email);
         setIsSigningIn(false);
       } else if (result.isAdmin) {
-        console.log('✅ Admin login successful, navigating immediately...');
+        secureLog.dev('✅ Admin login successful, navigating immediately...');
         toast({
           title: "Welcome Admin",
           description: "Welcome back, Admin!",
