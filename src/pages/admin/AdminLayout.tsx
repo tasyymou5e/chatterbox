@@ -18,7 +18,8 @@ import {
   TrendingUp,
   Wrench,
   ShieldCheck,
-  HeartPulse
+  HeartPulse,
+  BookOpen
 } from 'lucide-react';
 
 export default function AdminLayout() {
@@ -195,6 +196,17 @@ export default function AdminLayout() {
                 >
                   <HeartPulse className="h-4 w-4" />
                   <span>Data Health</span>
+                </Link>
+                <Link 
+                  to="/admin/architecture-ebook" 
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    location.pathname === '/admin/architecture-ebook' 
+                      ? 'text-white bg-gray-700' 
+                      : 'text-gray-300 hover:text-white hover:bg-gray-700'
+                  }`}
+                >
+                  <BookOpen className="h-4 w-4" />
+                  <span>Ebook</span>
                 </Link>
               </div>
             </div>
