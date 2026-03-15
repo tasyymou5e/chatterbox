@@ -4,6 +4,7 @@ import { usePrivacyConsent } from '@/hooks/usePrivacyConsent';
 import PrivacyConsentDialog from '@/components/privacy/PrivacyConsentDialog';
 import { initLogger } from '@/utils/initializationLogger';
 import { secureLog } from '@/utils/wideLogger';
+import { useAuthSessionGuard } from '@/hooks/useAuthSessionGuard';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, Trash2, AlertCircle } from 'lucide-react';
 
@@ -94,6 +95,9 @@ export default function AppInitializer({ children }: AppInitializerProps) {
   } = usePrivacyConsent();
 
   const initStarted = useRef(false);
+  
+  // Mount session guard (cross-tab sync, proactive refresh, idle timeout, error recovery)
+  useAuthSessionGuard();
   const authPhaseLogged = useRef(false);
   const consentPhaseLogged = useRef(false);
   const fallbackTimeoutRef = useRef<NodeJS.Timeout | null>(null);

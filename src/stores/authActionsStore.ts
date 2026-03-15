@@ -15,6 +15,7 @@ import { type AuthError, type AuthMetadata, isAdminRole } from '@/types/auth';
 import { useAuthSessionStore } from './authSessionStore';
 import { useAuthRoleStore } from './authRoleStore';
 import { secureLog } from '@/utils/wideLogger';
+import { broadcastAuthEvent } from '@/hooks/useAuthSessionGuard';
 
 interface AuthResult {
   error: AuthError | null;
@@ -184,6 +185,7 @@ export const useAuthActionsStore = create<AuthActionsState>()(
               });
             }, 0);
 
+            broadcastAuthEvent('SIGNED_IN', data.user.id);
             return { error: null, user: data.user, isAdmin: hasAdminAccess, userRole };
           }
 
@@ -240,6 +242,7 @@ export const useAuthActionsStore = create<AuthActionsState>()(
           const { error } = await signOutWithTimeout();
 
           set({ signingOut: false });
+          broadcastAuthEvent('SIGNED_OUT');
 
           // Log activity
           if (currentUserId) {
