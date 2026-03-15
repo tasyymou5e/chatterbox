@@ -15,6 +15,7 @@ import type { CatalogItem } from '@/types/skillPlan';
 interface ActivityExecutorProps {
   catalogItem: CatalogItem;
   planItemId?: string;
+  isIdle?: boolean;
   onComplete?: () => void;
   onClose?: () => void;
 }
