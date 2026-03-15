@@ -7,6 +7,7 @@ import { ParentActivityLogsTable } from '@/components/reports/ParentActivityLogs
 import { ChildrenAchievementsPanel } from '@/components/parent/ChildrenAchievementsPanel';
 import { ChildrenContentUsage } from '@/components/parent/ChildrenContentUsage';
 import { ProgressReportExport } from '@/components/parent/ProgressReportExport';
+import { DailyProgressReport } from '@/components/parent/DailyProgressReport';
 import { useAuthStore } from '@/stores/authStore';
 import { supabase } from '@/integrations/supabase/client';
 import { logSupabaseQuery, logDataAccessIssue, logDataFetchSuccess, createQueryTimer } from '@/utils/parentPortalLogger';
