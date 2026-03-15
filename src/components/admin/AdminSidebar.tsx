@@ -75,7 +75,7 @@ const navGroups: NavGroup[] = [
       { title: 'LLM Monitor', url: '/admin/llm-monitoring', icon: Brain },
       { title: 'Uptime Report', url: '/admin/uptime-report', icon: TrendingUp },
       { title: 'Logs Triage', url: '/admin/logs-triage', icon: Bug },
-    ],
+      { title: 'Test Results', url: '/admin/test-results', icon: FlaskConical },
   },
   {
     label: 'Security & Health',

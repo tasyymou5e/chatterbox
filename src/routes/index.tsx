@@ -337,6 +337,14 @@ export const adminChildRoutes: RouteConfig[] = [
       </ErrorBoundary>
     )
   },
+  { 
+    path: 'test-results', 
+    element: (
+      <ErrorBoundary componentName="AdminTestResults">
+        <LazyRoute variant="dashboard"><AdminTestResultsLazy /></LazyRoute>
+      </ErrorBoundary>
+    )
+  },
 ];
 
 // Create the protected admin layout route
