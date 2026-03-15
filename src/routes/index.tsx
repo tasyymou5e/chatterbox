@@ -45,6 +45,7 @@ const AdminSecurityCenterLazy = React.lazy(() =>
 const AdminAutoRepairLogsLazy = React.lazy(() => import('@/pages/admin/AdminAutoRepairLogs'));
 const AdminIntegrityManagementLazy = React.lazy(() => import('@/pages/admin/AdminIntegrityManagement'));
 const AdminDataHealthLazy = React.lazy(() => import('@/pages/admin/AdminDataHealth'));
+const AdminArchitectureEbookLazy = React.lazy(() => import('@/pages/admin/AdminArchitectureEbook'));
 
 // Lazy loaded pages - Parent
 const ParentDashboardLazy = React.lazy(() => import('@/pages/ParentDashboard'));
