@@ -12,7 +12,7 @@ import { AlertTriangle, RefreshCw, Copy, Bug } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { initLogger } from '@/utils/initializationLogger';
-import { secureLog } from '@/utils/secureLogging';
+import { secureLog } from '@/utils/wideLogger';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Props {

@@ -36,7 +36,7 @@ import { UserCreateDialog } from '@/components/admin/UserCreateDialog';
 import { BulkDeleteConfirmDialog, type BulkDeleteItem } from '@/components/admin/BulkDeleteConfirmDialog';
 import { AdminEmptyState } from '@/components/illustrations';
 import { getErrorMessage } from '@/utils/getErrorMessage';
-import { cLog, cError, cWarn } from '@/utils/conditionalLogger';
+import { cLog, cError, cWarn } from '@/utils/wideLogger';
 
 interface User {
   id: string;

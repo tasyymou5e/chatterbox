@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { secureLog } from '@/utils/secureLogging';
+import { secureLog } from '@/utils/wideLogger';
 import { useNavigate } from 'react-router-dom';
 
 interface LLMProviderStatus {

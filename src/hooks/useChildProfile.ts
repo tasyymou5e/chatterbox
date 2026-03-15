@@ -3,7 +3,7 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
-import { cWarn } from '@/utils/conditionalLogger';
+import { cWarn } from '@/utils/wideLogger';
 import { supabase } from '@/integrations/supabase/client';
 import type { ChildProfile, AgeGroup } from '@/types/kidsPortal';
 

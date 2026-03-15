@@ -13,7 +13,7 @@ import { useChildProfile } from '@/hooks/useChildProfile';
 import { useChildAvatar } from '@/hooks/useChildAvatar';
 import { useLessonProgressStore } from '@/stores/lessonProgressStore';
 import { useIdleDetector } from '@/hooks/useIdleDetector';
-import { cLog } from '@/utils/conditionalLogger';
+import { cLog } from '@/utils/wideLogger';
 import type { KidContentItem, ContentType, AgeGroup, ChildProfile } from '@/types/kidsPortal';
 import { KidsLoadingState } from '@/components/illustrations';
 

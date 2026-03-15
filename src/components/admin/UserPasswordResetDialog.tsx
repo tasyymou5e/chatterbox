@@ -8,7 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, Copy, RefreshCw, Key, Loader2 } from 'lucide-react';
 import { invokeEdgeFunction } from '@/utils/secureEdgeFunctionInvoke';
-import { cLog, cError } from '@/utils/conditionalLogger';
+import { cLog, cError } from '@/utils/wideLogger';
 import { getErrorMessage } from '@/types/interfaces';
 
 interface User {

@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { supabase } from '@/integrations/supabase/client';
 import type { Json } from '@/integrations/supabase/types';
-import { cLog, cError } from '@/utils/conditionalLogger';
+import { cLog, cError } from '@/utils/wideLogger';
 
 interface BehavioralEvent {
   id: string;

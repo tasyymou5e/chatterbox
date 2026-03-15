@@ -9,7 +9,7 @@ import { Plus, Search, Edit, Trash2, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ContentItemDialog } from '@/components/admin/ContentItemDialog';
 import { AdminEmptyState } from '@/components/illustrations';
-import { cError } from '@/utils/conditionalLogger';
+import { cError } from '@/utils/wideLogger';
 
 interface ContentItem {
   id: string;

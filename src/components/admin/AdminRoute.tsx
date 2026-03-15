@@ -4,7 +4,7 @@ import { useAuthSessionStore } from '@/stores/authSessionStore';
 import { useAuthRoleStore } from '@/stores/authRoleStore';
 import { useAuthActionsStore } from '@/stores/authActionsStore';
 import { RefreshCw, AlertCircle, Shield, Bug } from 'lucide-react';
-import { cLog, cWarn, cInfo, cError } from '@/utils/conditionalLogger';
+import { cLog, cWarn, cInfo, cError } from '@/utils/wideLogger';
 
 interface AdminRouteProps {
   children: React.ReactNode;
