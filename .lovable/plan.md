@@ -1,21 +1,37 @@
 
 
-# Animate Quota Progress Bar on Change
+## Plan: Admin Test Results Dashboard Page
 
-## Changes
+### What We'll Build
 
-### 1. `src/components/ui/progress.tsx`
-- Add a smooth CSS transition on the indicator's `transform` property: `transition: transform 600ms cubic-bezier(0.4, 0, 0.2, 1)` instead of the generic `transition-all`
+A dedicated **Test Results** page at `/admin/test-results` that serves as the central hub for viewing all test results (E2E, accessibility, etc.). It reuses the existing `TestResultsDashboard` component and adds clear instructions for running tests and importing results.
 
-### 2. `src/components/ai/AIAssistantChat.tsx`
-- Track previous quota value with `useRef` and detect when it decreases
-- When quota decreases, briefly apply a "pulse" scale animation to the quota section (scale up then back) using a CSS class toggled via `useState` + `setTimeout`
-- Add a brief color flash on the text label when quota changes (e.g., opacity transition)
+### Changes
+
+**1. New page: `src/pages/admin/AdminTestResults.tsx`**
+
+A full admin page wrapping `TestResultsDashboard` with:
+- Page header with title and description
+- A "How to Run Tests" card with copy-paste commands:
+  - `npx playwright test` — all tests
+  - `npx playwright test accessibility` — accessibility only
+  - `npx playwright test --reporter=json > results.json` — generate importable JSON
+- The existing `TestResultsDashboard` component (import panel, summary cards, charts, results table, failed tests detail, run history)
+
+**2. Add route: `src/routes/index.tsx`**
+
+- Add lazy import for `AdminTestResults`
+- Add child route `{ path: 'test-results', element: <AdminTestResultsLazy /> }` under the admin layout
+
+**3. Add sidebar link: `src/components/admin/AdminSidebar.tsx`**
+
+- Add a "Test Results" item under the **Monitoring** group with a `FlaskConical` or `TestTube2` icon, linking to `/admin/test-results`
 
 ### Files
 
 | File | Action |
-|---|---|
-| `src/components/ui/progress.tsx` | **Modify** -- smoother transition timing on indicator |
-| `src/components/ai/AIAssistantChat.tsx` | **Modify** -- add pulse animation on quota change |
+|------|--------|
+| `src/pages/admin/AdminTestResults.tsx` | Create |
+| `src/routes/index.tsx` | Add lazy import + route |
+| `src/components/admin/AdminSidebar.tsx` | Add nav item |
 
