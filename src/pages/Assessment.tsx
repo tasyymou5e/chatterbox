@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ArrowLeft, ClipboardCheck, Brain, FileText, Home } from 'lucide-react';
@@ -31,6 +31,22 @@ const Assessment: React.FC = () => {
   const [subjectName, setSubjectName] = useState('');
   const [_answers, setAnswers] = useState<Record<string, number>>({});
 
+  // Read query params for child context
+  const searchParams = new URLSearchParams(window.location.search);
+  const childIdParam = searchParams.get('childId');
+  const typeParam = searchParams.get('type');
+
+  // Auto-select instrument if type param is provided
+  useEffect(() => {
+    if (typeParam && view === 'select') {
+      const inst = getInstrumentById(typeParam);
+      if (inst) {
+        setSelectedInstrument(inst);
+        setView('form');
+      }
+    }
+  }, [typeParam]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const selectInstrument = (id: string) => {
     const inst = getInstrumentById(id);
     if (inst) {
@@ -58,6 +74,7 @@ const Assessment: React.FC = () => {
       if (user) {
         await (supabase.from('assessment_results').insert as any)({
           user_id: user.id,
+          child_id: childIdParam || user.id,
           assessment_type: selectedInstrument.id,
           subject_name: name,
           answers: formAnswers as any,

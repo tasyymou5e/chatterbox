@@ -19,6 +19,7 @@ import { WeeklyProgressSummary } from '@/components/parent/WeeklyProgressSummary
 import { AssessmentHistoryCard } from '@/components/parent/AssessmentHistoryCard';
 import { SkillPlanManager } from '@/components/parent/SkillPlanManager';
 import { SkillPlanReports } from '@/components/parent/SkillPlanReports';
+import { DailyProgressReport } from '@/components/parent/DailyProgressReport';
 import { logSupabaseQuery, logDataAccessIssue, logDataFetchSuccess, createQueryTimer } from '@/utils/parentPortalLogger';
 import { authLoggingService } from '@/services/authLoggingService';
 
@@ -693,13 +694,27 @@ const ParentDashboard = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Skill Plan Manager */}
+      {/* Skill Plan Manager + Reports */}
       {familyData.length > 0 && (
-        <div className="grid gap-6 md:grid-cols-2 mt-6">
-          <SkillPlanManager familyId={familyData[0]?.id || null} />
-          {familyMembers.filter(m => m.role === 'child').length > 0 && (
-            <SkillPlanReports childId={familyMembers.filter(m => m.role === 'child')[0].user_id} />
-          )}
+        <div className="container mx-auto px-4">
+          <div className="grid gap-6 md:grid-cols-2 mt-6">
+            <SkillPlanManager
+              familyId={familyData[0]?.id || null}
+              familyMembers={familyMembers}
+            />
+            <div className="space-y-6">
+              {familyMembers.filter(m => m.role === 'child').map(child => (
+                <DailyProgressReport
+                  key={child.user_id}
+                  childId={child.user_id}
+                  childName={child.first_name || 'Child'}
+                />
+              ))}
+              {familyMembers.filter(m => m.role === 'child').length > 0 && (
+                <SkillPlanReports childId={familyMembers.filter(m => m.role === 'child')[0].user_id} />
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

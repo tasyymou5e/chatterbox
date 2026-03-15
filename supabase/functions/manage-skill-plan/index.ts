@@ -163,6 +163,22 @@ serve(async (req) => {
         });
       }
 
+      case "get_child_approved_plan": {
+        // Returns the active/approved plan for the requesting child
+        const targetChildId = body.child_id || user.id;
+        const { data, error } = await adminClient
+          .from("skill_plan_schedules")
+          .select("*")
+          .eq("child_id", targetChildId)
+          .in("status", ["approved", "active"])
+          .order("created_at", { ascending: false })
+          .limit(1);
+        if (error) throw error;
+        return new Response(JSON.stringify({ plan: data?.[0] || null }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       default:
         return new Response(JSON.stringify({ error: `Unknown action: ${action}` }), {
           status: 400,
