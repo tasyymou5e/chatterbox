@@ -102,7 +102,7 @@ export default function AdminLogin() {
         });
         
         // Navigate immediately since auth state is established atomically in signIn
-        console.log('🔄 Navigating to admin dashboard...');
+        secureLog.dev('🔄 Navigating to admin dashboard...');
         navigate('/admin/dashboard');
         setIsSigningIn(false);
       } else {
