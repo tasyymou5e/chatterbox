@@ -62,7 +62,7 @@ export function useCatalogRealtime({
 
     if (userFamily) {
       // Family-specific subscriptions
-      console.log(`Setting up family realtime for family: ${userFamily}`);
+      secureLog.dev(`Setting up family realtime for family: ${userFamily}`);
       
       unsubscribeContent = realtimeManager.subscribeFamilyChannel(
         userFamily,
