@@ -23,7 +23,7 @@ export default function AdminLogin() {
 
   // Enhanced redirect check - only if fully authenticated and admin status confirmed
   if (!loading && user && isAdmin && user.id && user.email) {
-    console.log('✅ AdminLogin: User already authenticated as admin, redirecting');
+    secureLog.dev('✅ AdminLogin: User already authenticated as admin, redirecting');
     return <Navigate to="/admin/dashboard" replace />;
   }
 
