@@ -31,6 +31,7 @@ export default function ParentReports() {
     totalActivities: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [childMembers, setChildMembers] = useState<ChildMember[]>([]);
 
   const fetchStats = useCallback(async () => {
     if (!user?.id) {
