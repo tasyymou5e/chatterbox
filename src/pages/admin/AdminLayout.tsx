@@ -19,7 +19,8 @@ import {
   Wrench,
   ShieldCheck,
   HeartPulse,
-  BookOpen
+  BookOpen,
+  Bug
 } from 'lucide-react';
 
 export default function AdminLayout() {
@@ -207,6 +208,17 @@ export default function AdminLayout() {
                 >
                   <BookOpen className="h-4 w-4" />
                   <span>Ebook</span>
+                </Link>
+                <Link 
+                  to="/admin/logs-triage" 
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    location.pathname === '/admin/logs-triage' 
+                      ? 'text-white bg-gray-700' 
+                      : 'text-gray-300 hover:text-white hover:bg-gray-700'
+                  }`}
+                >
+                  <Bug className="h-4 w-4" />
+                  <span>Logs Triage</span>
                 </Link>
               </div>
             </div>

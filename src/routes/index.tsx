@@ -46,6 +46,7 @@ const AdminAutoRepairLogsLazy = React.lazy(() => import('@/pages/admin/AdminAuto
 const AdminIntegrityManagementLazy = React.lazy(() => import('@/pages/admin/AdminIntegrityManagement'));
 const AdminDataHealthLazy = React.lazy(() => import('@/pages/admin/AdminDataHealth'));
 const AdminArchitectureEbookLazy = React.lazy(() => import('@/pages/admin/AdminArchitectureEbook'));
+const AdminLogsTriageLazy = React.lazy(() => import('@/pages/admin/AdminLogsTriage'));
 
 // Lazy loaded pages - Parent
 const ParentDashboardLazy = React.lazy(() => import('@/pages/ParentDashboard'));
@@ -315,6 +316,14 @@ export const adminChildRoutes: RouteConfig[] = [
     element: (
       <ErrorBoundary componentName="AdminArchitectureEbook">
         <LazyRoute variant="dashboard"><AdminArchitectureEbookLazy /></LazyRoute>
+      </ErrorBoundary>
+    )
+  },
+  { 
+    path: 'logs-triage', 
+    element: (
+      <ErrorBoundary componentName="AdminLogsTriage">
+        <LazyRoute variant="dashboard"><AdminLogsTriageLazy /></LazyRoute>
       </ErrorBoundary>
     )
   },
