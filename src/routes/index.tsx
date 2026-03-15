@@ -48,6 +48,7 @@ const AdminDataHealthLazy = React.lazy(() => import('@/pages/admin/AdminDataHeal
 const AdminArchitectureEbookLazy = React.lazy(() => import('@/pages/admin/AdminArchitectureEbook'));
 const AdminLogsTriageLazy = React.lazy(() => import('@/pages/admin/AdminLogsTriage'));
 const AdminKidsCatalogOverviewLazy = React.lazy(() => import('@/pages/admin/AdminKidsCatalogOverview'));
+const AdminTestResultsLazy = React.lazy(() => import('@/pages/admin/AdminTestResults'));
 
 // Lazy loaded pages - Parent
 const ParentDashboardLazy = React.lazy(() => import('@/pages/ParentDashboard'));
@@ -333,6 +334,14 @@ export const adminChildRoutes: RouteConfig[] = [
     element: (
       <ErrorBoundary componentName="AdminKidsCatalogOverview">
         <LazyRoute variant="dashboard"><AdminKidsCatalogOverviewLazy /></LazyRoute>
+      </ErrorBoundary>
+    )
+  },
+  { 
+    path: 'test-results', 
+    element: (
+      <ErrorBoundary componentName="AdminTestResults">
+        <LazyRoute variant="dashboard"><AdminTestResultsLazy /></LazyRoute>
       </ErrorBoundary>
     )
   },
