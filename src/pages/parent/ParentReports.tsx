@@ -250,6 +250,7 @@ export default function ParentReports() {
           <TabsList>
             <TabsTrigger value="activity">Activity Logs</TabsTrigger>
             <TabsTrigger value="progress">Progress Summary</TabsTrigger>
+            <TabsTrigger value="daily">Daily Progress</TabsTrigger>
           </TabsList>
 
           <TabsContent value="activity">
