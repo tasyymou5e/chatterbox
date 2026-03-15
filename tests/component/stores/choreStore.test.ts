@@ -9,12 +9,17 @@ vi.mock('@/integrations/supabase/client', () => ({
         eq: vi.fn(() => ({
           single: vi.fn(() => Promise.resolve({ data: null, error: null })),
           order: vi.fn(() => Promise.resolve({ data: [], error: null })),
+          maybeSingle: vi.fn(() => Promise.resolve({ data: null, error: null })),
+          in: vi.fn(() => Promise.resolve({ data: [], error: null })),
         })),
-        order: vi.fn(() => ({
-          limit: vi.fn(() => Promise.resolve({ data: [], error: null })),
+        order: vi.fn(() => Promise.resolve({ data: [], error: null })),
+        in: vi.fn(() => Promise.resolve({ data: [], error: null })),
+      })),
+      insert: vi.fn(() => ({
+        select: vi.fn(() => ({
+          single: vi.fn(() => Promise.resolve({ data: { id: 'new-id' }, error: null })),
         })),
       })),
-      insert: vi.fn(() => Promise.resolve({ data: null, error: null })),
       update: vi.fn(() => ({
         eq: vi.fn(() => Promise.resolve({ data: null, error: null })),
       })),
@@ -28,25 +33,27 @@ vi.mock('@/integrations/supabase/client', () => ({
   },
 }));
 
+// Mock storeUtils
+vi.mock('@/services/storeUtils', () => ({
+  choreInputSchema: { parse: vi.fn() },
+  getCurrentUserId: vi.fn(() => 'test-user-id'),
+  requireAuth: vi.fn(() => 'test-user-id'),
+  sanitizeInput: vi.fn((s: string) => s),
+  createStoreError: vi.fn((type: string, msg: string) => ({ type, message: msg })),
+  createStoreSuccess: vi.fn((data: unknown, msg: string) => ({ data, message: msg })),
+}));
+
 describe('choreStore', () => {
   beforeEach(() => {
-    // Reset store state before each test
+    // Reset store state to match actual initial values
     useChoreStore.setState({
+      categories: [],
+      templates: [],
       chores: [],
       assignments: [],
-      completions: [],
-      templates: [],
-      categories: [],
-      selectedChore: null,
-      selectedAssignment: null,
-      isLoading: false,
+      loading: true,
       error: null,
-      filters: {
-        status: 'all',
-        assignedTo: null,
-        category: null,
-        dateRange: null,
-      },
+      familyId: null,
     });
     vi.clearAllMocks();
   });
@@ -59,201 +66,83 @@ describe('choreStore', () => {
     it('should have correct initial values', () => {
       const state = useChoreStore.getState();
       
-      expect(state.chores).toEqual([]);
-      expect(state.assignments).toEqual([]);
-      expect(state.completions).toEqual([]);
-      expect(state.templates).toEqual([]);
       expect(state.categories).toEqual([]);
-      expect(state.selectedChore).toBeNull();
-      expect(state.selectedAssignment).toBeNull();
-      expect(state.isLoading).toBe(false);
-      expect(state.error).toBeNull();
-    });
-
-    it('should have default filter values', () => {
-      const { filters } = useChoreStore.getState();
-      
-      expect(filters.status).toBe('all');
-      expect(filters.assignedTo).toBeNull();
-      expect(filters.category).toBeNull();
-      expect(filters.dateRange).toBeNull();
-    });
-  });
-
-  describe('state setters', () => {
-    it('should set chores correctly', () => {
-      const { setChores } = useChoreStore.getState();
-      const mockChores = [
-        { id: '1', title: 'Clean room', description: 'Clean your bedroom' },
-        { id: '2', title: 'Do dishes', description: 'Wash the dishes' },
-      ];
-      
-      setChores(mockChores as any);
-      
-      expect(useChoreStore.getState().chores).toEqual(mockChores);
-    });
-
-    it('should set assignments correctly', () => {
-      const { setAssignments } = useChoreStore.getState();
-      const mockAssignments = [
-        { id: '1', chore_id: '1', assigned_to: 'user-1', status: 'pending' },
-      ];
-      
-      setAssignments(mockAssignments as any);
-      
-      expect(useChoreStore.getState().assignments).toEqual(mockAssignments);
-    });
-
-    it('should set loading state correctly', () => {
-      const { setIsLoading } = useChoreStore.getState();
-      
-      setIsLoading(true);
-      
-      expect(useChoreStore.getState().isLoading).toBe(true);
-    });
-
-    it('should set error correctly', () => {
-      const { setError } = useChoreStore.getState();
-      
-      setError('Failed to load chores');
-      
-      expect(useChoreStore.getState().error).toBe('Failed to load chores');
-    });
-
-    it('should set selected chore correctly', () => {
-      const { setSelectedChore } = useChoreStore.getState();
-      const mockChore = { id: '1', title: 'Test Chore' };
-      
-      setSelectedChore(mockChore as any);
-      
-      expect(useChoreStore.getState().selectedChore).toEqual(mockChore);
-    });
-
-    it('should set selected assignment correctly', () => {
-      const { setSelectedAssignment } = useChoreStore.getState();
-      const mockAssignment = { id: '1', chore_id: '1', status: 'pending' };
-      
-      setSelectedAssignment(mockAssignment as any);
-      
-      expect(useChoreStore.getState().selectedAssignment).toEqual(mockAssignment);
-    });
-  });
-
-  describe('filter operations', () => {
-    it('should update status filter', () => {
-      const { setFilters } = useChoreStore.getState();
-      
-      setFilters({ status: 'completed' });
-      
-      expect(useChoreStore.getState().filters.status).toBe('completed');
-    });
-
-    it('should update assignedTo filter', () => {
-      const { setFilters } = useChoreStore.getState();
-      
-      setFilters({ assignedTo: 'user-123' });
-      
-      expect(useChoreStore.getState().filters.assignedTo).toBe('user-123');
-    });
-
-    it('should update category filter', () => {
-      const { setFilters } = useChoreStore.getState();
-      
-      setFilters({ category: 'cleaning' });
-      
-      expect(useChoreStore.getState().filters.category).toBe('cleaning');
-    });
-
-    it('should update multiple filters at once', () => {
-      const { setFilters } = useChoreStore.getState();
-      
-      setFilters({
-        status: 'pending',
-        assignedTo: 'user-456',
-        category: 'outdoor',
-      });
-      
-      const { filters } = useChoreStore.getState();
-      expect(filters.status).toBe('pending');
-      expect(filters.assignedTo).toBe('user-456');
-      expect(filters.category).toBe('outdoor');
-    });
-
-    it('should reset filters', () => {
-      const { setFilters, resetFilters } = useChoreStore.getState();
-      
-      // Set some filters first
-      setFilters({
-        status: 'completed',
-        assignedTo: 'user-123',
-        category: 'cleaning',
-      });
-      
-      // Reset
-      resetFilters();
-      
-      const { filters } = useChoreStore.getState();
-      expect(filters.status).toBe('all');
-      expect(filters.assignedTo).toBeNull();
-      expect(filters.category).toBeNull();
-    });
-  });
-
-  describe('chore operations', () => {
-    it('should add a chore', () => {
-      const { addChore } = useChoreStore.getState();
-      const newChore = { id: '3', title: 'New Chore', description: 'Test' };
-      
-      addChore(newChore as any);
-      
-      expect(useChoreStore.getState().chores).toContainEqual(newChore);
-    });
-
-    it('should update a chore', () => {
-      const { setChores, updateChore } = useChoreStore.getState();
-      const initialChores = [
-        { id: '1', title: 'Original Title', description: 'Original' },
-      ];
-      
-      setChores(initialChores as any);
-      updateChore('1', { title: 'Updated Title' });
-      
-      const updatedChore = useChoreStore.getState().chores.find(c => c.id === '1');
-      expect(updatedChore?.title).toBe('Updated Title');
-    });
-
-    it('should remove a chore', () => {
-      const { setChores, removeChore } = useChoreStore.getState();
-      const initialChores = [
-        { id: '1', title: 'Chore 1' },
-        { id: '2', title: 'Chore 2' },
-      ];
-      
-      setChores(initialChores as any);
-      removeChore('1');
-      
-      const chores = useChoreStore.getState().chores;
-      expect(chores.length).toBe(1);
-      expect(chores[0].id).toBe('2');
-    });
-  });
-
-  describe('clearStore', () => {
-    it('should clear all store data', () => {
-      const { setChores, setAssignments, setError, clearStore } = useChoreStore.getState();
-      
-      // Set some data
-      setChores([{ id: '1', title: 'Test' }] as any);
-      setAssignments([{ id: '1', chore_id: '1' }] as any);
-      setError('Some error');
-      
-      // Clear
-      clearStore();
-      
-      const state = useChoreStore.getState();
+      expect(state.templates).toEqual([]);
       expect(state.chores).toEqual([]);
       expect(state.assignments).toEqual([]);
       expect(state.error).toBeNull();
+      expect(state.familyId).toBeNull();
+    });
+  });
+
+  describe('setFamilyId', () => {
+    it('should set family ID', () => {
+      const { setFamilyId } = useChoreStore.getState();
+      
+      setFamilyId('family-123');
+      
+      expect(useChoreStore.getState().familyId).toBe('family-123');
+    });
+
+    it('should accept null to clear family ID', () => {
+      useChoreStore.setState({ familyId: 'family-123' });
+      
+      const { setFamilyId } = useChoreStore.getState();
+      setFamilyId(null);
+      
+      expect(useChoreStore.getState().familyId).toBeNull();
+    });
+  });
+
+  describe('clearError', () => {
+    it('should clear the error state', () => {
+      useChoreStore.setState({ error: { type: 'network', message: 'Failed' } as any });
+      
+      const { clearError } = useChoreStore.getState();
+      clearError();
+      
+      expect(useChoreStore.getState().error).toBeNull();
+    });
+  });
+
+  describe('store actions exist', () => {
+    it('should have all required action methods', () => {
+      const state = useChoreStore.getState();
+      
+      expect(typeof state.setFamilyId).toBe('function');
+      expect(typeof state.fetchCategories).toBe('function');
+      expect(typeof state.fetchTemplates).toBe('function');
+      expect(typeof state.fetchChores).toBe('function');
+      expect(typeof state.fetchAssignments).toBe('function');
+      expect(typeof state.createChoreFromTemplate).toBe('function');
+      expect(typeof state.createCustomChore).toBe('function');
+      expect(typeof state.assignChore).toBe('function');
+      expect(typeof state.bulkAssignChores).toBe('function');
+      expect(typeof state.updateAssignmentStatus).toBe('function');
+      expect(typeof state.refetch).toBe('function');
+      expect(typeof state.clearError).toBe('function');
+    });
+  });
+
+  describe('createChoreFromTemplate', () => {
+    it('should fail without family ID', async () => {
+      useChoreStore.setState({ familyId: null });
+      
+      const { createChoreFromTemplate } = useChoreStore.getState();
+      const result = await createChoreFromTemplate('template-1');
+      
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe('assignChore', () => {
+    it('should fail without family ID', async () => {
+      useChoreStore.setState({ familyId: null });
+      
+      const { assignChore } = useChoreStore.getState();
+      const result = await assignChore('chore-1', 'user-1');
+      
+      expect(result.success).toBe(false);
     });
   });
 });

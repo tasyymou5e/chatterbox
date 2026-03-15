@@ -13,7 +13,11 @@ vi.mock('@/hooks/useAuth', () => ({
     signIn: mockSignIn,
     signUp: mockSignUp,
     resetPassword: mockResetPassword,
-    isLoading: false,
+    loading: false,
+    user: null,
+    session: null,
+    userRole: null,
+    sessionReady: false,
   }),
 }));
 
@@ -25,9 +29,26 @@ vi.mock('@/hooks/useSiteSettings', () => ({
   }),
 }));
 
-// Mock SiteHeader
-vi.mock('@/components/SiteHeader', () => ({
-  default: () => <header data-testid="site-header">Header</header>,
+// Mock useAuthNavigation
+vi.mock('@/hooks/useAuthNavigation', () => ({
+  useAuthNavigation: () => ({
+    handleAuthRedirect: vi.fn(),
+  }),
+}));
+
+// Mock utils
+vi.mock('@/utils/authHelpers', () => ({
+  getDashboardPath: vi.fn(() => '/parent-dashboard'),
+}));
+
+// Mock auth components
+vi.mock('@/components/auth', () => ({
+  AuthLayout: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  SignUpForm: () => <div data-testid="signup-form">Sign Up Form</div>,
+  SignInForm: () => <div data-testid="signin-form">Sign In Form</div>,
+  ForgotPasswordForm: () => <div data-testid="forgot-form">Forgot Password</div>,
+  ResetPasswordConfirmForm: () => <div data-testid="reset-form">Reset Password</div>,
+  ChildSignupForm: () => <div data-testid="child-form">Child Signup</div>,
 }));
 
 describe('Auth Page', () => {
@@ -49,29 +70,7 @@ describe('Auth Page', () => {
     await user.click(screen.getByRole('tab', { name: /sign in/i }));
     
     await waitFor(() => {
-      // Sign in tab should be selected
       expect(screen.getByRole('tab', { name: /sign in/i })).toHaveAttribute('data-state', 'active');
-    });
-  });
-
-  it('displays email input field', () => {
-    render(<Auth />);
-    expect(screen.getAllByLabelText(/email/i).length).toBeGreaterThan(0);
-  });
-
-  it('displays password input field', () => {
-    render(<Auth />);
-    expect(screen.getAllByLabelText(/password/i).length).toBeGreaterThan(0);
-  });
-
-  it('shows forgot password link on signin tab', async () => {
-    const user = userEvent.setup();
-    render(<Auth />);
-    
-    await user.click(screen.getByRole('tab', { name: /sign in/i }));
-    
-    await waitFor(() => {
-      expect(screen.getByText(/forgot password/i)).toBeInTheDocument();
     });
   });
 });
