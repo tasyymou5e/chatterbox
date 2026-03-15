@@ -310,6 +310,14 @@ export const adminChildRoutes: RouteConfig[] = [
       </ErrorBoundary>
     )
   },
+  { 
+    path: 'architecture-ebook', 
+    element: (
+      <ErrorBoundary componentName="AdminArchitectureEbook">
+        <LazyRoute variant="dashboard"><AdminArchitectureEbookLazy /></LazyRoute>
+      </ErrorBoundary>
+    )
+  },
 ];
 
 // Create the protected admin layout route
