@@ -49,7 +49,7 @@ export const handleError = (
 
   // Unknown error type
   const unknownError = String(error);
-  logger.error(`${context}: Unknown error - ${unknownError}`, undefined, { component: context });
+  logger.error({ message: `${context}: Unknown error - ${unknownError}`, component: context });
   return {
     name: 'UnknownError',
     message: fallbackMessage,
