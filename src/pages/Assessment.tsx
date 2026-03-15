@@ -74,6 +74,7 @@ const Assessment: React.FC = () => {
       if (user) {
         await (supabase.from('assessment_results').insert as any)({
           user_id: user.id,
+          child_id: childIdParam || user.id,
           assessment_type: selectedInstrument.id,
           subject_name: name,
           answers: formAnswers as any,

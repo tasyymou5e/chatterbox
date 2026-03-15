@@ -250,15 +250,40 @@ Create a personalized ${scheduleType} plan for ${timeframe}. Select items and ex
     const validIds = new Set(catalogItems.map((c: any) => c.id));
     const validItems = plan.items.filter((item: any) => validIds.has(item.catalog_item_id));
 
-    // Insert the plan
+    // Insert the plan under the child's user id
     const { data: newPlan, error: planError } = await adminClient
       .from("user_daily_plans")
       .insert({
-        user_id: user.id,
+        user_id: targetChildId,
         plan_date: today,
         status: "active",
         ai_summary: plan.summary,
         assessment_snapshot: assessmentSummary.length > 0 ? assessmentSummary : null,
+      })
+      .select("id")
+      .single();
+
+    // Also create a skill_plan_schedules entry for parent approval
+    await adminClient
+      .from("skill_plan_schedules")
+      .insert({
+        child_id: targetChildId,
+        family_id: null, // will be filled by trigger or parent
+        created_by: user.id,
+        schedule_type: scheduleType,
+        plan_name: `${scheduleType.charAt(0).toUpperCase() + scheduleType.slice(1)} Plan - ${today}`,
+        plan_items: validItems.map((item: any) => ({
+          catalog_item_id: item.catalog_item_id,
+          title: item.title,
+          description: item.description,
+          category: item.category,
+          skill_domain: item.category,
+          item_type: 'activity',
+          priority: item.priority,
+          ai_reasoning: item.ai_reasoning,
+        })),
+        status: "pending_approval",
+        start_date: today,
       })
       .select("id")
       .single();
