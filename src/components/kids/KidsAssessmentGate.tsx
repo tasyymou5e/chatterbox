@@ -3,6 +3,7 @@
  * Shows kid-friendly assessment cards if assessments are incomplete
  */
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -43,6 +44,7 @@ interface KidsAssessmentGateProps {
 
 export function KidsAssessmentGate({ children, onAllComplete }: KidsAssessmentGateProps) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [completedAssessments, setCompletedAssessments] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [hasApprovedPlan, setHasApprovedPlan] = useState(false);
@@ -109,8 +111,8 @@ export function KidsAssessmentGate({ children, onAllComplete }: KidsAssessmentGa
   }, [user?.id, isGeneratingPlan, checkAssessments, onAllComplete]);
 
   const handleStartAssessment = (assessmentId: string) => {
-    // Navigate to assessment with child context
-    window.location.href = `/assessment?type=${assessmentId}&childId=${user?.id}`;
+    // Navigate to assessment with child context using SPA navigation
+    navigate(`/assessment?type=${assessmentId}&childId=${user?.id}`);
   };
 
   if (isLoading) {

@@ -72,7 +72,7 @@ const Assessment: React.FC = () => {
       // Save to database
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        await (supabase.from('assessment_results').insert as any)({
+        await supabase.from('assessment_results').insert([{
           user_id: user.id,
           child_id: childIdParam || user.id,
           assessment_type: selectedInstrument.id,
@@ -80,7 +80,7 @@ const Assessment: React.FC = () => {
           answers: formAnswers as any,
           scores: computed as any,
           overall_grade: computed.overallGrade,
-        });
+        }]);
       }
 
       // Request AI review
@@ -211,9 +211,9 @@ const Assessment: React.FC = () => {
         {view === 'results' && selectedInstrument && scores && (
           <div className="space-y-6">
             <div className="flex justify-between">
-              <Button variant="outline" onClick={() => navigate('/parent')}>
+              <Button variant="outline" onClick={() => navigate(childIdParam ? '/kids' : '/parent')}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Return to Dashboard
+                {childIdParam ? 'Back to My Portal' : 'Return to Dashboard'}
               </Button>
               <AssessmentPDFExport
                 instrument={selectedInstrument}
@@ -230,10 +230,17 @@ const Assessment: React.FC = () => {
             />
             <div className="flex flex-col items-center gap-3 pt-4 border-t border-border">
               <p className="text-sm text-muted-foreground">Assessment complete — your results have been saved.</p>
-              <Button size="lg" className="w-full" onClick={() => navigate('/parent')}>
-                <Home className="w-4 h-4 mr-2" />
-                Return to Parent Dashboard
-              </Button>
+              {childIdParam ? (
+                <Button size="lg" className="w-full" onClick={() => navigate('/kids')}>
+                  <Home className="w-4 h-4 mr-2" />
+                  Continue to My Portal
+                </Button>
+              ) : (
+                <Button size="lg" className="w-full" onClick={() => navigate('/parent')}>
+                  <Home className="w-4 h-4 mr-2" />
+                  Return to Parent Dashboard
+                </Button>
+              )}
             </div>
           </div>
         )}
