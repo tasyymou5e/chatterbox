@@ -1,7 +1,7 @@
 /**
  * Centralized error handling utilities
  */
-import { logger } from './logger';
+import { logger } from './wideLogger';
 import type { SupabaseError } from '@/types/supabase';
 import { isSupabaseError, isAuthError, isNetworkError } from '@/types/supabase';
 

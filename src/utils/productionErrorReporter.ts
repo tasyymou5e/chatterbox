@@ -1,6 +1,5 @@
-import { logger } from '@/utils/logger';
+import { logger, secureLog } from '@/utils/wideLogger';
 import { supabase } from '@/integrations/supabase/client';
-import { secureLog } from '@/utils/secureLogging';
 
 type ErrorSeverity = 'low' | 'medium' | 'high' | 'critical';
 

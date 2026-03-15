@@ -15,8 +15,7 @@ import { useUIStore } from '@/stores/uiStore';
 import TestFamilyResultsDialog from './TestFamilyResultsDialog';
 import { PasswordStrengthIndicator } from '../auth/PasswordStrengthIndicator';
 import { getErrorMessage } from '@/utils/getErrorMessage';
-import { cLog, cError } from '@/utils/conditionalLogger';
-import { secureLog } from '@/utils/secureLogging';
+import { cLog, cError, secureLog } from '@/utils/wideLogger';
 import { invokeEdgeFunction } from '@/utils/secureEdgeFunctionInvoke';
 
 interface Child {

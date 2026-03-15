@@ -1,7 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { updatePrivacySettings } from './privacySettings';
-import { secureLog } from '@/utils/secureLogging';
-import { cLog } from '@/utils/conditionalLogger';
+import { secureLog, cLog } from '@/utils/wideLogger';
 import type { UserDataExport, DataDeletionOptions } from '@/types/privacy';
 
 /**

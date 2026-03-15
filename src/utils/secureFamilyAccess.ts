@@ -1,7 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { logSupabaseQuery, logDataAccessIssue, logDataFetchSuccess } from '@/utils/parentPortalLogger';
-import { secureLog } from '@/utils/secureLogging';
-import { cLog, cWarn } from '@/utils/conditionalLogger';
+import { logSupabaseQuery, logDataAccessIssue, logDataFetchSuccess, secureLog, cLog, cWarn } from '@/utils/wideLogger';
 
 /**
  * Secure family access utilities

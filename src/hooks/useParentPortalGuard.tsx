@@ -2,9 +2,8 @@ import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import { supabase } from '@/integrations/supabase/client';
-import { logSupabaseQuery, logDataAccessIssue } from '@/utils/parentPortalLogger';
+import { logSupabaseQuery, logDataAccessIssue, cLog, cWarn } from '@/utils/wideLogger';
 import { UserRoles } from '@/types/auth';
-import { cLog, cWarn } from '@/utils/conditionalLogger';
 
 interface ParentPortalGuardOptions {
   requiredFamilyAccess?: boolean;

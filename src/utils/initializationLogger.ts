@@ -7,7 +7,7 @@
  * @module initializationLogger
  */
 
-import { secureLog } from './secureLogging';
+import { secureLog } from './wideLogger';
 
 export interface InitPhase {
   name: string;

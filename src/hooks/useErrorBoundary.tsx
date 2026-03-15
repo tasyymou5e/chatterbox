@@ -2,7 +2,7 @@
  * Enhanced error boundary hook with structured logging
  */
 import { useCallback } from 'react';
-import { logger } from '@/utils/logger';
+import { logger } from '@/utils/wideLogger';
 import { handleError } from '@/utils/errorHandling';
 
 export interface ErrorBoundaryState {

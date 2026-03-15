@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Heart, Users } from 'lucide-react';
 import { ParentNavigation } from '@/components/parent/ParentNavigation';
-import { logSupabaseQuery, logDataAccessIssue, logDataFetchSuccess, createQueryTimer } from '@/utils/parentPortalLogger';
+import { logSupabaseQuery, logDataAccessIssue, logDataFetchSuccess, createQueryTimer } from '@/utils/wideLogger';
 
 interface Family {
   id: string;

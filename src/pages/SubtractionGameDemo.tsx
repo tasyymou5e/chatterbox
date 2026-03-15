@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLessonProgressStore } from '@/stores/lessonProgressStore';
-import { cLog } from '@/utils/conditionalLogger';
+import { cLog } from '@/utils/wideLogger';
 
 // Content IDs matching database records
 const TEST_CONTENT_ID = 'b2c3d4e5-f6a7-8901-bcde-f12345678901';

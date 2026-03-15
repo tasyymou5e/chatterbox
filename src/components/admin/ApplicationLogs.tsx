@@ -8,7 +8,7 @@ import { RefreshCw, Search, Download, AlertTriangle, AlertCircle, Info, Bug } fr
 import { useToast } from '@/hooks/use-toast';
 import type { SystemError } from '@/types/systemHealth';
 // Types from supabase are used via casting since types.ts is read-only
-import { logger } from '@/utils/logger';
+import { logger } from '@/utils/wideLogger';
 
 export const ApplicationLogs = () => {
   const [logs, setLogs] = useState<SystemError[]>([]);

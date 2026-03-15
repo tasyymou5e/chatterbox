@@ -8,9 +8,8 @@ import App from './App.tsx'
 import AppInitializer from '@/components/app/AppInitializer'
 import ErrorBoundary from './components/ErrorBoundary'
 import InitializationErrorBoundary from '@/components/app/InitializationErrorBoundary'
-import { logger } from '@/utils/logger'
+import { logger, secureLog } from '@/utils/wideLogger'
 import { initLogger } from '@/utils/initializationLogger'
-import { secureLog } from '@/utils/secureLogging'
 import './index.css'
 
 // Start initialization tracking immediately

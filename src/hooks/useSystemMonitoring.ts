@@ -9,7 +9,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
-import { debugLog } from '@/utils/debugLogger';
+import { debugLog } from '@/utils/wideLogger';
 import type { SystemError, SystemAlert, ErrorStatistics } from '@/types/systemHealth';
 import type { AuthDebugInfo, CircuitBreakerState, CallFrequencyTracker } from '@/types/logs';
 

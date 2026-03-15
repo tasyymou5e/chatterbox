@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { UserPlus, Shield, CheckCircle, Loader2 } from 'lucide-react';
-import { cError } from '@/utils/conditionalLogger';
+import { cError } from '@/utils/wideLogger';
 
 export const AdminBootstrap = () => {
   const { toast } = useToast();
