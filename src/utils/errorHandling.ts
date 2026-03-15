@@ -30,7 +30,7 @@ export const handleError = (
   }
 
   if (isNetworkError(error)) {
-    logger.error(`${context}: Network error - ${error.message}`, error, { component: context });
+    logger.error({ message: `${context}: Network error - ${error.message}`, component: context, error: { name: error.name, message: error.message } });
     return {
       name: 'NetworkError',
       message: 'Connection failed. Please check your internet connection.',
