@@ -106,7 +106,7 @@ export default function AdminLogin() {
         navigate('/admin/dashboard');
         setIsSigningIn(false);
       } else {
-        console.error('❌ User is not an admin');
+        secureLog.dev('❌ User is not an admin');
         refreshStatus(email);
         toast({
           title: "Access Denied",
