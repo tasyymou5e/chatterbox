@@ -158,6 +158,11 @@ export default function KidsPortal() {
       </KidsPortalLayout>
 
       {/* Embedded Game Viewer - Full screen inline game experience */}
+      {/* Skill Plan Dashboard */}
+      <div className="px-4 pb-4">
+        <SkillPlanDashboard />
+      </div>
+
       {activeGame && (
         <EmbeddedGameViewer
           game={activeGame}
