@@ -72,7 +72,7 @@ const Assessment: React.FC = () => {
       // Save to database
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        await (supabase.from('assessment_results').insert as any)({
+        await supabase.from('assessment_results').insert([{
           user_id: user.id,
           child_id: childIdParam || user.id,
           assessment_type: selectedInstrument.id,
@@ -80,7 +80,7 @@ const Assessment: React.FC = () => {
           answers: formAnswers as any,
           scores: computed as any,
           overall_grade: computed.overallGrade,
-        });
+        }]);
       }
 
       // Request AI review
