@@ -8,7 +8,7 @@ import {
   BookOpen, Search, ChevronRight, ChevronDown, 
   ArrowUp, Layers, Database, Shield, 
   Brain, TestTube, FileText, Zap, Users,
-  Lock, BarChart3, Gauge, BookMarked
+  Lock, Gauge, BookMarked
 } from 'lucide-react';
 
 // Full ebook content embedded as structured chapters
