@@ -1,6 +1,10 @@
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { secureLog } from '@/utils/wideLogger';
+
+// Circuit breaker: max 5 error reports per 10 seconds
+const ERROR_RATE_LIMIT = 5;
+const ERROR_RATE_WINDOW_MS = 10_000;
 
 interface ErrorInfo {
   errorType: string;
@@ -30,6 +34,8 @@ interface DeviceInfo {
 }
 
 export const useErrorTracking = () => {
+  const errorTimestamps = useRef<number[]>([]);
+
   const getBrowserInfo = useCallback((): BrowserInfo => {
     return {
       userAgent: navigator.userAgent,
@@ -54,7 +60,6 @@ export const useErrorTracking = () => {
   const getSessionId = useCallback((): string => {
     let sessionId = sessionStorage.getItem('error_session_id');
     if (!sessionId) {
-      // Use cryptographically secure UUID instead of predictable Date.now() + Math.random()
       sessionId = crypto.randomUUID();
       sessionStorage.setItem('error_session_id', sessionId);
     }
@@ -62,6 +67,14 @@ export const useErrorTracking = () => {
   }, []);
 
   const logError = useCallback(async (errorInfo: ErrorInfo) => {
+    // Circuit breaker: drop if too many errors in the window
+    const now = Date.now();
+    errorTimestamps.current = errorTimestamps.current.filter(t => now - t < ERROR_RATE_WINDOW_MS);
+    if (errorTimestamps.current.length >= ERROR_RATE_LIMIT) {
+      return; // silently drop
+    }
+    errorTimestamps.current.push(now);
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
       

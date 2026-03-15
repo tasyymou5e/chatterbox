@@ -12,14 +12,14 @@
     <!-- NOTE: 'unsafe-inline' and 'unsafe-eval' in script-src are required for Vite HMR
          and the Lovable preview environment. In a production deployment served via your own
          infrastructure, replace these with nonce-based CSP delivered through HTTP headers. -->
+    <!-- NOTE: connect-src Supabase domain must be updated if the project ID changes (currently lxuqfgbukrrickanmmic) -->
     <meta http-equiv="Content-Security-Policy" content="
       default-src 'self';
       script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.gpteng.co;
       style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
       font-src 'self' https://fonts.gstatic.com;
       img-src 'self' data: blob: https:;
-     <!-- NOTE: connect-src Supabase domain must be updated if the project ID changes (currently lxuqfgbukrrickanmmic) -->
-     connect-src 'self' https://lxuqfgbukrrickanmmic.supabase.co wss://lxuqfgbukrrickanmmic.supabase.co https://api.x.ai https://fonts.googleapis.com https://fonts.gstatic.com;
+      connect-src 'self' https://lxuqfgbukrrickanmmic.supabase.co wss://lxuqfgbukrrickanmmic.supabase.co https://api.x.ai https://fonts.googleapis.com https://fonts.gstatic.com;
       frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com;
       media-src 'self' https: blob:;
       worker-src 'self';
