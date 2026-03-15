@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { 
   BookOpen, Search, ChevronRight, ChevronDown, 
-  ArrowUp, Layers, Database, Shield, Cpu, 
+  ArrowUp, Layers, Database, Shield, 
   Brain, TestTube, FileText, Zap, Users,
   Lock, BarChart3, Gauge, BookMarked
 } from 'lucide-react';

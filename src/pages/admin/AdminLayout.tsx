@@ -18,7 +18,8 @@ import {
   TrendingUp,
   Wrench,
   ShieldCheck,
-  HeartPulse
+  HeartPulse,
+  BookOpen
 } from 'lucide-react';
 
 export default function AdminLayout() {
