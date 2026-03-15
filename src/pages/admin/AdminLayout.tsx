@@ -20,7 +20,8 @@ import {
   ShieldCheck,
   HeartPulse,
   BookOpen,
-  Bug
+  Bug,
+  Gamepad2
 } from 'lucide-react';
 
 export default function AdminLayout() {
