@@ -59,7 +59,7 @@ export const useSystemHealthStore = create<SystemHealthState>()(
           const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
           
           if (cachedMetrics && lastUpdated && lastUpdated > fiveMinutesAgo) {
-            console.log('📱 Using cached system health metrics');
+            secureLog.dev('📱 Using cached system health metrics');
             set({ metrics: cachedMetrics, loading: false });
             return;
           }
