@@ -12,6 +12,7 @@ import type { CelebrationEvent } from '@/types/lessonProgress';
 import { cn } from '@/lib/utils';
 import { useGameSession } from '@/hooks/useGameSession';
 import { CelebrationEffect } from '@/components/aac/CelebrationEffect';
+import { secureLog } from '@/utils/wideLogger';
 
 interface KidsGameLauncherProps {
   game: KidContentItem | null;
