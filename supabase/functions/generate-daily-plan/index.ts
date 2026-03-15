@@ -39,6 +39,11 @@ serve(async (req) => {
 
     const adminClient = createClient(supabaseUrl, serviceKey);
 
+    // Parse request body for schedule_type
+    const requestBody = await req.json().catch(() => ({}));
+    const scheduleType = requestBody.schedule_type || "daily";
+    const childId = requestBody.child_id; // optional: generate plan for a specific child
+
     // Check if plan already exists for today
     const today = new Date().toISOString().split("T")[0];
     const { data: existingPlan } = await adminClient
