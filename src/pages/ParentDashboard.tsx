@@ -17,6 +17,8 @@ import { Badge } from '@/components/ui/badge';
 import { ParentNavigation } from '@/components/parent/ParentNavigation';
 import { WeeklyProgressSummary } from '@/components/parent/WeeklyProgressSummary';
 import { AssessmentHistoryCard } from '@/components/parent/AssessmentHistoryCard';
+import { SkillPlanManager } from '@/components/parent/SkillPlanManager';
+import { SkillPlanReports } from '@/components/parent/SkillPlanReports';
 import { logSupabaseQuery, logDataAccessIssue, logDataFetchSuccess, createQueryTimer } from '@/utils/parentPortalLogger';
 import { authLoggingService } from '@/services/authLoggingService';
 
