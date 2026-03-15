@@ -1,7 +1,7 @@
 # Zustand Stores Documentation
 
-> **Last Updated:** 2026-01-21  
-> **Total Stores:** 12  
+> **Last Updated:** 2026-03-15  
+> **Total Stores:** 18  
 > **Location:** `src/stores/`  
 > **State Management:** Zustand v5.0.10
 
