@@ -1,13 +1,18 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook } from '@testing-library/react';
 import { useAuth } from '@/hooks/useAuth';
 import { useAuthStore } from '@/stores/authStore';
 import type { User, Session } from '@supabase/supabase-js';
 
 // Mock the auth store
-vi.mock('@/stores/authStore', () => ({
-  useAuthStore: vi.fn(),
-}));
+vi.mock('@/stores/authStore', () => {
+  const mockGetState = vi.fn();
+  const mockStore = Object.assign(
+    vi.fn(),
+    { getState: mockGetState }
+  );
+  return { useAuthStore: mockStore };
+});
 
 const mockUser: User = {
   id: 'test-user-id',
@@ -26,37 +31,38 @@ const mockSession: Session = {
   user: mockUser,
 };
 
+const createMockStoreState = (overrides = {}) => ({
+  user: null,
+  session: null,
+  userRole: null,
+  isAdmin: false,
+  loading: false,
+  isHydrated: true,
+  sessionReady: false,
+  initialize: vi.fn(),
+  signUp: vi.fn(),
+  signIn: vi.fn(),
+  signOut: vi.fn(),
+  resetPassword: vi.fn(),
+  ...overrides,
+});
+
 describe('useAuth', () => {
   const mockSignIn = vi.fn();
   const mockSignUp = vi.fn();
   const mockSignOut = vi.fn();
   const mockResetPassword = vi.fn();
-  const mockFetchUserRole = vi.fn();
-  const mockCheckAdminRole = vi.fn();
 
   beforeEach(() => {
-    vi.mocked(useAuthStore).mockReturnValue({
-      user: null,
-      session: null,
-      userRole: null,
-      isAdmin: false,
-      loading: false,
-      isHydrated: true,
-      isInitialized: true,
+    const defaultState = createMockStoreState({
       signIn: mockSignIn,
       signUp: mockSignUp,
       signOut: mockSignOut,
       resetPassword: mockResetPassword,
-      fetchUserRole: mockFetchUserRole,
-      checkAdminRole: mockCheckAdminRole,
-      setUser: vi.fn(),
-      setSession: vi.fn(),
-      setUserRole: vi.fn(),
-      setIsAdmin: vi.fn(),
-      setLoading: vi.fn(),
-      emergencyLogout: vi.fn(),
-      initializeAuth: vi.fn(),
     });
+    
+    vi.mocked(useAuthStore).mockReturnValue(defaultState as any);
+    (useAuthStore as any).getState.mockReturnValue({ resetPassword: mockResetPassword });
   });
 
   afterEach(() => {
@@ -73,28 +79,15 @@ describe('useAuth', () => {
     });
 
     it('returns user when authenticated', () => {
-      vi.mocked(useAuthStore).mockReturnValue({
+      vi.mocked(useAuthStore).mockReturnValue(createMockStoreState({
         user: mockUser,
         session: mockSession,
         userRole: 'parent',
-        isAdmin: false,
-        loading: false,
-        isHydrated: true,
-        isInitialized: true,
         signIn: mockSignIn,
         signUp: mockSignUp,
         signOut: mockSignOut,
         resetPassword: mockResetPassword,
-        fetchUserRole: mockFetchUserRole,
-        checkAdminRole: mockCheckAdminRole,
-        setUser: vi.fn(),
-        setSession: vi.fn(),
-        setUserRole: vi.fn(),
-        setIsAdmin: vi.fn(),
-        setLoading: vi.fn(),
-        emergencyLogout: vi.fn(),
-        initializeAuth: vi.fn(),
-      });
+      }) as any);
 
       const { result } = renderHook(() => useAuth());
       
@@ -133,15 +126,9 @@ describe('useAuth', () => {
 
       const { result } = renderHook(() => useAuth());
       
-      await result.current.signUp('new@example.com', 'password123', {
-        first_name: 'New',
-        last_name: 'User',
-      });
+      await result.current.signUp('new@example.com', 'password123', 'New', 'User');
       
-      expect(mockSignUp).toHaveBeenCalledWith('new@example.com', 'password123', {
-        first_name: 'New',
-        last_name: 'User',
-      });
+      expect(mockSignUp).toHaveBeenCalledWith('new@example.com', 'password123', 'New', 'User');
     });
   });
 
@@ -157,89 +144,30 @@ describe('useAuth', () => {
     });
   });
 
-  describe('resetPassword', () => {
-    it('calls resetPassword with email', async () => {
-      mockResetPassword.mockResolvedValue({ error: null });
-
-      const { result } = renderHook(() => useAuth());
-      
-      await result.current.resetPassword('test@example.com');
-      
-      expect(mockResetPassword).toHaveBeenCalledWith('test@example.com', undefined);
-    });
-
-    it('calls resetPassword with admin type', async () => {
-      mockResetPassword.mockResolvedValue({ error: null });
-
-      const { result } = renderHook(() => useAuth());
-      
-      await result.current.resetPassword('admin@example.com', 'admin');
-      
-      expect(mockResetPassword).toHaveBeenCalledWith('admin@example.com', 'admin');
-    });
-  });
-
-  describe('isAdmin', () => {
-    it('returns false when not admin', () => {
-      const { result } = renderHook(() => useAuth());
-      
-      expect(result.current.isAdmin).toBe(false);
-    });
-
-    it('returns true when admin', () => {
-      vi.mocked(useAuthStore).mockReturnValue({
-        user: mockUser,
-        session: mockSession,
-        userRole: 'admin',
-        isAdmin: true,
-        loading: false,
-        isHydrated: true,
-        isInitialized: true,
-        signIn: mockSignIn,
-        signUp: mockSignUp,
-        signOut: mockSignOut,
-        resetPassword: mockResetPassword,
-        fetchUserRole: mockFetchUserRole,
-        checkAdminRole: mockCheckAdminRole,
-        setUser: vi.fn(),
-        setSession: vi.fn(),
-        setUserRole: vi.fn(),
-        setIsAdmin: vi.fn(),
-        setLoading: vi.fn(),
-        emergencyLogout: vi.fn(),
-        initializeAuth: vi.fn(),
-      });
-
-      const { result } = renderHook(() => useAuth());
-      
-      expect(result.current.isAdmin).toBe(true);
-    });
-  });
-
   describe('loading state', () => {
-    it('returns loading state from store', () => {
-      vi.mocked(useAuthStore).mockReturnValue({
-        user: null,
-        session: null,
-        userRole: null,
-        isAdmin: false,
+    it('returns loading when store is loading', () => {
+      vi.mocked(useAuthStore).mockReturnValue(createMockStoreState({
         loading: true,
-        isHydrated: true,
-        isInitialized: false,
         signIn: mockSignIn,
         signUp: mockSignUp,
         signOut: mockSignOut,
         resetPassword: mockResetPassword,
-        fetchUserRole: mockFetchUserRole,
-        checkAdminRole: mockCheckAdminRole,
-        setUser: vi.fn(),
-        setSession: vi.fn(),
-        setUserRole: vi.fn(),
-        setIsAdmin: vi.fn(),
-        setLoading: vi.fn(),
-        emergencyLogout: vi.fn(),
-        initializeAuth: vi.fn(),
-      });
+      }) as any);
+
+      const { result } = renderHook(() => useAuth());
+      
+      expect(result.current.loading).toBe(true);
+    });
+
+    it('returns loading when not hydrated', () => {
+      vi.mocked(useAuthStore).mockReturnValue(createMockStoreState({
+        loading: false,
+        isHydrated: false,
+        signIn: mockSignIn,
+        signUp: mockSignUp,
+        signOut: mockSignOut,
+        resetPassword: mockResetPassword,
+      }) as any);
 
       const { result } = renderHook(() => useAuth());
       

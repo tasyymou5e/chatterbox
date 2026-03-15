@@ -9,14 +9,22 @@ vi.mock('@/integrations/supabase/client', () => ({
         eq: vi.fn(() => ({
           single: vi.fn(() => Promise.resolve({ data: null, error: null })),
           order: vi.fn(() => Promise.resolve({ data: [], error: null })),
+          maybeSingle: vi.fn(() => Promise.resolve({ data: null, error: null })),
+          gte: vi.fn(() => ({
+            order: vi.fn(() => Promise.resolve({ data: [], error: null })),
+          })),
         })),
-        order: vi.fn(() => ({
-          limit: vi.fn(() => Promise.resolve({ data: [], error: null })),
+        order: vi.fn(() => Promise.resolve({ data: [], error: null })),
+      })),
+      insert: vi.fn(() => ({
+        select: vi.fn(() => ({
+          single: vi.fn(() => Promise.resolve({ data: { id: 'new-id' }, error: null })),
         })),
       })),
-      insert: vi.fn(() => Promise.resolve({ data: null, error: null })),
       update: vi.fn(() => ({
-        eq: vi.fn(() => Promise.resolve({ data: null, error: null })),
+        eq: vi.fn(() => ({
+          eq: vi.fn(() => Promise.resolve({ data: null, error: null })),
+        })),
       })),
       upsert: vi.fn(() => Promise.resolve({ data: null, error: null })),
     })),
@@ -27,20 +35,35 @@ vi.mock('@/integrations/supabase/client', () => ({
   },
 }));
 
+// Mock storeUtils
+vi.mock('@/services/storeUtils', () => ({
+  wishlistInputSchema: { parse: vi.fn() },
+  sanitizeInput: vi.fn((s: string) => s),
+  createStoreError: vi.fn((type: string, msg: string) => ({ type, message: msg })),
+  createStoreSuccess: vi.fn((data: unknown, msg: string) => ({ data, message: msg })),
+}));
+
+// Mock wideLogger
+vi.mock('@/utils/wideLogger', () => ({
+  cLog: vi.fn(),
+  cError: vi.fn(),
+}));
+
 describe('gamificationStore', () => {
   beforeEach(() => {
-    // Reset store state before each test
+    // Reset store state to match actual initial values
     useGamificationStore.setState({
-      points: 0,
-      level: 1,
-      experience: 0,
-      experienceToNextLevel: 100,
+      userLevel: null,
+      userPoints: null,
       achievements: [],
-      unlockedAchievements: [],
-      recentActivity: [],
-      dailyStreak: 0,
-      isLoading: false,
+      userAchievements: [],
+      wishlistItems: [],
+      dailyStreaks: [],
+      leaderboard: [],
+      loading: true,
       error: null,
+      userId: null,
+      familyId: null,
     });
     vi.clearAllMocks();
   });
@@ -53,150 +76,102 @@ describe('gamificationStore', () => {
     it('should have correct initial values', () => {
       const state = useGamificationStore.getState();
       
-      expect(state.points).toBe(0);
-      expect(state.level).toBe(1);
-      expect(state.experience).toBe(0);
-      expect(state.experienceToNextLevel).toBe(100);
+      expect(state.userLevel).toBeNull();
+      expect(state.userPoints).toBeNull();
       expect(state.achievements).toEqual([]);
-      expect(state.unlockedAchievements).toEqual([]);
-      expect(state.dailyStreak).toBe(0);
-      expect(state.isLoading).toBe(false);
+      expect(state.userAchievements).toEqual([]);
+      expect(state.wishlistItems).toEqual([]);
+      expect(state.dailyStreaks).toEqual([]);
+      expect(state.leaderboard).toEqual([]);
       expect(state.error).toBeNull();
+      expect(state.userId).toBeNull();
+      expect(state.familyId).toBeNull();
     });
   });
 
-  describe('state setters', () => {
-    it('should set points correctly', () => {
-      const { setPoints } = useGamificationStore.getState();
+  describe('setUserId', () => {
+    it('should set user ID', () => {
+      const { setUserId } = useGamificationStore.getState();
       
-      setPoints(100);
+      setUserId('user-123');
       
-      expect(useGamificationStore.getState().points).toBe(100);
+      expect(useGamificationStore.getState().userId).toBe('user-123');
     });
 
-    it('should set level correctly', () => {
-      const { setLevel } = useGamificationStore.getState();
+    it('should accept null to clear user ID', () => {
+      useGamificationStore.setState({ userId: 'user-123' });
       
-      setLevel(5);
+      const { setUserId } = useGamificationStore.getState();
+      setUserId(null);
       
-      expect(useGamificationStore.getState().level).toBe(5);
-    });
-
-    it('should set experience correctly', () => {
-      const { setExperience } = useGamificationStore.getState();
-      
-      setExperience(50);
-      
-      expect(useGamificationStore.getState().experience).toBe(50);
-    });
-
-    it('should set daily streak correctly', () => {
-      const { setDailyStreak } = useGamificationStore.getState();
-      
-      setDailyStreak(7);
-      
-      expect(useGamificationStore.getState().dailyStreak).toBe(7);
-    });
-
-    it('should set loading state correctly', () => {
-      const { setIsLoading } = useGamificationStore.getState();
-      
-      setIsLoading(true);
-      
-      expect(useGamificationStore.getState().isLoading).toBe(true);
-    });
-
-    it('should set error correctly', () => {
-      const { setError } = useGamificationStore.getState();
-      
-      setError('Test error');
-      
-      expect(useGamificationStore.getState().error).toBe('Test error');
+      expect(useGamificationStore.getState().userId).toBeNull();
     });
   });
 
-  describe('addPoints', () => {
-    it('should add points to current total', () => {
-      const { setPoints, addPoints } = useGamificationStore.getState();
+  describe('setFamilyId', () => {
+    it('should set family ID', () => {
+      const { setFamilyId } = useGamificationStore.getState();
       
-      setPoints(50);
-      addPoints(25);
+      setFamilyId('family-456');
       
-      expect(useGamificationStore.getState().points).toBe(75);
-    });
-
-    it('should handle negative point additions', () => {
-      const { setPoints, addPoints } = useGamificationStore.getState();
-      
-      setPoints(100);
-      addPoints(-30);
-      
-      expect(useGamificationStore.getState().points).toBe(70);
+      expect(useGamificationStore.getState().familyId).toBe('family-456');
     });
   });
 
-  describe('addExperience', () => {
-    it('should add experience to current total', () => {
-      const { setExperience, addExperience } = useGamificationStore.getState();
+  describe('clearError', () => {
+    it('should clear the error state', () => {
+      useGamificationStore.setState({ error: { type: 'network', message: 'Failed' } as any });
       
-      setExperience(20);
-      addExperience(30);
+      const { clearError } = useGamificationStore.getState();
+      clearError();
       
-      expect(useGamificationStore.getState().experience).toBe(50);
+      expect(useGamificationStore.getState().error).toBeNull();
     });
   });
 
-  describe('unlockAchievement', () => {
-    it('should add achievement to unlocked list', () => {
-      const { unlockAchievement } = useGamificationStore.getState();
-      
-      unlockAchievement('first_login');
-      
-      expect(useGamificationStore.getState().unlockedAchievements).toContain('first_login');
-    });
-
-    it('should not duplicate unlocked achievements', () => {
-      const { unlockAchievement } = useGamificationStore.getState();
-      
-      unlockAchievement('first_login');
-      unlockAchievement('first_login');
-      
-      const unlocked = useGamificationStore.getState().unlockedAchievements;
-      expect(unlocked.filter(a => a === 'first_login').length).toBe(1);
-    });
-  });
-
-  describe('resetGamification', () => {
-    it('should reset all gamification state to initial values', () => {
-      const { setPoints, setLevel, setExperience, setDailyStreak, unlockAchievement, resetGamification } = useGamificationStore.getState();
-      
-      // Set some values
-      setPoints(500);
-      setLevel(10);
-      setExperience(75);
-      setDailyStreak(14);
-      unlockAchievement('test_achievement');
-      
-      // Reset
-      resetGamification();
-      
+  describe('store actions exist', () => {
+    it('should have all required action methods', () => {
       const state = useGamificationStore.getState();
-      expect(state.points).toBe(0);
-      expect(state.level).toBe(1);
-      expect(state.experience).toBe(0);
-      expect(state.dailyStreak).toBe(0);
-      expect(state.unlockedAchievements).toEqual([]);
+      
+      expect(typeof state.setUserId).toBe('function');
+      expect(typeof state.setFamilyId).toBe('function');
+      expect(typeof state.fetchUserLevel).toBe('function');
+      expect(typeof state.fetchUserPoints).toBe('function');
+      expect(typeof state.fetchAchievements).toBe('function');
+      expect(typeof state.fetchUserAchievements).toBe('function');
+      expect(typeof state.fetchWishlistItems).toBe('function');
+      expect(typeof state.fetchDailyStreaks).toBe('function');
+      expect(typeof state.fetchLeaderboard).toBe('function');
+      expect(typeof state.addWishlistItem).toBe('function');
+      expect(typeof state.redeemWishlistItem).toBe('function');
+      expect(typeof state.checkAchievements).toBe('function');
+      expect(typeof state.refetch).toBe('function');
+      expect(typeof state.clearError).toBe('function');
     });
   });
 
-  describe('calculateLevel', () => {
-    it('should correctly calculate level from experience', () => {
-      const { calculateLevel } = useGamificationStore.getState();
+  describe('addWishlistItem', () => {
+    it('should fail without authentication', async () => {
+      useGamificationStore.setState({ userId: null, familyId: null });
       
-      // Level thresholds typically increase, so test various experience amounts
-      expect(calculateLevel(0)).toBe(1);
-      expect(calculateLevel(100)).toBeGreaterThanOrEqual(1);
-      expect(calculateLevel(1000)).toBeGreaterThanOrEqual(1);
+      const { addWishlistItem } = useGamificationStore.getState();
+      const result = await addWishlistItem({
+        item_name: 'Test Item',
+        point_cost: 100,
+      });
+      
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe('redeemWishlistItem', () => {
+    it('should fail without authentication', async () => {
+      useGamificationStore.setState({ userId: null, familyId: null });
+      
+      const { redeemWishlistItem } = useGamificationStore.getState();
+      const result = await redeemWishlistItem('item-1');
+      
+      expect(result.success).toBe(false);
     });
   });
 });

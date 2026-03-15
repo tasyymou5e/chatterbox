@@ -10,19 +10,14 @@ vi.mock('@/hooks/useSiteSettings', () => ({
   }),
 }));
 
-// Mock SiteHeader to avoid complex dependencies
+// Mock SiteHeader (named export)
 vi.mock('@/components/SiteHeader', () => ({
-  default: () => <header data-testid="site-header">Header</header>,
+  SiteHeader: () => <header data-testid="site-header">Header</header>,
 }));
 
-// Mock Hero to avoid complex dependencies
+// Mock Hero (named export)
 vi.mock('@/components/Hero', () => ({
-  default: () => <section data-testid="hero">Hero Section</section>,
-}));
-
-// Mock PortalSelection
-vi.mock('@/components/PortalSelection', () => ({
-  default: () => <section data-testid="portal-selection">Portal Selection</section>,
+  Hero: () => <section data-testid="hero">Hero Section</section>,
 }));
 
 describe('Index Page', () => {
@@ -30,7 +25,6 @@ describe('Index Page', () => {
     render(<Index />);
     expect(screen.getByTestId('site-header')).toBeInTheDocument();
     expect(screen.getByTestId('hero')).toBeInTheDocument();
-    expect(screen.getByTestId('portal-selection')).toBeInTheDocument();
   });
 
   it('renders the footer with navigation links', () => {
@@ -40,13 +34,10 @@ describe('Index Page', () => {
     expect(screen.getByText(/Privacy Policy/i)).toBeInTheDocument();
   });
 
-  it('renders quick links section', () => {
+  it('renders footer sections', () => {
     render(<Index />);
-    expect(screen.getByText(/Quick Links/i)).toBeInTheDocument();
-  });
-
-  it('renders social section placeholder', () => {
-    render(<Index />);
-    expect(screen.getByText(/Connect/i)).toBeInTheDocument();
+    expect(screen.getByText('Features')).toBeInTheDocument();
+    expect(screen.getByText('Support')).toBeInTheDocument();
+    expect(screen.getByText('Connect')).toBeInTheDocument();
   });
 });
