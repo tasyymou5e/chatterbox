@@ -15,11 +15,12 @@ import type { CatalogItem } from '@/types/skillPlan';
 interface ActivityExecutorProps {
   catalogItem: CatalogItem;
   planItemId?: string;
+  isIdle?: boolean;
   onComplete?: () => void;
   onClose?: () => void;
 }
 
-export function ActivityExecutor({ catalogItem, planItemId, onComplete, onClose }: ActivityExecutorProps) {
+export function ActivityExecutor({ catalogItem, planItemId, isIdle, onComplete, onClose }: ActivityExecutorProps) {
   const { session, startSession, updateProgress, pauseSession, resumeSession, completeSession } = useActivitySession();
   const [timerSeconds, setTimerSeconds] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -48,6 +49,13 @@ export function ActivityExecutor({ catalogItem, planItemId, onComplete, onClose 
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [session.sessionId, session.isPaused, session.isCompleted]);
+
+  // Auto-pause on idle timeout
+  useEffect(() => {
+    if (isIdle && session.sessionId && !session.isPaused && !session.isCompleted) {
+      pauseSession('idle_timeout');
+    }
+  }, [isIdle, session.sessionId, session.isPaused, session.isCompleted, pauseSession]);
 
   // Periodic progress update every 30s
   useEffect(() => {

@@ -16,9 +16,6 @@ import { useIdleDetector } from '@/hooks/useIdleDetector';
 import { cLog } from '@/utils/conditionalLogger';
 import type { KidContentItem, ContentType, AgeGroup, ChildProfile } from '@/types/kidsPortal';
 import { KidsLoadingState } from '@/components/illustrations';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Play } from 'lucide-react';
 
 export default function KidsPortal() {
   const navigate = useNavigate();
@@ -87,24 +84,7 @@ export default function KidsPortal() {
     );
   }
 
-  if (isIdle) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted">
-        <Card className="max-w-md mx-auto border-2 border-primary/20">
-          <CardContent className="flex flex-col items-center justify-center py-12 gap-4">
-            <div className="text-6xl">👋</div>
-            <h2 className="text-2xl font-bold text-foreground">Welcome Back!</h2>
-            <p className="text-muted-foreground text-center">
-              You were away for a while. Ready to continue?
-            </p>
-            <Button size="lg" className="gap-2" onClick={() => window.location.reload()}>
-              <Play className="h-5 w-5" /> Let's Go!
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  // isIdle is now passed as a prop to SkillPlanDashboard for auto-pause integration
 
   return (
     <>
@@ -123,7 +103,7 @@ export default function KidsPortal() {
             <KidsProgressHeader profile={childProfile} className="mb-2" />
 
             {/* Skill Plan Dashboard - primary full view */}
-            <SkillPlanDashboard />
+            <SkillPlanDashboard isIdle={isIdle} />
           </div>
 
           <AgeGroupMenu

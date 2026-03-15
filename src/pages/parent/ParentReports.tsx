@@ -7,9 +7,15 @@ import { ParentActivityLogsTable } from '@/components/reports/ParentActivityLogs
 import { ChildrenAchievementsPanel } from '@/components/parent/ChildrenAchievementsPanel';
 import { ChildrenContentUsage } from '@/components/parent/ChildrenContentUsage';
 import { ProgressReportExport } from '@/components/parent/ProgressReportExport';
+import { DailyProgressReport } from '@/components/parent/DailyProgressReport';
 import { useAuthStore } from '@/stores/authStore';
 import { supabase } from '@/integrations/supabase/client';
 import { logSupabaseQuery, logDataAccessIssue, logDataFetchSuccess, createQueryTimer } from '@/utils/parentPortalLogger';
+
+interface ChildMember {
+  user_id: string;
+  first_name?: string;
+}
 
 interface FamilyStats {
   totalChildren: number;
@@ -25,6 +31,7 @@ export default function ParentReports() {
     totalActivities: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [childMembers, setChildMembers] = useState<ChildMember[]>([]);
 
   const fetchStats = useCallback(async () => {
     if (!user?.id) {
@@ -83,6 +90,17 @@ export default function ParentReports() {
       );
 
       const childUserIds = childMembers?.map(m => m.user_id) || [];
+
+      // Store child members for Daily Progress tab
+      if (childMembers && childMembers.length > 0) {
+        // Fetch profile names for children
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, first_name')
+          .in('user_id', childUserIds);
+        
+        setChildMembers(profiles?.map(p => ({ user_id: p.user_id, first_name: p.first_name || undefined })) || []);
+      }
 
       if (childUserIds.length === 0) {
         logDataAccessIssue('Reports', 'No child members found', {
@@ -232,6 +250,7 @@ export default function ParentReports() {
           <TabsList>
             <TabsTrigger value="activity">Activity Logs</TabsTrigger>
             <TabsTrigger value="progress">Progress Summary</TabsTrigger>
+            <TabsTrigger value="daily">Daily Progress</TabsTrigger>
           </TabsList>
 
           <TabsContent value="activity">
@@ -241,6 +260,24 @@ export default function ParentReports() {
           <TabsContent value="progress" className="space-y-6">
             <ChildrenAchievementsPanel />
             <ChildrenContentUsage />
+          </TabsContent>
+
+          <TabsContent value="daily" className="space-y-6">
+            {childMembers.length === 0 ? (
+              <Card>
+                <CardContent className="py-8 text-center text-muted-foreground">
+                  {loading ? 'Loading...' : 'No children found in your family.'}
+                </CardContent>
+              </Card>
+            ) : (
+              childMembers.map(child => (
+                <DailyProgressReport
+                  key={child.user_id}
+                  childId={child.user_id}
+                  childName={child.first_name || 'Child'}
+                />
+              ))
+            )}
           </TabsContent>
         </Tabs>
       </main>

@@ -1,6 +1,7 @@
 /**
  * SkillPlanDashboard - Kids view of today's approved plan with activity cards
- * Loads from skill_plan_schedules (approved/active plans) instead of user_daily_plans
+ * Loads from skill_plan_schedules (approved/active plans)
+ * Supports session resume and idle auto-pause forwarding
  */
 import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,25 +9,37 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Star, Play, CheckCircle, RotateCcw } from 'lucide-react';
+import { Star, Play, CheckCircle, RotateCcw, ArrowRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { ActivityExecutor } from './ActivityExecutor';
 import { getDomainInfo, getItemTypeInfo } from '@/types/skillPlan';
 import type { CatalogItem, PlanItem } from '@/types/skillPlan';
 
+interface SkillPlanDashboardProps {
+  isIdle?: boolean;
+}
+
 interface PlanItemWithStatus extends PlanItem {
   isCompleted: boolean;
   sessionId?: string;
 }
 
-export function SkillPlanDashboard() {
+interface ResumeInfo {
+  catalogItemId: string;
+  title: string;
+  currentStep: number;
+  totalSteps: number;
+}
+
+export function SkillPlanDashboard({ isIdle }: SkillPlanDashboardProps) {
   const { user } = useAuth();
   const [planItems, setPlanItems] = useState<PlanItemWithStatus[]>([]);
   const [planName, setPlanName] = useState('');
   const [activeItem, setActiveItem] = useState<CatalogItem | null>(null);
   const [activePlanItemId, setActivePlanItemId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [resumeInfo, setResumeInfo] = useState<ResumeInfo | null>(null);
 
   const loadApprovedPlan = useCallback(async () => {
     if (!user?.id) return;
@@ -54,17 +67,32 @@ export function SkillPlanDashboard() {
         ? (schedule.plan_items as unknown as PlanItem[])
         : [];
 
-      // Fetch session logs to determine completion status
+      // Fetch session logs to determine completion status + find in-progress sessions
       const { data: sessions } = await supabase
         .from('plan_session_logs')
-        .select('catalog_item_id, completion_status, id')
-        .eq('child_id', user.id)
-        .eq('completion_status', 'completed');
+        .select('catalog_item_id, completion_status, id, current_step, total_steps')
+        .eq('child_id', user.id);
 
       const completedSet = new Set<string>();
+      let pendingSession: ResumeInfo | null = null;
+
       sessions?.forEach(s => {
-        if (s.catalog_item_id) completedSet.add(s.catalog_item_id);
+        if (s.completion_status === 'completed' && s.catalog_item_id) {
+          completedSet.add(s.catalog_item_id);
+        }
+        if ((s.completion_status === 'in_progress' || s.completion_status === 'paused') && s.catalog_item_id) {
+          // Find the matching plan item title
+          const matchingItem = items.find(i => i.catalog_item_id === s.catalog_item_id);
+          pendingSession = {
+            catalogItemId: s.catalog_item_id,
+            title: matchingItem?.title || 'Activity',
+            currentStep: (s.current_step as number) || 0,
+            totalSteps: (s.total_steps as number) || 1,
+          };
+        }
       });
+
+      setResumeInfo(pendingSession);
 
       const enriched: PlanItemWithStatus[] = items.map(item => ({
         ...item,
@@ -93,9 +121,18 @@ export function SkillPlanDashboard() {
       if (catalogItem) {
         setActiveItem(catalogItem);
         setActivePlanItemId(item.catalog_item_id);
+        setResumeInfo(null);
       }
     } catch (err) {
       console.error('Error loading catalog item:', err);
+    }
+  };
+
+  const handleResumeSession = async () => {
+    if (!resumeInfo) return;
+    const matchingItem = planItems.find(i => i.catalog_item_id === resumeInfo.catalogItemId);
+    if (matchingItem) {
+      await handleStartActivity(matchingItem);
     }
   };
 
@@ -113,6 +150,7 @@ export function SkillPlanDashboard() {
       <ActivityExecutor
         catalogItem={activeItem}
         planItemId={activePlanItemId || undefined}
+        isIdle={isIdle}
         onComplete={handleComplete}
         onClose={handleComplete}
       />
@@ -135,6 +173,24 @@ export function SkillPlanDashboard() {
         </div>
       </CardHeader>
       <CardContent>
+        {/* Resume banner */}
+        {resumeInfo && (
+          <div className="mb-4 p-4 rounded-xl border-2 border-primary/30 bg-primary/5 flex items-center gap-3">
+            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+              <Play className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-foreground">Continue where you left off</p>
+              <p className="text-sm text-muted-foreground">
+                {resumeInfo.title} — Step {resumeInfo.currentStep + 1} of {resumeInfo.totalSteps}
+              </p>
+            </div>
+            <Button onClick={handleResumeSession} className="gap-1 flex-shrink-0">
+              <ArrowRight className="h-4 w-4" /> Resume
+            </Button>
+          </div>
+        )}
+
         {isLoading ? (
           <div className="flex items-center justify-center py-8 text-muted-foreground">
             Loading your plan...
