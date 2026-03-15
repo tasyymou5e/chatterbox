@@ -16,9 +16,6 @@ import { useIdleDetector } from '@/hooks/useIdleDetector';
 import { cLog } from '@/utils/conditionalLogger';
 import type { KidContentItem, ContentType, AgeGroup, ChildProfile } from '@/types/kidsPortal';
 import { KidsLoadingState } from '@/components/illustrations';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Play } from 'lucide-react';
 
 export default function KidsPortal() {
   const navigate = useNavigate();
