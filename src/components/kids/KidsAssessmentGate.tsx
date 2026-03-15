@@ -44,6 +44,7 @@ interface KidsAssessmentGateProps {
 
 export function KidsAssessmentGate({ children, onAllComplete }: KidsAssessmentGateProps) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [completedAssessments, setCompletedAssessments] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [hasApprovedPlan, setHasApprovedPlan] = useState(false);
