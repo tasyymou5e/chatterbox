@@ -73,7 +73,7 @@ export function useEdgeFunctionHealth() {
         // For functions without health endpoints, try OPTIONS (CORS preflight)
         // This at least verifies the function is deployed
         const response = await fetch(
-          `https://lxuqfgbukrrickanmmic.supabase.co/functions/v1/${funcConfig.name}`,
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${funcConfig.name}`,
           { method: 'OPTIONS' }
         );
         

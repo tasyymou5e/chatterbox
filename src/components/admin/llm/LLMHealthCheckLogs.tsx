@@ -66,7 +66,7 @@ export function LLMHealthCheckLogs() {
     try {
       const { data: session } = await supabase.auth.getSession();
       const response = await fetch(
-        'https://lxuqfgbukrrickanmmic.supabase.co/functions/v1/scheduled-health-check',
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/scheduled-health-check`,
         {
           method: 'POST',
           headers: {

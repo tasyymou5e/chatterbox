@@ -4,6 +4,13 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { visualizer } from "rollup-plugin-visualizer";
 import { VitePWA } from "vite-plugin-pwa";
+import { version } from "./package.json";
+
+// Supabase project ID — used to build PWA caching regexes.
+// If the project changes, update this AND the CSP connect-src in index.html.
+const SUPABASE_PROJECT_ID = 'lxuqfgbukrrickanmmic';
+const supabaseRegex = (path: string) =>
+  new RegExp(`^https:\\/\\/${SUPABASE_PROJECT_ID}\\.supabase\\.co\\/${path}\\/.*`, 'i');
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -68,7 +75,7 @@ export default defineConfig(({ mode }) => ({
         runtimeCaching: [
           // Supabase REST API - NetworkFirst with fallback
           {
-            urlPattern: /^https:\/\/lxuqfgbukrrickanmmic\.supabase\.co\/rest\/v1\/.*/i,
+            urlPattern: supabaseRegex('rest/v1'),
             handler: 'NetworkFirst',
             options: {
               cacheName: 'supabase-api-cache',
@@ -84,17 +91,17 @@ export default defineConfig(({ mode }) => ({
           },
           // Supabase Edge Functions - NetworkOnly (no caching for mutations)
           {
-            urlPattern: /^https:\/\/lxuqfgbukrrickanmmic\.supabase\.co\/functions\/.*/i,
+            urlPattern: supabaseRegex('functions'),
             handler: 'NetworkOnly'
           },
           // Supabase Auth - NetworkOnly (critical for security)
           {
-            urlPattern: /^https:\/\/lxuqfgbukrrickanmmic\.supabase\.co\/auth\/.*/i,
+            urlPattern: supabaseRegex('auth'),
             handler: 'NetworkOnly'
           },
           // Supabase Storage - CacheFirst for images
           {
-            urlPattern: /^https:\/\/lxuqfgbukrrickanmmic\.supabase\.co\/storage\/.*/i,
+            urlPattern: supabaseRegex('storage'),
             handler: 'CacheFirst',
             options: {
               cacheName: 'supabase-storage-cache',
@@ -150,6 +157,9 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+  },
+  define: {
+    'import.meta.env.VITE_APP_VERSION': JSON.stringify(version),
   },
   build: {
     // Disable source maps in production to prevent code exposure
