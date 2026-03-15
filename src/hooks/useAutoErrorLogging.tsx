@@ -21,16 +21,21 @@ export const useAutoErrorLogging = () => {
     // Intercept fetch requests to log network errors
     // Skip logging expected auth failures (401/403) to reduce noise
     const originalFetch = window.fetch;
+    const ERROR_REPORTING_URLS = ['error-collector', 'security-monitoring'];
     window.fetch = async (...args) => {
+      const url = args[0]?.toString() || 'Unknown URL';
+      const isErrorReporter = ERROR_REPORTING_URLS.some(u => url.includes(u));
       try {
         const response = await originalFetch(...args);
-        // Only log 5xx server errors, not expected auth failures (401/403)
-        if (!response.ok && response.status >= 500) {
-          logNetworkError(args[0]?.toString() || 'Unknown URL', response.status, response.statusText);
+        // Only log 5xx server errors, skip error-reporting endpoints to prevent recursion
+        if (!response.ok && response.status >= 500 && !isErrorReporter) {
+          logNetworkError(url, response.status, response.statusText);
         }
         return response;
       } catch (error) {
-        logNetworkError(args[0]?.toString() || 'Unknown URL', 0, 'Network Error');
+        if (!isErrorReporter) {
+          logNetworkError(url, 0, 'Network Error');
+        }
         throw error;
       }
     };

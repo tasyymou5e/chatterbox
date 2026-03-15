@@ -1,6 +1,10 @@
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { secureLog } from '@/utils/wideLogger';
+
+// Circuit breaker: max 5 error reports per 10 seconds
+const ERROR_RATE_LIMIT = 5;
+const ERROR_RATE_WINDOW_MS = 10_000;
 
 interface ErrorInfo {
   errorType: string;
