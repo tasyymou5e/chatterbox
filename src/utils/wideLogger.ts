@@ -343,3 +343,64 @@ export const initSecureLogging = () => {
     console.info = original.info;
   }
 };
+
+// ─── Backward-Compat Shims (conditionalLogger, secureLog, debugLog) ──────────
+
+/** Shims for conditionalLogger exports */
+export const cLog = (message: string, data?: unknown) => {
+  logger.info({ message, data });
+};
+export const cDebug = (message: string, data?: unknown) => {
+  logger.info({ message, level_hint: 'debug', data });
+};
+export const cInfo = (message: string, data?: unknown) => {
+  logger.info({ message, level_hint: 'info', data });
+};
+export const cWarn = (message: string, data?: unknown) => {
+  logger.info({ message, level_hint: 'warn', data });
+};
+export const cError = (message: string, error?: unknown) => {
+  logger.error({ message, error: error instanceof Error ? { name: error.name, message: error.message, stack: error.stack } : error });
+};
+
+/** Shim for secureLog object */
+export const secureLog = {
+  dev: (message: string, data?: unknown) => { logger.info({ message, data }); },
+  error: (message: string, error?: Error | unknown, context?: string) => {
+    logger.error({
+      message,
+      component: context,
+      error: error instanceof Error ? { name: error.name, message: error.message, stack: error.stack } : error ? { message: String(error) } : undefined,
+    });
+  },
+  security: (event: string, data?: unknown, severity: 'low' | 'medium' | 'high' | 'critical' = 'medium') => {
+    logger.security(event, data, severity);
+  },
+  performance: (metric: string, value: number, context?: string) => {
+    logger.info({ message: `Performance: ${metric}`, component: context, duration_ms: value });
+  },
+  warn: (message: string, data?: unknown, context?: string) => {
+    logger.info({ message, component: context, level_hint: 'warn', data: sanitize(data) });
+  },
+  info: (message: string, data?: unknown, context?: string) => {
+    logger.info({ message, component: context, data: sanitize(data) });
+  },
+};
+
+/** Shim for debugLog object */
+export const debugLog = {
+  info: (component: string, message: string, data?: unknown) => { logger.info({ message, component, data }); },
+  warn: (component: string, message: string, data?: unknown) => { logger.info({ message, component, level_hint: 'warn', data }); },
+  error: (component: string, message: string, error?: unknown) => { logger.error({ message, component, error }); },
+  debug: (component: string, message: string, data?: unknown) => { logger.info({ message, component, level_hint: 'debug', data }); },
+  trace: (component: string, message: string, data?: unknown) => { logger.info({ message, component, level_hint: 'trace', data }); },
+};
+
+/** Shim for rateLimitedLogger */
+export const rateLimitedLogger = {
+  log: (component: string, message: string, error?: unknown): boolean => {
+    logger.error({ message, component, error });
+    return true;
+  },
+  getRemainingCapacity: () => 60,
+};
