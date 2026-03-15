@@ -37,29 +37,45 @@ Chatterbox is a comprehensive React-based web application designed to empower ch
 #### Component Structure
 ```
 src/
-├── components/
-│   ├── admin/           # Admin-specific components (30+ components)
-│   ├── analytics/       # Data visualization components (15+ components)
+├── components/          # 24 directories + root components
+│   ├── aac/             # AAC (Augmentative & Alternative Communication)
+│   ├── admin/           # Admin-specific components (30+)
+│   ├── ai/              # AI assistant chat
+│   ├── analytics/       # Data visualization (15+)
+│   ├── app/             # App-level wrappers
+│   ├── assessment/      # Assessment forms, results, PDF export
 │   ├── auth/            # Authentication components
-│   ├── chores/          # Chore management components
-│   ├── connections/     # Family connection components
-│   ├── games/           # Educational content components
-│   ├── kids/            # Kids Portal components ✨ NEW
+│   ├── avatar/          # Child avatar system
+│   ├── chores/          # Chore management
+│   ├── composition/     # WithAuth, AsyncContent, ConditionalRender
+│   ├── connections/     # Family connections
+│   ├── daily-plan/      # Daily plan widget
+│   ├── games/           # Educational content
+│   ├── illustrations/   # Decorative illustrations
+│   ├── kids/            # Kids Portal (12 components)
 │   ├── parent/          # Parent-specific components
-│   ├── privacy/         # Privacy and compliance components
+│   ├── privacy/         # Privacy and compliance
+│   ├── progress/        # Progress tracking UI
+│   ├── pwa/             # PWA install prompts
 │   ├── reports/         # Reporting components
-│   ├── security/        # Security monitoring components
-│   └── ui/              # Reusable UI components (Shadcn)
-├── hooks/               # Custom React hooks (25+ hooks)
+│   ├── security/        # Security monitoring
+│   ├── skeletons/       # Loading skeletons
+│   ├── ui/              # Reusable Shadcn/Radix components
+│   └── wrappers/        # Layout wrappers
+├── hooks/               # 58 custom React hooks
 ├── pages/               # Route components
 │   ├── admin/           # Admin dashboard pages
 │   ├── children/        # Child-specific pages (legacy)
-│   ├── kids/            # Kids Portal pages ✨ NEW
-│   └── parent/          # Parent dashboard pages
-├── stores/              # Zustand state management (12 stores)
+│   ├── connect/         # Connection pages
+│   ├── features/        # Feature pages
+│   ├── kids/            # Kids Portal pages
+│   ├── lazy/            # Lazy-loaded route wrappers
+│   ├── parent/          # Parent dashboard pages
+│   └── support/         # Support pages
+├── stores/              # 18 Zustand stores
 ├── lib/                 # Utility functions
-├── types/               # TypeScript type definitions
-├── utils/               # Utility functions and conditional logging
+├── types/               # 30 TypeScript type definition files
+├── utils/               # Utility functions, logging, security
 └── integrations/        # External service integrations
     └── supabase/        # Supabase client and types
 ```
