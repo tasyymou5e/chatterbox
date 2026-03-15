@@ -1,6 +1,9 @@
 /**
  * Documentation Registry Configuration
  * Maps source code patterns to documentation files for automated updates
+ *
+ * Last synced: 2026-03-15
+ * Total registered docs: 35
  */
 
 export interface SectionConfig {
@@ -56,6 +59,13 @@ export type DocCategory =
 
 /**
  * Complete registry of all documentation files and their source mappings
+ *
+ * Consolidated 2026-03-15:
+ * - Removed: IMPLEMENTATION_COMPLETE, VERIFICATION_COMPLETE, MIGRATION_COMPLETE,
+ *   IMPLEMENTATION_SUMMARY, ADMIN_IMPROVEMENTS_WEEK1, IMPLEMENTATION_INDEX
+ * - Merged: RLS_POLICIES_COMPREHENSIVE_GUIDE + RLS_SECURITY_KNOWLEDGE → RLS_POLICIES_DOCUMENTATION
+ * - Merged: SECURITY_IMPROVEMENTS + PROJECT_SECURITY_REVIEW + API_SECURITY_REVIEW → SECURITY_FRAMEWORK
+ * - Added: ARCHITECTURE_EBOOK.md
  */
 export const docRegistry: DocMapping[] = [
   // ============ CORE DOCUMENTATION ============
@@ -85,6 +95,13 @@ export const docRegistry: DocMapping[] = [
       { header: 'Directory Structure', extractor: 'generateTree' },
       { header: 'Component Count', extractor: 'countFiles', subPatterns: ['src/components/**/*'] },
     ],
+    autoUpdateFields: ['Last Updated'],
+    category: 'core',
+  },
+  {
+    docFile: 'ARCHITECTURE_EBOOK.md',
+    watchPatterns: ['src/**/*', 'supabase/**/*'],
+    sections: [],
     autoUpdateFields: ['Last Updated'],
     category: 'core',
   },
@@ -168,30 +185,15 @@ export const docRegistry: DocMapping[] = [
     category: 'types',
   },
 
-  // ============ SECURITY DOCUMENTATION ============
+  // ============ SECURITY DOCUMENTATION (consolidated) ============
   {
     docFile: 'SECURITY_FRAMEWORK.md',
     watchPatterns: ['src/utils/**/secure*.ts', 'supabase/functions/**/*'],
     sections: [
       { header: 'Security Functions', extractor: 'countFiles' },
-    ],
-    autoUpdateFields: ['Last Updated', 'Last Security Review'],
-    category: 'security',
-  },
-  {
-    docFile: 'PROJECT_SECURITY_REVIEW.md',
-    watchPatterns: ['src/**/*', 'supabase/**/*'],
-    sections: [],
-    autoUpdateFields: ['Last Updated', 'Review Date'],
-    category: 'security',
-  },
-  {
-    docFile: 'API_SECURITY_REVIEW.md',
-    watchPatterns: ['supabase/functions/**/*'],
-    sections: [
       { header: 'Edge Function Count', extractor: 'listEdgeFunctions' },
     ],
-    autoUpdateFields: ['Last Updated', 'Review Date'],
+    autoUpdateFields: ['Last Updated', 'Last Security Review'],
     category: 'security',
   },
   {
@@ -200,22 +202,6 @@ export const docRegistry: DocMapping[] = [
     sections: [
       { header: 'Policy Count', extractor: 'countRLSPolicies' },
     ],
-    autoUpdateFields: ['Last Updated'],
-    category: 'security',
-  },
-  {
-    docFile: 'RLS_POLICIES_COMPREHENSIVE_GUIDE.md',
-    watchPatterns: ['supabase/migrations/**/*.sql'],
-    sections: [
-      { header: 'Policy Count', extractor: 'countRLSPolicies' },
-    ],
-    autoUpdateFields: ['Last Updated'],
-    category: 'security',
-  },
-  {
-    docFile: 'RLS_SECURITY_KNOWLEDGE.md',
-    watchPatterns: ['supabase/migrations/**/*.sql'],
-    sections: [],
     autoUpdateFields: ['Last Updated'],
     category: 'security',
   },
@@ -294,7 +280,7 @@ export const docRegistry: DocMapping[] = [
   },
   {
     docFile: 'KIDS_PORTAL_DOCUMENTATION.md',
-    watchPatterns: ['src/pages/kids/**/*', 'src/components/kids/**/*'],
+    watchPatterns: ['src/pages/kids/**/*', 'src/components/kids/**/*', 'src/components/assessment/**/*'],
     sections: [
       { header: 'Kids Component Count', extractor: 'countFiles' },
     ],
@@ -367,20 +353,6 @@ export const docRegistry: DocMapping[] = [
     category: 'status',
   },
   {
-    docFile: 'IMPLEMENTATION_SUMMARY.md',
-    watchPatterns: ['src/**/*'],
-    sections: [],
-    autoUpdateFields: ['Last Updated'],
-    category: 'status',
-  },
-  {
-    docFile: 'MIGRATION_COMPLETE.md',
-    watchPatterns: ['src/stores/**/*'],
-    sections: [],
-    autoUpdateFields: ['Last Updated'],
-    category: 'status',
-  },
-  {
     docFile: 'BUNDLE_OPTIMIZATION.md',
     watchPatterns: ['src/**/*', 'vite.config.ts'],
     sections: [],
@@ -422,7 +394,7 @@ export const docRegistry: DocMapping[] = [
     autoUpdateFields: ['Last Updated'],
     category: 'status',
   },
-  
+
   // ============ GRAPHICS & DESIGN ============
   {
     docFile: 'GRAPHICS_TECH_STACK.md',
@@ -456,7 +428,6 @@ export function getDocsByCategory(category: DocCategory): DocMapping[] {
 export function findAffectedDocs(changedFile: string): DocMapping[] {
   return docRegistry.filter((doc) =>
     doc.watchPatterns.some((pattern) => {
-      // Simple glob matching for common patterns
       const regexPattern = pattern
         .replace(/\*\*/g, '.*')
         .replace(/\*/g, '[^/]*')
