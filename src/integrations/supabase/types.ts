@@ -2501,7 +2501,9 @@ export type Database = {
       life_skill_catalog: {
         Row: {
           age_group: string
+          autism_skill_tags: string[] | null
           category: string
+          clinical_reference: string | null
           created_at: string
           description: string | null
           difficulty: string
@@ -2509,14 +2511,21 @@ export type Database = {
           id: string
           instructions: Json | null
           is_active: boolean | null
+          item_type: string | null
+          max_duration_minutes: number | null
+          pause_checkpoint_enabled: boolean | null
+          skill_domain: string | null
           sort_order: number | null
+          step_by_step_instructions: Json | null
           tags: string[] | null
           title: string
           updated_at: string
         }
         Insert: {
           age_group?: string
+          autism_skill_tags?: string[] | null
           category: string
+          clinical_reference?: string | null
           created_at?: string
           description?: string | null
           difficulty?: string
@@ -2524,14 +2533,21 @@ export type Database = {
           id?: string
           instructions?: Json | null
           is_active?: boolean | null
+          item_type?: string | null
+          max_duration_minutes?: number | null
+          pause_checkpoint_enabled?: boolean | null
+          skill_domain?: string | null
           sort_order?: number | null
+          step_by_step_instructions?: Json | null
           tags?: string[] | null
           title: string
           updated_at?: string
         }
         Update: {
           age_group?: string
+          autism_skill_tags?: string[] | null
           category?: string
+          clinical_reference?: string | null
           created_at?: string
           description?: string | null
           difficulty?: string
@@ -2539,7 +2555,12 @@ export type Database = {
           id?: string
           instructions?: Json | null
           is_active?: boolean | null
+          item_type?: string | null
+          max_duration_minutes?: number | null
+          pause_checkpoint_enabled?: boolean | null
+          skill_domain?: string | null
           sort_order?: number | null
+          step_by_step_instructions?: Json | null
           tags?: string[] | null
           title?: string
           updated_at?: string
@@ -3257,6 +3278,85 @@ export type Database = {
         }
         Relationships: []
       }
+      plan_session_logs: {
+        Row: {
+          ai_observations: string | null
+          catalog_item_id: string | null
+          child_id: string
+          completed_at: string | null
+          completion_status: string
+          created_at: string
+          current_step: number | null
+          duration_seconds: number | null
+          id: string
+          pause_reason: string | null
+          paused_at: string | null
+          plan_item_id: string | null
+          resumed_at: string | null
+          score: number | null
+          started_at: string
+          total_steps: number | null
+        }
+        Insert: {
+          ai_observations?: string | null
+          catalog_item_id?: string | null
+          child_id: string
+          completed_at?: string | null
+          completion_status?: string
+          created_at?: string
+          current_step?: number | null
+          duration_seconds?: number | null
+          id?: string
+          pause_reason?: string | null
+          paused_at?: string | null
+          plan_item_id?: string | null
+          resumed_at?: string | null
+          score?: number | null
+          started_at?: string
+          total_steps?: number | null
+        }
+        Update: {
+          ai_observations?: string | null
+          catalog_item_id?: string | null
+          child_id?: string
+          completed_at?: string | null
+          completion_status?: string
+          created_at?: string
+          current_step?: number | null
+          duration_seconds?: number | null
+          id?: string
+          pause_reason?: string | null
+          paused_at?: string | null
+          plan_item_id?: string | null
+          resumed_at?: string | null
+          score?: number | null
+          started_at?: string
+          total_steps?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_session_logs_catalog_item_id_fkey"
+            columns: ["catalog_item_id"]
+            isOneToOne: false
+            referencedRelation: "life_skill_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_session_logs_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "plan_session_logs_plan_item_id_fkey"
+            columns: ["plan_item_id"]
+            isOneToOne: false
+            referencedRelation: "user_daily_plan_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       popular_content_cache: {
         Row: {
           age_max: number | null
@@ -3648,6 +3748,99 @@ export type Database = {
           updated_by?: string | null
         }
         Relationships: []
+      }
+      skill_plan_schedules: {
+        Row: {
+          approval_notes: string | null
+          approved_at: string | null
+          approved_by: string | null
+          assessment_basis_id: string | null
+          child_id: string
+          created_at: string
+          created_by: string
+          end_date: string | null
+          family_id: string
+          id: string
+          plan_items: Json
+          plan_name: string
+          schedule_type: string
+          start_date: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          approval_notes?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          assessment_basis_id?: string | null
+          child_id: string
+          created_at?: string
+          created_by: string
+          end_date?: string | null
+          family_id: string
+          id?: string
+          plan_items?: Json
+          plan_name: string
+          schedule_type?: string
+          start_date: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          approval_notes?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          assessment_basis_id?: string | null
+          child_id?: string
+          created_at?: string
+          created_by?: string
+          end_date?: string | null
+          family_id?: string
+          id?: string
+          plan_items?: Json
+          plan_name?: string
+          schedule_type?: string
+          start_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skill_plan_schedules_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "skill_plan_schedules_assessment_basis_id_fkey"
+            columns: ["assessment_basis_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_results"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "skill_plan_schedules_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "skill_plan_schedules_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "skill_plan_schedules_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sla_configurations: {
         Row: {
