@@ -9,6 +9,8 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Shield, AlertTriangle, Clock } from 'lucide-react';
 import { getErrorMessage } from '@/utils/getErrorMessage';
+import { secureLog } from '@/utils/wideLogger';
+
 export default function AdminLogin() {
   const { signIn, loading, user, isAdmin } = useAdminAuth();
   const { toast } = useToast();
