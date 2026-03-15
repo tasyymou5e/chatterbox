@@ -221,6 +221,17 @@ export default function AdminLayout() {
                   <Bug className="h-4 w-4" />
                   <span>Logs Triage</span>
                 </Link>
+                <Link 
+                  to="/admin/kids-catalog" 
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    location.pathname === '/admin/kids-catalog' 
+                      ? 'text-white bg-gray-700' 
+                      : 'text-gray-300 hover:text-white hover:bg-gray-700'
+                  }`}
+                >
+                  <Gamepad2 className="h-4 w-4" />
+                  <span>Kids Catalog</span>
+                </Link>
               </div>
             </div>
 
