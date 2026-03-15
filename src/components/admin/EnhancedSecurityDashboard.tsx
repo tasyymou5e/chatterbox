@@ -93,7 +93,7 @@ export default function EnhancedSecurityDashboard() {
   const loadSecurityAlerts = async () => {
     const { data } = await supabase
       .from('security_audit_logs')
-      .select('*')
+      .select('id, event_type, severity, event_details, created_at')
       .in('severity', ['high', 'critical'])
       .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
       .order('created_at', { ascending: false })

@@ -117,7 +117,7 @@ export default function AdminAutoRepairLogs() {
       
       const { data, error } = await supabase
         .from('auto_repair_logs')
-        .select('*')
+        .select('id, user_id, timestamp, success, trigger_source, total_fields_repaired, failure_reason, profile_repair_details, role_repair_details, family_repair_details')
         .gte('timestamp', dateStart.toISOString())
         .order('timestamp', { ascending: false });
 

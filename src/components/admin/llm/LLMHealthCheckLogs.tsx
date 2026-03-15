@@ -32,7 +32,7 @@ export function LLMHealthCheckLogs() {
     queryFn: async () => {
       let query = supabase
         .from('llm_health_check_logs')
-        .select('*')
+        .select('id, provider_key, check_type, previous_status, new_status, response_time_ms, error_message, metadata, created_at')
         .order('created_at', { ascending: false })
         .limit(100);
 
