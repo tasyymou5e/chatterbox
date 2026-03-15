@@ -4,7 +4,7 @@
  */
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileCode, CheckCircle2 } from 'lucide-react';
+import { FileCode, CheckCircle2, Shield, AlertTriangle, Info } from 'lucide-react';
 import { ITEM_TYPES } from '@/types/skillPlan';
 import { ProfessionalIllustration } from '@/components/illustrations/ProfessionalIllustration';
 
