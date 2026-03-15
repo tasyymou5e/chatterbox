@@ -116,7 +116,7 @@ export default function AdminLogin() {
         setIsSigningIn(false);
       }
     } catch (error: unknown) {
-      console.error('💥 Unexpected login error:', getErrorMessage(error));
+      secureLog.dev('💥 Unexpected login error:', getErrorMessage(error));
       toast({
         title: "Connection Error", 
         description: getErrorMessage(error),

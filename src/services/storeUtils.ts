@@ -349,7 +349,7 @@ export const withRetry = async <T>(
     retryCount++;
     lastRetryTime = Date.now();
     
-    console.log(`🔄 Retrying operation (${retryCount}/${maxRetries}) in ${backoffDelay}ms...`);
+    secureLog.dev(`🔄 Retrying operation (${retryCount}/${maxRetries}) in ${backoffDelay}ms...`);
     
     await new Promise(resolve => setTimeout(resolve, backoffDelay));
     return executeWithRetry();

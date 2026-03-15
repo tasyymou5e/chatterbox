@@ -223,7 +223,7 @@ const ParentDashboard = () => {
             repairDetails
           );
           
-          console.log('Auto-repair completed for user:', user.id, 'Fields repaired:', repairedFields);
+          secureLog.dev('Auto-repair completed for user, fields repaired:', repairedFields);
         }
       } catch (error) {
         // Log failed repair attempt

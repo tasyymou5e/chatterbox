@@ -104,7 +104,7 @@ export function useCatalogRealtime({
 
     // Cleanup function
     return () => {
-      console.log('Cleaning up realtime subscriptions');
+      secureLog.dev('Cleaning up realtime subscriptions');
       unsubscribeContent?.();
       unsubscribeCategories?.();
       unsubscribeFamilyAccess?.();

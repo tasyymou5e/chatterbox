@@ -40,7 +40,7 @@ test.describe('Site Navigation', () => {
     
     const termsLink = page.getByRole('link', { name: /terms of service/i });
     await termsLink.click();
-    await expect(page).toHaveURL(/\/support\/terms-of-service/);
+    await expect(page).toHaveURL(/\/support\/terms/);
   });
 
   test('404 page displays for invalid routes', async ({ page }) => {
