@@ -70,19 +70,19 @@ serve(async (req) => {
       );
     }
 
-    // Fetch user's assessment results
+    // Fetch child's assessment results (by child_id or user_id)
     const { data: assessments } = await adminClient
       .from("assessment_results")
       .select("*")
-      .eq("user_id", user.id)
+      .or(`child_id.eq.${targetChildId},user_id.eq.${targetChildId}`)
       .order("created_at", { ascending: false })
       .limit(5);
 
-    // Fetch user profile for context
+    // Fetch child profile for context
     const { data: profile } = await adminClient
       .from("profiles")
       .select("first_name, last_name, user_role")
-      .eq("user_id", user.id)
+      .eq("user_id", targetChildId)
       .maybeSingle();
 
     // Fetch available catalog items
