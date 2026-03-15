@@ -152,7 +152,7 @@ export const useSystemHealthStore = create<SystemHealthState>()(
             loading: false 
           });
 
-          console.log('✅ System health metrics updated successfully');
+          secureLog.dev('✅ System health metrics updated successfully');
 
         } catch (err: unknown) {
           console.error('❌ Error fetching system health:', err);
