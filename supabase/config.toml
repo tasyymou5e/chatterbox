@@ -141,3 +141,11 @@ verify_jwt = false
 [functions.generate-daily-plan]
 # AI daily plan generation - requires user JWT
 verify_jwt = true
+
+[functions.manage-skill-plan]
+# Skill plan CRUD + approval workflow - requires user JWT
+verify_jwt = true
+
+[functions.ai-session-helper]
+# AI session helper for kid activities - requires user JWT
+verify_jwt = true
