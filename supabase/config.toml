@@ -143,8 +143,8 @@ verify_jwt = false
 verify_jwt = true
 
 [functions.manage-skill-plan]
-# Skill plan CRUD + approval workflow - requires user JWT
-verify_jwt = true
+# Skill plan CRUD + approval workflow - JWT validated in code
+verify_jwt = false
 
 [functions.ai-session-helper]
 # AI session helper for kid activities - requires user JWT
