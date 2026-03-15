@@ -185,8 +185,8 @@ export const useAuthActionsStore = create<AuthActionsState>()(
               });
             }, 0);
 
+            broadcastAuthEvent('SIGNED_IN', data.user.id);
             return { error: null, user: data.user, isAdmin: hasAdminAccess, userRole };
-          }
 
           sessionStore.setLoading(false);
           roleStore.setIsCheckingRole(false);
