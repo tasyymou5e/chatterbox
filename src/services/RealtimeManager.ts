@@ -1,7 +1,7 @@
 // Phase 3: Optimized Realtime with Connection Pooling
 import { supabase } from '@/integrations/supabase/client';
 import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
-import { cError } from '@/utils/conditionalLogger';
+import { cError } from '@/utils/wideLogger';
 
 // Typed callback for realtime subscriptions
 type RealtimeCallback = (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => void;

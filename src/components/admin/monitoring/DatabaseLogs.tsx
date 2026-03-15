@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { debugLog } from '@/utils/debugLogger';
+import { debugLog } from '@/utils/wideLogger';
 import type { DatabaseLog, PostgresLog, AuthLog } from '@/types/logs';
 
 // Type guards for database logs

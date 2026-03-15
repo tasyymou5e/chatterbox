@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
-import { cLog } from '@/utils/conditionalLogger';
+import { cLog } from '@/utils/wideLogger';
 
 interface FireworksDisplayProps {
   isActive: boolean;

@@ -1,7 +1,7 @@
 /**
  * Centralized error handling utilities
  */
-import { logger } from './logger';
+import { logger } from './wideLogger';
 import type { SupabaseError } from '@/types/supabase';
 import { isSupabaseError, isAuthError, isNetworkError } from '@/types/supabase';
 
@@ -15,12 +15,12 @@ export const handleError = (
 ): SupabaseError => {
   // Type guard and error processing
   if (isSupabaseError(error)) {
-    logger.error(`${context}: ${error.message}`, undefined, { component: context });
+    logger.error({ message: `${context}: ${error.message}`, component: context });
     return error;
   }
 
   if (isAuthError(error)) {
-    logger.error(`${context}: Auth error - ${error.message}`, undefined, { component: context });
+    logger.error({ message: `${context}: Auth error - ${error.message}`, component: context });
     return {
       name: 'AuthError',
       message: error.message,
@@ -30,7 +30,7 @@ export const handleError = (
   }
 
   if (isNetworkError(error)) {
-    logger.error(`${context}: Network error - ${error.message}`, error, { component: context });
+    logger.error({ message: `${context}: Network error - ${error.message}`, component: context, error: { name: error.name, message: error.message } });
     return {
       name: 'NetworkError',
       message: 'Connection failed. Please check your internet connection.',
@@ -39,7 +39,7 @@ export const handleError = (
   }
 
   if (error instanceof Error) {
-    logger.error(`${context}: ${error.message}`, error, { component: context });
+    logger.error({ message: `${context}: ${error.message}`, component: context, error: { name: error.name, message: error.message, stack: error.stack } });
     return {
       name: error.name,
       message: error.message,
@@ -49,7 +49,7 @@ export const handleError = (
 
   // Unknown error type
   const unknownError = String(error);
-  logger.error(`${context}: Unknown error - ${unknownError}`, undefined, { component: context });
+  logger.error({ message: `${context}: Unknown error - ${unknownError}`, component: context });
   return {
     name: 'UnknownError',
     message: fallbackMessage,
@@ -144,9 +144,11 @@ export const retryOperation = async <T>(
       }
 
       const delay = initialDelay * Math.pow(2, attempt);
-      logger.warn(`${context} failed, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries + 1})`, {
+      logger.info({
+        message: `${context} failed, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries + 1})`,
         component: context,
-        metadata: { attempt, delay, error: getErrorMessage(error) }
+        level_hint: 'warn',
+        attempt, delay, retry_error: getErrorMessage(error)
       });
 
       await new Promise(resolve => setTimeout(resolve, delay));

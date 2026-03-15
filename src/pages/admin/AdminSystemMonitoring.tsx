@@ -33,7 +33,7 @@ import { ErrorPatternsAnalysis } from '@/components/admin/monitoring/ErrorPatter
 import { EdgeFunctionHealthDashboard } from '@/components/admin/monitoring/EdgeFunctionHealthDashboard';
 import { AuthE2ETestCoverage } from '@/components/admin/testing';
 import type { SystemError } from '@/types/systemHealth';
-import { cLog } from '@/utils/conditionalLogger';
+import { cLog } from '@/utils/wideLogger';
 
 const AdminSystemMonitoring = () => {
   const [selectedError, setSelectedError] = useState<SystemError | null>(null);

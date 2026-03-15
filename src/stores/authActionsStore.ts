@@ -14,7 +14,7 @@ import { authLoggingService } from '@/services/authLoggingService';
 import { type AuthError, type AuthMetadata, isAdminRole } from '@/types/auth';
 import { useAuthSessionStore } from './authSessionStore';
 import { useAuthRoleStore } from './authRoleStore';
-import { secureLog } from '@/utils/secureLogging';
+import { secureLog } from '@/utils/wideLogger';
 
 interface AuthResult {
   error: AuthError | null;

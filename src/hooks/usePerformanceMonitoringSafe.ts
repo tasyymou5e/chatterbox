@@ -1,5 +1,5 @@
 import { useCallback, useRef } from 'react';
-import { secureLog } from '@/utils/secureLogging';
+import { secureLog } from '@/utils/wideLogger';
 import '@/types/navigator'; // Import type extensions for Performance.memory
 
 interface PerformanceMetric {

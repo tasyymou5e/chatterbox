@@ -11,7 +11,7 @@ import {
   DEFAULT_AVATAR,
   AvatarType,
 } from '@/types/avatar';
-import { cLog, cWarn } from '@/utils/conditionalLogger';
+import { cLog, cWarn } from '@/utils/wideLogger';
 
 interface UseChildAvatarResult {
   avatar: AvatarConfig | null;

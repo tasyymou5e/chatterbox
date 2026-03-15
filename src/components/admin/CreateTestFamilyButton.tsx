@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import CreateTestFamilyDialog from './CreateTestFamilyDialog';
-import { cLog } from '@/utils/conditionalLogger';
+import { cLog } from '@/utils/wideLogger';
 
 interface CreateTestFamilyButtonProps {
   onSuccess?: () => void;

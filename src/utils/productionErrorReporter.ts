@@ -1,6 +1,5 @@
-import { logger } from '@/utils/logger';
+import { logger, secureLog } from '@/utils/wideLogger';
 import { supabase } from '@/integrations/supabase/client';
-import { secureLog } from '@/utils/secureLogging';
 
 type ErrorSeverity = 'low' | 'medium' | 'high' | 'critical';
 
@@ -43,9 +42,12 @@ export async function reportError(
   };
 
   // Always log to our logger (respects environment)
-  logger.error(`[${severity.toUpperCase()}] ${context}: ${errorObj.message}`, errorObj, {
+  logger.error({
+    message: `[${severity.toUpperCase()}] ${context}: ${errorObj.message}`,
     component: context,
-    metadata: { ...metadata, severity },
+    error: { name: errorObj.name, message: errorObj.message, stack: errorObj.stack },
+    severity,
+    ...metadata,
   });
 
   // In production, also send to backend

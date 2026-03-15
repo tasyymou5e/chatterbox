@@ -31,7 +31,7 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 import { AdminEmptyState } from '@/components/illustrations';
 import { useAuthStore } from '@/stores/authStore';
 import { getErrorMessage } from '@/utils/getErrorMessage';
-import { cLog, cError } from '@/utils/conditionalLogger';
+import { cLog, cError } from '@/utils/wideLogger';
 
 interface FamilyMember {
   id: string;

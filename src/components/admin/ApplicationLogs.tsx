@@ -8,7 +8,7 @@ import { RefreshCw, Search, Download, AlertTriangle, AlertCircle, Info, Bug } fr
 import { useToast } from '@/hooks/use-toast';
 import type { SystemError } from '@/types/systemHealth';
 // Types from supabase are used via casting since types.ts is read-only
-import { logger } from '@/utils/logger';
+import { logger } from '@/utils/wideLogger';
 
 export const ApplicationLogs = () => {
   const [logs, setLogs] = useState<SystemError[]>([]);
@@ -48,7 +48,7 @@ export const ApplicationLogs = () => {
         metadata: (item.metadata as Record<string, unknown>) || {}
       })));
     } catch (error: unknown) {
-      logger.error('Error fetching application logs', error instanceof Error ? error : new Error(String(error)));
+      logger.error({ message: 'Error fetching application logs', component: 'ApplicationLogs', error: error instanceof Error ? { name: (error as Error).name, message: (error as Error).message } : String(error) });
       toast({
         title: "Error",
         description: "Failed to fetch application logs",

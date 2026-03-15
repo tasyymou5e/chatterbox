@@ -8,9 +8,8 @@ import App from './App.tsx'
 import AppInitializer from '@/components/app/AppInitializer'
 import ErrorBoundary from './components/ErrorBoundary'
 import InitializationErrorBoundary from '@/components/app/InitializationErrorBoundary'
-import { logger } from '@/utils/logger'
+import { logger, secureLog } from '@/utils/wideLogger'
 import { initLogger } from '@/utils/initializationLogger'
-import { secureLog } from '@/utils/secureLogging'
 import './index.css'
 
 // Start initialization tracking immediately
@@ -38,7 +37,7 @@ const queryClient = new QueryClient({
       retry: 1, // Retry mutations once on failure
       retryDelay: 1000,
       onError: (error) => {
-        logger.error('Mutation failed', error instanceof Error ? error : new Error(String(error)));
+        logger.error({ message: 'Mutation failed', error: error instanceof Error ? { name: (error as Error).name, message: (error as Error).message } : String(error) });
       },
     },
   },

@@ -3,7 +3,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { cWarn, cLog } from '@/utils/conditionalLogger';
+import { cWarn, cLog } from '@/utils/wideLogger';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,

@@ -3,7 +3,7 @@
  */
 
 import type { SkillLevel } from '@/types/kidsPortal';
-import { cDebug } from '@/utils/conditionalLogger';
+import { cDebug } from '@/utils/wideLogger';
 
 // Game difficulty configurations
 export const DIFFICULTY_CONFIG = {

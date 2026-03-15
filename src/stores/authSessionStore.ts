@@ -12,7 +12,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthRoleStore } from './authRoleStore';
 import { isAdminRole } from '@/types/auth';
-import { secureLog } from '@/utils/secureLogging';
+import { secureLog } from '@/utils/wideLogger';
 
 /**
  * Auth session state interface.

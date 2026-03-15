@@ -17,7 +17,7 @@ import { useAuthSessionStore } from './authSessionStore';
 import { useAuthRoleStore } from './authRoleStore';
 import { useAuthActionsStore } from './authActionsStore';
 import { type AuthError } from '@/types/auth';
-import { secureLog } from '@/utils/secureLogging';
+import { secureLog } from '@/utils/wideLogger';
 
 /**
  * Authentication state interface - maintained for backward compatibility.

@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { RefreshCw, Search, Download, Activity, TrendingUp, Clock, Zap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { cError } from '@/utils/conditionalLogger';
+import { cError } from '@/utils/wideLogger';
 import type { PerformanceMetadata } from '@/types/interfaces';
 
 interface PerformanceMetric {

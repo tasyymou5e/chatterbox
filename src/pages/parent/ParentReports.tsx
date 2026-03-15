@@ -10,7 +10,7 @@ import { ProgressReportExport } from '@/components/parent/ProgressReportExport';
 import { DailyProgressReport } from '@/components/parent/DailyProgressReport';
 import { useAuthStore } from '@/stores/authStore';
 import { supabase } from '@/integrations/supabase/client';
-import { logSupabaseQuery, logDataAccessIssue, logDataFetchSuccess, createQueryTimer } from '@/utils/parentPortalLogger';
+import { logSupabaseQuery, logDataAccessIssue, logDataFetchSuccess, createQueryTimer } from '@/utils/wideLogger';
 
 interface ChildMember {
   user_id: string;

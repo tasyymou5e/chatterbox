@@ -2,7 +2,7 @@
  * Enhanced security audit trail with comprehensive logging
  */
 import React, { useState, useEffect } from 'react';
-import { cWarn } from '@/utils/conditionalLogger';
+import { cWarn } from '@/utils/wideLogger';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';

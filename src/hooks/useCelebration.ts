@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import '@/types/navigator'; // Import type extensions for webkitAudioContext
-import { cLog } from '@/utils/conditionalLogger';
+import { cLog } from '@/utils/wideLogger';
 
 type CelebrationType = 'confetti' | 'stars' | 'hearts';
 

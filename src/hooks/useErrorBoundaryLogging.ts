@@ -7,7 +7,7 @@
  * @module useErrorBoundaryLogging
  */
 import { useCallback } from 'react';
-import { secureLog } from '@/utils/secureLogging';
+import { secureLog } from '@/utils/wideLogger';
 import { reportError } from '@/utils/productionErrorReporter';
 import type { ErrorInfo } from 'react';
 

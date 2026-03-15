@@ -15,8 +15,7 @@ import { useUIStore } from '@/stores/uiStore';
 import TestFamilyResultsDialog from './TestFamilyResultsDialog';
 import { PasswordStrengthIndicator } from '../auth/PasswordStrengthIndicator';
 import { getErrorMessage } from '@/utils/getErrorMessage';
-import { cLog, cError } from '@/utils/conditionalLogger';
-import { secureLog } from '@/utils/secureLogging';
+import { cLog, cError, secureLog } from '@/utils/wideLogger';
 import { invokeEdgeFunction } from '@/utils/secureEdgeFunctionInvoke';
 
 interface Child {
@@ -340,7 +339,7 @@ export default function CreateTestFamilyDialog({ open, onOpenChange, onSuccess }
       }
     } catch (error: unknown) {
       const totalDuration = Date.now() - submitStartTime;
-      cError('[CreateTestFamily] ERROR after', `${totalDuration}ms:`, error);
+      cError(`[CreateTestFamily] ERROR after ${totalDuration}ms`, error);
       secureLog.error('Test family creation failed', error, 'CreateTestFamily');
       toast({
         variant: "destructive",

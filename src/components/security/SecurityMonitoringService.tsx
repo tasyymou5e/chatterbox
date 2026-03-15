@@ -3,7 +3,7 @@
  */
 import { useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { secureLog } from '@/utils/secureLogging';
+import { secureLog } from '@/utils/wideLogger';
 import { useToast } from '@/hooks/use-toast';
 
 interface SecurityEvent {

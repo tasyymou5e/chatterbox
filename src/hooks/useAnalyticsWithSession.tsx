@@ -2,7 +2,7 @@ import { useEffect, useCallback, useRef } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import { useAuthSessionStore } from '@/stores/authSessionStore';
 import { useAnalyticsStore } from '@/stores/analyticsStore';
-import { cLog, cInfo, cWarn } from '@/utils/conditionalLogger';
+import { cLog, cInfo, cWarn } from '@/utils/wideLogger';
 
 /**
  * Hook to manage analytics with proper session synchronization.

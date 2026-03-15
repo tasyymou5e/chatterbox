@@ -3,7 +3,7 @@ import { devtools } from 'zustand/middleware';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthStore } from './authStore';
 import type { SupabaseRPCResult, EngagementAnalyticsRow, DailyAnalyticsRow, RetentionAnalyticsRow } from '@/types/analytics';
-import { cLog, cWarn, cError } from '@/utils/conditionalLogger';
+import { cLog, cWarn, cError } from '@/utils/wideLogger';
 
 interface EngagementMetric {
   metric: string;

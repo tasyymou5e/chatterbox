@@ -2,7 +2,7 @@
  * Enhanced error boundary hook with structured logging
  */
 import { useCallback } from 'react';
-import { logger } from '@/utils/logger';
+import { logger } from '@/utils/wideLogger';
 import { handleError } from '@/utils/errorHandling';
 
 export interface ErrorBoundaryState {
@@ -13,28 +13,28 @@ export interface ErrorBoundaryState {
 
 export const useErrorBoundary = () => {
   const logError = useCallback((error: Error, errorInfo: React.ErrorInfo) => {
-    logger.error('React Error Boundary caught an error', error, {
+    logger.error({
+      message: 'React Error Boundary caught an error',
       component: 'ErrorBoundary',
-      metadata: {
-        componentStack: errorInfo.componentStack,
-        errorBoundary: true
-      }
+      error: { name: error.name, message: error.message, stack: error.stack },
+      component_stack: errorInfo.componentStack,
+      error_boundary: true,
     });
   }, []);
 
   const handleComponentError = useCallback((error: unknown, component: string) => {
     const handledError = handleError(error, `Component: ${component}`);
-    logger.error(`Component error in ${component}`, error instanceof Error ? error : new Error(String(error)), {
+    logger.error({
+      message: `Component error in ${component}`,
       component,
-      metadata: {
-        handledError
-      }
+      error: error instanceof Error ? { name: error.name, message: error.message, stack: error.stack } : String(error),
+      handled_error: handledError,
     });
     return handledError;
   }, []);
 
   const resetError = useCallback(() => {
-    logger.info('Error boundary reset', { component: 'ErrorBoundary' });
+    logger.info({ message: 'Error boundary reset', component: 'ErrorBoundary' });
   }, []);
 
   return {

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
-import { cLog, cWarn, cInfo } from '@/utils/conditionalLogger';
+import { cLog, cWarn, cInfo } from '@/utils/wideLogger';
 import '@/types/interfaces'; // Import for Window interface extension
 
 export const useAuthNavigation = () => {
