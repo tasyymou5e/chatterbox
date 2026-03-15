@@ -111,8 +111,8 @@ export function KidsAssessmentGate({ children, onAllComplete }: KidsAssessmentGa
   }, [user?.id, isGeneratingPlan, checkAssessments, onAllComplete]);
 
   const handleStartAssessment = (assessmentId: string) => {
-    // Navigate to assessment with child context
-    window.location.href = `/assessment?type=${assessmentId}&childId=${user?.id}`;
+    // Navigate to assessment with child context using SPA navigation
+    navigate(`/assessment?type=${assessmentId}&childId=${user?.id}`);
   };
 
   if (isLoading) {

@@ -211,9 +211,9 @@ const Assessment: React.FC = () => {
         {view === 'results' && selectedInstrument && scores && (
           <div className="space-y-6">
             <div className="flex justify-between">
-              <Button variant="outline" onClick={() => navigate('/parent')}>
+              <Button variant="outline" onClick={() => navigate(childIdParam ? '/kids' : '/parent')}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Return to Dashboard
+                {childIdParam ? 'Back to My Portal' : 'Return to Dashboard'}
               </Button>
               <AssessmentPDFExport
                 instrument={selectedInstrument}

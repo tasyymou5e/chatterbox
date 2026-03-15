@@ -297,11 +297,12 @@ Create a personalized ${scheduleType} plan for ${timeframe}. Select items and ex
           priority: item.priority,
           ai_reasoning: item.ai_reasoning,
         })),
-        status: "pending_approval",
-        start_date: today,
-      })
-      .select("id")
-      .single();
+          status: "pending_approval",
+          start_date: today,
+        })
+        .select("id")
+        .single();
+    }
 
     if (planError) {
       console.error("Plan insert error:", planError);
