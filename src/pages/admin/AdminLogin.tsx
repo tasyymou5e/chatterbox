@@ -65,7 +65,7 @@ export default function AdminLogin() {
       const result = await signIn(email, password);
       
       if (result.error) {
-        console.error('❌ Login failed:', result.error);
+        secureLog.dev('❌ Login failed');
         if (result.error.message?.includes('Invalid login credentials')) {
           toast({
             title: "Access Denied",
