@@ -263,13 +263,28 @@ Create a personalized ${scheduleType} plan for ${timeframe}. Select items and ex
       .select("id")
       .single();
 
+    // Look up the child's family_id before inserting
+    const { data: familyMember } = await adminClient
+      .from("family_connections")
+      .select("family_id")
+      .eq("connected_user_id", targetChildId)
+      .limit(1)
+      .maybeSingle();
+
+    const resolvedFamilyId = familyMember?.family_id;
+
+    if (!resolvedFamilyId) {
+      console.warn("No family found for child:", targetChildId, "— skipping skill_plan_schedules insert");
+    }
+
     // Also create a skill_plan_schedules entry for parent approval
-    await adminClient
-      .from("skill_plan_schedules")
-      .insert({
-        child_id: targetChildId,
-        family_id: null, // will be filled by trigger or parent
-        created_by: user.id,
+    if (resolvedFamilyId) {
+      await adminClient
+        .from("skill_plan_schedules")
+        .insert({
+          child_id: targetChildId,
+          family_id: resolvedFamilyId,
+          created_by: user.id,
         schedule_type: scheduleType,
         plan_name: `${scheduleType.charAt(0).toUpperCase() + scheduleType.slice(1)} Plan - ${today}`,
         plan_items: validItems.map((item: any) => ({
