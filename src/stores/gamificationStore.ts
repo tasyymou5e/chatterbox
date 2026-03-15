@@ -13,7 +13,7 @@ import {
 // @ts-expect-error Types are used in the codebase but appear unused to the compiler
 import type { AchievementCriteria, UserProgress, UserMetadata, AchievementMetadata } from '@/types/gamification';
 import { type Json } from '@/integrations/supabase/types';
-import { cLog, cError } from '@/utils/conditionalLogger';
+import { cLog, cError } from '@/utils/wideLogger';
 
 interface UserLevel {
   id: string;

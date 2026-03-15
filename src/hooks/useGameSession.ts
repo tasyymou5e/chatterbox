@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useLessonProgressStore } from '@/stores/lessonProgressStore';
-import { cWarn } from '@/utils/conditionalLogger';
+import { cWarn } from '@/utils/wideLogger';
 import type { GameSessionStats, GameIntegrationConfig } from '@/types/gameEvents';
 import type { CelebrationEvent } from '@/types/lessonProgress';
 

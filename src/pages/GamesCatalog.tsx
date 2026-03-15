@@ -17,7 +17,7 @@ import {
   CurationPanel
 } from '@/components/games/catalog';
 import type { CatalogContentItem, CurationAccessType } from '@/components/games/types/catalog';
-import { cWarn, cError } from '@/utils/conditionalLogger';
+import { cWarn, cError } from '@/utils/wideLogger';
 
 export default function GamesCatalog() {
   const [userFamily, setUserFamily] = useState<string | null>(null);

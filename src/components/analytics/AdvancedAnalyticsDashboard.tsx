@@ -17,7 +17,7 @@ import { AnalyticsKPICard } from './AnalyticsKPICard';
 import { LazyEngagementChart, LazyRetentionChart, LazyFamilyGrowthChart } from './lazy';
 import { SystemHealthMonitor } from './SystemHealthMonitor';
 import { supabase } from '@/integrations/supabase/client';
-import { cError } from '@/utils/conditionalLogger';
+import { cError } from '@/utils/wideLogger';
 
 interface FamilyGrowthData {
   date: string;

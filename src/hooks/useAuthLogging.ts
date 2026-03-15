@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { cError } from '@/utils/conditionalLogger';
+import { cError } from '@/utils/wideLogger';
 import type { ActivityMetadata } from '@/types/interfaces';
 
 // Utility functions for enhanced authentication logging

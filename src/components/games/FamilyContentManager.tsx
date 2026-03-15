@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Shield, ShieldX, Sparkles, Eye } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { cError } from '@/utils/conditionalLogger';
+import { cError } from '@/utils/wideLogger';
 
 interface ContentAccess {
   id: string;

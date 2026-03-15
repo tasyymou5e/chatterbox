@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { hasTrackingConsent } from '@/utils/privacySettings';
-import { cLog } from '@/utils/conditionalLogger';
+import { cLog } from '@/utils/wideLogger';
 
 interface BehavioralEvent {
   event_type: string;

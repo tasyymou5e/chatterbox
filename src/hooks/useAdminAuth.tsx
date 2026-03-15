@@ -2,7 +2,7 @@
 import { useEffect } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import type { User, Session, SupabaseError } from '@/types/supabase';
-import { cLog } from '@/utils/conditionalLogger';
+import { cLog } from '@/utils/wideLogger';
 
 export interface AdminAuthContextType {
   user: User | null;

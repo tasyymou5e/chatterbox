@@ -8,8 +8,7 @@ import { Search, ExternalLink, Home, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
-import { cLog } from '@/utils/conditionalLogger';
-import { secureLog } from '@/utils/secureLogging';
+import { cLog, secureLog } from '@/utils/wideLogger';
 
 interface ContentItem {
   id: string;
