@@ -73,7 +73,7 @@ export function StarProgressTracker({
         />
         <Moon
           className={cn(
-            'h-16 w-16 relative z-10 transition-all duration-300',
+            'h-16 w-16 relative z-10 transition-colors duration-300',
             moonGlowIntensity > 50 ? 'text-amber-300 fill-amber-200' : 'text-muted-foreground/50'
           )}
         />
