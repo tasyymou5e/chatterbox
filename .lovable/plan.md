@@ -1,14 +1,21 @@
 
 
-## Fix: Admin Sidebar Menu Font Color
+# Animate Quota Progress Bar on Change
 
-**Problem**: Menu items use `text-gray-300` at rest, which is too dark against the `bg-gray-800` sidebar background.
+## Changes
 
-**Fix**: Change the resting text color from `text-gray-300` to `text-gray-100` in `AdminSidebar.tsx` (line 142), making items clearly readable without hover.
+### 1. `src/components/ui/progress.tsx`
+- Add a smooth CSS transition on the indicator's `transform` property: `transition: transform 600ms cubic-bezier(0.4, 0, 0.2, 1)` instead of the generic `transition-all`
 
-Also update the group label color from `text-gray-400` to `text-gray-300` (line 118) for consistency.
+### 2. `src/components/ai/AIAssistantChat.tsx`
+- Track previous quota value with `useRef` and detect when it decreases
+- When quota decreases, briefly apply a "pulse" scale animation to the quota section (scale up then back) using a CSS class toggled via `useState` + `setTimeout`
+- Add a brief color flash on the text label when quota changes (e.g., opacity transition)
 
-**File**: `src/components/admin/AdminSidebar.tsx`
-- Line 118: `text-gray-400` → `text-gray-300`
-- Line 142: `text-gray-300` → `text-gray-100`
+### Files
+
+| File | Action |
+|---|---|
+| `src/components/ui/progress.tsx` | **Modify** -- smoother transition timing on indicator |
+| `src/components/ai/AIAssistantChat.tsx` | **Modify** -- add pulse animation on quota change |
 
