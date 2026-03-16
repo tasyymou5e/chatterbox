@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ArrowLeft, ClipboardCheck, Brain, FileText, Home } from 'lucide-react';
+import { ParentNavigation } from '@/components/parent/ParentNavigation';
 import { useNavigate } from 'react-router-dom';
 import { allInstruments, getInstrumentById } from '@/data/assessmentInstruments';
 import type { AssessmentInstrument } from '@/data/assessmentInstruments';
