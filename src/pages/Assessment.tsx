@@ -145,8 +145,8 @@ const Assessment: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* Header */}
+      <ParentNavigation />
+      <main className="max-w-4xl mx-auto px-4 py-8">
         <div className="flex items-center gap-3 mb-8">
           <Button
             variant="ghost"
