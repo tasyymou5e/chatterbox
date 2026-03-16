@@ -51,12 +51,15 @@ export const AssessmentHistoryCard: React.FC = () => {
   const [results, setResults] = useState<AssessmentResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [showAssignDialog, setShowAssignDialog] = useState(false);
+  const [childMembers, setChildMembers] = useState<{ user_id: string; first_name?: string | null; last_name?: string | null; role: string }[]>([]);
 
   useEffect(() => {
     const fetchResults = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setLoading(false); return; }
 
+      // Fetch assessment results
       const { data, error } = await supabase
         .from('assessment_results')
         .select('id, assessment_type, subject_name, overall_grade, created_at, scores, ai_review')
@@ -68,6 +71,38 @@ export const AssessmentHistoryCard: React.FC = () => {
         console.error('Failed to fetch assessment results:', error);
       }
       if (data) setResults(data as unknown as AssessmentResult[]);
+
+      // Fetch children for assign dialog
+      const { data: membership } = await supabase
+        .from('family_members')
+        .select('family_id')
+        .eq('user_id', user.id)
+        .limit(1)
+        .maybeSingle();
+
+      if (membership?.family_id) {
+        const { data: members } = await supabase
+          .from('family_members')
+          .select('user_id, role')
+          .eq('family_id', membership.family_id)
+          .eq('role', 'child');
+
+        if (members && members.length > 0) {
+          const childIds = members.map(m => m.user_id);
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('user_id, first_name, last_name')
+            .in('user_id', childIds);
+
+          setChildMembers(
+            members.map(m => {
+              const p = profiles?.find(p => p.user_id === m.user_id);
+              return { user_id: m.user_id, first_name: p?.first_name, last_name: p?.last_name, role: 'child' };
+            })
+          );
+        }
+      }
+
       setLoading(false);
     };
     fetchResults();
