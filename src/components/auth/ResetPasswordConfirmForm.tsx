@@ -179,6 +179,7 @@ export const ResetPasswordConfirmForm = ({ onBackToSignIn }: ResetPasswordConfir
             type="password"
             required
             minLength={8}
+            autoComplete="new-password"
             placeholder="Enter new password (min 8 characters)"
             aria-describedby="new-password-help"
           />
