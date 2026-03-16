@@ -230,6 +230,8 @@ export const ChildSignupForm = ({ initialCode = '', onBackToSignIn }: ChildSignu
             value={accountCode}
             onChange={(e) => setAccountCode(e.target.value.toUpperCase())}
             className="font-mono"
+            autoComplete="off"
+            spellCheck={false}
             aria-describedby="account-code-help"
             disabled={lockInfo?.isLocked}
           />
