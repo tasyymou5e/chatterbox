@@ -1,0 +1,202 @@
+import { Component, ErrorInfo, ReactNode } from 'react';
+import { AlertTriangle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
+import { secureLog } from '@/utils/wideLogger';
+
+interface Props {
+  children: ReactNode;
+  fallback?: ReactNode;
+  componentName?: string;
+}
+
+interface State {
+  hasError: boolean;
+  error: Error | null;
+  errorInfo: ErrorInfo | null;
+}
+
+class ErrorBoundary extends Component<Props, State> {
+  // Rate limiting for error logging
+  private errorLogCount = 0;
+  private lastErrorLogTime = 0;
+  private static readonly MAX_ERRORS_PER_MINUTE = 10;
+
+  constructor(props: Props) {
+    super(props);
+    this.state = { hasError: false, error: null, errorInfo: null };
+  }
+
+  static getDerivedStateFromError(error: Error): State {
+    return { hasError: true, error, errorInfo: null };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    this.setState({ errorInfo });
+    this.logErrorToSystem(error, errorInfo);
+  }
+
+  componentWillUnmount() {
+    // Reset error tracking state to prevent memory leaks
+    this.errorLogCount = 0;
+    this.lastErrorLogTime = 0;
+  }
+
+  private shouldLogError(): boolean {
+    const now = Date.now();
+    
+    // Reset counter every minute
+    if (now - this.lastErrorLogTime > 60000) {
+      this.errorLogCount = 0;
+      this.lastErrorLogTime = now;
+    }
+    
+    // Check if we've exceeded the rate limit
+    if (this.errorLogCount >= ErrorBoundary.MAX_ERRORS_PER_MINUTE) {
+      return false;
+    }
+    
+    this.errorLogCount++;
+    return true;
+  }
+
+  private async logErrorToSystem(error: Error, errorInfo: ErrorInfo) {
+    // Rate limit error logging to prevent log flooding
+    if (!this.shouldLogError()) {
+      secureLog.warn('Error logging rate limited - too many errors in a short period', null, 'ErrorBoundary');
+      return;
+    }
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // Use cryptographically secure session ID
+      let sessionId = sessionStorage.getItem('error_session_id');
+      if (!sessionId) {
+        sessionId = crypto.randomUUID();
+        sessionStorage.setItem('error_session_id', sessionId);
+      }
+      
+      await supabase.functions.invoke('error-collector', {
+        body: {
+          errorType: 'react_error_boundary',
+          severity: 'critical',
+          message: error.message,
+          stackTrace: process.env.NODE_ENV === 'development' ? error.stack : '[REDACTED]',
+          componentName: this.props.componentName || 'Unknown',
+          userId: user?.id ? `user_${user.id.substring(0, 8)}***` : null, // Partially redacted
+          sessionId,
+          routePath: window.location.pathname,
+          browserInfo: {
+            userAgent: navigator.userAgent.split(' ')[0], // Only browser name
+            language: navigator.language,
+            platform: navigator.platform,
+          },
+          deviceInfo: {
+            screenWidth: screen.width,
+            screenHeight: screen.height,
+            windowWidth: window.innerWidth,
+            windowHeight: window.innerHeight,
+          },
+          metadata: {
+            componentStack: process.env.NODE_ENV === 'development' ? errorInfo.componentStack : '[REDACTED]',
+            errorBoundaryName: this.props.componentName,
+            timestamp: new Date().toISOString(),
+          }
+        }
+      });
+      
+      // Log security event for error boundary activation
+      secureLog.security('error_boundary_activated', {
+        componentName: this.props.componentName,
+        errorType: error.name,
+        hasUser: !!user?.id
+      }, 'medium');
+      
+    } catch (err) {
+      secureLog.error('Failed to log error boundary error', err, 'ErrorBoundary');
+    }
+  }
+
+  private handleReset = () => {
+    this.setState({ hasError: false, error: null, errorInfo: null });
+  };
+
+  private handleReload = () => {
+    this.setState({ hasError: false, error: null, errorInfo: null });
+    if (window.__navigate) {
+      window.__navigate('/');
+    }
+  };
+
+  render() {
+    if (this.state.hasError) {
+      if (this.props.fallback) {
+        return this.props.fallback;
+      }
+
+      return (
+        <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+          <div className="max-w-md w-full space-y-4">
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription className="text-sm">
+                Something went wrong in this part of the application. The error has been logged and will be reviewed.
+              </AlertDescription>
+            </Alert>
+            
+            <div className="space-y-2">
+              <Button 
+                onClick={this.handleReset}
+                variant="outline" 
+                className="w-full"
+              >
+                Try Again
+              </Button>
+              
+              <Button 
+                onClick={this.handleReload}
+                variant="secondary" 
+                className="w-full"
+              >
+                Reload Page
+              </Button>
+            </div>
+            
+            {process.env.NODE_ENV === 'development' && this.state.error && (
+              <details className="mt-4 p-3 bg-muted rounded-md text-xs">
+                <summary className="cursor-pointer font-medium">
+                  Error Details (Development Only)
+                </summary>
+                <pre className="mt-2 whitespace-pre-wrap text-xs">
+                  {this.state.error.message}
+                  {'\n\n'}
+                  {this.state.error.stack}
+                  {this.state.errorInfo?.componentStack && (
+                    <>
+                      {'\n\nComponent Stack:'}
+                      {this.state.errorInfo.componentStack}
+                    </>
+                  )}
+                </pre>
+              </details>
+            )}
+            
+            {process.env.NODE_ENV === 'production' && (
+              <div className="mt-4 p-3 bg-muted rounded-md text-xs">
+                <p className="text-center text-muted-foreground">
+                  Error ID: {sessionStorage.getItem('error_session_id')?.substring(0, 12)}...
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+export default ErrorBoundary;

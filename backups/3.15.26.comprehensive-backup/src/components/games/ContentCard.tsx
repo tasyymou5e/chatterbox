@@ -1,0 +1,213 @@
+import React from 'react';
+import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Heart, Play, Shield, ShieldX, Sparkles } from 'lucide-react';
+import type { CatalogContentItem, CurationAccessType } from './types/catalog';
+
+interface ContentCardProps {
+  item: CatalogContentItem;
+  isFavorited: boolean;
+  onFavorite: () => void;
+  onClick: () => void;
+  showCurationControls?: boolean;
+  onContentCuration?: (contentId: string, accessType: CurationAccessType) => void;
+}
+
+import type { AutismFeatures } from '@/types/autism';
+
+function ContentCardComponent({ 
+  item, 
+  isFavorited, 
+  onFavorite, 
+  onClick, 
+  showCurationControls = false,
+  onContentCuration
+}: ContentCardProps) {
+  const getContentIcon = (type: string) => {
+    switch (type) {
+      case 'game': return '🎮';
+      case 'video': return '📺';
+      case 'website': return '🌐';
+      case 'app': return '📱';
+      default: return '🎯';
+    }
+  };
+
+  const getAutismBadges = (features: AutismFeatures | null) => {
+    if (!features) return [];
+    const badges: string[] = [];
+    if (features.sensory_friendly) badges.push('Sensory Friendly');
+    if (features.non_verbal_friendly) badges.push('Non-Verbal');
+    if (features.executive_function) badges.push('Executive Function');
+    return badges;
+  };
+
+  return (
+    <Card className="group hover:shadow-lg transition-[box-shadow,border-color] duration-300 cursor-pointer bg-white border-2 hover:border-primary/20">
+      <CardHeader className="p-0">
+        <div 
+          className="relative aspect-video bg-gradient-to-br from-blue-100 to-purple-100 rounded-t-lg overflow-hidden"
+          onClick={onClick}
+        >
+          {item.thumbnail_url ? (
+            <img
+              src={item.thumbnail_url}
+              alt={item.title}
+              loading="lazy"
+              decoding="async"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = 'none';
+              }}
+            />
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <span className="text-4xl">{getContentIcon(item.content_type)}</span>
+            </div>
+          )}
+          
+          {/* Overlay */}
+          <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+            <Button size="lg" className="bg-white/90 text-primary hover:bg-white">
+              <Play className="h-5 w-5 mr-2" />
+              Open
+            </Button>
+          </div>
+
+          {/* Favorite Button */}
+          <Button
+            size="sm"
+            variant="ghost"
+            className="absolute top-2 right-2 bg-white/80 hover:bg-white"
+            onClick={(e) => {
+              e.stopPropagation();
+              onFavorite();
+            }}
+          >
+            <Heart 
+              className={`h-4 w-4 ${isFavorited ? 'fill-red-500 text-red-500' : 'text-gray-600'}`} 
+            />
+          </Button>
+
+          {/* Free Badge */}
+          {item.is_free && (
+            <Badge className="absolute top-2 left-2 bg-green-500 text-white">
+              FREE
+            </Badge>
+          )}
+        </div>
+      </CardHeader>
+
+      <CardContent className="p-4" onClick={onClick}>
+        <div className="space-y-3">
+          <div>
+            <h3 className="font-semibold text-lg line-clamp-1 mb-1">
+              {item.title}
+            </h3>
+            <p className="text-sm text-muted-foreground line-clamp-2">
+              {item.description || ''}
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="outline" className="text-xs">
+              {getContentIcon(item.content_type)} {item.content_type}
+            </Badge>
+            <Badge variant="secondary" className="text-xs">
+              Ages {item.age_min ?? 0}-{item.age_max ?? 18}
+            </Badge>
+            {item.content_categories && (
+              <Badge variant="outline" className="text-xs">
+                {item.content_categories.name}
+              </Badge>
+            )}
+          </div>
+
+          {/* Autism-specific features */}
+          {getAutismBadges(item.autism_features).length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {getAutismBadges(item.autism_features).map((feature, index) => (
+                <Badge key={index} variant="secondary" className="text-xs bg-blue-100 text-blue-700">
+                  ✨ {feature}
+                </Badge>
+              ))}
+            </div>
+          )}
+
+          {/* Tags */}
+          {item.tags && item.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {item.tags.slice(0, 3).map((tag, index) => (
+                <Badge key={index} variant="outline" className="text-xs">
+                  #{tag}
+                </Badge>
+              ))}
+              {item.tags.length > 3 && (
+                <Badge variant="outline" className="text-xs">
+                  +{item.tags.length - 3} more
+                </Badge>
+              )}
+            </div>
+          )}
+        </div>
+      </CardContent>
+
+      {/* Phase 2: Family Content Curation Controls */}
+      {showCurationControls && onContentCuration && (
+        <CardFooter className="pt-2 pb-4 px-4">
+          <div className="flex flex-wrap gap-1 w-full">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={(e) => {
+                e.stopPropagation();
+                onContentCuration(item.id, 'featured');
+              }}
+              className="flex-1 text-xs"
+            >
+              <Sparkles className="h-3 w-3 mr-1" />
+              Feature
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={(e) => {
+                e.stopPropagation();
+                onContentCuration(item.id, 'allowed');
+              }}
+              className="flex-1 text-xs"
+            >
+              <Shield className="h-3 w-3 mr-1" />
+              Allow
+            </Button>
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={(e) => {
+                e.stopPropagation();
+                onContentCuration(item.id, 'blocked');
+              }}
+              className="flex-1 text-xs"
+            >
+              <ShieldX className="h-3 w-3 mr-1" />
+              Block
+            </Button>
+          </div>
+        </CardFooter>
+      )}
+    </Card>
+  );
+}
+
+// Phase 2: Enhanced Performance optimization with React.memo
+export const ContentCard = React.memo(ContentCardComponent, (prevProps, nextProps) => {
+  return (
+    prevProps.item.id === nextProps.item.id &&
+    prevProps.isFavorited === nextProps.isFavorited &&
+    prevProps.item.title === nextProps.item.title &&
+    prevProps.item.thumbnail_url === nextProps.item.thumbnail_url &&
+    prevProps.item.is_free === nextProps.item.is_free &&
+    prevProps.showCurationControls === nextProps.showCurationControls
+  );
+});
