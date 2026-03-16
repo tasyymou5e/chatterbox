@@ -429,6 +429,15 @@ const ParentDashboard = () => {
           </p>
         </div>
 
+        {/* Plan Approval Notification */}
+        <PlanApprovalNotificationBanner
+          familyId={familyData[0]?.id || null}
+          onNavigateToPlans={() => {
+            const el = document.getElementById('skill-plan-manager');
+            el?.scrollIntoView({ behavior: 'smooth' });
+          }}
+        />
+
         {/* Assessment History - prominently placed */}
         <div className="mb-6">
           <AssessmentHistoryCard />
