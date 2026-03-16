@@ -105,7 +105,7 @@ export const TypeSafetyReport = () => {
                 <div className="text-2xl font-bold text-primary">{progressPercentage}%</div>
                 <div className="w-20 h-2 bg-secondary rounded-full overflow-hidden">
                   <div 
-                    className="h-full bg-primary transition-all duration-300"
+                    className="h-full bg-primary transition-[width] duration-300"
                     style={{ width: `${progressPercentage}%` }}
                   />
                 </div>

@@ -262,7 +262,7 @@ export const ChoreCompletionDialog: React.FC<ChoreCompletionDialogProps> = ({
                   key={index}
                   onClick={() => setSatisfaction(index + 1)}
                   className={cn(
-                    "text-2xl p-2 rounded-lg transition-all",
+                    "text-2xl p-2 rounded-lg transition-[transform,background-color]",
                     satisfaction === index + 1 
                       ? "bg-primary/20 scale-110" 
                       : "hover:bg-muted"

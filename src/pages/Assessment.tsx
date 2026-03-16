@@ -178,7 +178,7 @@ const Assessment: React.FC = () => {
             {allInstruments.map(inst => (
               <Card
                 key={inst.id}
-                className="border-border hover:border-primary/50 cursor-pointer transition-all hover:shadow-md"
+                className="border-border hover:border-primary/50 cursor-pointer transition-[border-color,box-shadow] hover:shadow-md"
                 onClick={() => selectInstrument(inst.id)}
               >
                 <CardHeader className="text-center pb-2">

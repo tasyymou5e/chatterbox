@@ -71,7 +71,7 @@ export function MoonProgressBar({
             <div
               key={i}
               className={cn(
-                'w-1.5 h-1.5 rounded-full transition-all duration-300',
+                'w-1.5 h-1.5 rounded-full transition-colors duration-300',
                 i < currentStars
                   ? 'bg-yellow-200 shadow-[0_0_4px_rgba(250,204,21,0.5)]'
                   : 'bg-muted-foreground/20'

@@ -100,7 +100,7 @@ export function StarProgressTracker({
           >
             <Star
               className={cn(
-                'h-6 w-6 transition-all duration-300',
+                'h-6 w-6 transition-colors duration-300',
                 star.isEarned 
                   ? 'text-yellow-400 fill-yellow-400 drop-shadow-[0_0_6px_rgba(250,204,21,0.5)]' 
                   : 'text-muted-foreground/30'

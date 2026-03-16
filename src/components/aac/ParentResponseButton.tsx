@@ -359,7 +359,7 @@ export function ParentResponseButton({
                   <button
                     onClick={(e) => handleRecordingClick(button, e)}
                     className={cn(
-                      'absolute -top-2 -right-2 p-1.5 rounded-full transition-all shadow-md border-2 border-background',
+                      'absolute -top-2 -right-2 p-1.5 rounded-full transition-colors shadow-md border-2 border-background',
                       hasCustomRecording 
                         ? 'bg-green-500 text-white hover:bg-green-600' 
                         : 'bg-primary text-primary-foreground hover:bg-primary/90'

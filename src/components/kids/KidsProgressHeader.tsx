@@ -88,7 +88,7 @@ export const KidsProgressHeader: React.FC<KidsProgressHeaderProps> = ({
               <Star 
                 key={i}
                 className={cn(
-                  "h-3 w-3 transition-all",
+                  "h-3 w-3 transition-colors",
                   i < starsInCurrentMoon 
                     ? "text-yellow-400 fill-yellow-400" 
                     : "text-gray-200 dark:text-gray-700"
