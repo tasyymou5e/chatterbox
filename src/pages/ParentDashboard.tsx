@@ -18,6 +18,7 @@ import { ParentNavigation } from '@/components/parent/ParentNavigation';
 import { WeeklyProgressSummary } from '@/components/parent/WeeklyProgressSummary';
 import { AssessmentHistoryCard } from '@/components/parent/AssessmentHistoryCard';
 import { SkillPlanManager } from '@/components/parent/SkillPlanManager';
+import { PlanApprovalNotificationBanner } from '@/components/parent/PlanApprovalNotificationBanner';
 import { SkillPlanReports } from '@/components/parent/SkillPlanReports';
 import { DailyProgressReport } from '@/components/parent/DailyProgressReport';
 import { logSupabaseQuery, logDataAccessIssue, logDataFetchSuccess, createQueryTimer, secureLog } from '@/utils/wideLogger';
@@ -428,6 +429,15 @@ const ParentDashboard = () => {
           </p>
         </div>
 
+        {/* Plan Approval Notification */}
+        <PlanApprovalNotificationBanner
+          familyId={familyData[0]?.id || null}
+          onNavigateToPlans={() => {
+            const el = document.getElementById('skill-plan-manager');
+            el?.scrollIntoView({ behavior: 'smooth' });
+          }}
+        />
+
         {/* Assessment History - prominently placed */}
         <div className="mb-6">
           <AssessmentHistoryCard />
@@ -698,10 +708,12 @@ const ParentDashboard = () => {
       {familyData.length > 0 && (
         <div className="container mx-auto px-4">
           <div className="grid gap-6 md:grid-cols-2 mt-6">
-            <SkillPlanManager
-              familyId={familyData[0]?.id || null}
-              familyMembers={familyMembers}
-            />
+            <div id="skill-plan-manager">
+              <SkillPlanManager
+                familyId={familyData[0]?.id || null}
+                familyMembers={familyMembers}
+              />
+            </div>
             <div className="space-y-6">
               {familyMembers.filter(m => m.role === 'child').map(child => (
                 <DailyProgressReport

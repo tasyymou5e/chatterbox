@@ -6,8 +6,11 @@ import { ClipboardCheck, Plus, Download, Users, ChevronRight, ChevronDown } from
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 import type { AssessmentScores } from '@/utils/assessmentScoring';
+import { AssessmentFreshnessBadge } from './AssessmentFreshnessBadge';
+import { AssignAssessmentDialog } from './AssignAssessmentDialog';
 import { AssessmentResultDetail } from './AssessmentResultDetail';
 import { AssessmentTrendChart } from './AssessmentTrendChart';
 import { generateAssessmentPDF } from '@/utils/assessmentPdfGenerator';
@@ -48,12 +51,15 @@ export const AssessmentHistoryCard: React.FC = () => {
   const [results, setResults] = useState<AssessmentResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [showAssignDialog, setShowAssignDialog] = useState(false);
+  const [childMembers, setChildMembers] = useState<{ user_id: string; first_name?: string | null; last_name?: string | null; role: string }[]>([]);
 
   useEffect(() => {
     const fetchResults = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setLoading(false); return; }
 
+      // Fetch assessment results
       const { data, error } = await supabase
         .from('assessment_results')
         .select('id, assessment_type, subject_name, overall_grade, created_at, scores, ai_review')
@@ -65,6 +71,38 @@ export const AssessmentHistoryCard: React.FC = () => {
         console.error('Failed to fetch assessment results:', error);
       }
       if (data) setResults(data as unknown as AssessmentResult[]);
+
+      // Fetch children for assign dialog
+      const { data: membership } = await supabase
+        .from('family_members')
+        .select('family_id')
+        .eq('user_id', user.id)
+        .limit(1)
+        .maybeSingle();
+
+      if (membership?.family_id) {
+        const { data: members } = await supabase
+          .from('family_members')
+          .select('user_id, role')
+          .eq('family_id', membership.family_id)
+          .eq('role', 'child');
+
+        if (members && members.length > 0) {
+          const childIds = members.map(m => m.user_id);
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('user_id, first_name, last_name')
+            .in('user_id', childIds);
+
+          setChildMembers(
+            members.map(m => {
+              const p = profiles?.find(p => p.user_id === m.user_id);
+              return { user_id: m.user_id, first_name: p?.first_name, last_name: p?.last_name, role: 'child' };
+            })
+          );
+        }
+      }
+
       setLoading(false);
     };
     fetchResults();
@@ -75,6 +113,7 @@ export const AssessmentHistoryCard: React.FC = () => {
   };
 
   return (
+    <TooltipProvider>
     <Card className="border-border shadow-sm">
       <CardHeader className="pb-3">
         <div className="flex items-center gap-2 mb-1">
@@ -86,10 +125,18 @@ export const AssessmentHistoryCard: React.FC = () => {
             <ClipboardCheck className="w-4 h-4 text-muted-foreground" />
             <span className="text-sm font-medium text-muted-foreground">Assessment History</span>
           </div>
-          <Button size="sm" variant="outline" onClick={() => navigate('/assessment')}>
-            <Plus className="w-4 h-4 mr-1" />
-            New Assessment
-          </Button>
+          <div className="flex items-center gap-2">
+            {childMembers.length > 0 && (
+              <Button size="sm" variant="default" onClick={() => setShowAssignDialog(true)}>
+                <Plus className="w-4 h-4 mr-1" />
+                Assign to Child
+              </Button>
+            )}
+            <Button size="sm" variant="outline" onClick={() => navigate('/assessment')}>
+              <Plus className="w-4 h-4 mr-1" />
+              New Assessment
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -130,6 +177,7 @@ export const AssessmentHistoryCard: React.FC = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
+                    <AssessmentFreshnessBadge createdAt={r.created_at} />
                     {r.overall_grade && (
                       <Badge className={gradeColor(r.overall_grade)}>{r.overall_grade}</Badge>
                     )}
@@ -164,5 +212,11 @@ export const AssessmentHistoryCard: React.FC = () => {
         {results.length >= 2 && <AssessmentTrendChart results={results} />}
       </CardContent>
     </Card>
+    <AssignAssessmentDialog
+      open={showAssignDialog}
+      onOpenChange={setShowAssignDialog}
+      children={childMembers}
+    />
+    </TooltipProvider>
   );
 };
