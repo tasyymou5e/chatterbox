@@ -1,0 +1,136 @@
+project_id = "lxuqfgbukrrickanmmic"
+
+# JWT Authentication Configuration
+# ---------------------------------
+# All functions use verify_jwt = false because the project uses Supabase's
+# signing-keys system, which is incompatible with gateway-level JWT verification.
+# Each function validates JWTs in its own code using getClaims() or getUser().
+
+[functions.create-test-family]
+# Admin only - uses validateAdminJWT in code
+verify_jwt = false
+
+[functions.create-child-account]
+# Parent auth required - uses validateJWT in code
+verify_jwt = false
+
+[functions.admin-delete-user]
+# Admin only - uses validateAdminJWT in code
+verify_jwt = false
+
+[functions.admin-update-user]
+# Admin only - uses validateJWT + admin check in code
+verify_jwt = false
+
+[functions.delete-family-comprehensive]
+# Admin only - uses validateAdminJWT in code
+verify_jwt = false
+
+[functions.security-testing]
+# Admin only - uses validateAdminJWT, has unauthenticated /health endpoint
+verify_jwt = false
+
+[functions.security-monitoring]
+# Admin only - uses validateAdminJWT, has unauthenticated /health endpoint
+verify_jwt = false
+
+[functions.text-to-speech]
+# Supports anonymous access with tiered rate limiting in code
+verify_jwt = false
+
+[functions.api-integration-status]
+# User auth required - uses validateJWT in code
+verify_jwt = false
+
+[functions.grok-chat]
+# Supports anonymous access with tiered rate limiting in code
+verify_jwt = false
+
+[functions.send-family-email]
+# User auth required - uses validateJWT in code
+verify_jwt = false
+
+[functions.admin-create-user]
+# Admin only - uses validateJWT + admin check in code
+verify_jwt = false
+
+[functions.admin-add-family-member]
+# Admin only - uses validateJWT + admin check in code
+verify_jwt = false
+
+[functions.admin-remove-family-member]
+# Admin only - uses validateJWT + admin check in code
+verify_jwt = false
+
+[functions.cleanup-test-families]
+# Admin only - uses validateAdminJWT in code
+verify_jwt = false
+
+[functions.update-site-settings]
+# User auth required - uses validateJWT in code
+verify_jwt = false
+
+[functions.manage-llm-provider]
+# User auth required - uses validateJWT in code
+verify_jwt = false
+
+[functions.supabase-analytics-query]
+# Admin only - uses validateAdminJWT in code
+verify_jwt = false
+
+[functions.llm-with-failover]
+# User auth required - uses validateJWT in code
+# Has unauthenticated /health endpoint for monitoring
+verify_jwt = false
+
+[functions.family-integrity-check]
+# Admin only for actions - uses validateAdminJWT in code
+verify_jwt = false
+
+# ============================================
+# UNAUTHENTICATED / SPECIAL AUTH FUNCTIONS
+# ============================================
+
+[functions.complete-child-account]
+# Child account completion - uses PIN-based auth, not JWT
+verify_jwt = false
+
+[functions.scheduled-health-check]
+# System cron job - no user context
+verify_jwt = false
+
+[functions.edge-function-health-check]
+# System cron job - no user context
+verify_jwt = false
+
+[functions.process-recurring-chores]
+# System cron job - no user context
+verify_jwt = false
+
+[functions.data-health-alerter]
+# System cron job - alerting function
+verify_jwt = false
+
+[functions.error-collector]
+# Public endpoint - client error reporting
+verify_jwt = false
+
+[functions.ai-chat]
+# AI chat with tiered rate limiting - JWT validated in code
+verify_jwt = false
+
+[functions.ai-assessment-review]
+# Assessment AI review - public access
+verify_jwt = false
+
+[functions.generate-daily-plan]
+# AI daily plan generation - JWT validated in code
+verify_jwt = false
+
+[functions.manage-skill-plan]
+# Skill plan CRUD + approval workflow - JWT validated in code
+verify_jwt = false
+
+[functions.ai-session-helper]
+# AI session helper - JWT validated in code
+verify_jwt = false

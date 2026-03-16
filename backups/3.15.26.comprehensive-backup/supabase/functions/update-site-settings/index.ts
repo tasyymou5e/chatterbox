@@ -1,0 +1,105 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.0'
+import { getCorsHeaders } from '../_shared/cors.ts'
+import { adminActionLimiter, RateLimiter } from '../_shared/rate-limiter.ts'
+import { validateJWT, getServiceClient, createUnauthorizedResponse } from '../_shared/auth-validator.ts'
+
+serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req.headers.get('origin'));
+  
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  // Apply rate limiting
+  const rateCheck = adminActionLimiter.check(req);
+  if (!rateCheck.allowed) {
+    console.warn('Rate limit exceeded for update-site-settings');
+    return RateLimiter.createRateLimitResponse(rateCheck.resetTime);
+  }
+
+  try {
+    // Get service client for admin operations
+    const supabase = getServiceClient();
+
+    // Validate JWT using getClaims() - local verification with asymmetric keys
+    const auth = await validateJWT(req);
+    if (!auth.success || !auth.userId) {
+      return createUnauthorizedResponse(auth.error || 'Invalid authentication', corsHeaders);
+    }
+
+    const user = { id: auth.userId, email: auth.email };
+
+    // Check if user has admin role
+    const { data: userRoles, error: roleError } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('role', 'admin');
+
+    if (roleError || !userRoles || userRoles.length === 0) {
+      return new Response(JSON.stringify({ error: 'Admin role required' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const { setting_key, setting_value } = await req.json();
+
+    if (!setting_key || setting_value === undefined) {
+      return new Response(JSON.stringify({ error: 'setting_key and setting_value are required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Update the setting
+    const { data, error } = await supabase
+      .from('site_settings')
+      .update({ 
+        setting_value: setting_value,
+        updated_by: user.id,
+        updated_at: new Date().toISOString()
+      })
+      .eq('setting_key', setting_key)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating site setting:', error);
+      return new Response(JSON.stringify({ error: 'Failed to update setting' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Log the admin activity
+    await supabase.from('admin_audit_logs').insert({
+      admin_user_id: user.id,
+      operation_type: 'update_site_setting',
+      target_table: 'site_settings',
+      target_id: data.id,
+      new_values: { setting_key, setting_value },
+      metadata: {
+        setting_description: data.description,
+        timestamp: new Date().toISOString()
+      }
+    });
+
+    return new Response(JSON.stringify({ 
+      success: true, 
+      data: data,
+      message: `Setting '${setting_key}' updated successfully`
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+
+  } catch (error) {
+    console.error('Error in update-site-settings function:', error);
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+});
