@@ -63,7 +63,7 @@ export function StarProgressTracker({
       <div className="relative">
         <div
           className={cn(
-            'absolute inset-0 rounded-full blur-xl transition-all duration-500',
+            'absolute inset-0 rounded-full blur-xl transition-opacity duration-500',
             isCloseToMoon && animate && 'animate-moon-pulse'
           )}
           style={{
