@@ -57,7 +57,7 @@ function GameCardComponent({
   return (
     <button
       className={cn(
-        'relative rounded-xl transition-all focus:outline-none focus:ring-4 focus:ring-primary/50',
+        'relative rounded-xl transition-[transform,box-shadow] focus:outline-none focus:ring-4 focus:ring-primary/50',
         sizeClasses[size],
         isDisabled && 'cursor-not-allowed opacity-50',
         !isDisabled && !isMatched && 'cursor-pointer hover:scale-105 active:scale-95',
