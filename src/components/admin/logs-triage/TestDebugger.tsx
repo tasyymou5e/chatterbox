@@ -103,6 +103,7 @@ export const TestDebugger = () => {
                   size="icon"
                   className="h-7 w-7 text-gray-400 hover:text-white"
                   onClick={() => copyCommand(cmd.command, idx)}
+                  aria-label="Copy command"
                 >
                   {copiedIdx === idx ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
                 </Button>

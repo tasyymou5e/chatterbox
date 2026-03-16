@@ -244,7 +244,7 @@ export function ParentResponseButton({
             </CardTitle>
             <Collapsible open={showSettings} onOpenChange={setShowSettings}>
               <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" aria-label="Response settings">
                   <Settings2 className="h-5 w-5" />
                 </Button>
               </CollapsibleTrigger>

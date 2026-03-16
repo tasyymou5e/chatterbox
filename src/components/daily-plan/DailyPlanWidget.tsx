@@ -167,7 +167,7 @@ export function DailyPlanWidget() {
               {plan.summary || 'Personalized activities for today'}
             </CardDescription>
           </div>
-          <Button variant="ghost" size="icon" onClick={generatePlan} title="Refresh plan">
+          <Button variant="ghost" size="icon" onClick={generatePlan} aria-label="Refresh plan">
             <RefreshCw className="w-4 h-4" />
           </Button>
         </div>

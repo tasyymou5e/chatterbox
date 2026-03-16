@@ -214,6 +214,7 @@ export const KidsGameLauncher: React.FC<KidsGameLauncherProps> = ({
                   size="icon"
                   onClick={() => setIsPaused(!isPaused)}
                   className="text-white hover:bg-white/20"
+                  aria-label={isPaused ? 'Resume game' : 'Pause game'}
                 >
                   {isPaused ? <Play className="h-5 w-5" /> : <Pause className="h-5 w-5" />}
                 </Button>
@@ -223,6 +224,7 @@ export const KidsGameLauncher: React.FC<KidsGameLauncherProps> = ({
                   size="icon"
                   onClick={handleClose}
                   className="text-white hover:bg-white/20"
+                  aria-label="Close game"
                 >
                   <X className="h-5 w-5" />
                 </Button>

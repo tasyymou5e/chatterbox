@@ -37,7 +37,7 @@ export default function AdminTestResults() {
               <code className="flex-1 rounded bg-muted px-3 py-1.5 text-xs font-mono">
                 {c.cmd}
               </code>
-              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyCmd(c.cmd)}>
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyCmd(c.cmd)} aria-label="Copy command">
                 <Copy className="h-3.5 w-3.5" />
               </Button>
               <span className="text-xs text-muted-foreground w-40 hidden sm:inline">{c.label}</span>

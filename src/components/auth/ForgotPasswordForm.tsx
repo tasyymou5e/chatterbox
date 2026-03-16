@@ -98,6 +98,8 @@ export const ForgotPasswordForm = ({ onBackToSignIn }: ForgotPasswordFormProps) 
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
+              spellCheck={false}
               aria-describedby="forgot-email-help"
             />
             <p id="forgot-email-help" className="text-xs text-muted-foreground">

@@ -151,6 +151,7 @@ const Assessment: React.FC = () => {
           <Button
             variant="ghost"
             size="icon"
+            aria-label="Go back"
             onClick={() => {
               if (view === 'form') setView('select');
               else if (view === 'results') setView('select');
