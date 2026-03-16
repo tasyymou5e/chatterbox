@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ArrowLeft, ClipboardCheck, Brain, FileText, Home } from 'lucide-react';
+import { ParentNavigation } from '@/components/parent/ParentNavigation';
 import { useNavigate } from 'react-router-dom';
 import { allInstruments, getInstrumentById } from '@/data/assessmentInstruments';
 import type { AssessmentInstrument } from '@/data/assessmentInstruments';
@@ -144,8 +145,8 @@ const Assessment: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* Header */}
+      <ParentNavigation />
+      <main className="max-w-4xl mx-auto px-4 py-8">
         <div className="flex items-center gap-3 mb-8">
           <Button
             variant="ghost"
@@ -244,7 +245,7 @@ const Assessment: React.FC = () => {
             </div>
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 };
