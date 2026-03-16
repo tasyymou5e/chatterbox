@@ -120,6 +120,7 @@ export const SignUpForm = ({ isSignupEnabled, onSignUpSuccess }: SignUpFormProps
             placeholder="Doe"
             required
             disabled={!isSignupEnabled}
+            autoComplete="family-name"
             aria-describedby="last-name-help"
           />
         </div>
