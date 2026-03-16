@@ -56,7 +56,7 @@ const CategoryDetail: React.FC<{ cat: CategoryScore; aiNote?: string }> = ({ cat
       <div className="flex-1">
         <div className="h-2 rounded-full bg-muted overflow-hidden">
           <div
-            className={`h-full rounded-full transition-all ${gradeBarColor(cat.grade)}`}
+            className={`h-full rounded-full transition-[width] ${gradeBarColor(cat.grade)}`}
             style={{ width: `${cat.percentage}%` }}
           />
         </div>
