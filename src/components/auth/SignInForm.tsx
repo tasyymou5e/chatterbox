@@ -106,6 +106,8 @@ export const SignInForm = ({ onForgotPassword, onChildSignup }: SignInFormProps)
           type="email"
           placeholder="your@example.com"
           required
+          autoComplete="email"
+          spellCheck={false}
           aria-describedby="signin-email-help"
         />
       </div>
