@@ -272,6 +272,7 @@ export const ChildSignupForm = ({ initialCode = '', onBackToSignIn }: ChildSignu
             placeholder="Create a secure password"
             required
             minLength={8}
+            autoComplete="new-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             aria-describedby="child-password-requirements"
