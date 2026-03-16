@@ -178,6 +178,8 @@ export default function AdminLogin() {
                   name="email"
                   type="email"
                   required
+                  autoComplete="email"
+                  spellCheck={false}
                   className="bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500"
                   placeholder="admin@example.com"
                 />
