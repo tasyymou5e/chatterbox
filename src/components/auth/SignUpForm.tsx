@@ -134,6 +134,8 @@ export const SignUpForm = ({ isSignupEnabled, onSignUpSuccess }: SignUpFormProps
           placeholder="your@example.com"
           required
           disabled={!isSignupEnabled}
+          autoComplete="email"
+          spellCheck={false}
           aria-describedby="signup-email-help"
         />
       </div>
