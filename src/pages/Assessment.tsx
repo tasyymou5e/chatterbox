@@ -245,7 +245,7 @@ const Assessment: React.FC = () => {
             </div>
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 };
