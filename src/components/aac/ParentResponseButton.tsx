@@ -339,7 +339,7 @@ export function ParentResponseButton({
                     onClick={() => handleButtonClick(button)}
                     disabled={isLoading && activeButton !== button.id}
                     className={cn(
-                      'h-24 w-full flex flex-col items-center justify-center gap-2 text-white font-semibold transition-all',
+                      'h-24 w-full flex flex-col items-center justify-center gap-2 text-white font-semibold transition-[transform,box-shadow,opacity]',
                       button.color,
                       activeButton === button.id && 'ring-4 ring-primary ring-offset-2 scale-95',
                       isSpeaking && activeButton === button.id && 'animate-pulse'
