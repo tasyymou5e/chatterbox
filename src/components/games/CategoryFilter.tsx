@@ -43,7 +43,7 @@ function CategoryFilterComponent({ categories, selectedCategory, onCategoryChang
         {categories.map((category) => (
           <Card
             key={category.id}
-            className={`cursor-pointer transition-all duration-300 hover:shadow-lg ${
+            className={`cursor-pointer transition-[box-shadow,border-color,background-color] duration-300 hover:shadow-lg ${
               selectedCategory === category.id
                 ? 'ring-2 ring-primary bg-primary/5'
                 : 'hover:bg-gray-50'

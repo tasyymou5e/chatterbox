@@ -78,7 +78,7 @@ export const AgeGroupMenu: React.FC<AgeGroupMenuProps> = ({
                 key={option.value}
                 onClick={() => onAgeGroupChange(option.value)}
                 className={cn(
-                  "w-full flex items-center gap-3 p-2 rounded-xl transition-all text-left",
+                  "w-full flex items-center gap-3 p-2 rounded-xl transition-colors text-left",
                   isSelected 
                     ? "bg-purple-100 dark:bg-purple-900/50 ring-2 ring-purple-400" 
                     : "hover:bg-muted"

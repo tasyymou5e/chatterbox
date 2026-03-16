@@ -149,7 +149,7 @@ export const KidsPortalLayout: React.FC<KidsPortalLayoutProps> = ({
                   key={tab.value}
                   value={tab.value}
                   className={cn(
-                    "flex-1 flex items-center justify-center gap-2 py-3 text-white/80 data-[state=active]:bg-white data-[state=active]:text-purple-600 rounded-lg transition-all",
+                    "flex-1 flex items-center justify-center gap-2 py-3 text-white/80 data-[state=active]:bg-white data-[state=active]:text-purple-600 rounded-lg transition-colors",
                     "text-sm md:text-base font-medium"
                   )}
                 >

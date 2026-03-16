@@ -333,7 +333,7 @@ export function Mascot({
       className={cn(
         'relative inline-block transition-opacity duration-300',
         isVisible ? 'opacity-100' : 'opacity-0',
-        onClick && 'cursor-pointer hover:scale-105 transition-transform',
+        onClick && 'cursor-pointer hover:scale-105 motion-reduce:hover:scale-100 transition-transform',
         className
       )}
       onClick={onClick}

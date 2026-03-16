@@ -82,7 +82,7 @@ export function GamesTabContent({ items, loading }: Props) {
           {filtered.map(item => {
             const colorGrad = contentTypeColors[item.content_type] || contentTypeColors.article;
             return (
-              <Card key={item.id} className="group overflow-hidden rounded-xl border-border/50 hover:border-primary/30 transition-all hover:shadow-md">
+              <Card key={item.id} className="group overflow-hidden rounded-xl border-border/50 hover:border-primary/30 transition-[border-color,box-shadow] hover:shadow-md">
                 {/* Thumbnail / Placeholder */}
                 <div className={`h-32 bg-gradient-to-br ${colorGrad} flex items-center justify-center relative`}>
                   {item.thumbnail_url ? (

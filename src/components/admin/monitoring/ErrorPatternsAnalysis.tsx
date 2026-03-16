@@ -238,7 +238,7 @@ export const ErrorPatternsAnalysis = () => {
                   <div key={idx} className="flex-1 flex flex-col items-center gap-1">
                     <span className="text-xs text-muted-foreground">{trend.count}</span>
                     <div 
-                      className="w-full bg-primary/80 rounded-t transition-all hover:bg-primary"
+                      className="w-full bg-primary/80 rounded-t transition-colors hover:bg-primary"
                       style={{ height: `${height}%`, minHeight: trend.count > 0 ? '4px' : '0' }}
                     />
                     <span className="text-xs text-muted-foreground truncate w-full text-center">
