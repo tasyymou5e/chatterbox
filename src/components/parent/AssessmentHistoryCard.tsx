@@ -177,6 +177,7 @@ export const AssessmentHistoryCard: React.FC = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
+                    <AssessmentFreshnessBadge createdAt={r.created_at} />
                     {r.overall_grade && (
                       <Badge className={gradeColor(r.overall_grade)}>{r.overall_grade}</Badge>
                     )}
