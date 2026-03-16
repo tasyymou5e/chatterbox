@@ -43,7 +43,7 @@ export const AgeGroupMenu: React.FC<AgeGroupMenuProps> = ({
   return (
     <div 
       className={cn(
-        "fixed right-0 top-1/2 -translate-y-1/2 z-40 transition-all duration-300",
+        "fixed right-0 top-1/2 -translate-y-1/2 z-40 transition-transform duration-300",
         isCollapsed ? "translate-x-[calc(100%-48px)]" : "translate-x-0",
         className
       )}
