@@ -76,7 +76,7 @@ export const KidsProgressHeader: React.FC<KidsProgressHeaderProps> = ({
             <Progress value={progressToNextMoon} className="h-3 bg-blue-100 dark:bg-blue-900/30" />
             <div className="absolute top-0 left-0 h-full w-full flex items-center justify-end pr-1">
               <Moon className={cn(
-                "h-4 w-4 transition-all",
+                "h-4 w-4 transition-[color,transform]",
                 progressToNextMoon >= 100 
                   ? "text-blue-400 fill-blue-400 scale-110" 
                   : "text-blue-200 dark:text-blue-800"
