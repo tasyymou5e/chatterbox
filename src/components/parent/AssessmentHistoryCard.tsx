@@ -212,5 +212,11 @@ export const AssessmentHistoryCard: React.FC = () => {
         {results.length >= 2 && <AssessmentTrendChart results={results} />}
       </CardContent>
     </Card>
+    <AssignAssessmentDialog
+      open={showAssignDialog}
+      onOpenChange={setShowAssignDialog}
+      children={childMembers}
+    />
+    </TooltipProvider>
   );
 };
