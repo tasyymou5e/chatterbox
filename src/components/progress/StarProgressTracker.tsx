@@ -90,7 +90,7 @@ export function StarProgressTracker({
           <div
             key={star.id}
             className={cn(
-              'transition-all duration-300',
+              'transition-opacity duration-300',
               animate && star.isEarned && 'animate-star-twinkle',
               star.isNext && 'opacity-50'
             )}
