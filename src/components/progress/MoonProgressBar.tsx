@@ -53,7 +53,7 @@ export function MoonProgressBar({
         )}>
           <div
             className={cn(
-              'h-full rounded-full transition-all duration-500 ease-out',
+              'h-full rounded-full transition-[width] duration-500 ease-out',
               isCloseToMoon 
                 ? 'bg-gradient-to-r from-yellow-400 via-amber-400 to-amber-300' 
                 : 'bg-gradient-to-r from-yellow-500 to-yellow-400'
