@@ -91,7 +91,7 @@ export function MoonProgressBar({
         <Moon
           className={cn(
             moonSizes[size],
-            'relative z-10 transition-all duration-300',
+            'relative z-10 transition-colors duration-300',
             progress >= 100
               ? 'text-amber-300 fill-amber-300 drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]'
               : isCloseToMoon

@@ -34,7 +34,7 @@ function PlanItem({
 
   return (
     <div
-      className={`flex items-start gap-3 p-4 rounded-lg border transition-all ${
+      className={`flex items-start gap-3 p-4 rounded-lg border transition-[background-color,border-color,opacity] ${
         isCompleted
           ? 'bg-green-50/50 border-green-200 dark:bg-green-950/20 dark:border-green-800'
           : isSkipped
