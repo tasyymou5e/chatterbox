@@ -149,6 +149,7 @@ export const SignUpForm = ({ isSignupEnabled, onSignUpSuccess }: SignUpFormProps
           required
           minLength={8}
           disabled={!isSignupEnabled}
+          autoComplete="new-password"
           value={signupPassword}
           onChange={(e) => setSignupPassword(e.target.value)}
           aria-describedby="password-requirements"

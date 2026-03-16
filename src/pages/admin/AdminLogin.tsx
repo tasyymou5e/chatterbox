@@ -193,6 +193,7 @@ export default function AdminLogin() {
                   name="password"
                   type="password"
                   required
+                  autoComplete="current-password"
                   className="bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500"
                   placeholder="Enter your password"
                 />

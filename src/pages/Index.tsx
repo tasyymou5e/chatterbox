@@ -29,8 +29,9 @@ const Index = () => {
             variant="ghost"
             size="lg"
             className="text-white hover:bg-white/10 animate-bounce"
+            aria-label="Scroll to get started"
           >
-            <ArrowDown className="w-6 h-6" />
+            <ArrowDown className="w-6 h-6" aria-hidden="true" />
           </Button>
         </div>
       </section>

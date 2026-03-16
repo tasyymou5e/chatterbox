@@ -289,6 +289,7 @@ export const ChildSignupForm = ({ initialCode = '', onBackToSignIn }: ChildSignu
             placeholder="Confirm your password"
             required
             minLength={8}
+            autoComplete="new-password"
             aria-describedby="child-confirm-password-help"
             disabled={lockInfo?.isLocked}
           />

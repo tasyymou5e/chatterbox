@@ -55,6 +55,9 @@ const App = () => {
       <ProductionSecurityWrapper>
         <SecurityMonitoringProvider>
           <ErrorBoundary componentName="App">
+              <a href="#main-content" className="skip-to-content">
+                Skip to main content
+              </a>
               <OfflineIndicator />
               <PWAInstallPrompt />
               <Suspense fallback={null}>

@@ -119,6 +119,7 @@ export const SignInForm = ({ onForgotPassword, onChildSignup }: SignInFormProps)
           type="password"
           placeholder="Enter your password"
           required
+          autoComplete="current-password"
           aria-describedby="signin-password-help"
         />
       </div>
