@@ -113,6 +113,7 @@ export const AssessmentHistoryCard: React.FC = () => {
   };
 
   return (
+    <TooltipProvider>
     <Card className="border-border shadow-sm">
       <CardHeader className="pb-3">
         <div className="flex items-center gap-2 mb-1">
@@ -124,10 +125,18 @@ export const AssessmentHistoryCard: React.FC = () => {
             <ClipboardCheck className="w-4 h-4 text-muted-foreground" />
             <span className="text-sm font-medium text-muted-foreground">Assessment History</span>
           </div>
-          <Button size="sm" variant="outline" onClick={() => navigate('/assessment')}>
-            <Plus className="w-4 h-4 mr-1" />
-            New Assessment
-          </Button>
+          <div className="flex items-center gap-2">
+            {childMembers.length > 0 && (
+              <Button size="sm" variant="default" onClick={() => setShowAssignDialog(true)}>
+                <Plus className="w-4 h-4 mr-1" />
+                Assign to Child
+              </Button>
+            )}
+            <Button size="sm" variant="outline" onClick={() => navigate('/assessment')}>
+              <Plus className="w-4 h-4 mr-1" />
+              New Assessment
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
