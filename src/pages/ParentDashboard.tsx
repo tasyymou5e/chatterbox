@@ -708,10 +708,12 @@ const ParentDashboard = () => {
       {familyData.length > 0 && (
         <div className="container mx-auto px-4">
           <div className="grid gap-6 md:grid-cols-2 mt-6">
-            <SkillPlanManager
-              familyId={familyData[0]?.id || null}
-              familyMembers={familyMembers}
-            />
+            <div id="skill-plan-manager">
+              <SkillPlanManager
+                familyId={familyData[0]?.id || null}
+                familyMembers={familyMembers}
+              />
+            </div>
             <div className="space-y-6">
               {familyMembers.filter(m => m.role === 'child').map(child => (
                 <DailyProgressReport
