@@ -137,7 +137,7 @@ export const RecurringChoreDialog: React.FC<RecurringChoreDialogProps> = ({
                   key={option.value}
                   onClick={() => setFrequency(option.value as 'daily' | 'weekly' | 'custom')}
                   className={cn(
-                    "p-3 rounded-lg border text-center transition-all",
+                    "p-3 rounded-lg border text-center transition-[background-color,border-color,box-shadow]",
                     frequency === option.value 
                       ? "border-primary bg-primary/10 ring-2 ring-primary/20" 
                       : "hover:bg-muted"
@@ -160,7 +160,7 @@ export const RecurringChoreDialog: React.FC<RecurringChoreDialogProps> = ({
                     key={day.value}
                     onClick={() => toggleDay(day.value)}
                     className={cn(
-                      "w-10 h-10 rounded-full text-sm font-medium transition-all",
+                      "w-10 h-10 rounded-full text-sm font-medium transition-colors",
                       daysOfWeek.includes(day.value)
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted hover:bg-muted/80"

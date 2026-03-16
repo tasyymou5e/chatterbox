@@ -58,7 +58,7 @@ export function UptimeOverviewCards({
           </div>
           <div className="mt-2 h-2 bg-gray-700 rounded-full overflow-hidden">
             <div
-              className={`h-full transition-all duration-500 ${
+              className={`h-full transition-[width] duration-500 ${
                 isSystemPassing ? 'bg-green-500' : 'bg-red-500'
               }`}
               style={{ width: `${Math.min(systemUptime, 100)}%` }}

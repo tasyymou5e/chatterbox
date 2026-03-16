@@ -159,7 +159,7 @@ export function SubtractionGame({
                     ? 'outline'
                     : 'outline'
                 }
-                className="h-20 text-3xl font-bold shadow-lg hover:scale-105 transition-all motion-reduce:hover:scale-100"
+                className="h-20 text-3xl font-bold shadow-lg hover:scale-105 transition-transform motion-reduce:hover:scale-100"
                 size="lg"
               >
                 {n}

@@ -277,7 +277,7 @@ export const ChildrenChoresDashboard = ({ familyId }: ChildrenChoresDashboardPro
               return (
                 <Card 
                   key={assignment.id} 
-                  className={`transition-all duration-300 ${
+                  className={`transition-[box-shadow,border-color,background-color,opacity] duration-300 ${
                     isActive ? 'ring-2 ring-primary shadow-glow' : 
                     isCompleted ? 'bg-muted/50 opacity-75' : 'hover:shadow-medium'
                   }`}

@@ -65,7 +65,7 @@ export function HealthScoreGauge({
             strokeLinecap="round"
             strokeDasharray={circumference}
             strokeDashoffset={strokeDashoffset}
-            className={cn(animated && 'transition-all duration-1000 ease-out')}
+            className={cn(animated && 'transition-[stroke-dashoffset] duration-1000 ease-out')}
           />
         </svg>
         

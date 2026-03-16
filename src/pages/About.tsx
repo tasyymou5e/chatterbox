@@ -145,7 +145,7 @@ const About = () => {
               {benefits.map((benefit, index) => (
                 <Card 
                   key={index} 
-                  className="bg-gradient-card backdrop-blur-sm border-white/20 shadow-soft hover:shadow-medium transition-all duration-300"
+                  className="bg-gradient-card backdrop-blur-sm border-white/20 shadow-soft hover:shadow-medium transition-[box-shadow] duration-300"
                 >
                   <CardContent className="p-6 text-center">
                     <div className="bg-primary rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 shadow-soft">

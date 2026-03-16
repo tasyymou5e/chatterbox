@@ -189,7 +189,7 @@ export function KidsAssessmentGate({ children, onAllComplete }: KidsAssessmentGa
           return (
             <Card
               key={assessment.id}
-              className={`transition-all ${
+              className={`transition-[border-color,background-color,box-shadow] ${
                 isComplete
                   ? 'border-secondary/50 bg-secondary/5'
                   : 'border-border hover:border-primary/50 hover:shadow-md cursor-pointer'

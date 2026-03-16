@@ -95,7 +95,7 @@ function CategoryProgressCard({ category, onClick }: CategoryProgressCardProps) 
     <button
       onClick={onClick}
       className={cn(
-        'w-full p-3 rounded-lg border bg-background hover:bg-accent/30 transition-all text-left',
+        'w-full p-3 rounded-lg border bg-background hover:bg-accent/30 transition-[background-color,border-color,box-shadow] text-left',
         category.isCloseToMoon && 'ring-2 ring-yellow-400/50 bg-yellow-50/10',
         category.isCloseToLevelUp && 'ring-2 ring-primary/50 bg-primary/5'
       )}

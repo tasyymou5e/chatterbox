@@ -60,7 +60,7 @@ const KidsContentCardComponent: React.FC<KidsContentCardProps> = ({
 
   return (
     <Card 
-      className="group relative overflow-hidden cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-xl border-2 border-transparent hover:border-purple-300 dark:hover:border-purple-600"
+      className="group relative overflow-hidden cursor-pointer transition-[transform,box-shadow,border-color] duration-300 hover:scale-[1.02] motion-reduce:hover:scale-100 hover:shadow-xl border-2 border-transparent hover:border-purple-300 dark:hover:border-purple-600"
       onClick={handleLaunch}
     >
       {/* Thumbnail / Gradient header */}

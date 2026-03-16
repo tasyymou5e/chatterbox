@@ -69,8 +69,8 @@ function ColorSelector<T extends string>({
             key={option.value}
             onClick={() => onChange(option.value)}
             className={cn(
-              'w-10 h-10 rounded-full border-2 transition-all',
-              'hover:scale-110 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
+              'w-10 h-10 rounded-full border-2 transition-[transform,border-color,box-shadow]',
+              'hover:scale-110 motion-reduce:hover:scale-100 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
               value === option.value 
                 ? 'border-primary ring-2 ring-primary ring-offset-2' 
                 : 'border-transparent'

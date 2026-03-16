@@ -167,7 +167,7 @@ export function AudioPlayer({
           <div
             key={i}
             className={cn(
-              'w-1 rounded-full transition-all duration-100',
+              'w-1 rounded-full transition-[height,background-color] duration-100',
               isPlaying ? 'bg-primary' : 'bg-muted-foreground/30'
             )}
             style={{

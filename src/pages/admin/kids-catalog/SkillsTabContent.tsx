@@ -72,7 +72,7 @@ export function SkillsTabContent({ items, loading }: Props) {
               {/* Proportion bar */}
               <div className="h-1.5 rounded-full bg-muted overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-primary/70 transition-all duration-500"
+                  className="h-full rounded-full bg-primary/70 transition-[width] duration-500"
                   style={{ width: `${Math.max(pct, 2)}%` }}
                 />
               </div>

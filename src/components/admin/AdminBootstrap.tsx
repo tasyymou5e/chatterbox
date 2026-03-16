@@ -227,6 +227,8 @@ export const AdminBootstrap = () => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
+                  spellCheck={false}
                   className="bg-gray-700 border-gray-600 text-white"
                   placeholder="admin@your-domain.com"
                 />
@@ -241,6 +243,7 @@ export const AdminBootstrap = () => {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="new-password"
                   className="bg-gray-700 border-gray-600 text-white"
                   placeholder="Strong password"
                 />

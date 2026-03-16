@@ -158,10 +158,15 @@ Focus on calm, friendly, and accessible design tokens.
     font-family: 'Nunito', system-ui, -apple-system, sans-serif;
   }
 
+  /* Skip-to-content link */
+  .skip-to-content {
+    @apply sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-md focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2;
+  }
+
   /* Accessibility improvements for children with autism */
   button, [role="button"] {
     @apply focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2;
-    transition: all 0.2s ease-in-out;
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out, border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out, opacity 0.2s ease-in-out;
   }
 
   /* Reduced motion for users who prefer it */

@@ -108,6 +108,7 @@ export const SignUpForm = ({ isSignupEnabled, onSignUpSuccess }: SignUpFormProps
             placeholder="John"
             required
             disabled={!isSignupEnabled}
+            autoComplete="given-name"
             aria-describedby="first-name-help"
           />
         </div>
@@ -119,6 +120,7 @@ export const SignUpForm = ({ isSignupEnabled, onSignUpSuccess }: SignUpFormProps
             placeholder="Doe"
             required
             disabled={!isSignupEnabled}
+            autoComplete="family-name"
             aria-describedby="last-name-help"
           />
         </div>
@@ -132,6 +134,8 @@ export const SignUpForm = ({ isSignupEnabled, onSignUpSuccess }: SignUpFormProps
           placeholder="your@example.com"
           required
           disabled={!isSignupEnabled}
+          autoComplete="email"
+          spellCheck={false}
           aria-describedby="signup-email-help"
         />
       </div>
@@ -145,6 +149,7 @@ export const SignUpForm = ({ isSignupEnabled, onSignUpSuccess }: SignUpFormProps
           required
           minLength={8}
           disabled={!isSignupEnabled}
+          autoComplete="new-password"
           value={signupPassword}
           onChange={(e) => setSignupPassword(e.target.value)}
           aria-describedby="password-requirements"

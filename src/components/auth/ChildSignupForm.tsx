@@ -230,6 +230,8 @@ export const ChildSignupForm = ({ initialCode = '', onBackToSignIn }: ChildSignu
             value={accountCode}
             onChange={(e) => setAccountCode(e.target.value.toUpperCase())}
             className="font-mono"
+            autoComplete="off"
+            spellCheck={false}
             aria-describedby="account-code-help"
             disabled={lockInfo?.isLocked}
           />
@@ -270,6 +272,7 @@ export const ChildSignupForm = ({ initialCode = '', onBackToSignIn }: ChildSignu
             placeholder="Create a secure password"
             required
             minLength={8}
+            autoComplete="new-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             aria-describedby="child-password-requirements"
@@ -286,6 +289,7 @@ export const ChildSignupForm = ({ initialCode = '', onBackToSignIn }: ChildSignu
             placeholder="Confirm your password"
             required
             minLength={8}
+            autoComplete="new-password"
             aria-describedby="child-confirm-password-help"
             disabled={lockInfo?.isLocked}
           />

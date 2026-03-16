@@ -106,6 +106,8 @@ export const SignInForm = ({ onForgotPassword, onChildSignup }: SignInFormProps)
           type="email"
           placeholder="your@example.com"
           required
+          autoComplete="email"
+          spellCheck={false}
           aria-describedby="signin-email-help"
         />
       </div>
@@ -117,6 +119,7 @@ export const SignInForm = ({ onForgotPassword, onChildSignup }: SignInFormProps)
           type="password"
           placeholder="Enter your password"
           required
+          autoComplete="current-password"
           aria-describedby="signin-password-help"
         />
       </div>

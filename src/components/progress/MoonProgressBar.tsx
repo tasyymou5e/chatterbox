@@ -53,7 +53,7 @@ export function MoonProgressBar({
         )}>
           <div
             className={cn(
-              'h-full rounded-full transition-all duration-500 ease-out',
+              'h-full rounded-full transition-[width] duration-500 ease-out',
               isCloseToMoon 
                 ? 'bg-gradient-to-r from-yellow-400 via-amber-400 to-amber-300' 
                 : 'bg-gradient-to-r from-yellow-500 to-yellow-400'
@@ -71,7 +71,7 @@ export function MoonProgressBar({
             <div
               key={i}
               className={cn(
-                'w-1.5 h-1.5 rounded-full transition-all duration-300',
+                'w-1.5 h-1.5 rounded-full transition-colors duration-300',
                 i < currentStars
                   ? 'bg-yellow-200 shadow-[0_0_4px_rgba(250,204,21,0.5)]'
                   : 'bg-muted-foreground/20'
@@ -91,7 +91,7 @@ export function MoonProgressBar({
         <Moon
           className={cn(
             moonSizes[size],
-            'relative z-10 transition-all duration-300',
+            'relative z-10 transition-colors duration-300',
             progress >= 100
               ? 'text-amber-300 fill-amber-300 drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]'
               : isCloseToMoon

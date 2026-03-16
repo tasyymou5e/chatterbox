@@ -63,7 +63,7 @@ export function StarProgressTracker({
       <div className="relative">
         <div
           className={cn(
-            'absolute inset-0 rounded-full blur-xl transition-all duration-500',
+            'absolute inset-0 rounded-full blur-xl transition-opacity duration-500',
             isCloseToMoon && animate && 'animate-moon-pulse'
           )}
           style={{
@@ -73,7 +73,7 @@ export function StarProgressTracker({
         />
         <Moon
           className={cn(
-            'h-16 w-16 relative z-10 transition-all duration-300',
+            'h-16 w-16 relative z-10 transition-colors duration-300',
             moonGlowIntensity > 50 ? 'text-amber-300 fill-amber-200' : 'text-muted-foreground/50'
           )}
         />
@@ -90,7 +90,7 @@ export function StarProgressTracker({
           <div
             key={star.id}
             className={cn(
-              'transition-all duration-300',
+              'transition-opacity duration-300',
               animate && star.isEarned && 'animate-star-twinkle',
               star.isNext && 'opacity-50'
             )}
@@ -100,7 +100,7 @@ export function StarProgressTracker({
           >
             <Star
               className={cn(
-                'h-6 w-6 transition-all duration-300',
+                'h-6 w-6 transition-colors duration-300',
                 star.isEarned 
                   ? 'text-yellow-400 fill-yellow-400 drop-shadow-[0_0_6px_rgba(250,204,21,0.5)]' 
                   : 'text-muted-foreground/30'

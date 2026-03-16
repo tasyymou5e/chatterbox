@@ -339,7 +339,7 @@ export function ParentResponseButton({
                     onClick={() => handleButtonClick(button)}
                     disabled={isLoading && activeButton !== button.id}
                     className={cn(
-                      'h-24 w-full flex flex-col items-center justify-center gap-2 text-white font-semibold transition-all',
+                      'h-24 w-full flex flex-col items-center justify-center gap-2 text-white font-semibold transition-[transform,box-shadow,opacity]',
                       button.color,
                       activeButton === button.id && 'ring-4 ring-primary ring-offset-2 scale-95',
                       isSpeaking && activeButton === button.id && 'animate-pulse'
@@ -359,7 +359,7 @@ export function ParentResponseButton({
                   <button
                     onClick={(e) => handleRecordingClick(button, e)}
                     className={cn(
-                      'absolute -top-2 -right-2 p-1.5 rounded-full transition-all shadow-md border-2 border-background',
+                      'absolute -top-2 -right-2 p-1.5 rounded-full transition-colors shadow-md border-2 border-background',
                       hasCustomRecording 
                         ? 'bg-green-500 text-white hover:bg-green-600' 
                         : 'bg-primary text-primary-foreground hover:bg-primary/90'
