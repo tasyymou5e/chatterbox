@@ -141,6 +141,7 @@ export function RunHistorySelector({
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8 shrink-0"
+                    aria-label="Delete test run"
                     onClick={(e) => {
                       e.stopPropagation();
                       onDeleteRun(run.id);

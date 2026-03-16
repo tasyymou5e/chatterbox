@@ -31,7 +31,7 @@ export const LogDetailPanel = ({ log, onClose, onCreateTicket }: LogDetailPanelP
           <Badge className={severityColor[log.severity] ?? 'bg-gray-600'}>
             {log.severity}
           </Badge>
-          <Button variant="ghost" size="icon" onClick={onClose} className="text-gray-400 hover:text-white">
+          <Button variant="ghost" size="icon" onClick={onClose} className="text-gray-400 hover:text-white" aria-label="Close log detail">
             <X className="h-4 w-4" />
           </Button>
         </div>

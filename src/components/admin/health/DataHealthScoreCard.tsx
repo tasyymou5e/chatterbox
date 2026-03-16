@@ -74,7 +74,7 @@ export function DataHealthScoreCard({ className }: DataHealthScoreCardProps) {
             size="icon"
             onClick={recalculateScore}
             disabled={calculating}
-            title="Recalculate score"
+            aria-label="Recalculate health score"
           >
             <RefreshCw className={cn('h-4 w-4', calculating && 'animate-spin')} />
           </Button>
