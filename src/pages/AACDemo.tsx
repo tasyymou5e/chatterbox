@@ -16,7 +16,7 @@ export default function AACDemo() {
       <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" asChild>
+            <Button variant="ghost" size="icon" asChild aria-label="Back to home">
               <Link to="/">
                 <ArrowLeft className="h-5 w-5" />
               </Link>
