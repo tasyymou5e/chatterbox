@@ -60,7 +60,7 @@ function GameCardComponent({
         'relative rounded-xl transition-[transform,box-shadow] focus:outline-none focus:ring-4 focus:ring-primary/50',
         sizeClasses[size],
         isDisabled && 'cursor-not-allowed opacity-50',
-        !isDisabled && !isMatched && 'cursor-pointer hover:scale-105 active:scale-95',
+        !isDisabled && !isMatched && 'cursor-pointer hover:scale-105 active:scale-95 motion-reduce:hover:scale-100',
         isPressed && 'scale-95',
         className
       )}

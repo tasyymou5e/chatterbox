@@ -98,7 +98,7 @@ export const Hero = ({ onChoosePortal, settings, loading = false }: HeroProps) =
           {features.map((feature, index) => (
             <Card 
               key={index} 
-              className="bg-gradient-card backdrop-blur-sm border-white/20 shadow-soft hover:shadow-medium transition-all duration-300 hover:scale-105"
+              className="bg-gradient-card backdrop-blur-sm border-white/20 shadow-soft hover:shadow-medium transition-[transform,box-shadow] duration-300 hover:scale-105 motion-reduce:hover:scale-100"
             >
               <div className="p-6 text-center">
                 <div className="bg-primary rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 shadow-soft">

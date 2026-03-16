@@ -160,7 +160,7 @@ export const RecurringChoreDialog: React.FC<RecurringChoreDialogProps> = ({
                     key={day.value}
                     onClick={() => toggleDay(day.value)}
                     className={cn(
-                      "w-10 h-10 rounded-full text-sm font-medium transition-all",
+                      "w-10 h-10 rounded-full text-sm font-medium transition-colors",
                       daysOfWeek.includes(day.value)
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted hover:bg-muted/80"

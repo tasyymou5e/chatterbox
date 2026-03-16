@@ -89,7 +89,7 @@ export const PortalSelection = () => {
           {portals.map((portal) => (
             <Card 
               key={portal.id}
-              className="relative overflow-hidden hover:shadow-large transition-all duration-300 hover:scale-105 border-2 hover:border-primary/20"
+              className="relative overflow-hidden hover:shadow-large transition-[transform,box-shadow,border-color] duration-300 hover:scale-105 motion-reduce:hover:scale-100 border-2 hover:border-primary/20"
             >
               {/* Header with gradient background */}
               <div className={`${portal.gradient} p-6 text-white relative`}>

@@ -249,7 +249,7 @@ export const ChoreVerificationDialog: React.FC<ChoreVerificationDialogProps> = (
                       <button
                         key={index}
                         onClick={() => setSelectedPhotoIndex(index)}
-                        className="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden border hover:ring-2 hover:ring-primary transition-all"
+                        className="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden border hover:ring-2 hover:ring-primary transition-[box-shadow]"
                       >
                         <img
                           src={url}

@@ -44,7 +44,7 @@ function ContentCardComponent({
   };
 
   return (
-    <Card className="group hover:shadow-lg transition-all duration-300 cursor-pointer bg-white border-2 hover:border-primary/20">
+    <Card className="group hover:shadow-lg transition-[box-shadow,border-color] duration-300 cursor-pointer bg-white border-2 hover:border-primary/20">
       <CardHeader className="p-0">
         <div 
           className="relative aspect-video bg-gradient-to-br from-blue-100 to-purple-100 rounded-t-lg overflow-hidden"
