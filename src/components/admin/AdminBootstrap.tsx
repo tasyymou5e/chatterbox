@@ -227,6 +227,8 @@ export const AdminBootstrap = () => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
+                  spellCheck={false}
                   className="bg-gray-700 border-gray-600 text-white"
                   placeholder="admin@your-domain.com"
                 />
