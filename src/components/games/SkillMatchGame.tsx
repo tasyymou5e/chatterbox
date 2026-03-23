@@ -2,7 +2,7 @@
  * SkillMatchGame - Domain-adaptive interactive game
  * Renders match, sort, or sequence challenges based on skill domain
  */
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { GameWrapper } from './shared/GameWrapper';
 import { playSound, prefersReducedMotion } from './shared/gameUtils';
