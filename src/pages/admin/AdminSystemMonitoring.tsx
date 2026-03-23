@@ -32,6 +32,7 @@ import {
 } from '@/components/admin/monitoring';
 import { ErrorPatternsAnalysis } from '@/components/admin/monitoring/ErrorPatternsAnalysis';
 import { EdgeFunctionHealthDashboard } from '@/components/admin/monitoring/EdgeFunctionHealthDashboard';
+import { DiagnosticsPanel } from '@/components/admin/monitoring/DiagnosticsPanel';
 import { AuthE2ETestCoverage } from '@/components/admin/testing';
 import type { SystemError } from '@/types/systemHealth';
 import { cLog } from '@/utils/wideLogger';
