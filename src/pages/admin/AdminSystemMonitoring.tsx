@@ -17,7 +17,8 @@ import {
   FileText,
   AlertTriangle,
   Zap,
-  TestTube2
+  TestTube2,
+  Stethoscope
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSystemMonitoring } from '@/hooks/useSystemMonitoring';
