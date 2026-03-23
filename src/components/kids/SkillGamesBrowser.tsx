@@ -157,11 +157,11 @@ function DomainGameCard({
         {/* Last score badge */}
         {score && (
           <div className="flex items-center gap-2 text-xs">
-            <Trophy className="h-3.5 w-3.5 text-amber-500" />
+            <Trophy className="h-3.5 w-3.5 text-accent-foreground" />
             <span className="text-muted-foreground">
               Last: <span className="font-semibold text-foreground">{score.lastScore}/{score.lastTotal}</span>
               {accuracy !== null && (
-                <span className={`ml-1 ${accuracy >= 80 ? 'text-green-600' : accuracy >= 50 ? 'text-amber-600' : 'text-red-500'}`}>
+                <span className={`ml-1 font-medium ${accuracy >= 80 ? 'text-primary' : accuracy >= 50 ? 'text-accent-foreground' : 'text-destructive'}`}>
                   ({accuracy}%)
                 </span>
               )}
