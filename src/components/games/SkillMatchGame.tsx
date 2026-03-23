@@ -1,8 +1,8 @@
 /**
  * SkillMatchGame - Domain-adaptive interactive game
- * Renders match, sort, or sequence challenges based on skill domain
+ * Renders match, sort, sequence, odd-one-out, or fill-blank challenges based on skill domain
  */
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef, type DragEvent, type TouchEvent as ReactTouchEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { GameWrapper } from './shared/GameWrapper';
 import { playSound, prefersReducedMotion } from './shared/gameUtils';
@@ -93,17 +93,14 @@ export function SkillMatchGame({
       if (soundEnabled) playSound('click');
       return;
     }
-    // Check if it's the same item
     if (selectedSymbol === symbolId) {
       setSelectedSymbol(null);
       return;
     }
-    // Pair selected: check match (in match mode items match themselves)
     const matched = selectedSymbol === symbolId;
     if (matched) {
       setMatchedPairs(prev => new Set(prev).add(symbolId));
     }
-    // For simplicity: any two taps counts as an attempt
     setSelectedSymbol(null);
   }, [selectedSymbol, feedback, soundEnabled]);
 
@@ -112,11 +109,12 @@ export function SkillMatchGame({
     if (feedback) return;
     setSortBuckets(prev => {
       const updated = { ...prev };
-      // Remove from other buckets
       Object.keys(updated).forEach(g => {
         updated[g] = (updated[g] || []).filter(id => id !== itemId);
       });
-      updated[group] = [...(updated[group] || []), itemId];
+      if (group) {
+        updated[group] = [...(updated[group] || []), itemId];
+      }
       return updated;
     });
     if (soundEnabled) playSound('click');
@@ -124,7 +122,6 @@ export function SkillMatchGame({
 
   const handleSortSubmit = useCallback(() => {
     if (feedback) return;
-    // Check if all items are correctly sorted
     let allCorrect = true;
     challenge.items.forEach(item => {
       const placedIn = Object.entries(sortBuckets).find(([, ids]) => ids.includes(item.id));
@@ -151,6 +148,18 @@ export function SkillMatchGame({
       showFeedback(isCorrect);
     }
   }, [feedback, sequenceOrder, challenge, soundEnabled, showFeedback]);
+
+  // ── Odd-one-out mode ──
+  const handleOddOneOutPick = useCallback((symbolId: string) => {
+    if (feedback) return;
+    showFeedback(challenge.correctAnswer.includes(symbolId));
+  }, [feedback, challenge, showFeedback]);
+
+  // ── Fill-blank mode ──
+  const handleFillBlankPick = useCallback((symbolId: string) => {
+    if (feedback) return;
+    showFeedback(challenge.correctAnswer.includes(symbolId));
+  }, [feedback, challenge, showFeedback]);
 
   const handleClose = useCallback(() => {
     onClose?.();
@@ -237,7 +246,7 @@ export function SkillMatchGame({
         )}
 
         {/* Game area */}
-        <div className="flex-1 flex flex-col items-center justify-center">
+        <div className="flex-1 flex flex-col items-center justify-center overflow-y-auto">
           {challenge.type === 'match' && (
             <MatchMode
               items={challenge.items}
@@ -268,6 +277,20 @@ export function SkillMatchGame({
               feedback={feedback}
             />
           )}
+          {challenge.type === 'odd_one_out' && (
+            <OddOneOutMode
+              items={challenge.items}
+              onPick={handleOddOneOutPick}
+              feedback={feedback}
+            />
+          )}
+          {challenge.type === 'fill_blank' && (
+            <FillBlankMode
+              challenge={challenge}
+              onPick={handleFillBlankPick}
+              feedback={feedback}
+            />
+          )}
         </div>
       </div>
     </GameWrapper>
@@ -287,7 +310,6 @@ function MatchMode({
   onCheck: (correct: boolean) => void;
   feedback: 'correct' | 'incorrect' | null;
 }) {
-  // Show symbols on left, labels on right — tap to match
   const [selected1, setSelected1] = useState<string | null>(null);
   const [selected2, setSelected2] = useState<string | null>(null);
   const [matched, setMatched] = useState<Set<string>>(new Set());
@@ -304,17 +326,13 @@ function MatchMode({
   const handleLeft = (id: string) => {
     if (feedback || matched.has(id)) return;
     setSelected1(id);
-    if (selected2) {
-      checkPair(id, selected2);
-    }
+    if (selected2) checkPair(id, selected2);
   };
 
   const handleRight = (id: string) => {
     if (feedback || matched.has(id)) return;
     setSelected2(id);
-    if (selected1) {
-      checkPair(selected1, id);
-    }
+    if (selected1) checkPair(selected1, id);
   };
 
   const checkPair = (leftId: string, rightId: string) => {
@@ -322,7 +340,6 @@ function MatchMode({
       setMatched(prev => new Set(prev).add(leftId));
       setSelected1(null);
       setSelected2(null);
-      // Check if all matched
       if (matched.size + 1 >= items.length) {
         onCheck(true);
       }
@@ -336,7 +353,6 @@ function MatchMode({
 
   return (
     <div className="flex gap-6 md:gap-10 w-full max-w-lg mx-auto">
-      {/* Symbols column */}
       <div className="flex-1 flex flex-col gap-3">
         {items.map(item => (
           <button
@@ -356,7 +372,6 @@ function MatchMode({
           </button>
         ))}
       </div>
-      {/* Labels column */}
       <div className="flex-1 flex flex-col gap-3">
         {shuffledLabels.map(item => (
           <button
@@ -380,7 +395,7 @@ function MatchMode({
   );
 }
 
-// ── Sort Sub-component ──
+// ── Sort Sub-component with HTML5 Drag & Drop + Touch fallback ──
 function SortMode({
   items,
   groups,
@@ -400,6 +415,9 @@ function SortMode({
   onSubmit: () => void;
   feedback: 'correct' | 'incorrect' | null;
 }) {
+  const [dragOverGroup, setDragOverGroup] = useState<string | null>(null);
+  const touchDragRef = useRef<{ id: string; el: HTMLElement | null }>({ id: '', el: null });
+
   const allPlaced = items.every(item =>
     Object.values(buckets).some(ids => ids.includes(item.id))
   );
@@ -408,9 +426,53 @@ function SortMode({
     item => !Object.values(buckets).some(ids => ids.includes(item.id))
   );
 
+  // HTML5 Drag handlers
+  const handleDragStart = (e: DragEvent<HTMLButtonElement>, id: string) => {
+    e.dataTransfer.setData('text/plain', id);
+    e.dataTransfer.effectAllowed = 'move';
+    onDragStart(id);
+  };
+
+  const handleDragEnd = () => {
+    onDragStart(null);
+    setDragOverGroup(null);
+  };
+
+  const handleDragOver = (e: DragEvent<HTMLButtonElement>, group: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverGroup(group);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverGroup(null);
+  };
+
+  const handleDropOnGroup = (e: DragEvent<HTMLButtonElement>, group: string) => {
+    e.preventDefault();
+    const itemId = e.dataTransfer.getData('text/plain');
+    if (itemId) {
+      onDrop(itemId, group);
+    }
+    onDragStart(null);
+    setDragOverGroup(null);
+  };
+
+  // Touch drag fallback — tap to select, tap bucket to place
+  const handleTouchItem = (id: string) => {
+    onDragStart(dragItem === id ? null : id);
+  };
+
+  const handleTouchBucket = (group: string) => {
+    if (dragItem) {
+      onDrop(dragItem, group);
+      onDragStart(null);
+    }
+  };
+
   return (
     <div className="w-full max-w-2xl mx-auto space-y-4">
-      {/* Unplaced items */}
+      {/* Unplaced items — draggable */}
       <div className="flex flex-wrap gap-2 justify-center min-h-[60px] p-3 rounded-xl bg-muted/50 border border-dashed border-border">
         {unplacedItems.length === 0 ? (
           <p className="text-sm text-muted-foreground self-center">All items sorted!</p>
@@ -418,13 +480,16 @@ function SortMode({
           unplacedItems.map(item => (
             <button
               key={item.id}
-              onClick={() => onDragStart(dragItem === item.id ? null : item.id)}
-              className={`flex items-center gap-2 px-4 py-3 rounded-xl border-2 text-base transition-colors cursor-pointer ${
+              draggable
+              onDragStart={(e) => handleDragStart(e, item.id)}
+              onDragEnd={handleDragEnd}
+              onClick={() => handleTouchItem(item.id)}
+              className={`flex items-center gap-2 px-4 py-3 rounded-xl border-2 text-base cursor-grab active:cursor-grabbing transition-transform ${
                 dragItem === item.id
-                  ? 'bg-primary/20 border-primary shadow-md scale-105'
-                  : 'bg-card border-border hover:border-primary/50'
+                  ? 'bg-primary/20 border-primary shadow-lg scale-105 ring-2 ring-primary/30'
+                  : 'bg-card border-border hover:border-primary/50 hover:shadow-md'
               }`}
-              aria-label={item.label}
+              aria-label={`Drag ${item.label}`}
             >
               <span className="text-2xl">{item.emoji}</span>
               <span className="font-medium">{item.label}</span>
@@ -433,27 +498,35 @@ function SortMode({
         )}
       </div>
 
-      {/* Group buckets */}
+      {/* Instruction hint */}
+      {unplacedItems.length > 0 && (
+        <p className="text-xs text-center text-muted-foreground">
+          Drag items below or tap an item then tap a group
+        </p>
+      )}
+
+      {/* Group buckets — drop targets */}
       <div className="grid grid-cols-2 gap-3">
         {groups.map(group => {
           const groupItems = items.filter(
             i => (buckets[group] || []).includes(i.id)
           );
+          const isOver = dragOverGroup === group;
           return (
             <button
               key={group}
-              onClick={() => {
-                if (dragItem) {
-                  onDrop(dragItem, group);
-                  onDragStart(null);
-                }
-              }}
+              onDragOver={(e) => handleDragOver(e, group)}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDropOnGroup(e, group)}
+              onClick={() => handleTouchBucket(group)}
               className={`p-4 rounded-xl border-2 min-h-[100px] text-left transition-colors ${
-                dragItem
+                isOver
+                  ? 'border-primary bg-primary/15 scale-[1.02] shadow-lg'
+                  : dragItem
                   ? 'border-primary/50 bg-primary/5 cursor-pointer hover:bg-primary/10'
                   : 'border-border bg-card'
               }`}
-              aria-label={`${group} category`}
+              aria-label={`${group} category drop zone`}
             >
               <p className="font-bold text-sm uppercase tracking-wide text-muted-foreground mb-2 capitalize">
                 {group}
@@ -462,17 +535,16 @@ function SortMode({
                 {groupItems.map(item => (
                   <span
                     key={item.id}
-                    className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-muted text-sm cursor-pointer"
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-muted text-sm cursor-pointer hover:bg-destructive/10"
                     onClick={(e) => {
                       e.stopPropagation();
-                      // Remove from bucket by selecting it again
                       onDragStart(item.id);
-                      onDrop(item.id, ''); // triggers removal
+                      onDrop(item.id, '');
                     }}
                     role="button"
                     aria-label={`Remove ${item.label} from ${group}`}
                   >
-                    {item.emoji} {item.label}
+                    {item.emoji} {item.label} ✕
                   </span>
                 ))}
               </div>
@@ -555,6 +627,148 @@ function SequenceMode({
             </button>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+// ── Odd-One-Out Sub-component ──
+function OddOneOutMode({
+  items,
+  onPick,
+  feedback,
+}: {
+  items: GameSymbol[];
+  onPick: (id: string) => void;
+  feedback: 'correct' | 'incorrect' | null;
+}) {
+  const [selected, setSelected] = useState<string | null>(null);
+
+  const handlePick = (id: string) => {
+    if (feedback) return;
+    setSelected(id);
+    onPick(id);
+  };
+
+  return (
+    <div className="w-full max-w-lg mx-auto space-y-4">
+      <div className="text-center mb-2">
+        <p className="text-sm text-muted-foreground">
+          One of these doesn't belong with the others. Tap it!
+        </p>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        {items.map(item => (
+          <button
+            key={item.id}
+            onClick={() => handlePick(item.id)}
+            disabled={!!feedback}
+            className={`flex flex-col items-center justify-center gap-2 p-6 rounded-2xl border-2 min-h-[120px] transition-colors ${
+              selected === item.id && feedback === 'correct'
+                ? 'bg-green-100 dark:bg-green-900/30 border-green-400 ring-2 ring-green-300'
+                : selected === item.id && feedback === 'incorrect'
+                ? 'bg-red-100 dark:bg-red-900/30 border-red-400 ring-2 ring-red-300'
+                : selected === item.id
+                ? 'bg-primary/20 border-primary ring-2 ring-primary/30'
+                : 'bg-card border-border hover:border-primary/50 hover:shadow-md'
+            }`}
+            aria-label={item.label}
+          >
+            <span className="text-5xl">{item.emoji}</span>
+            <span className="font-semibold text-base">{item.label}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Fill-in-the-Blank Sub-component ──
+function FillBlankMode({
+  challenge,
+  onPick,
+  feedback,
+}: {
+  challenge: GameChallenge;
+  onPick: (id: string) => void;
+  feedback: 'correct' | 'incorrect' | null;
+}) {
+  const [selected, setSelected] = useState<string | null>(null);
+
+  // Items before the blankIndex are the visible sequence; the rest are choices
+  const blankIdx = challenge.blankIndex ?? 1;
+  // The sequence items are all items except the choice options (last N items that are choices)
+  // From the generator: items = [...displayed (sequence without blank), ...choices]
+  // displayed.length = original sequence length - 1
+  // choices.length = 3 (1 correct + 2 distractors)
+  const choiceCount = 3;
+  const sequenceItems = challenge.items.slice(0, challenge.items.length - choiceCount);
+  const choices = challenge.items.slice(challenge.items.length - choiceCount);
+
+  const handlePick = (id: string) => {
+    if (feedback) return;
+    setSelected(id);
+    onPick(id);
+  };
+
+  return (
+    <div className="w-full max-w-lg mx-auto space-y-6">
+      {/* Sequence with blank */}
+      <div className="flex items-center justify-center gap-2 flex-wrap">
+        {sequenceItems.map((item, idx) => (
+          <div key={item.id} className="flex items-center gap-2">
+            {idx === blankIdx && (
+              <>
+                <div className="flex flex-col items-center justify-center w-16 h-16 rounded-2xl border-2 border-dashed border-primary bg-primary/5">
+                  <span className="text-2xl text-primary">?</span>
+                </div>
+                <span className="text-muted-foreground text-lg">→</span>
+              </>
+            )}
+            <div className="flex flex-col items-center justify-center w-16 h-16 rounded-2xl border-2 border-border bg-card">
+              <span className="text-2xl">{item.emoji}</span>
+            </div>
+            {idx < sequenceItems.length - 1 && idx !== blankIdx - 1 && (
+              <span className="text-muted-foreground text-lg">→</span>
+            )}
+          </div>
+        ))}
+        {/* If blank is at the end */}
+        {blankIdx >= sequenceItems.length && (
+          <>
+            <span className="text-muted-foreground text-lg">→</span>
+            <div className="flex flex-col items-center justify-center w-16 h-16 rounded-2xl border-2 border-dashed border-primary bg-primary/5">
+              <span className="text-2xl text-primary">?</span>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Choices */}
+      <div className="text-center mb-1">
+        <p className="text-sm text-muted-foreground font-medium">Pick the missing piece:</p>
+      </div>
+      <div className="flex gap-4 justify-center">
+        {choices.map(item => (
+          <button
+            key={item.id}
+            onClick={() => handlePick(item.id)}
+            disabled={!!feedback}
+            className={`flex flex-col items-center justify-center gap-2 p-5 rounded-2xl border-2 min-w-[100px] transition-colors ${
+              selected === item.id && feedback === 'correct'
+                ? 'bg-green-100 dark:bg-green-900/30 border-green-400 ring-2 ring-green-300'
+                : selected === item.id && feedback === 'incorrect'
+                ? 'bg-red-100 dark:bg-red-900/30 border-red-400 ring-2 ring-red-300'
+                : selected === item.id
+                ? 'bg-primary/20 border-primary ring-2 ring-primary/30'
+                : 'bg-card border-border hover:border-primary/50 hover:shadow-md'
+            }`}
+            aria-label={item.label}
+          >
+            <span className="text-4xl">{item.emoji}</span>
+            <span className="font-semibold text-sm">{item.label}</span>
+          </button>
+        ))}
       </div>
     </div>
   );
