@@ -169,7 +169,7 @@ const AdminSystemMonitoring = () => {
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="errors" className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="errors">Recent Errors</TabsTrigger>
           <TabsTrigger value="alerts">System Alerts</TabsTrigger>
           <TabsTrigger value="patterns">Error Patterns</TabsTrigger>
@@ -184,6 +184,10 @@ const AdminSystemMonitoring = () => {
           <TabsTrigger value="e2e-tests">
             <TestTube2 className="h-4 w-4 mr-2" />
             E2E Tests
+          </TabsTrigger>
+          <TabsTrigger value="diagnostics">
+            <Stethoscope className="h-4 w-4 mr-2" />
+            Diagnostics
           </TabsTrigger>
         </TabsList>
 
