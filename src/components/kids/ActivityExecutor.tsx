@@ -1,6 +1,7 @@
 /**
  * ActivityExecutor - Step-by-step guided activity view for kids
- * with AI pause/resume, visual timer, and progress tracking
+ * with AI pause/resume, visual timer, and progress tracking.
+ * For game-type items, renders the interactive SkillMatchGame instead.
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +12,7 @@ import { Play, SkipForward, CheckCircle, Coffee, ArrowRight } from 'lucide-react
 import { useActivitySession } from '@/hooks/useActivitySession';
 import { getDomainInfo, getItemTypeInfo } from '@/types/skillPlan';
 import type { CatalogItem } from '@/types/skillPlan';
+import { SkillMatchGame } from '@/components/games/SkillMatchGame';
 
 interface ActivityExecutorProps {
   catalogItem: CatalogItem;
