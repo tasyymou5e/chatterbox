@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Star, Play, CheckCircle, RotateCcw, ArrowRight } from 'lucide-react';
+import { Star, Play, CheckCircle, RotateCcw, ArrowRight, Gamepad2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { ActivityExecutor } from './ActivityExecutor';
