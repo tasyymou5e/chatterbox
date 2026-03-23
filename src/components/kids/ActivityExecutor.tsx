@@ -1,6 +1,7 @@
 /**
  * ActivityExecutor - Step-by-step guided activity view for kids
- * with AI pause/resume, visual timer, and progress tracking
+ * with AI pause/resume, visual timer, and progress tracking.
+ * For game-type items, renders the interactive SkillMatchGame instead.
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +12,7 @@ import { Play, SkipForward, CheckCircle, Coffee, ArrowRight } from 'lucide-react
 import { useActivitySession } from '@/hooks/useActivitySession';
 import { getDomainInfo, getItemTypeInfo } from '@/types/skillPlan';
 import type { CatalogItem } from '@/types/skillPlan';
+import { SkillMatchGame } from '@/components/games/SkillMatchGame';
 
 interface ActivityExecutorProps {
   catalogItem: CatalogItem;
@@ -21,6 +23,24 @@ interface ActivityExecutorProps {
 }
 
 export function ActivityExecutor({ catalogItem, planItemId, isIdle, onComplete, onClose }: ActivityExecutorProps) {
+  // If item_type is 'game', render interactive SkillMatchGame
+  if (catalogItem.item_type === 'game') {
+    return (
+      <SkillMatchGame
+        skillDomain={catalogItem.skill_domain}
+        difficulty={catalogItem.difficulty}
+        onComplete={(_score) => {
+          onComplete?.();
+        }}
+        onClose={onClose}
+      />
+    );
+  }
+
+  return <ActivityExecutorSteps catalogItem={catalogItem} planItemId={planItemId} isIdle={isIdle} onComplete={onComplete} onClose={onClose} />;
+}
+
+function ActivityExecutorSteps({ catalogItem, planItemId, isIdle, onComplete, onClose }: ActivityExecutorProps) {
   const { session, startSession, updateProgress, pauseSession, resumeSession, completeSession } = useActivitySession();
   const [timerSeconds, setTimerSeconds] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);

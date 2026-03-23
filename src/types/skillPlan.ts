@@ -21,6 +21,7 @@ export interface CatalogItem {
   step_by_step_instructions: StepInstruction[] | null;
   pause_checkpoint_enabled: boolean;
   max_duration_minutes: number | null;
+  game_mode?: 'match' | 'sort' | 'sequence' | null;
 }
 
 export interface StepInstruction {
