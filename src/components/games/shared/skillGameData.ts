@@ -13,11 +13,13 @@ export interface GameSymbol {
 }
 
 export interface GameChallenge {
-  type: 'match' | 'sort' | 'sequence';
+  type: 'match' | 'sort' | 'sequence' | 'odd_one_out' | 'fill_blank';
   prompt: string;
   items: GameSymbol[];
-  correctAnswer: string[]; // ordered IDs for sequence, group names for sort, pair IDs for match
+  correctAnswer: string[]; // ordered IDs for sequence, group names for sort, correct ID for odd_one_out/fill_blank
   pairs?: { symbolId: string; targetId: string }[];
+  /** For fill_blank: the visible partial sequence with one blank */
+  blankIndex?: number;
 }
 
 export interface DomainGameConfig {
@@ -164,14 +166,13 @@ function generateSortChallenge(symbols: GameSymbol[], groupCount: number): GameC
   const filtered = symbols.filter(s => groups.includes(s.group));
   return {
     type: 'sort',
-    prompt: 'Sort these into the right groups!',
+    prompt: 'Drag items into the right groups!',
     items: shuffleArray(filtered),
     correctAnswer: groups as string[],
   };
 }
 
 function generateSequenceChallenge(symbols: GameSymbol[], length: number): GameChallenge {
-  // Pick symbols that have numeric ordering in their labels
   const ordered = symbols.slice(0, length);
   return {
     type: 'sequence',
@@ -179,6 +180,77 @@ function generateSequenceChallenge(symbols: GameSymbol[], length: number): GameC
     items: shuffleArray(ordered),
     correctAnswer: ordered.map(s => s.id),
   };
+}
+
+/**
+ * Odd-one-out: show N items from the same group + 1 from a different group.
+ * Player must find the one that doesn't belong.
+ */
+function generateOddOneOutChallenge(symbols: GameSymbol[], size: number): GameChallenge {
+  const groups = [...new Set(symbols.map(s => s.group).filter(Boolean))];
+  if (groups.length < 2) return generateMatchChallenge(symbols, size);
+
+  const mainGroup = groups[Math.floor(Math.random() * groups.length)];
+  const otherGroups = groups.filter(g => g !== mainGroup);
+  const oddGroup = otherGroups[Math.floor(Math.random() * otherGroups.length)];
+
+  const mainItems = shuffleArray(symbols.filter(s => s.group === mainGroup)).slice(0, size - 1);
+  const oddItem = shuffleArray(symbols.filter(s => s.group === oddGroup))[0];
+
+  if (!oddItem || mainItems.length < size - 1) {
+    return generateMatchChallenge(symbols, size);
+  }
+
+  const items = shuffleArray([...mainItems, oddItem]);
+  return {
+    type: 'odd_one_out',
+    prompt: `Find the one that doesn't belong!`,
+    items,
+    correctAnswer: [oddItem.id],
+  };
+}
+
+/**
+ * Fill-in-the-blank: show an ordered sequence with one item missing.
+ * Player picks the correct missing item from choices.
+ */
+function generateFillBlankChallenge(symbols: GameSymbol[], length: number): GameChallenge {
+  const ordered = symbols.slice(0, Math.min(length + 1, symbols.length));
+  if (ordered.length < 3) return generateMatchChallenge(symbols, 3);
+
+  const blankIdx = 1 + Math.floor(Math.random() * (ordered.length - 2)); // never first or last
+  const missing = ordered[blankIdx];
+  const displayed = ordered.filter((_, i) => i !== blankIdx);
+
+  // Build choices: the correct one + 2 distractors from outside this set
+  const distractors = shuffleArray(
+    symbols.filter(s => !ordered.some(o => o.id === s.id))
+  ).slice(0, 2);
+  const choices = shuffleArray([missing, ...distractors]);
+
+  return {
+    type: 'fill_blank',
+    prompt: 'Which one is missing from the sequence?',
+    items: [...displayed, ...choices], // first `displayed.length` are the sequence, rest are choices
+    correctAnswer: [missing.id],
+    blankIndex: blankIdx,
+  };
+}
+
+// ── Weighted random challenge picker ──
+type ChallengeType = 'match' | 'sort' | 'sequence' | 'odd_one_out' | 'fill_blank';
+
+function pickWeightedMode(
+  weights: Partial<Record<ChallengeType, number>>
+): ChallengeType {
+  const entries = Object.entries(weights) as [ChallengeType, number][];
+  const total = entries.reduce((sum, [, w]) => sum + w, 0);
+  let r = Math.random() * total;
+  for (const [mode, weight] of entries) {
+    r -= weight;
+    if (r <= 0) return mode;
+  }
+  return entries[0][0];
 }
 
 // ── Domain configs ──
@@ -191,7 +263,12 @@ export const DOMAIN_GAME_CONFIGS: Record<string, DomainGameConfig> = {
     accentClass: 'text-blue-600 dark:text-blue-400',
     description: 'Match words to their meanings!',
     symbols: communicationSymbols,
-    generateChallenge: (diff) => generateMatchChallenge(communicationSymbols, 3 + diff),
+    generateChallenge: (diff) => {
+      const mode = pickWeightedMode({ match: 3, odd_one_out: 2, fill_blank: 1 });
+      if (mode === 'odd_one_out') return generateOddOneOutChallenge(communicationSymbols, 4 + diff);
+      if (mode === 'fill_blank') return generateFillBlankChallenge(communicationSymbols, 4 + diff);
+      return generateMatchChallenge(communicationSymbols, 3 + diff);
+    },
   },
   social: {
     domain: 'social',
@@ -200,7 +277,11 @@ export const DOMAIN_GAME_CONFIGS: Record<string, DomainGameConfig> = {
     accentClass: 'text-purple-600 dark:text-purple-400',
     description: 'Sort emotions into groups!',
     symbols: socialSymbols,
-    generateChallenge: (diff) => generateSortChallenge(socialSymbols, 2 + Math.min(diff, 1)),
+    generateChallenge: (diff) => {
+      const mode = pickWeightedMode({ sort: 3, odd_one_out: 2 });
+      if (mode === 'odd_one_out') return generateOddOneOutChallenge(socialSymbols, 4 + diff);
+      return generateSortChallenge(socialSymbols, 2 + Math.min(diff, 1));
+    },
   },
   sensory: {
     domain: 'sensory',
@@ -209,7 +290,11 @@ export const DOMAIN_GAME_CONFIGS: Record<string, DomainGameConfig> = {
     accentClass: 'text-yellow-600 dark:text-yellow-400',
     description: 'Sort senses into categories!',
     symbols: sensorySymbols,
-    generateChallenge: (diff) => generateSortChallenge(sensorySymbols, 2 + Math.min(diff, 2)),
+    generateChallenge: (diff) => {
+      const mode = pickWeightedMode({ sort: 3, odd_one_out: 2 });
+      if (mode === 'odd_one_out') return generateOddOneOutChallenge(sensorySymbols, 4 + diff);
+      return generateSortChallenge(sensorySymbols, 2 + Math.min(diff, 2));
+    },
   },
   executive_function: {
     domain: 'executive_function',
@@ -218,10 +303,19 @@ export const DOMAIN_GAME_CONFIGS: Record<string, DomainGameConfig> = {
     accentClass: 'text-indigo-600 dark:text-indigo-400',
     description: 'Put the steps in the right order!',
     symbols: execFunctionSymbols,
-    generateChallenge: (diff) => generateSequenceChallenge(
-      execFunctionSymbols.filter(s => s.group === 'morning'),
-      3 + diff
-    ),
+    generateChallenge: (diff) => {
+      const mode = pickWeightedMode({ sequence: 3, fill_blank: 2 });
+      if (mode === 'fill_blank') {
+        return generateFillBlankChallenge(
+          execFunctionSymbols.filter(s => s.group === 'morning'),
+          4 + diff
+        );
+      }
+      return generateSequenceChallenge(
+        execFunctionSymbols.filter(s => s.group === 'morning'),
+        3 + diff
+      );
+    },
   },
   daily_living: {
     domain: 'daily_living',
@@ -230,7 +324,11 @@ export const DOMAIN_GAME_CONFIGS: Record<string, DomainGameConfig> = {
     accentClass: 'text-green-600 dark:text-green-400',
     description: 'Sort items into rooms!',
     symbols: dailyLivingSymbols,
-    generateChallenge: (diff) => generateSortChallenge(dailyLivingSymbols, 2 + Math.min(diff, 2)),
+    generateChallenge: (diff) => {
+      const mode = pickWeightedMode({ sort: 3, odd_one_out: 2 });
+      if (mode === 'odd_one_out') return generateOddOneOutChallenge(dailyLivingSymbols, 4 + diff);
+      return generateSortChallenge(dailyLivingSymbols, 2 + Math.min(diff, 2));
+    },
   },
   emotional_regulation: {
     domain: 'emotional_regulation',
@@ -239,7 +337,12 @@ export const DOMAIN_GAME_CONFIGS: Record<string, DomainGameConfig> = {
     accentClass: 'text-pink-600 dark:text-pink-400',
     description: 'Match feelings to their intensity!',
     symbols: emotionalSymbols,
-    generateChallenge: (diff) => generateSortChallenge(emotionalSymbols, 2 + Math.min(diff, 2)),
+    generateChallenge: (diff) => {
+      const mode = pickWeightedMode({ sort: 2, odd_one_out: 2, fill_blank: 1 });
+      if (mode === 'odd_one_out') return generateOddOneOutChallenge(emotionalSymbols, 4 + diff);
+      if (mode === 'fill_blank') return generateFillBlankChallenge(emotionalSymbols, 4 + diff);
+      return generateSortChallenge(emotionalSymbols, 2 + Math.min(diff, 2));
+    },
   },
   motor_skills: {
     domain: 'motor_skills',
@@ -248,7 +351,11 @@ export const DOMAIN_GAME_CONFIGS: Record<string, DomainGameConfig> = {
     accentClass: 'text-orange-600 dark:text-orange-400',
     description: 'Match actions to body parts!',
     symbols: motorSymbols,
-    generateChallenge: (diff) => generateMatchChallenge(motorSymbols, 3 + diff),
+    generateChallenge: (diff) => {
+      const mode = pickWeightedMode({ match: 3, odd_one_out: 2 });
+      if (mode === 'odd_one_out') return generateOddOneOutChallenge(motorSymbols, 4 + diff);
+      return generateMatchChallenge(motorSymbols, 3 + diff);
+    },
   },
   academic: {
     domain: 'academic',
@@ -257,7 +364,12 @@ export const DOMAIN_GAME_CONFIGS: Record<string, DomainGameConfig> = {
     accentClass: 'text-teal-600 dark:text-teal-400',
     description: 'Sort letters, numbers, and shapes!',
     symbols: academicSymbols,
-    generateChallenge: (diff) => generateSortChallenge(academicSymbols, 2 + Math.min(diff, 2)),
+    generateChallenge: (diff) => {
+      const mode = pickWeightedMode({ sort: 2, odd_one_out: 2, fill_blank: 1 });
+      if (mode === 'odd_one_out') return generateOddOneOutChallenge(academicSymbols, 4 + diff);
+      if (mode === 'fill_blank') return generateFillBlankChallenge(academicSymbols, 4 + diff);
+      return generateSortChallenge(academicSymbols, 2 + Math.min(diff, 2));
+    },
   },
 };
 
