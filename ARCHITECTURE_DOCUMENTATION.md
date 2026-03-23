@@ -407,10 +407,60 @@ export const useAnalyticsWithSession = () => {
 
 ---
 
-**Documentation Version**: 3.2  
-**Last Updated**: 2025-09-22  
-**Project**: Chatterbox (formerly Spectrum Harmony)  
-**Database Tables**: 59 with comprehensive security  
-**Zustand Stores**: 12 with optimal performance  
+## Error Tracking & Diagnostics Architecture
+
+### Comprehensive Error Capture Flow
+
+```
+Browser Events ──────────────────────────────┐
+  ├─ window.onerror (JS errors)              │
+  ├─ window.onunhandledrejection             │
+  ├─ console.error intercept                 │
+  ├─ console.warn intercept                  │
+  ├─ fetch interceptor (5xx errors)          │
+  └─ Vite HMR errors (dev only)             │
+         │                                   │
+         ▼                                   │
+  useAutoErrorLogging ──► useErrorTracking    │
+         │                     │             │
+         │            Circuit Breaker        │
+         │            (5 calls/10s max)      │
+         │                     │             │
+         ▼                     ▼             │
+  error-collector (Edge Function)            │
+         │                                   │
+         ▼                                   │
+  system_errors table (Supabase)             │
+         │                                   │
+         ▼                                   │
+  Admin System Monitoring Dashboard          │
+  ├─ Errors tab: recent errors + resolution  │
+  ├─ Alerts tab: system alert management     │
+  ├─ Patterns tab: error pattern analysis    │
+  ├─ Edge Functions tab: health & SLA        │
+  ├─ Logs tab: database & system logs        │
+  ├─ E2E Tests tab: test coverage matrix     │
+  └─ Diagnostics tab:                        │
+       ├─ Safety check runner                │
+       ├─ Vitest suite trigger               │
+       ├─ Error log analysis (charts)        │
+       ├─ Test suggestions (static+dynamic)  │
+       └─ Run history (test_run_results)     │
+```
+
+### Key Tables
+- `system_errors`: All tracked errors with severity, component, stack trace
+- `error_patterns`: Aggregated error patterns with occurrence counts
+- `test_run_results`: Test execution history (vitest, security)
+- `edge_function_health_logs`: Edge function monitoring data
+- `edge_function_uptime_daily`: SLA tracking
+
+---
+
+**Documentation Version**: 3.3  
+**Last Updated**: 2026-03-23  
+**Project**: Chatterbox  
+**Database Tables**: 60+ with comprehensive security  
+**Zustand Stores**: 13 with optimal performance  
 **Security Grade**: A- (Excellent)  
 **Maintained By**: Development Team

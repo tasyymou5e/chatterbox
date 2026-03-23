@@ -5,3 +5,6 @@ export { SystemErrorsPanel } from './SystemErrorsPanel';
 export { SystemAlertsPanel } from './SystemAlertsPanel';
 export { ErrorDetailModal } from './ErrorDetailModal';
 export { CircuitBreakerAlert } from './CircuitBreakerAlert';
+export { DiagnosticsPanel } from './DiagnosticsPanel';
+export { ErrorLogAnalysis } from './ErrorLogAnalysis';
+export { TestSuggestionsPanel } from './TestSuggestionsPanel';

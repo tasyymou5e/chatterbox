@@ -4098,6 +4098,45 @@ export type Database = {
         }
         Relationships: []
       }
+      test_run_results: {
+        Row: {
+          created_at: string | null
+          duration_ms: number | null
+          failed: number | null
+          id: string
+          passed: number | null
+          results: Json | null
+          run_type: string
+          skipped: number | null
+          total_tests: number | null
+          triggered_by: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          duration_ms?: number | null
+          failed?: number | null
+          id?: string
+          passed?: number | null
+          results?: Json | null
+          run_type: string
+          skipped?: number | null
+          total_tests?: number | null
+          triggered_by?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          duration_ms?: number | null
+          failed?: number | null
+          id?: string
+          passed?: number | null
+          results?: Json | null
+          run_type?: string
+          skipped?: number | null
+          total_tests?: number | null
+          triggered_by?: string | null
+        }
+        Relationships: []
+      }
       user_achievements: {
         Row: {
           achievement_id: string | null
