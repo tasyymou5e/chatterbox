@@ -119,7 +119,7 @@ export const TestSuggestionsPanel = ({ errorComponents = [] }: TestSuggestionsPa
                   {s.command}
                 </code>
                 <Button variant="ghost" size="sm" onClick={() => copyCommand(s.command, i)}>
-                  {copiedIndex === i ? <CheckCircle2 className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
+                  {copiedIndex === i ? <CheckCircle2 className="h-3 w-3 text-primary" /> : <Copy className="h-3 w-3" />}
                 </Button>
               </div>
             </CardContent>

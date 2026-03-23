@@ -222,6 +222,10 @@ const AdminSystemMonitoring = () => {
         <TabsContent value="e2e-tests">
           <AuthE2ETestCoverage />
         </TabsContent>
+
+        <TabsContent value="diagnostics">
+          <DiagnosticsPanel />
+        </TabsContent>
       </Tabs>
 
       {/* Error Detail Modal */}

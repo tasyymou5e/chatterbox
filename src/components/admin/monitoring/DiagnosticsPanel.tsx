@@ -155,7 +155,7 @@ export const DiagnosticsPanel = () => {
           </div>
           <div className="grid grid-cols-4 gap-2 text-xs text-muted-foreground">
             <div>Total: {result.total_tests}</div>
-            <div className="text-green-600">Passed: {result.passed}</div>
+            <div className="text-primary">Passed: {result.passed}</div>
             <div className="text-destructive">Failed: {result.failed}</div>
             <div>Duration: {(result.duration_ms / 1000).toFixed(1)}s</div>
           </div>
