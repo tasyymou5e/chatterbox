@@ -244,6 +244,102 @@ const academicSymbols: GameSymbol[] = [
   { id: 'yellow', emoji: '🟡', label: 'Yellow', group: 'color' },
 ];
 
+// ── Speech Therapy ──
+const speechTherapySymbols: GameSymbol[] = [
+  { id: 'lips_round', emoji: '👄', label: 'Round Lips', group: 'mouth_shape' },
+  { id: 'lips_wide', emoji: '😁', label: 'Wide Smile', group: 'mouth_shape' },
+  { id: 'tongue_out', emoji: '😛', label: 'Tongue Out', group: 'mouth_shape' },
+  { id: 'tongue_up', emoji: '😋', label: 'Tongue Up', group: 'mouth_shape' },
+  { id: 'blow', emoji: '💨', label: 'Blow Air', group: 'mouth_shape' },
+  { id: 'vowel_a', emoji: '🗣️', label: 'Sound "Aah"', group: 'sound_type' },
+  { id: 'vowel_e', emoji: '😃', label: 'Sound "Eee"', group: 'sound_type' },
+  { id: 'vowel_o', emoji: '😮', label: 'Sound "Ooo"', group: 'sound_type' },
+  { id: 'consonant_b', emoji: '🅱️', label: 'Sound "Buh"', group: 'sound_type' },
+  { id: 'consonant_m', emoji: 'Ⓜ️', label: 'Sound "Mmm"', group: 'sound_type' },
+  { id: 'word_cat', emoji: '🐱', label: 'Say "Cat"', group: 'word_practice' },
+  { id: 'word_dog', emoji: '🐕', label: 'Say "Dog"', group: 'word_practice' },
+  { id: 'word_ball', emoji: '⚽', label: 'Say "Ball"', group: 'word_practice' },
+  { id: 'word_sun', emoji: '☀️', label: 'Say "Sun"', group: 'word_practice' },
+  { id: 'word_hat', emoji: '🎩', label: 'Say "Hat"', group: 'word_practice' },
+  { id: 'rhyme_cat_hat', emoji: '🎶', label: 'Cat-Hat Rhyme', group: 'articulation' },
+  { id: 'rhyme_dog_log', emoji: '🪵', label: 'Dog-Log Rhyme', group: 'articulation' },
+  { id: 'rhyme_sun_fun', emoji: '🎉', label: 'Sun-Fun Rhyme', group: 'articulation' },
+  { id: 'syllable_clap', emoji: '👏', label: 'Clap Syllables', group: 'articulation' },
+  { id: 'slow_speech', emoji: '🐢', label: 'Speak Slowly', group: 'articulation' },
+];
+
+// ── Storytelling ──
+const storytellingSymbols: GameSymbol[] = [
+  { id: 'hero', emoji: '🦸', label: 'Hero', group: 'character' },
+  { id: 'princess', emoji: '👸', label: 'Princess', group: 'character' },
+  { id: 'wizard', emoji: '🧙', label: 'Wizard', group: 'character' },
+  { id: 'dragon', emoji: '🐉', label: 'Dragon', group: 'character' },
+  { id: 'robot', emoji: '🤖', label: 'Robot', group: 'character' },
+  { id: 'castle', emoji: '🏰', label: 'Castle', group: 'setting' },
+  { id: 'forest', emoji: '🌲', label: 'Forest', group: 'setting' },
+  { id: 'ocean', emoji: '🌊', label: 'Ocean', group: 'setting' },
+  { id: 'space', emoji: '🚀', label: 'Space', group: 'setting' },
+  { id: 'village', emoji: '🏘️', label: 'Village', group: 'setting' },
+  { id: 'running', emoji: '🏃', label: 'Running', group: 'action' },
+  { id: 'finding', emoji: '🔍', label: 'Finding', group: 'action' },
+  { id: 'helping', emoji: '🤝', label: 'Helping', group: 'action' },
+  { id: 'flying', emoji: '✈️', label: 'Flying', group: 'action' },
+  { id: 'magic_wand', emoji: '🪄', label: 'Magic Wand', group: 'object' },
+  { id: 'treasure', emoji: '💎', label: 'Treasure', group: 'object' },
+  { id: 'map', emoji: '🗺️', label: 'Map', group: 'object' },
+  { id: 'key', emoji: '🔑', label: 'Key', group: 'object' },
+  { id: 'book_story', emoji: '📖', label: 'Story Book', group: 'object' },
+  { id: 'crown', emoji: '👑', label: 'Crown', group: 'object' },
+];
+
+// ── Educational Learning ──
+const educationalSymbols: GameSymbol[] = [
+  { id: 'letter_d', emoji: '🇩', label: 'Letter D', group: 'alphabet' },
+  { id: 'letter_e', emoji: '🇪', label: 'Letter E', group: 'alphabet' },
+  { id: 'letter_f', emoji: '🇫', label: 'Letter F', group: 'alphabet' },
+  { id: 'letter_g', emoji: '🇬', label: 'Letter G', group: 'alphabet' },
+  { id: 'letter_h', emoji: '🇭', label: 'Letter H', group: 'alphabet' },
+  { id: 'num_six', emoji: '6️⃣', label: 'Number 6', group: 'counting' },
+  { id: 'num_seven', emoji: '7️⃣', label: 'Number 7', group: 'counting' },
+  { id: 'num_eight', emoji: '8️⃣', label: 'Number 8', group: 'counting' },
+  { id: 'num_nine', emoji: '9️⃣', label: 'Number 9', group: 'counting' },
+  { id: 'num_ten', emoji: '🔟', label: 'Number 10', group: 'counting' },
+  { id: 'planet', emoji: '🪐', label: 'Planet', group: 'science' },
+  { id: 'microscope', emoji: '🔬', label: 'Microscope', group: 'science' },
+  { id: 'magnet', emoji: '🧲', label: 'Magnet', group: 'science' },
+  { id: 'weather_sun', emoji: '☀️', label: 'Sunny', group: 'science' },
+  { id: 'weather_rain', emoji: '🌧️', label: 'Rainy', group: 'science' },
+  { id: 'reading_book', emoji: '📚', label: 'Books', group: 'reading' },
+  { id: 'pencil', emoji: '✏️', label: 'Pencil', group: 'reading' },
+  { id: 'notebook', emoji: '📓', label: 'Notebook', group: 'reading' },
+  { id: 'magnifying', emoji: '🔎', label: 'Magnifying Glass', group: 'reading' },
+  { id: 'globe', emoji: '🌍', label: 'Globe', group: 'science' },
+];
+
+// ── Cognitive Development ──
+const cognitiveSymbols: GameSymbol[] = [
+  { id: 'brain', emoji: '🧠', label: 'Brain', group: 'memory' },
+  { id: 'think', emoji: '🤔', label: 'Think', group: 'memory' },
+  { id: 'remember', emoji: '💭', label: 'Remember', group: 'memory' },
+  { id: 'idea', emoji: '💡', label: 'Idea', group: 'memory' },
+  { id: 'question', emoji: '❓', label: 'Question', group: 'memory' },
+  { id: 'focus_eye', emoji: '👁️', label: 'Focus', group: 'attention' },
+  { id: 'target', emoji: '🎯', label: 'Target', group: 'attention' },
+  { id: 'hourglass', emoji: '⏳', label: 'Timer', group: 'attention' },
+  { id: 'magnifier', emoji: '🔍', label: 'Search', group: 'attention' },
+  { id: 'binoculars', emoji: '🔭', label: 'Observe', group: 'attention' },
+  { id: 'puzzle_piece', emoji: '🧩', label: 'Puzzle', group: 'logic' },
+  { id: 'gear', emoji: '⚙️', label: 'Gear', group: 'logic' },
+  { id: 'chain', emoji: '🔗', label: 'Connect', group: 'logic' },
+  { id: 'scale', emoji: '⚖️', label: 'Balance', group: 'logic' },
+  { id: 'chess', emoji: '♟️', label: 'Strategy', group: 'logic' },
+  { id: 'maze', emoji: '🌀', label: 'Maze', group: 'problem_solving' },
+  { id: 'key_solve', emoji: '🗝️', label: 'Solve', group: 'problem_solving' },
+  { id: 'lightbulb', emoji: '🔦', label: 'Discover', group: 'problem_solving' },
+  { id: 'map_solve', emoji: '🧭', label: 'Navigate', group: 'problem_solving' },
+  { id: 'trophy_solve', emoji: '🏆', label: 'Achieve', group: 'problem_solving' },
+];
+
 // ── Challenge generators ──
 
 function generateMatchChallenge(symbols: GameSymbol[], count: number): GameChallenge {
