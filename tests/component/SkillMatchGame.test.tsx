@@ -3,8 +3,8 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { SkillMatchGame } from '@/components/games/SkillMatchGame';
 
 // Mock gameUtils audio
-vi.mock('./shared/gameUtils', async () => {
-  const actual = await vi.importActual('./shared/gameUtils');
+vi.mock('@/components/games/shared/gameUtils', async () => {
+  const actual = await vi.importActual('@/components/games/shared/gameUtils');
   return {
     ...actual,
     playSound: vi.fn(),
