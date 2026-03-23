@@ -380,8 +380,46 @@ SELECT * FROM profiles; -- Should only return user's own profile
 
 ---
 
-**Last Updated**: 2025-09-22  
-**Version**: 2.0  
-**Next Review**: 2025-12-22  
-**Database Tables**: 59 with comprehensive monitoring  
-**Zustand Stores**: 12 with enhanced debugging
+## Diagnostics-Based Troubleshooting
+
+### Using the Admin Diagnostics Panel
+
+**Route:** `/admin/system-monitoring` → **Diagnostics** tab
+
+#### Step 1: Run Safety Checks
+Click **Run Safety Checks** to invoke the `security-testing` edge function. This validates RLS policies, authentication flows, and security configurations. Review pass/fail results inline.
+
+#### Step 2: Run Vitest Validation
+Click **Run Vitest** to execute database connectivity and table accessibility checks. For full unit test suite, copy the provided CLI command and run locally.
+
+#### Step 3: Analyze Error Logs
+Switch to the **Error Analysis** sub-tab to view:
+- Top error-producing components (identify hotspots)
+- Error frequency trends (detect regressions)
+- Unresolved error backlog (prioritize fixes)
+
+#### Step 4: Review Test Suggestions
+The **Test Suggestions** sub-tab provides:
+- **Dynamic suggestions** based on components with most unresolved errors
+- **Static recommendations** for RLS, auth, accessibility, performance, and data integrity tests
+- Copy-able CLI commands for each test suite
+
+#### Step 5: Check Run History
+The **Run History** sub-tab shows the last 10 test executions with pass/fail counts and duration, stored in the `test_run_results` table.
+
+### Error Capture Coverage
+
+All error sources are now tracked via `useAutoErrorLogging`:
+- JavaScript errors and unhandled promise rejections
+- `console.error()` and `console.warn()` calls (with loop prevention)
+- Network errors (5xx responses)
+- Vite HMR/build errors (development mode)
+
+All errors flow to `system_errors` table via the `error-collector` edge function with circuit breaker protection (max 5 reports per 10 seconds).
+
+---
+
+**Last Updated**: 2026-03-23  
+**Version**: 3.0  
+**Database Tables**: 60+ with comprehensive monitoring  
+**Zustand Stores**: 13 with enhanced debugging
