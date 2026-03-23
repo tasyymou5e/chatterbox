@@ -37,7 +37,7 @@ const DOMAIN_EMOJIS: Record<string, string> = {
   academic: '📚',
 };
 
-export function SkillGamesBrowser({ isIdle }: { isIdle?: boolean }) {
+export function SkillGamesBrowser() {
   const { user } = useAuth();
   const { familyId } = useChildProfile(user?.id);
   const [selectedDifficulty, setSelectedDifficulty] = useState<Record<string, Difficulty>>({});
