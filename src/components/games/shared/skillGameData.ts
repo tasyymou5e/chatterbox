@@ -1533,6 +1533,47 @@ export const STANDALONE_GAMES: StandaloneGameEntry[] = [
     accentClass: 'text-orange-700 dark:text-orange-300',
     gameType: 'sounds',
   },
+  // ── New standalone games for new domains ──
+  {
+    id: 'bonus-memory-storytelling',
+    domain: 'storytelling',
+    label: 'Story Memory',
+    description: 'Flip cards to match story element pairs!',
+    emoji: '📖',
+    bgClass: 'bg-amber-100 dark:bg-amber-900/30',
+    accentClass: 'text-amber-700 dark:text-amber-300',
+    gameType: 'memory',
+  },
+  {
+    id: 'bonus-pattern-speech',
+    domain: 'speech_therapy',
+    label: 'Speech Sounds Pattern',
+    description: 'Spot patterns in speech sounds!',
+    emoji: '🗣️',
+    bgClass: 'bg-rose-100 dark:bg-rose-900/30',
+    accentClass: 'text-rose-700 dark:text-rose-300',
+    gameType: 'pattern',
+  },
+  {
+    id: 'bonus-memory-cognitive',
+    domain: 'cognitive_development',
+    label: 'Cognitive Memory',
+    description: 'Train your memory with card pairs!',
+    emoji: '🧠',
+    bgClass: 'bg-violet-100 dark:bg-violet-900/30',
+    accentClass: 'text-violet-700 dark:text-violet-300',
+    gameType: 'memory',
+  },
+  {
+    id: 'bonus-pattern-educational',
+    domain: 'educational_learning',
+    label: 'Learning Patterns',
+    description: 'Find patterns in letters & numbers!',
+    emoji: '🎓',
+    bgClass: 'bg-emerald-100 dark:bg-emerald-900/30',
+    accentClass: 'text-emerald-700 dark:text-emerald-300',
+    gameType: 'pattern',
+  },
 ];
 
 /** Get all games (variants + standalone) grouped by domain */
