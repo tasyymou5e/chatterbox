@@ -16,6 +16,8 @@ import {
 interface SkillMatchGameProps {
   skillDomain: string;
   difficulty?: string;
+  /** Optional pre-built config (for game variants). Falls back to domain default. */
+  gameConfig?: import('./shared/skillGameData').DomainGameConfig;
   onComplete?: (score: number, total: number) => void;
   onClose?: () => void;
 }
@@ -23,10 +25,11 @@ interface SkillMatchGameProps {
 export function SkillMatchGame({
   skillDomain,
   difficulty = 'easy',
+  gameConfig,
   onComplete,
   onClose,
 }: SkillMatchGameProps) {
-  const config = useMemo(() => getDomainGameConfig(skillDomain), [skillDomain]);
+  const config = useMemo(() => gameConfig || getDomainGameConfig(skillDomain), [gameConfig, skillDomain]);
   const totalRounds = useMemo(() => getRoundCount(difficulty), [difficulty]);
   const difficultyLevel = difficulty === 'hard' ? 2 : difficulty === 'medium' ? 1 : 0;
 

@@ -45,7 +45,7 @@ const DOMAIN_LABELS: Record<string, { label: string; emoji: string }> = {
 
 export function SkillGamesBrowser() {
   const { user } = useAuth();
-  const { familyId } = useChildProfile(user?.id);
+  const { familyId: _familyId } = useChildProfile(user?.id);
   const [activeGame, setActiveGame] = useState<{ variantId: string; domain: string; difficulty: Difficulty } | null>(null);
   const [scores, setScores] = useState<Record<string, VariantScore>>({});
   const [expandedDomains, setExpandedDomains] = useState<Set<string>>(new Set());
