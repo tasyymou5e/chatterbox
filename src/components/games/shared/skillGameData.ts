@@ -561,6 +561,42 @@ export const DOMAIN_GAME_CONFIGS: Record<string, DomainGameConfig> = {
     symbols: academicSymbols,
     generateChallenge: makeGenerator(academicSymbols, { sort: 2, odd_one_out: 2, fill_blank: 1 }),
   },
+  speech_therapy: {
+    domain: 'speech_therapy',
+    label: 'Speech Practice',
+    bgClass: 'bg-rose-50 dark:bg-rose-950/30',
+    accentClass: 'text-rose-600 dark:text-rose-400',
+    description: 'Practice sounds, words & mouth shapes!',
+    symbols: speechTherapySymbols,
+    generateChallenge: makeGenerator(speechTherapySymbols, { match: 3, sort: 2, odd_one_out: 1 }),
+  },
+  storytelling: {
+    domain: 'storytelling',
+    label: 'Story World',
+    bgClass: 'bg-amber-50 dark:bg-amber-950/30',
+    accentClass: 'text-amber-600 dark:text-amber-400',
+    description: 'Build stories with characters & settings!',
+    symbols: storytellingSymbols,
+    generateChallenge: makeGenerator(storytellingSymbols, { sort: 2, sequence: 2, odd_one_out: 1, match: 1 }),
+  },
+  educational_learning: {
+    domain: 'educational_learning',
+    label: 'Learning Lab',
+    bgClass: 'bg-emerald-50 dark:bg-emerald-950/30',
+    accentClass: 'text-emerald-600 dark:text-emerald-400',
+    description: 'Explore letters, numbers & science!',
+    symbols: educationalSymbols,
+    generateChallenge: makeGenerator(educationalSymbols, { sort: 2, sequence: 2, fill_blank: 1, match: 1 }),
+  },
+  cognitive_development: {
+    domain: 'cognitive_development',
+    label: 'Mind Gym',
+    bgClass: 'bg-violet-50 dark:bg-violet-950/30',
+    accentClass: 'text-violet-600 dark:text-violet-400',
+    description: 'Train your brain with puzzles & logic!',
+    symbols: cognitiveSymbols,
+    generateChallenge: makeGenerator(cognitiveSymbols, { odd_one_out: 2, sort: 2, match: 1, fill_blank: 1 }),
+  },
 };
 
 // ── Game Variants: multiple named mini-games per domain ──
