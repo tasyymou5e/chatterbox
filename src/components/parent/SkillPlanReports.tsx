@@ -306,8 +306,8 @@ export function SkillPlanReports({ childId }: SkillPlanReportsProps) {
                         border: '1px solid hsl(var(--border))',
                         borderRadius: '8px',
                       }}
-                      formatter={(value: number, _name: string, props: { payload: { sessions: number } }) => [
-                        `${value}% (${props.payload.sessions} games)`,
+                      formatter={(value, _name, props) => [
+                        `${value ?? 0}% (${(props as { payload?: { sessions?: number } })?.payload?.sessions ?? 0} games)`,
                         'Accuracy',
                       ]}
                     />
