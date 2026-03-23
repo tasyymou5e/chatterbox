@@ -277,8 +277,6 @@ export function SkillMatchGame({
 // ── Match Sub-component ──
 function MatchMode({
   items,
-  selectedSymbol,
-  onSelect,
   onCheck,
   feedback,
 }: {
