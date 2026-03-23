@@ -18,21 +18,40 @@ const isPreviewHost = typeof window !== 'undefined' && (
   window.location.hostname.endsWith('lovableproject.com')
 );
 
+const hasDesignTokensLoaded = () => {
+  if (typeof window === 'undefined') return true;
+
+  try {
+    const rootStyles = getComputedStyle(document.documentElement);
+    return rootStyles.getPropertyValue('--background').trim().length > 0;
+  } catch {
+    return true;
+  }
+};
+
 const resetPreviewServiceWorker = async () => {
   if (!('serviceWorker' in navigator)) return;
 
-  const registrations = await navigator.serviceWorker.getRegistrations();
-  if (registrations.length === 0) return;
+  const cssLooksBroken = !hasDesignTokensLoaded();
+  const resetFlag = cssLooksBroken
+    ? `${PREVIEW_SW_RESET_FLAG}:css-recovery`
+    : PREVIEW_SW_RESET_FLAG;
 
-  await Promise.all(registrations.map((registration) => registration.unregister()));
+  if (sessionStorage.getItem(resetFlag)) return;
+
+  const registrations = await navigator.serviceWorker.getRegistrations();
+
+  if (registrations.length > 0) {
+    await Promise.all(registrations.map((registration) => registration.unregister()));
+  }
 
   if ('caches' in window) {
     const cacheKeys = await caches.keys();
     await Promise.all(cacheKeys.map((cacheKey) => caches.delete(cacheKey)));
   }
 
-  if (!sessionStorage.getItem(PREVIEW_SW_RESET_FLAG)) {
-    sessionStorage.setItem(PREVIEW_SW_RESET_FLAG, '1');
+  if (registrations.length > 0 || cssLooksBroken) {
+    sessionStorage.setItem(resetFlag, '1');
     window.location.reload();
   }
 };
