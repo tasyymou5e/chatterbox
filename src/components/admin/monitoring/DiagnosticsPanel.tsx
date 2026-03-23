@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ErrorLogAnalysis } from './ErrorLogAnalysis';
 import { TestSuggestionsPanel } from './TestSuggestionsPanel';
-import { invokeEdgeFunction } from '@/utils/edgeFunctionInvoker';
+import { invokeEdgeFunction } from '@/utils/secureEdgeFunctionInvoke';
 
 interface TestResult {
   run_type: string;
@@ -30,35 +30,42 @@ export const DiagnosticsPanel = () => {
   const [recentRuns, setRecentRuns] = useState<TestResult[]>([]);
   const [errorComponents, setErrorComponents] = useState<string[]>([]);
 
+  const storeTestResult = async (result: { run_type: string; total_tests: number; passed: number; failed: number; skipped?: number; duration_ms: number; results: Record<string, unknown> }) => {
+    // Use RPC or raw insert via supabase - cast to bypass generated types not yet reflecting new table
+    const { error } = await (supabase as unknown as { from: (table: string) => { insert: (data: Record<string, unknown>) => Promise<{ error: unknown }> } })
+      .from('test_run_results')
+      .insert({
+        run_type: result.run_type,
+        total_tests: result.total_tests,
+        passed: result.passed,
+        failed: result.failed,
+        skipped: result.skipped || 0,
+        duration_ms: result.duration_ms,
+        results: result.results,
+      });
+    if (error) console.warn('Failed to store test result:', error);
+  };
+
   const runSafetyChecks = async () => {
     setSafetyLoading(true);
     try {
-      const { data, error } = await invokeEdgeFunction('security-testing', { body: { action: 'run_all' } });
+      const { data, error } = await invokeEdgeFunction('security-testing', { action: 'run_all' });
       
       if (error) throw error;
 
       const result: TestResult = {
         run_type: 'security',
-        total_tests: data?.totalTests || 0,
-        passed: data?.passedTests || 0,
-        failed: data?.failedTests || 0,
+        total_tests: (data as Record<string, number>)?.totalTests || 0,
+        passed: (data as Record<string, number>)?.passedTests || 0,
+        failed: (data as Record<string, number>)?.failedTests || 0,
         skipped: 0,
-        duration_ms: data?.durationMs || 0,
-        results: data || {},
+        duration_ms: (data as Record<string, number>)?.durationMs || 0,
+        results: (data as Record<string, unknown>) || {},
         created_at: new Date().toISOString(),
       };
 
       setSafetyResults(result);
-
-      // Store results
-      await supabase.from('test_run_results').insert({
-        run_type: 'security',
-        total_tests: result.total_tests,
-        passed: result.passed,
-        failed: result.failed,
-        duration_ms: result.duration_ms,
-        results: result.results,
-      });
+      await storeTestResult(result);
 
       toast({
         title: 'Safety Checks Complete',
@@ -74,32 +81,23 @@ export const DiagnosticsPanel = () => {
   const runVitestSuite = async () => {
     setVitestLoading(true);
     try {
-      const { data, error } = await invokeEdgeFunction('run-vitest', { body: { filter: '' } });
+      const { data, error } = await invokeEdgeFunction('run-vitest', { filter: '' });
       
       if (error) throw error;
 
       const result: TestResult = {
         run_type: 'vitest',
-        total_tests: data?.totalTests || 0,
-        passed: data?.passed || 0,
-        failed: data?.failed || 0,
-        skipped: data?.skipped || 0,
-        duration_ms: data?.durationMs || 0,
-        results: data || {},
+        total_tests: (data as Record<string, number>)?.totalTests || 0,
+        passed: (data as Record<string, number>)?.passed || 0,
+        failed: (data as Record<string, number>)?.failed || 0,
+        skipped: (data as Record<string, number>)?.skipped || 0,
+        duration_ms: (data as Record<string, number>)?.durationMs || 0,
+        results: (data as Record<string, unknown>) || {},
         created_at: new Date().toISOString(),
       };
 
       setVitestResults(result);
-
-      await supabase.from('test_run_results').insert({
-        run_type: 'vitest',
-        total_tests: result.total_tests,
-        passed: result.passed,
-        failed: result.failed,
-        skipped: result.skipped,
-        duration_ms: result.duration_ms,
-        results: result.results,
-      });
+      await storeTestResult(result);
 
       toast({
         title: 'Vitest Suite Complete',
@@ -113,13 +111,13 @@ export const DiagnosticsPanel = () => {
   };
 
   const loadRecentRuns = async () => {
-    const { data } = await supabase
+    const { data } = await (supabase as unknown as { from: (table: string) => { select: (cols: string) => { order: (col: string, opts: { ascending: boolean }) => { limit: (n: number) => Promise<{ data: TestResult[] | null }> } } } })
       .from('test_run_results')
       .select('run_type, total_tests, passed, failed, skipped, duration_ms, results, created_at')
       .order('created_at', { ascending: false })
       .limit(10);
 
-    if (data) setRecentRuns(data as TestResult[]);
+    if (data) setRecentRuns(data);
 
     // Load top error components for suggestions
     const { data: errors } = await supabase
@@ -140,7 +138,7 @@ export const DiagnosticsPanel = () => {
     }
   };
 
-  useState(() => { loadRecentRuns(); });
+  useEffect(() => { loadRecentRuns(); }, []);
 
   const ResultCard = ({ label, result }: { label: string; result: TestResult | null }) => {
     if (!result) return null;
@@ -194,7 +192,7 @@ export const DiagnosticsPanel = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xs text-muted-foreground mb-3">Execute the full Vitest test suite remotely</p>
+            <p className="text-xs text-muted-foreground mb-3">Execute validation checks and get CLI commands</p>
             <Button onClick={runVitestSuite} disabled={vitestLoading} size="sm" className="w-full">
               {vitestLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <TestTube2 className="h-4 w-4 mr-2" />}
               Run Vitest
@@ -255,7 +253,7 @@ export const DiagnosticsPanel = () => {
                         </span>
                       </div>
                       <div className="flex items-center gap-3 text-xs">
-                        <span className="text-green-600">✓ {run.passed}</span>
+                        <span className="text-primary">✓ {run.passed}</span>
                         <span className="text-destructive">✗ {run.failed}</span>
                         <span className="text-muted-foreground">{(run.duration_ms / 1000).toFixed(1)}s</span>
                       </div>
