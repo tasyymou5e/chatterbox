@@ -248,11 +248,6 @@ export function SkillPlanReports({ childId }: SkillPlanReportsProps) {
                       }}
                       formatter={(value) => value != null ? [`${value}%`, ''] : ['—', '']}
                     />
-                        borderRadius: '8px',
-                        fontSize: '13px',
-                      }}
-                      formatter={(value: number | null) => value !== null ? [`${value}%`, ''] : ['—', '']}
-                    />
                     <Legend />
                     {activeDomains.map(d => (
                       <Line
