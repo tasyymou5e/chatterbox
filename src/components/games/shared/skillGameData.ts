@@ -470,7 +470,7 @@ export const DOMAIN_GAME_CONFIGS: Record<string, DomainGameConfig> = {
 // ── Game Variants: multiple named mini-games per domain ──
 
 export const GAME_VARIANTS: GameVariant[] = [
-  // ── Communication (3 variants) ──
+  // ── Communication (5 variants) ──
   {
     id: 'comm-word-match',
     domain: 'communication',
@@ -504,8 +504,31 @@ export const GAME_VARIANTS: GameVariant[] = [
     challengeWeights: { odd_one_out: 4, fill_blank: 2 },
     symbolFilter: s => ['request', 'need', 'feeling'].includes(s.group || ''),
   },
+  {
+    id: 'comm-conversation-builder',
+    domain: 'communication',
+    label: 'Conversation Builder',
+    description: 'Put conversation steps in order!',
+    emoji: '💬',
+    bgClass: 'bg-indigo-50 dark:bg-indigo-950/30',
+    accentClass: 'text-indigo-600 dark:text-indigo-400',
+    challengeWeights: { sequence: 4, fill_blank: 2 },
+    symbolFilter: s => ['greeting', 'polite', 'response'].includes(s.group || ''),
+    promptOverride: 'What comes next in the conversation?',
+  },
+  {
+    id: 'comm-polite-words',
+    domain: 'communication',
+    label: 'Polite Words',
+    description: 'Match polite words to their meanings!',
+    emoji: '🌟',
+    bgClass: 'bg-cyan-50 dark:bg-cyan-950/30',
+    accentClass: 'text-cyan-600 dark:text-cyan-400',
+    challengeWeights: { match: 4, odd_one_out: 2 },
+    symbolFilter: s => s.group === 'polite' || s.group === 'greeting',
+  },
 
-  // ── Social Skills (3 variants) ──
+  // ── Social Skills (5 variants) ──
   {
     id: 'social-emotion-sort',
     domain: 'social',
@@ -538,8 +561,32 @@ export const GAME_VARIANTS: GameVariant[] = [
     accentClass: 'text-fuchsia-600 dark:text-fuchsia-400',
     challengeWeights: { odd_one_out: 5, match: 1 },
   },
+  {
+    id: 'social-friendship-sort',
+    domain: 'social',
+    label: 'Friendship Builder',
+    description: 'Sort friendly vs unfriendly behaviors!',
+    emoji: '💛',
+    bgClass: 'bg-amber-50 dark:bg-amber-950/30',
+    accentClass: 'text-amber-600 dark:text-amber-400',
+    challengeWeights: { sort: 5, odd_one_out: 1 },
+    symbolFilter: s => ['social_skill', 'positive'].includes(s.group || ''),
+    promptOverride: 'Which are friendly behaviors?',
+  },
+  {
+    id: 'social-face-reader',
+    domain: 'social',
+    label: 'Face Reader',
+    description: 'Match faces to the right emotion name!',
+    emoji: '🎭',
+    bgClass: 'bg-pink-50 dark:bg-pink-950/30',
+    accentClass: 'text-pink-600 dark:text-pink-400',
+    challengeWeights: { match: 5, fill_blank: 1 },
+    symbolFilter: s => ['positive', 'negative', 'neutral'].includes(s.group || ''),
+    promptOverride: 'What emotion is this face showing?',
+  },
 
-  // ── Sensory (3 variants) ──
+  // ── Sensory (5 variants) ──
   {
     id: 'sensory-five-senses',
     domain: 'sensory',
@@ -570,8 +617,31 @@ export const GAME_VARIANTS: GameVariant[] = [
     accentClass: 'text-lime-600 dark:text-lime-400',
     challengeWeights: { odd_one_out: 5, fill_blank: 1 },
   },
+  {
+    id: 'sensory-texture-match',
+    domain: 'sensory',
+    label: 'Texture Match',
+    description: 'Match textures: soft, rough, smooth, squishy!',
+    emoji: '🧸',
+    bgClass: 'bg-orange-50 dark:bg-orange-950/30',
+    accentClass: 'text-orange-600 dark:text-orange-400',
+    challengeWeights: { match: 4, sort: 2 },
+    symbolFilter: s => s.group === 'touch',
+    promptOverride: 'Match each texture to its name!',
+  },
+  {
+    id: 'sensory-calming-vs-alerting',
+    domain: 'sensory',
+    label: 'Calm or Alert?',
+    description: 'Is this sense calming or alerting?',
+    emoji: '⚖️',
+    bgClass: 'bg-teal-50 dark:bg-teal-950/30',
+    accentClass: 'text-teal-600 dark:text-teal-400',
+    challengeWeights: { sort: 4, odd_one_out: 2 },
+    promptOverride: 'Sort: calming or alerting?',
+  },
 
-  // ── Executive Function (3 variants) ──
+  // ── Executive Function (5 variants) ──
   {
     id: 'exec-morning-routine',
     domain: 'executive_function',
@@ -605,8 +675,30 @@ export const GAME_VARIANTS: GameVariant[] = [
     challengeWeights: { fill_blank: 4, sequence: 2 },
     symbolFilter: s => ['task', 'snack'].includes(s.group || ''),
   },
+  {
+    id: 'exec-snack-time',
+    domain: 'executive_function',
+    label: 'Snack Time Steps',
+    description: 'Order the steps to make a snack!',
+    emoji: '🍎',
+    bgClass: 'bg-green-50 dark:bg-green-950/30',
+    accentClass: 'text-green-600 dark:text-green-400',
+    challengeWeights: { sequence: 5, fill_blank: 1 },
+    symbolFilter: s => s.group === 'snack',
+  },
+  {
+    id: 'exec-routine-mix',
+    domain: 'executive_function',
+    label: 'Routine Mixer',
+    description: 'Sort steps into the right routine!',
+    emoji: '🔀',
+    bgClass: 'bg-violet-50 dark:bg-violet-950/30',
+    accentClass: 'text-violet-600 dark:text-violet-400',
+    challengeWeights: { sort: 4, odd_one_out: 2 },
+    promptOverride: 'Which routine does this step belong to?',
+  },
 
-  // ── Daily Living (3 variants) ──
+  // ── Daily Living (5 variants) ──
   {
     id: 'daily-room-sort',
     domain: 'daily_living',
@@ -637,8 +729,32 @@ export const GAME_VARIANTS: GameVariant[] = [
     accentClass: 'text-teal-600 dark:text-teal-400',
     challengeWeights: { odd_one_out: 5, match: 1 },
   },
+  {
+    id: 'daily-kitchen-helper',
+    domain: 'daily_living',
+    label: 'Kitchen Helper',
+    description: 'Match kitchen items to their names!',
+    emoji: '🍳',
+    bgClass: 'bg-yellow-50 dark:bg-yellow-950/30',
+    accentClass: 'text-yellow-600 dark:text-yellow-400',
+    challengeWeights: { match: 5, odd_one_out: 1 },
+    symbolFilter: s => s.group === 'kitchen' || s.group === 'cleaning',
+    promptOverride: 'Match each kitchen item!',
+  },
+  {
+    id: 'daily-getting-dressed',
+    domain: 'daily_living',
+    label: 'Getting Dressed',
+    description: 'Sort clothing items vs bathroom items!',
+    emoji: '👕',
+    bgClass: 'bg-sky-50 dark:bg-sky-950/30',
+    accentClass: 'text-sky-600 dark:text-sky-400',
+    challengeWeights: { sort: 4, odd_one_out: 2 },
+    symbolFilter: s => s.group === 'clothing' || s.group === 'bathroom',
+    promptOverride: 'Sort: clothing or bathroom?',
+  },
 
-  // ── Emotional Regulation (3 variants) ──
+  // ── Emotional Regulation (5 variants) ──
   {
     id: 'emo-feelings-meter',
     domain: 'emotional_regulation',
@@ -672,8 +788,32 @@ export const GAME_VARIANTS: GameVariant[] = [
     accentClass: 'text-red-600 dark:text-red-400',
     challengeWeights: { odd_one_out: 4, sort: 2 },
   },
+  {
+    id: 'emo-calm-down-steps',
+    domain: 'emotional_regulation',
+    label: 'Calm Down Steps',
+    description: 'Put calming steps in the right order!',
+    emoji: '🌊',
+    bgClass: 'bg-blue-50 dark:bg-blue-950/30',
+    accentClass: 'text-blue-600 dark:text-blue-400',
+    challengeWeights: { sequence: 4, fill_blank: 2 },
+    symbolFilter: s => s.group === 'strategy',
+    promptOverride: 'Order the calm-down steps!',
+  },
+  {
+    id: 'emo-big-vs-small',
+    domain: 'emotional_regulation',
+    label: 'Big vs Small Feelings',
+    description: 'Sort big feelings from small feelings!',
+    emoji: '📊',
+    bgClass: 'bg-purple-50 dark:bg-purple-950/30',
+    accentClass: 'text-purple-600 dark:text-purple-400',
+    challengeWeights: { sort: 5, odd_one_out: 1 },
+    symbolFilter: s => ['low', 'high'].includes(s.group || ''),
+    promptOverride: 'Is this a big or small feeling?',
+  },
 
-  // ── Motor Skills (3 variants) ──
+  // ── Motor Skills (5 variants) ──
   {
     id: 'motor-body-match',
     domain: 'motor_skills',
@@ -705,8 +845,32 @@ export const GAME_VARIANTS: GameVariant[] = [
     challengeWeights: { odd_one_out: 4, fill_blank: 2 },
     symbolFilter: s => s.group === 'coordination' || s.group === 'hands',
   },
+  {
+    id: 'motor-hand-gym',
+    domain: 'motor_skills',
+    label: 'Hand Gym',
+    description: 'Match fine motor actions!',
+    emoji: '✋',
+    bgClass: 'bg-rose-50 dark:bg-rose-950/30',
+    accentClass: 'text-rose-600 dark:text-rose-400',
+    challengeWeights: { match: 5, fill_blank: 1 },
+    symbolFilter: s => s.group === 'hands',
+    promptOverride: 'Match each hand action!',
+  },
+  {
+    id: 'motor-movement-sequence',
+    domain: 'motor_skills',
+    label: 'Movement Sequence',
+    description: 'Put movements in order to make a routine!',
+    emoji: '🎪',
+    bgClass: 'bg-lime-50 dark:bg-lime-950/30',
+    accentClass: 'text-lime-600 dark:text-lime-400',
+    challengeWeights: { sequence: 4, fill_blank: 2 },
+    symbolFilter: s => s.group === 'body' || s.group === 'legs',
+    promptOverride: 'Create a movement sequence!',
+  },
 
-  // ── Academic (3 variants) ──
+  // ── Academic (5 variants) ──
   {
     id: 'acad-shape-sort',
     domain: 'academic',
@@ -739,7 +903,147 @@ export const GAME_VARIANTS: GameVariant[] = [
     challengeWeights: { sequence: 4, fill_blank: 3 },
     symbolFilter: s => s.group === 'number',
   },
+  {
+    id: 'acad-letter-detective',
+    domain: 'academic',
+    label: 'Letter Detective',
+    description: 'Find which letter doesn\'t belong!',
+    emoji: '🔎',
+    bgClass: 'bg-blue-50 dark:bg-blue-950/30',
+    accentClass: 'text-blue-600 dark:text-blue-400',
+    challengeWeights: { odd_one_out: 5, match: 1 },
+    symbolFilter: s => s.group === 'letter' || s.group === 'number',
+    promptOverride: 'Which one doesn\'t belong?',
+  },
+  {
+    id: 'acad-math-match',
+    domain: 'academic',
+    label: 'Math Symbols',
+    description: 'Match math symbols to their names!',
+    emoji: '➕',
+    bgClass: 'bg-violet-50 dark:bg-violet-950/30',
+    accentClass: 'text-violet-600 dark:text-violet-400',
+    challengeWeights: { match: 4, fill_blank: 2 },
+    symbolFilter: s => s.group === 'math' || s.group === 'number',
+    promptOverride: 'Match each math symbol!',
+  },
 ];
+
+/** Standalone game entries that use different game engines */
+export interface StandaloneGameEntry {
+  id: string;
+  domain: string;
+  label: string;
+  description: string;
+  emoji: string;
+  bgClass: string;
+  accentClass: string;
+  /** Which component to render: 'memory' | 'pattern' | 'sounds' */
+  gameType: 'memory' | 'pattern' | 'sounds';
+}
+
+export const STANDALONE_GAMES: StandaloneGameEntry[] = [
+  // Memory Match variants mapped to domains
+  {
+    id: 'bonus-memory-emotions',
+    domain: 'social',
+    label: 'Emotion Memory',
+    description: 'Flip cards to match emotion pairs!',
+    emoji: '🃏',
+    bgClass: 'bg-purple-100 dark:bg-purple-900/30',
+    accentClass: 'text-purple-700 dark:text-purple-300',
+    gameType: 'memory',
+  },
+  {
+    id: 'bonus-memory-sensory',
+    domain: 'sensory',
+    label: 'Sensory Memory',
+    description: 'Match sensory pairs from memory!',
+    emoji: '🧠',
+    bgClass: 'bg-yellow-100 dark:bg-yellow-900/30',
+    accentClass: 'text-yellow-700 dark:text-yellow-300',
+    gameType: 'memory',
+  },
+  {
+    id: 'bonus-memory-daily',
+    domain: 'daily_living',
+    label: 'Home Memory',
+    description: 'Flip & match household item pairs!',
+    emoji: '🏡',
+    bgClass: 'bg-green-100 dark:bg-green-900/30',
+    accentClass: 'text-green-700 dark:text-green-300',
+    gameType: 'memory',
+  },
+  // Pattern Match variants
+  {
+    id: 'bonus-pattern-academic',
+    domain: 'academic',
+    label: 'Pattern Spotter',
+    description: 'Find the pattern & pick what comes next!',
+    emoji: '🧩',
+    bgClass: 'bg-teal-100 dark:bg-teal-900/30',
+    accentClass: 'text-teal-700 dark:text-teal-300',
+    gameType: 'pattern',
+  },
+  {
+    id: 'bonus-pattern-exec',
+    domain: 'executive_function',
+    label: 'Sequence Spotter',
+    description: 'Spot the pattern in the sequence!',
+    emoji: '🔮',
+    bgClass: 'bg-indigo-100 dark:bg-indigo-900/30',
+    accentClass: 'text-indigo-700 dark:text-indigo-300',
+    gameType: 'pattern',
+  },
+  // Sounds Match variants
+  {
+    id: 'bonus-sounds-communication',
+    domain: 'communication',
+    label: 'Sound Match',
+    description: 'Listen & match sounds to pictures!',
+    emoji: '🔔',
+    bgClass: 'bg-blue-100 dark:bg-blue-900/30',
+    accentClass: 'text-blue-700 dark:text-blue-300',
+    gameType: 'sounds',
+  },
+  {
+    id: 'bonus-sounds-sensory',
+    domain: 'sensory',
+    label: 'Sound Sorter',
+    description: 'Listen to sounds & find the match!',
+    emoji: '🎵',
+    bgClass: 'bg-amber-100 dark:bg-amber-900/30',
+    accentClass: 'text-amber-700 dark:text-amber-300',
+    gameType: 'sounds',
+  },
+  {
+    id: 'bonus-sounds-motor',
+    domain: 'motor_skills',
+    label: 'Action Sounds',
+    description: 'Match action sounds to movements!',
+    emoji: '🥁',
+    bgClass: 'bg-orange-100 dark:bg-orange-900/30',
+    accentClass: 'text-orange-700 dark:text-orange-300',
+    gameType: 'sounds',
+  },
+];
+
+/** Get all games (variants + standalone) grouped by domain */
+export function getAllGamesByDomain(): Record<string, { variants: GameVariant[]; standalone: StandaloneGameEntry[] }> {
+  const grouped: Record<string, { variants: GameVariant[]; standalone: StandaloneGameEntry[] }> = {};
+  for (const domain of Object.keys(DOMAIN_GAME_CONFIGS)) {
+    grouped[domain] = { variants: [], standalone: [] };
+  }
+  for (const v of GAME_VARIANTS) {
+    if (!grouped[v.domain]) grouped[v.domain] = { variants: [], standalone: [] };
+    grouped[v.domain].variants.push(v);
+  }
+  for (const s of STANDALONE_GAMES) {
+    if (!grouped[s.domain]) grouped[s.domain] = { variants: [], standalone: [] };
+    grouped[s.domain].standalone.push(s);
+  }
+  return grouped;
+}
 
 /** Get all symbol data for a domain */
 function getSymbolsForDomain(domain: string): GameSymbol[] {
