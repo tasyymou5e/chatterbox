@@ -1,34 +1,45 @@
 
+# Comprehensive Error Tracking, Testing & Diagnostics System
 
-# Add Skill Games Browser to Kids Portal
+## Status: ✅ IMPLEMENTED (2026-03-23)
 
-## What This Does
+### What Was Built
 
-Currently, kids can only play skill games if a parent has assigned them in a plan. This adds a **"Skill Games"** tab/section directly in the Kids Portal where kids can browse all 8 skill domains and launch games freely — no plan assignment required. Game scores still get tracked.
+#### 1. Enhanced Error Capture (`useAutoErrorLogging.tsx`)
+- Console.error/warn interception with loop-prevention guard
+- Vite HMR error capture via `import.meta.hot` events
+- All errors routed to `system_errors` table via circuit-breaker-protected pipeline
 
-## Changes
+#### 2. Diagnostics Dashboard (Admin System Monitoring → Diagnostics tab)
+- **Safety Check Runner** — invokes `security-testing` edge function
+- **Vitest Runner** — invokes `run-vitest` edge function for DB validation checks
+- **Error Log Analysis** — charts for top error components, frequency trends, unresolved backlog
+- **Test Suggestions** — static + dynamic recommendations with copyable CLI commands
+- **Run History** — timestamped test execution history
 
-### 1. Create `src/components/kids/SkillGamesBrowser.tsx`
-A browsable grid showing all 8 skill domains as colorful cards. Each card displays:
-- Domain emoji and name (from `SKILL_DOMAINS`)
-- Game title (from `DOMAIN_GAME_CONFIGS` — e.g., "Emotion Explorer", "Sequence Builder")
-- Difficulty selector (Easy / Medium / Hard)
-- "Play" button that launches `SkillMatchGame` inline
-- Uses domain-specific background colors from `skillGameData.ts`
+#### 3. Database: `test_run_results` table
+- Stores all test runs (vitest, security) with pass/fail counts, duration, and JSONB results
+- Admin-only RLS via `has_role(auth.uid(), 'admin')`
 
-When a game completes, scores are logged via `useActivitySession` or a lightweight tracker, and the card shows the last score/accuracy.
+#### 4. Edge Function: `run-vitest`
+- Admin-only JWT validation
+- Runs database connectivity and table accessibility checks
+- Returns structured results + CLI command for full local Vitest execution
 
-### 2. Modify `src/pages/kids/KidsPortal.tsx`
-- Add a "Skill Games" section below the `SkillPlanDashboard`
-- Render `SkillGamesBrowser` component
-- When a game is active, show the `SkillMatchGame` full-screen (reusing existing pattern)
+#### 5. Documentation Updated
+- `ADMIN_FEATURES_GUIDE.md` — Diagnostics tab section added
+- `ARCHITECTURE_DOCUMENTATION.md` — Error tracking flow diagram added
+- `HOOKS_DOCUMENTATION.md` — Enhanced useAutoErrorLogging documentation
+- `TROUBLESHOOTING_GUIDE.md` — Diagnostics-based troubleshooting workflow
 
-### 3. Modify `src/components/kids/KidsPortalLayout.tsx` (if tabs exist)
-- Add a "Games" tab option so kids can toggle between their plan and free-play skill games
-
-### Technical Details
-- Reuses existing `SkillMatchGame`, `DOMAIN_GAME_CONFIGS`, `SKILL_DOMAINS` — no new game logic needed
-- Domain cards use the existing color palette (`bg-blue-50`, `bg-purple-50`, etc.)
-- Completion callbacks track scores in `plan_session_logs` with a null `plan_item_id` to distinguish free-play from assigned games
-- Large touch targets (min 64px) and `motion-reduce` support carry over from SkillMatchGame
-
+### Files Changed
+| File | Action |
+|------|--------|
+| `src/hooks/useAutoErrorLogging.tsx` | Enhanced with console/Vite intercepts |
+| `src/pages/admin/AdminSystemMonitoring.tsx` | Added 7th Diagnostics tab |
+| `src/components/admin/monitoring/DiagnosticsPanel.tsx` | New |
+| `src/components/admin/monitoring/ErrorLogAnalysis.tsx` | New |
+| `src/components/admin/monitoring/TestSuggestionsPanel.tsx` | New |
+| `src/components/admin/monitoring/index.ts` | Updated exports |
+| `supabase/functions/run-vitest/index.ts` | New edge function |
+| Migration: `test_run_results` table | New table |
