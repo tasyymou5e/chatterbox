@@ -1,18 +1,18 @@
 /**
  * SkillGamesBrowser - Browse and play skill domain games freely
  * No parent-assigned plan required. Scores still tracked.
+ * Includes adaptive difficulty that auto-adjusts based on accuracy history.
  */
 import { useState, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Gamepad2, Star, Trophy } from 'lucide-react';
+import { Gamepad2, Star, Trophy, TrendingUp, TrendingDown } from 'lucide-react';
 import { DOMAIN_GAME_CONFIGS, type DomainGameConfig } from '@/components/games/shared/skillGameData';
 import { SkillMatchGame } from '@/components/games/SkillMatchGame';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useChildProfile } from '@/hooks/useChildProfile';
-
-type Difficulty = 'easy' | 'medium' | 'hard';
+import { useAdaptiveDifficulty, type Difficulty } from '@/hooks/useAdaptiveDifficulty';
 
 interface DomainScore {
   lastScore: number;
@@ -40,18 +40,18 @@ const DOMAIN_EMOJIS: Record<string, string> = {
 export function SkillGamesBrowser() {
   const { user } = useAuth();
   const { familyId } = useChildProfile(user?.id);
-  const [selectedDifficulty, setSelectedDifficulty] = useState<Record<string, Difficulty>>({});
   const [activeGame, setActiveGame] = useState<{ domain: string; difficulty: Difficulty } | null>(null);
   const [scores, setScores] = useState<Record<string, DomainScore>>({});
-
-  const getDifficulty = (domain: string): Difficulty => selectedDifficulty[domain] || 'easy';
+  const adaptive = useAdaptiveDifficulty();
 
   const handlePlay = useCallback((domain: string) => {
-    setActiveGame({ domain, difficulty: getDifficulty(domain) });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDifficulty]);
+    setActiveGame({ domain, difficulty: adaptive.getDifficulty(domain) });
+  }, [adaptive]);
 
   const handleGameComplete = useCallback(async (domain: string, score: number, total: number) => {
+    // Record result and let adaptive engine adjust difficulty
+    adaptive.recordResult(domain, score, total);
+
     setScores(prev => ({
       ...prev,
       [domain]: {
@@ -70,13 +70,18 @@ export function SkillGamesBrowser() {
           completion_status: 'completed',
           score,
           duration_seconds: 0,
-          ai_observations: JSON.stringify({ free_play: true, domain, total_questions: total }),
+          ai_observations: JSON.stringify({
+            free_play: true,
+            domain,
+            total_questions: total,
+            adaptive_difficulty: adaptive.getDifficulty(domain),
+          }),
         });
       } catch {
         // Non-critical: don't block UX
       }
     }
-  }, [user?.id, familyId]);
+  }, [user?.id, familyId, adaptive]);
 
   const handleGameClose = useCallback(() => {
     setActiveGame(null);
@@ -110,10 +115,9 @@ export function SkillGamesBrowser() {
             key={config.domain}
             config={config}
             emoji={DOMAIN_EMOJIS[config.domain] || '🎮'}
-            difficulty={getDifficulty(config.domain)}
-            onDifficultyChange={(d) =>
-              setSelectedDifficulty(prev => ({ ...prev, [config.domain]: d }))
-            }
+            difficulty={adaptive.getDifficulty(config.domain)}
+            suggestion={adaptive.getSuggestion(config.domain)}
+            onDifficultyChange={(d) => adaptive.setManualDifficulty(config.domain, d)}
             onPlay={() => handlePlay(config.domain)}
             score={scores[config.domain]}
           />
@@ -127,6 +131,7 @@ function DomainGameCard({
   config,
   emoji,
   difficulty,
+  suggestion,
   onDifficultyChange,
   onPlay,
   score,
@@ -134,6 +139,7 @@ function DomainGameCard({
   config: DomainGameConfig;
   emoji: string;
   difficulty: Difficulty;
+  suggestion: 'promote' | 'demote' | 'stay';
   onDifficultyChange: (d: Difficulty) => void;
   onPlay: () => void;
   score?: DomainScore;
@@ -154,7 +160,7 @@ function DomainGameCard({
           </div>
         </div>
 
-        {/* Last score badge */}
+        {/* Last score badge + adaptive indicator */}
         {score && (
           <div className="flex items-center gap-2 text-xs">
             <Trophy className="h-3.5 w-3.5 text-accent-foreground" />
@@ -167,6 +173,16 @@ function DomainGameCard({
               )}
             </span>
             <span className="text-muted-foreground">· {score.gamesPlayed} played</span>
+            {suggestion === 'promote' && (
+              <span className="flex items-center gap-0.5 text-primary font-medium" title="Great job! Difficulty will increase">
+                <TrendingUp className="h-3 w-3" /> Level up!
+              </span>
+            )}
+            {suggestion === 'demote' && (
+              <span className="flex items-center gap-0.5 text-accent-foreground font-medium" title="Adjusting to an easier level">
+                <TrendingDown className="h-3 w-3" /> Easier
+              </span>
+            )}
           </div>
         )}
 
