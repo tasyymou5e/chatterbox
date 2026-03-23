@@ -413,6 +413,37 @@ Dashboard for authentication E2E test coverage:
 
 See `AUTH_E2E_COVERAGE_REPORT.md` for detailed coverage data.
 
+#### 8. Diagnostics Panel
+
+**Component:** `DiagnosticsPanel.tsx`
+
+Unified diagnostics dashboard providing one-click access to:
+
+**Safety Checks:**
+- Invokes `security-testing` edge function
+- Displays pass/fail results inline
+- Stores results in `test_run_results` table
+
+**Vitest Suite Runner:**
+- Invokes `run-vitest` edge function for database validation checks
+- Provides CLI command for full local Vitest execution
+- Results stored with timestamp for historical tracking
+
+**Error Log Analysis** (`ErrorLogAnalysis.tsx`):
+- Top 10 error-producing components (bar chart)
+- Error frequency timeline (line chart)
+- Configurable time range (24h / 7d / 30d)
+- Unresolved error backlog with severity badges
+
+**Test Suggestions** (`TestSuggestionsPanel.tsx`):
+- Static recommendations: RLS, auth, accessibility, performance, data integrity, component tests
+- Dynamic suggestions based on error patterns (components with most unresolved errors)
+- Copy-able CLI commands for each test suite
+
+**Run History:**
+- Last 10 test runs with pass/fail counts and duration
+- Filterable by run type (security, vitest)
+
 ---
 
 ## Security Center
