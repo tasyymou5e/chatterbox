@@ -238,7 +238,11 @@ export function SkillPlanDashboard({ isIdle }: SkillPlanDashboardProps) {
                         onClick={() => handleStartActivity(item)}
                         className="gap-1 flex-shrink-0"
                       >
-                        <Play className="h-4 w-4" /> Start
+                        {item.item_type === 'game' ? (
+                          <><Gamepad2 className="h-4 w-4" /> Play</>
+                        ) : (
+                          <><Play className="h-4 w-4" /> Start</>
+                        )}
                       </Button>
                     )}
                     {item.isCompleted && (

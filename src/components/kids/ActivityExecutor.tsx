@@ -23,6 +23,24 @@ interface ActivityExecutorProps {
 }
 
 export function ActivityExecutor({ catalogItem, planItemId, isIdle, onComplete, onClose }: ActivityExecutorProps) {
+  // If item_type is 'game', render interactive SkillMatchGame
+  if (catalogItem.item_type === 'game') {
+    return (
+      <SkillMatchGame
+        skillDomain={catalogItem.skill_domain}
+        difficulty={catalogItem.difficulty}
+        onComplete={(score) => {
+          onComplete?.();
+        }}
+        onClose={onClose}
+      />
+    );
+  }
+
+  return <ActivityExecutorSteps catalogItem={catalogItem} planItemId={planItemId} isIdle={isIdle} onComplete={onComplete} onClose={onClose} />;
+}
+
+function ActivityExecutorSteps({ catalogItem, planItemId, isIdle, onComplete, onClose }: ActivityExecutorProps) {
   const { session, startSession, updateProgress, pauseSession, resumeSession, completeSession } = useActivitySession();
   const [timerSeconds, setTimerSeconds] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
