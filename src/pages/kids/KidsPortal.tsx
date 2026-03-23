@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { KidsPortalLayout, AgeGroupMenu, KidsProgressHeader, EmbeddedGameViewer, MascotGuide, useMascotGuide } from '@/components/kids';
 import { SkillPlanDashboard } from '@/components/kids/SkillPlanDashboard';
+import { SkillGamesBrowser } from '@/components/kids/SkillGamesBrowser';
 import { KidsAssessmentGate } from '@/components/kids/KidsAssessmentGate';
 import { useChildProfile } from '@/hooks/useChildProfile';
 import { useChildAvatar } from '@/hooks/useChildAvatar';
@@ -104,6 +105,9 @@ export default function KidsPortal() {
 
             {/* Skill Plan Dashboard - primary full view */}
             <SkillPlanDashboard isIdle={isIdle} />
+
+            {/* Free-play Skill Games Browser */}
+            <SkillGamesBrowser />
           </div>
 
           <AgeGroupMenu
