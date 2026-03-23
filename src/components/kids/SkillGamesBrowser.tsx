@@ -56,14 +56,18 @@ const SKILL_LEVEL_MAP: Record<Difficulty, 'beginner' | 'intermediate' | 'advance
 };
 
 const DOMAIN_LABELS: Record<string, { label: string; emoji: string }> = {
-  communication: { label: 'Communication', emoji: '💬' },
+  communication: { label: 'Communication & AAC', emoji: '💬' },
   social: { label: 'Social Skills', emoji: '🤝' },
   sensory: { label: 'Sensory Regulation', emoji: '🌈' },
   executive_function: { label: 'Executive Function', emoji: '🧩' },
-  daily_living: { label: 'Daily Living', emoji: '🏠' },
+  daily_living: { label: 'Daily Routines', emoji: '🏠' },
   emotional_regulation: { label: 'Emotional Regulation', emoji: '💖' },
   motor_skills: { label: 'Motor Skills', emoji: '🏃' },
   academic: { label: 'Academic Readiness', emoji: '📚' },
+  speech_therapy: { label: 'Speech Therapy', emoji: '🗣️' },
+  storytelling: { label: 'Storytelling', emoji: '📖' },
+  educational_learning: { label: 'Educational Learning', emoji: '🎓' },
+  cognitive_development: { label: 'Cognitive Development', emoji: '🧠' },
 };
 
 export function SkillGamesBrowser() {
