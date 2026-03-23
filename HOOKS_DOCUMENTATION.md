@@ -691,3 +691,25 @@ const { user } = useAuth(); // Same API, Zustand backend
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0.0 | 2026-01-21 | Initial comprehensive documentation |
+| 1.1.0 | 2026-03-23 | Enhanced useAutoErrorLogging with console/Vite intercepts |
+
+---
+
+## Enhanced Error Logging (v1.1.0)
+
+### `useAutoErrorLogging.tsx` — Comprehensive Intercepts
+
+As of v1.1.0, this hook captures **6 error sources**:
+
+| Source | Error Type | Severity | Notes |
+|--------|-----------|----------|-------|
+| `window.onerror` | `javascript_error` | high | Global JS errors |
+| `window.onunhandledrejection` | `javascript_error` | high | Unhandled promises |
+| `console.error()` | `console_error` | medium | All console.error calls site-wide |
+| `console.warn()` | `console_warn` | low | All console.warn calls site-wide |
+| `fetch()` 5xx | `network_error` | high/medium | Server errors only |
+| `import.meta.hot` | `vite_build_error` | high | Vite HMR/build errors (dev only) |
+
+**Loop Prevention:** Uses `__isInternalLog` guard flag to prevent console intercepts from triggering recursive logging. Error-reporting URLs (`error-collector`, `security-monitoring`) are excluded from fetch intercepts.
+
+**Circuit Breaker:** Inherited from `useErrorTracking` — max 5 error reports per 10-second window.
