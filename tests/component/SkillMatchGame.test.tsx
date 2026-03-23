@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { SkillMatchGame } from './SkillMatchGame';
+import { SkillMatchGame } from '@/components/games/SkillMatchGame';
 
 // Mock gameUtils audio
 vi.mock('./shared/gameUtils', async () => {
