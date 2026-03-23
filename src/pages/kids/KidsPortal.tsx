@@ -105,6 +105,9 @@ export default function KidsPortal() {
 
             {/* Skill Plan Dashboard - primary full view */}
             <SkillPlanDashboard isIdle={isIdle} />
+
+            {/* Free-play Skill Games Browser */}
+            <SkillGamesBrowser />
           </div>
 
           <AgeGroupMenu

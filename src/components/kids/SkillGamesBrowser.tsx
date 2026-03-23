@@ -63,16 +63,14 @@ export function SkillGamesBrowser() {
     setActiveGame(null);
 
     // Log to plan_session_logs for tracking (null plan_item_id = free play)
-    if (user?.id && familyId) {
+    if (user?.id) {
       try {
         await supabase.from('plan_session_logs').insert({
-          user_id: user.id,
-          family_id: familyId,
-          plan_item_id: null as unknown as string,
-          status: 'completed',
+          child_id: user.id,
+          completion_status: 'completed',
           score,
           duration_seconds: 0,
-          metadata: { free_play: true, domain, total_questions: total },
+          ai_observations: JSON.stringify({ free_play: true, domain, total_questions: total }),
         });
       } catch {
         // Non-critical: don't block UX
