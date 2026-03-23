@@ -416,7 +416,6 @@ function SortMode({
   feedback: 'correct' | 'incorrect' | null;
 }) {
   const [dragOverGroup, setDragOverGroup] = useState<string | null>(null);
-  const touchDragRef = useRef<{ id: string; el: HTMLElement | null }>({ id: '', el: null });
 
   const allPlaced = items.every(item =>
     Object.values(buckets).some(ids => ids.includes(item.id))
