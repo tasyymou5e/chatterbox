@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { KidsPortalLayout, AgeGroupMenu, KidsProgressHeader, EmbeddedGameViewer, MascotGuide, useMascotGuide } from '@/components/kids';
 import { SkillPlanDashboard } from '@/components/kids/SkillPlanDashboard';
+import { SkillGamesBrowser } from '@/components/kids/SkillGamesBrowser';
 import { KidsAssessmentGate } from '@/components/kids/KidsAssessmentGate';
 import { useChildProfile } from '@/hooks/useChildProfile';
 import { useChildAvatar } from '@/hooks/useChildAvatar';
