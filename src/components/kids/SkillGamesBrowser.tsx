@@ -1,20 +1,26 @@
 /**
  * SkillGamesBrowser - Browse and play skill domain games freely
- * No parent-assigned plan required. Scores still tracked.
+ * Shows 24 game variants across 8 skill domains (3 per domain).
  * Includes adaptive difficulty that auto-adjusts based on accuracy history.
  */
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Gamepad2, Star, Trophy, TrendingUp, TrendingDown } from 'lucide-react';
-import { DOMAIN_GAME_CONFIGS, type DomainGameConfig } from '@/components/games/shared/skillGameData';
+import { Gamepad2, Star, Trophy, TrendingUp, TrendingDown, ChevronDown, ChevronUp } from 'lucide-react';
+import {
+  GAME_VARIANTS,
+  getVariantsByDomain,
+  variantToConfig,
+  DOMAIN_GAME_CONFIGS,
+  type GameVariant,
+} from '@/components/games/shared/skillGameData';
 import { SkillMatchGame } from '@/components/games/SkillMatchGame';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useChildProfile } from '@/hooks/useChildProfile';
 import { useAdaptiveDifficulty, type Difficulty } from '@/hooks/useAdaptiveDifficulty';
 
-interface DomainScore {
+interface VariantScore {
   lastScore: number;
   lastTotal: number;
   gamesPlayed: number;
@@ -26,43 +32,58 @@ const DIFFICULTY_OPTIONS: { value: Difficulty; label: string; emoji: string }[] 
   { value: 'hard', label: 'Hard', emoji: '🔴' },
 ];
 
-const DOMAIN_EMOJIS: Record<string, string> = {
-  communication: '💬',
-  social: '🤝',
-  sensory: '🌈',
-  executive_function: '🧩',
-  daily_living: '🏠',
-  emotional_regulation: '💖',
-  motor_skills: '🏃',
-  academic: '📚',
+const DOMAIN_LABELS: Record<string, { label: string; emoji: string }> = {
+  communication: { label: 'Communication', emoji: '💬' },
+  social: { label: 'Social Skills', emoji: '🤝' },
+  sensory: { label: 'Sensory Regulation', emoji: '🌈' },
+  executive_function: { label: 'Executive Function', emoji: '🧩' },
+  daily_living: { label: 'Daily Living', emoji: '🏠' },
+  emotional_regulation: { label: 'Emotional Regulation', emoji: '💖' },
+  motor_skills: { label: 'Motor Skills', emoji: '🏃' },
+  academic: { label: 'Academic Readiness', emoji: '📚' },
 };
 
 export function SkillGamesBrowser() {
   const { user } = useAuth();
-  const { familyId } = useChildProfile(user?.id);
-  const [activeGame, setActiveGame] = useState<{ domain: string; difficulty: Difficulty } | null>(null);
-  const [scores, setScores] = useState<Record<string, DomainScore>>({});
+  const { familyId: _familyId } = useChildProfile(user?.id);
+  const [activeGame, setActiveGame] = useState<{ variantId: string; domain: string; difficulty: Difficulty } | null>(null);
+  const [scores, setScores] = useState<Record<string, VariantScore>>({});
+  const [expandedDomains, setExpandedDomains] = useState<Set<string>>(new Set());
   const adaptive = useAdaptiveDifficulty();
 
-  const handlePlay = useCallback((domain: string) => {
-    setActiveGame({ domain, difficulty: adaptive.getDifficulty(domain) });
+  const variantsByDomain = useMemo(() => getVariantsByDomain(), []);
+  const domainOrder = useMemo(() => Object.keys(DOMAIN_GAME_CONFIGS), []);
+
+  const toggleDomain = useCallback((domain: string) => {
+    setExpandedDomains(prev => {
+      const next = new Set(prev);
+      if (next.has(domain)) next.delete(domain);
+      else next.add(domain);
+      return next;
+    });
+  }, []);
+
+  const handlePlay = useCallback((variant: GameVariant) => {
+    setActiveGame({
+      variantId: variant.id,
+      domain: variant.domain,
+      difficulty: adaptive.getDifficulty(variant.id),
+    });
   }, [adaptive]);
 
-  const handleGameComplete = useCallback(async (domain: string, score: number, total: number) => {
-    // Record result and let adaptive engine adjust difficulty
-    adaptive.recordResult(domain, score, total);
+  const handleGameComplete = useCallback(async (variantId: string, domain: string, score: number, total: number) => {
+    adaptive.recordResult(variantId, score, total);
 
     setScores(prev => ({
       ...prev,
-      [domain]: {
+      [variantId]: {
         lastScore: score,
         lastTotal: total,
-        gamesPlayed: (prev[domain]?.gamesPlayed || 0) + 1,
+        gamesPlayed: (prev[variantId]?.gamesPlayed || 0) + 1,
       },
     }));
     setActiveGame(null);
 
-    // Log to plan_session_logs for tracking (null plan_item_id = free play)
     if (user?.id) {
       try {
         await supabase.from('plan_session_logs').insert({
@@ -73,15 +94,16 @@ export function SkillGamesBrowser() {
           ai_observations: JSON.stringify({
             free_play: true,
             domain,
+            variant_id: variantId,
             total_questions: total,
-            adaptive_difficulty: adaptive.getDifficulty(domain),
+            adaptive_difficulty: adaptive.getDifficulty(variantId),
           }),
         });
       } catch {
-        // Non-critical: don't block UX
+        // Non-critical
       }
     }
-  }, [user?.id, familyId, adaptive]);
+  }, [user?.id, adaptive]);
 
   const handleGameClose = useCallback(() => {
     setActiveGame(null);
@@ -89,80 +111,125 @@ export function SkillGamesBrowser() {
 
   // Full-screen game view
   if (activeGame) {
+    const variant = GAME_VARIANTS.find(v => v.id === activeGame.variantId);
+    const config = variant ? variantToConfig(variant) : undefined;
+
     return (
       <SkillMatchGame
         skillDomain={activeGame.domain}
         difficulty={activeGame.difficulty}
-        onComplete={(score, total) => handleGameComplete(activeGame.domain, score, total)}
+        gameConfig={config}
+        onComplete={(score, total) =>
+          handleGameComplete(activeGame.variantId, activeGame.domain, score, total)
+        }
         onClose={handleGameClose}
       />
     );
   }
-
-  const configs = Object.values(DOMAIN_GAME_CONFIGS);
 
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
         <Gamepad2 className="h-5 w-5 text-primary" />
         <h2 className="text-lg font-bold text-foreground">Skill Games</h2>
-        <span className="text-sm text-muted-foreground">Play anytime!</span>
+        <span className="text-sm text-muted-foreground">
+          {GAME_VARIANTS.length} games · Play anytime!
+        </span>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {configs.map((config) => (
-          <DomainGameCard
-            key={config.domain}
-            config={config}
-            emoji={DOMAIN_EMOJIS[config.domain] || '🎮'}
-            difficulty={adaptive.getDifficulty(config.domain)}
-            suggestion={adaptive.getSuggestion(config.domain)}
-            onDifficultyChange={(d) => adaptive.setManualDifficulty(config.domain, d)}
-            onPlay={() => handlePlay(config.domain)}
-            score={scores[config.domain]}
-          />
-        ))}
-      </div>
+      {domainOrder.map(domain => {
+        const variants = variantsByDomain[domain];
+        if (!variants?.length) return null;
+
+        const domainInfo = DOMAIN_LABELS[domain] || { label: domain, emoji: '🎮' };
+        const isExpanded = expandedDomains.has(domain);
+        // Show first variant as preview when collapsed
+        const visibleVariants = isExpanded ? variants : variants.slice(0, 1);
+
+        return (
+          <div key={domain} className="space-y-2">
+            {/* Domain header */}
+            <button
+              onClick={() => toggleDomain(domain)}
+              className="flex items-center gap-2 w-full text-left group"
+            >
+              <span className="text-xl" role="img" aria-label={domainInfo.label}>
+                {domainInfo.emoji}
+              </span>
+              <h3 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
+                {domainInfo.label}
+              </h3>
+              <span className="text-xs text-muted-foreground">
+                ({variants.length} games)
+              </span>
+              <span className="ml-auto text-muted-foreground">
+                {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </span>
+            </button>
+
+            {/* Variant cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {visibleVariants.map(variant => (
+                <VariantGameCard
+                  key={variant.id}
+                  variant={variant}
+                  difficulty={adaptive.getDifficulty(variant.id)}
+                  suggestion={adaptive.getSuggestion(variant.id)}
+                  onDifficultyChange={d => adaptive.setManualDifficulty(variant.id, d)}
+                  onPlay={() => handlePlay(variant)}
+                  score={scores[variant.id]}
+                />
+              ))}
+            </div>
+
+            {/* Show more / less toggle */}
+            {variants.length > 1 && !isExpanded && (
+              <button
+                onClick={() => toggleDomain(domain)}
+                className="text-xs text-primary hover:underline ml-1"
+              >
+                + {variants.length - 1} more games
+              </button>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
 
-function DomainGameCard({
-  config,
-  emoji,
+function VariantGameCard({
+  variant,
   difficulty,
   suggestion,
   onDifficultyChange,
   onPlay,
   score,
 }: {
-  config: DomainGameConfig;
-  emoji: string;
+  variant: GameVariant;
   difficulty: Difficulty;
   suggestion: 'promote' | 'demote' | 'stay';
   onDifficultyChange: (d: Difficulty) => void;
   onPlay: () => void;
-  score?: DomainScore;
+  score?: VariantScore;
 }) {
   const accuracy = score ? Math.round((score.lastScore / score.lastTotal) * 100) : null;
 
   return (
-    <Card className={`${config.bgClass} border-0 transition-shadow duration-200 motion-reduce:transition-none hover:shadow-md`}>
+    <Card className={`${variant.bgClass} border-0 transition-shadow duration-200 motion-reduce:transition-none hover:shadow-md`}>
       <CardContent className="p-4 flex flex-col gap-3">
         {/* Header */}
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl" role="img" aria-label={config.label}>{emoji}</span>
-            <div>
-              <h3 className={`font-bold text-sm ${config.accentClass}`}>{config.label}</h3>
-              <p className="text-xs text-muted-foreground">{config.description}</p>
-            </div>
+        <div className="flex items-start gap-2">
+          <span className="text-2xl" role="img" aria-label={variant.label}>{variant.emoji}</span>
+          <div className="min-w-0">
+            <h4 className={`font-bold text-sm ${variant.accentClass} truncate`}>{variant.label}</h4>
+            <p className="text-xs text-muted-foreground line-clamp-2">{variant.description}</p>
           </div>
         </div>
 
-        {/* Last score badge + adaptive indicator */}
+        {/* Score badge + adaptive indicator */}
         {score && (
-          <div className="flex items-center gap-2 text-xs">
+          <div className="flex items-center flex-wrap gap-x-2 gap-y-1 text-xs">
             <Trophy className="h-3.5 w-3.5 text-accent-foreground" />
             <span className="text-muted-foreground">
               Last: <span className="font-semibold text-foreground">{score.lastScore}/{score.lastTotal}</span>
@@ -188,7 +255,7 @@ function DomainGameCard({
 
         {/* Difficulty selector */}
         <div className="flex gap-1">
-          {DIFFICULTY_OPTIONS.map((opt) => (
+          {DIFFICULTY_OPTIONS.map(opt => (
             <button
               key={opt.value}
               onClick={() => onDifficultyChange(opt.value)}
