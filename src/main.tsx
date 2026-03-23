@@ -12,6 +12,39 @@ import { logger, secureLog } from '@/utils/wideLogger'
 import { initLogger } from '@/utils/initializationLogger'
 import './index.css'
 
+const PREVIEW_SW_RESET_FLAG = '__preview_sw_reset__';
+const isPreviewHost = typeof window !== 'undefined' && (
+  window.location.hostname.includes('id-preview--') ||
+  window.location.hostname.endsWith('lovableproject.com')
+);
+
+const resetPreviewServiceWorker = async () => {
+  if (!('serviceWorker' in navigator)) return;
+
+  const registrations = await navigator.serviceWorker.getRegistrations();
+  if (registrations.length === 0) return;
+
+  await Promise.all(registrations.map((registration) => registration.unregister()));
+
+  if ('caches' in window) {
+    const cacheKeys = await caches.keys();
+    await Promise.all(cacheKeys.map((cacheKey) => caches.delete(cacheKey)));
+  }
+
+  if (!sessionStorage.getItem(PREVIEW_SW_RESET_FLAG)) {
+    sessionStorage.setItem(PREVIEW_SW_RESET_FLAG, '1');
+    window.location.reload();
+  }
+};
+
+if (isPreviewHost) {
+  void resetPreviewServiceWorker().catch((error) => {
+    secureLog.warn('Failed to reset preview service worker', {
+      message: error instanceof Error ? error.message : String(error),
+    });
+  });
+}
+
 // Start initialization tracking immediately
 initLogger.start();
 initLogger.beginPhase('module_load');
