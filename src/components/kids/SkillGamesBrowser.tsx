@@ -296,7 +296,7 @@ export function SkillGamesBrowser() {
 
 // ── Unified Game Card ──
 function GameCard({
-  id,
+  id: _id,
   label,
   description,
   emoji,
