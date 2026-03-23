@@ -1,18 +1,20 @@
 /**
  * SkillGamesBrowser - Browse and play skill domain games freely
- * Shows 24 game variants across 8 skill domains (3 per domain).
+ * Shows 40 SkillQuest variants + 8 bonus standalone games across 8 skill domains.
  * Includes adaptive difficulty that auto-adjusts based on accuracy history.
  */
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, lazy, Suspense } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Gamepad2, Star, Trophy, TrendingUp, TrendingDown, ChevronDown, ChevronUp } from 'lucide-react';
+import { Gamepad2, Star, Trophy, TrendingUp, TrendingDown, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
 import {
   GAME_VARIANTS,
-  getVariantsByDomain,
+  STANDALONE_GAMES,
+  getAllGamesByDomain,
   variantToConfig,
   DOMAIN_GAME_CONFIGS,
   type GameVariant,
+  type StandaloneGameEntry,
 } from '@/components/games/shared/skillGameData';
 import { SkillMatchGame } from '@/components/games/SkillMatchGame';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,17 +22,38 @@ import { useAuth } from '@/hooks/useAuth';
 import { useChildProfile } from '@/hooks/useChildProfile';
 import { useAdaptiveDifficulty, type Difficulty } from '@/hooks/useAdaptiveDifficulty';
 
-interface VariantScore {
+// Lazy-load standalone game components
+const MemoryMatchGame = lazy(() =>
+  import('@/components/games/MemoryMatchGame').then(m => ({ default: m.MemoryMatchGame }))
+);
+const PatternMatchGame = lazy(() =>
+  import('@/components/games/PatternMatchGame').then(m => ({ default: m.PatternMatchGame }))
+);
+const SoundsMatchGame = lazy(() =>
+  import('@/components/games/SoundsMatchGame').then(m => ({ default: m.SoundsMatchGame }))
+);
+
+interface GameScore {
   lastScore: number;
   lastTotal: number;
   gamesPlayed: number;
 }
+
+type ActiveGame =
+  | { type: 'variant'; variantId: string; domain: string; difficulty: Difficulty }
+  | { type: 'standalone'; entry: StandaloneGameEntry; difficulty: Difficulty };
 
 const DIFFICULTY_OPTIONS: { value: Difficulty; label: string; emoji: string }[] = [
   { value: 'easy', label: 'Easy', emoji: '🟢' },
   { value: 'medium', label: 'Medium', emoji: '🟡' },
   { value: 'hard', label: 'Hard', emoji: '🔴' },
 ];
+
+const SKILL_LEVEL_MAP: Record<Difficulty, 'beginner' | 'intermediate' | 'advanced'> = {
+  easy: 'beginner',
+  medium: 'intermediate',
+  hard: 'advanced',
+};
 
 const DOMAIN_LABELS: Record<string, { label: string; emoji: string }> = {
   communication: { label: 'Communication', emoji: '💬' },
@@ -45,14 +68,15 @@ const DOMAIN_LABELS: Record<string, { label: string; emoji: string }> = {
 
 export function SkillGamesBrowser() {
   const { user } = useAuth();
-  const { familyId: _familyId } = useChildProfile(user?.id);
-  const [activeGame, setActiveGame] = useState<{ variantId: string; domain: string; difficulty: Difficulty } | null>(null);
-  const [scores, setScores] = useState<Record<string, VariantScore>>({});
+  useChildProfile(user?.id); // keep profile loaded
+  const [activeGame, setActiveGame] = useState<ActiveGame | null>(null);
+  const [scores, setScores] = useState<Record<string, GameScore>>({});
   const [expandedDomains, setExpandedDomains] = useState<Set<string>>(new Set());
   const adaptive = useAdaptiveDifficulty();
 
-  const variantsByDomain = useMemo(() => getVariantsByDomain(), []);
+  const gamesByDomain = useMemo(() => getAllGamesByDomain(), []);
   const domainOrder = useMemo(() => Object.keys(DOMAIN_GAME_CONFIGS), []);
+  const totalGames = GAME_VARIANTS.length + STANDALONE_GAMES.length;
 
   const toggleDomain = useCallback((domain: string) => {
     setExpandedDomains(prev => {
@@ -63,23 +87,31 @@ export function SkillGamesBrowser() {
     });
   }, []);
 
-  const handlePlay = useCallback((variant: GameVariant) => {
+  const handlePlayVariant = useCallback((variant: GameVariant) => {
     setActiveGame({
+      type: 'variant',
       variantId: variant.id,
       domain: variant.domain,
       difficulty: adaptive.getDifficulty(variant.id),
     });
   }, [adaptive]);
 
-  const handleGameComplete = useCallback(async (variantId: string, domain: string, score: number, total: number) => {
-    adaptive.recordResult(variantId, score, total);
+  const handlePlayStandalone = useCallback((entry: StandaloneGameEntry) => {
+    setActiveGame({
+      type: 'standalone',
+      entry,
+      difficulty: adaptive.getDifficulty(entry.id),
+    });
+  }, [adaptive]);
 
+  const recordScore = useCallback(async (gameId: string, domain: string, score: number, total: number) => {
+    adaptive.recordResult(gameId, score, total);
     setScores(prev => ({
       ...prev,
-      [variantId]: {
+      [gameId]: {
         lastScore: score,
         lastTotal: total,
-        gamesPlayed: (prev[variantId]?.gamesPlayed || 0) + 1,
+        gamesPlayed: (prev[gameId]?.gamesPlayed || 0) + 1,
       },
     }));
     setActiveGame(null);
@@ -94,9 +126,9 @@ export function SkillGamesBrowser() {
           ai_observations: JSON.stringify({
             free_play: true,
             domain,
-            variant_id: variantId,
+            game_id: gameId,
             total_questions: total,
-            adaptive_difficulty: adaptive.getDifficulty(variantId),
+            adaptive_difficulty: adaptive.getDifficulty(gameId),
           }),
         });
       } catch {
@@ -109,42 +141,84 @@ export function SkillGamesBrowser() {
     setActiveGame(null);
   }, []);
 
-  // Full-screen game view
+  // ── Full-screen game view ──
   if (activeGame) {
-    const variant = GAME_VARIANTS.find(v => v.id === activeGame.variantId);
-    const config = variant ? variantToConfig(variant) : undefined;
+    if (activeGame.type === 'variant') {
+      const variant = GAME_VARIANTS.find(v => v.id === activeGame.variantId);
+      const config = variant ? variantToConfig(variant) : undefined;
+      return (
+        <SkillMatchGame
+          skillDomain={activeGame.domain}
+          difficulty={activeGame.difficulty}
+          gameConfig={config}
+          onComplete={(score, total) =>
+            recordScore(activeGame.variantId, activeGame.domain, score, total)
+          }
+          onClose={handleGameClose}
+        />
+      );
+    }
+
+    // Standalone game
+    const { entry, difficulty } = activeGame;
+    const skillLevel = SKILL_LEVEL_MAP[difficulty];
+
+    const handleStandaloneComplete = (stats: { correct: number; incorrect?: number; total?: number; time?: number }) => {
+      const total = stats.total || (stats.correct + (stats.incorrect || 0));
+      recordScore(entry.id, entry.domain, stats.correct, total);
+    };
 
     return (
-      <SkillMatchGame
-        skillDomain={activeGame.domain}
-        difficulty={activeGame.difficulty}
-        gameConfig={config}
-        onComplete={(score, total) =>
-          handleGameComplete(activeGame.variantId, activeGame.domain, score, total)
-        }
-        onClose={handleGameClose}
-      />
+      <Suspense fallback={
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-4xl animate-pulse">🎮</div>
+        </div>
+      }>
+        {entry.gameType === 'memory' && (
+          <MemoryMatchGame
+            skillLevel={skillLevel}
+            onComplete={handleStandaloneComplete}
+            onClose={handleGameClose}
+          />
+        )}
+        {entry.gameType === 'pattern' && (
+          <PatternMatchGame
+            skillLevel={skillLevel}
+            onComplete={handleStandaloneComplete}
+            onClose={handleGameClose}
+          />
+        )}
+        {entry.gameType === 'sounds' && (
+          <SoundsMatchGame
+            skillLevel={skillLevel}
+            onComplete={handleStandaloneComplete}
+            onClose={handleGameClose}
+          />
+        )}
+      </Suspense>
     );
   }
 
+  // ── Browse view ──
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <div className="flex items-center gap-2">
         <Gamepad2 className="h-5 w-5 text-primary" />
         <h2 className="text-lg font-bold text-foreground">Skill Games</h2>
         <span className="text-sm text-muted-foreground">
-          {GAME_VARIANTS.length} games · Play anytime!
+          {totalGames} games · Play anytime!
         </span>
       </div>
 
       {domainOrder.map(domain => {
-        const variants = variantsByDomain[domain];
-        if (!variants?.length) return null;
+        const { variants, standalone } = gamesByDomain[domain] || { variants: [], standalone: [] };
+        const totalInDomain = variants.length + standalone.length;
+        if (totalInDomain === 0) return null;
 
         const domainInfo = DOMAIN_LABELS[domain] || { label: domain, emoji: '🎮' };
         const isExpanded = expandedDomains.has(domain);
-        // Show first variant as preview when collapsed
         const visibleVariants = isExpanded ? variants : variants.slice(0, 1);
+        const visibleStandalone = isExpanded ? standalone : [];
 
         return (
           <div key={domain} className="space-y-2">
@@ -160,35 +234,57 @@ export function SkillGamesBrowser() {
                 {domainInfo.label}
               </h3>
               <span className="text-xs text-muted-foreground">
-                ({variants.length} games)
+                ({totalInDomain} games)
               </span>
               <span className="ml-auto text-muted-foreground">
                 {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
               </span>
             </button>
 
-            {/* Variant cards */}
+            {/* Game cards grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {visibleVariants.map(variant => (
-                <VariantGameCard
+                <GameCard
                   key={variant.id}
-                  variant={variant}
+                  id={variant.id}
+                  label={variant.label}
+                  description={variant.description}
+                  emoji={variant.emoji}
+                  bgClass={variant.bgClass}
+                  accentClass={variant.accentClass}
                   difficulty={adaptive.getDifficulty(variant.id)}
                   suggestion={adaptive.getSuggestion(variant.id)}
                   onDifficultyChange={d => adaptive.setManualDifficulty(variant.id, d)}
-                  onPlay={() => handlePlay(variant)}
+                  onPlay={() => handlePlayVariant(variant)}
                   score={scores[variant.id]}
+                />
+              ))}
+              {visibleStandalone.map(entry => (
+                <GameCard
+                  key={entry.id}
+                  id={entry.id}
+                  label={entry.label}
+                  description={entry.description}
+                  emoji={entry.emoji}
+                  bgClass={entry.bgClass}
+                  accentClass={entry.accentClass}
+                  difficulty={adaptive.getDifficulty(entry.id)}
+                  suggestion={adaptive.getSuggestion(entry.id)}
+                  onDifficultyChange={d => adaptive.setManualDifficulty(entry.id, d)}
+                  onPlay={() => handlePlayStandalone(entry)}
+                  score={scores[entry.id]}
+                  badge="Bonus"
                 />
               ))}
             </div>
 
-            {/* Show more / less toggle */}
-            {variants.length > 1 && !isExpanded && (
+            {/* Show more toggle */}
+            {totalInDomain > 1 && !isExpanded && (
               <button
                 onClick={() => toggleDomain(domain)}
                 className="text-xs text-primary hover:underline ml-1"
               >
-                + {variants.length - 1} more games
+                + {totalInDomain - 1} more games
               </button>
             )}
           </div>
@@ -198,32 +294,53 @@ export function SkillGamesBrowser() {
   );
 }
 
-function VariantGameCard({
-  variant,
+// ── Unified Game Card ──
+function GameCard({
+  id,
+  label,
+  description,
+  emoji,
+  bgClass,
+  accentClass,
   difficulty,
   suggestion,
   onDifficultyChange,
   onPlay,
   score,
+  badge,
 }: {
-  variant: GameVariant;
+  id: string;
+  label: string;
+  description: string;
+  emoji: string;
+  bgClass: string;
+  accentClass: string;
   difficulty: Difficulty;
   suggestion: 'promote' | 'demote' | 'stay';
   onDifficultyChange: (d: Difficulty) => void;
   onPlay: () => void;
-  score?: VariantScore;
+  score?: GameScore;
+  badge?: string;
 }) {
   const accuracy = score ? Math.round((score.lastScore / score.lastTotal) * 100) : null;
 
   return (
-    <Card className={`${variant.bgClass} border-0 transition-shadow duration-200 motion-reduce:transition-none hover:shadow-md`}>
+    <Card className={`${bgClass} border-0 transition-shadow duration-200 motion-reduce:transition-none hover:shadow-md`}>
       <CardContent className="p-4 flex flex-col gap-3">
         {/* Header */}
         <div className="flex items-start gap-2">
-          <span className="text-2xl" role="img" aria-label={variant.label}>{variant.emoji}</span>
-          <div className="min-w-0">
-            <h4 className={`font-bold text-sm ${variant.accentClass} truncate`}>{variant.label}</h4>
-            <p className="text-xs text-muted-foreground line-clamp-2">{variant.description}</p>
+          <span className="text-2xl" role="img" aria-label={label}>{emoji}</span>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5">
+              <h4 className={`font-bold text-sm ${accentClass} truncate`}>{label}</h4>
+              {badge && (
+                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-semibold shrink-0">
+                  <Sparkles className="h-2.5 w-2.5" />
+                  {badge}
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground line-clamp-2">{description}</p>
           </div>
         </div>
 
@@ -241,12 +358,12 @@ function VariantGameCard({
             </span>
             <span className="text-muted-foreground">· {score.gamesPlayed} played</span>
             {suggestion === 'promote' && (
-              <span className="flex items-center gap-0.5 text-primary font-medium" title="Great job! Difficulty will increase">
+              <span className="flex items-center gap-0.5 text-primary font-medium">
                 <TrendingUp className="h-3 w-3" /> Level up!
               </span>
             )}
             {suggestion === 'demote' && (
-              <span className="flex items-center gap-0.5 text-accent-foreground font-medium" title="Adjusting to an easier level">
+              <span className="flex items-center gap-0.5 text-accent-foreground font-medium">
                 <TrendingDown className="h-3 w-3" /> Easier
               </span>
             )}
