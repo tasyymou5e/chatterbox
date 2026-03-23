@@ -29,7 +29,7 @@ export function ActivityExecutor({ catalogItem, planItemId, isIdle, onComplete, 
       <SkillMatchGame
         skillDomain={catalogItem.skill_domain}
         difficulty={catalogItem.difficulty}
-        onComplete={(score) => {
+        onComplete={(_score) => {
           onComplete?.();
         }}
         onClose={onClose}
