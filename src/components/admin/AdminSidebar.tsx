@@ -105,8 +105,20 @@ export function AdminSidebar() {
   const collapsed = state === 'collapsed';
 
   return (
-    <Sidebar collapsible="icon" className="border-gray-700 bg-gray-800">
-      <SidebarContent className="bg-gray-800">
+    <Sidebar
+      collapsible="icon"
+      className="border-gray-700"
+      style={{
+        '--sidebar-background': '220 17% 17%',
+        '--sidebar-foreground': '220 13% 91%',
+        '--sidebar-accent': '220 17% 27%',
+        '--sidebar-accent-foreground': '0 0% 100%',
+        '--sidebar-primary': '213 94% 68%',
+        '--sidebar-primary-foreground': '0 0% 100%',
+        '--sidebar-border': '220 17% 27%',
+      } as React.CSSProperties}
+    >
+      <SidebarContent>
         {navGroups.map((group) => {
           const active = isGroupActive(group, location.pathname);
 
@@ -133,14 +145,7 @@ export function AdminSidebar() {
                               isActive={isActive}
                               tooltip={item.title}
                             >
-                              <Link
-                                to={item.url}
-                                className={
-                                  isActive
-                                    ? 'text-white bg-gray-700 font-semibold'
-                                    : 'text-gray-200 hover:text-white hover:bg-gray-700/50'
-                                }
-                              >
+                              <Link to={item.url}>
                                 <item.icon className="h-4 w-4" />
                                 <span>{item.title}</span>
                               </Link>
