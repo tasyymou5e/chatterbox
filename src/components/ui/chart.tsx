@@ -156,6 +156,7 @@ interface ChartPayloadItem {
   value?: number | string
   color?: string
   fill?: string
+  graphicalItemId?: number
   payload?: Record<string, unknown>
   [key: string]: unknown
 }
