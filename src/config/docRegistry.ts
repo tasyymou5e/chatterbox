@@ -2,8 +2,8 @@
  * Documentation Registry Configuration
  * Maps source code patterns to documentation files for automated updates
  *
- * Last synced: 2026-03-15
- * Total registered docs: 35
+ * Last synced: 2026-03-24
+ * Total registered docs: 42
  */
 
 export interface SectionConfig {
@@ -393,6 +393,57 @@ export const docRegistry: DocMapping[] = [
     sections: [],
     autoUpdateFields: ['Last Updated'],
     category: 'status',
+  },
+
+  // ============ ADDITIONAL DOCUMENTATION ============
+  {
+    docFile: 'TECHSTACK.md',
+    watchPatterns: ['src/**/*', 'supabase/**/*', 'package.json'],
+    sections: [],
+    autoUpdateFields: ['Last Updated'],
+    category: 'core',
+  },
+  {
+    docFile: 'ASSESSMENT_PIPELINE.md',
+    watchPatterns: ['src/components/assessment/**/*', 'supabase/functions/ai-assessment-review/**/*'],
+    sections: [],
+    autoUpdateFields: ['Last Updated'],
+    category: 'guides',
+  },
+  {
+    docFile: 'AUTH_E2E_COVERAGE_REPORT.md',
+    watchPatterns: ['tests-e2e/auth/**/*'],
+    sections: [],
+    autoUpdateFields: ['Last Updated'],
+    category: 'testing',
+  },
+  {
+    docFile: 'DOCS_AUTO_UPDATE.md',
+    watchPatterns: ['scripts/**/*', 'src/config/docRegistry.ts'],
+    sections: [],
+    autoUpdateFields: ['Last Updated'],
+    category: 'utils',
+  },
+  {
+    docFile: 'ENTERPRISE_SECURITY_PERFORMANCE.md',
+    watchPatterns: ['src/utils/**/secure*.ts', 'supabase/functions/**/*'],
+    sections: [],
+    autoUpdateFields: ['Last Updated'],
+    category: 'security',
+  },
+  {
+    docFile: 'INCOMPLETE_ITEMS.md',
+    watchPatterns: ['src/**/*'],
+    sections: [],
+    autoUpdateFields: ['Last Updated'],
+    category: 'status',
+  },
+  {
+    docFile: 'LOGGING_STANDARDS.md',
+    watchPatterns: ['supabase/functions/_shared/wide-event.ts', 'supabase/functions/**/*'],
+    sections: [],
+    autoUpdateFields: ['Last Updated'],
+    category: 'backend',
   },
 
   // ============ GRAPHICS & DESIGN ============
