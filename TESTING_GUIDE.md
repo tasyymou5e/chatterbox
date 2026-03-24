@@ -1,6 +1,6 @@
 # Testing Documentation
 
-> **Last Updated:** 2026-01-24  
+> **Last Updated:** 2026-03-24  
 > **Test Framework:** Vitest (unit/component), Playwright (E2E)  
 > **Coverage Target:** 80%+
 

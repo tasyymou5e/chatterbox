@@ -1,5 +1,5 @@
 # Bundle Optimization Guide
-**Last Updated: 2026-01-15**
+**Last Updated: 2026-03-24**
 
 ---
 

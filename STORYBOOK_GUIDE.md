@@ -1,6 +1,6 @@
 # Storybook Guide
 
-> **Last Updated:** 2026-01-21  
+> **Last Updated:** 2026-03-24  
 > **Storybook Version:** 8.x  
 > **Location:** `.storybook/`, `src/components/ui/*.stories.tsx`
 

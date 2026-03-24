@@ -1,6 +1,6 @@
 # Custom Hooks Documentation
 
-> **Last Updated:** 2026-03-15  
+> **Last Updated:** 2026-03-24  
 > **Total Hooks:** 58  
 > **Location:** `src/hooks/`
 

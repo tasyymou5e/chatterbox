@@ -1,8 +1,8 @@
 # Chatterbox Architecture Ebook
 **Comprehensive Technical Reference**
 
-> **Last Updated:** 2026-03-15  
-> **Version:** 3.0  
+> **Last Updated:** 2026-03-24  
+> **Version:** 4.0  
 > **Audience:** Developers, architects, new team members
 
 ---
@@ -35,11 +35,11 @@
 
 | Metric | Value |
 |--------|-------|
-| Custom React Hooks | 58 |
+| Custom React Hooks | 54 |
 | Zustand Stores | 18 |
 | Edge Functions | 32 |
 | Database Tables | 59 |
-| TypeScript Type Files | 30 |
+| TypeScript Type Files | 27 |
 | Component Directories | 24 |
 | Page Routes | 20+ |
 | RLS Policies | 65+ (optimized from 130+) |
@@ -349,15 +349,19 @@ Routes are protected by `WithAuth` and role-specific guards:
 | `supabase-analytics-query` | Admin JWT | Run analytics queries |
 | `text-to-speech` | JWT | Convert text to speech |
 
-### Shared Utilities (`_shared/`)
+### Shared Utilities (`_shared/` — 10 modules)
 
 All edge functions share common utilities:
 - `cors.ts` — Dynamic origin validation via `getCorsHeaders(origin)`
-- `auth-validator.ts` — JWT verification and role checking
+- `auth-validator.ts` — JWT verification, `validateAdminJWT()`, role checking
 - `rate-limiter.ts` — Per-IP rate limiting with configurable windows
 - `api-types.ts` — Shared TypeScript interfaces
 - `email-sender.ts` — Email sending via Resend
+- `email-templates.ts` — HTML email template rendering
+- `password-validator.ts` — Crypto-secure password generation & validation
+- `scheduler-validator.ts` — `X-Scheduler-Secret` header validation for cron functions
 - `security-headers.ts` — Standard security headers
+- `wide-event.ts` — `withWideEvent()` structured logging for all functions
 
 ---
 
@@ -602,7 +606,7 @@ tests-e2e/
 
 ### Automated Documentation Pipeline
 
-The project maintains 35 documentation files synchronized with source code through an automated system:
+The project maintains 42 documentation files synchronized with source code through an automated system:
 
 ```
 src/config/docRegistry.ts     ← Registry of all docs + watch patterns
@@ -633,7 +637,7 @@ npm run docs:update -- --filter=hooks       # Category filter
 
 ## 15. Appendix
 
-### A. Complete Hook Reference (58 hooks)
+### A. Complete Hook Reference (54 hooks)
 
 | Hook | Category |
 |------|----------|
@@ -717,6 +721,7 @@ npm run docs:update -- --filter=hooks       # Category filter
 | `usePerformanceAnalyticsStore` | `performanceAnalyticsStore.ts` | Analytics |
 | `useProgressAnalyticsStore` | `progressAnalyticsStore.ts` | Analytics |
 | `useSystemHealthStore` | `systemHealthStore.ts` | System |
+| — | `triageTicketStore.ts` | System |
 
 ### C. Edge Function Reference (32 functions)
 

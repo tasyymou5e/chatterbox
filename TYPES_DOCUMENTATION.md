@@ -1,6 +1,6 @@
 # TypeScript Types Documentation
 
-> **Last Updated:** 2026-01-21  
+> **Last Updated:** 2026-03-24  
 > **Total Type Files:** 21  
 > **Location:** `src/types/`  
 > **TypeScript Version:** 5.6.2
