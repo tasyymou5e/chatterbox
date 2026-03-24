@@ -247,18 +247,26 @@ Create a personalized ${scheduleType} plan for ${timeframe}. Select items and ex
     const validIds = new Set(catalogItems.map((c: any) => c.id));
     const validItems = plan.items.filter((item: any) => validIds.has(item.catalog_item_id));
 
-    // Insert the plan under the child's user id
+    // Insert the plan under the child's user id (upsert to handle race conditions)
     const { data: newPlan, error: planError } = await adminClient
       .from("user_daily_plans")
-      .insert({
+      .upsert({
         user_id: targetChildId,
         plan_date: today,
         status: "active",
         ai_summary: plan.summary,
         assessment_snapshot: assessmentSummary.length > 0 ? assessmentSummary : null,
-      })
+      }, { onConflict: "user_id,plan_date" })
       .select("id")
       .single();
+
+    if (planError || !newPlan) {
+      console.error("Plan insert/upsert error:", planError);
+      return new Response(JSON.stringify({ error: "Failed to save plan" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // Look up the child's family_id before inserting
     const { data: familyMember } = await adminClient
