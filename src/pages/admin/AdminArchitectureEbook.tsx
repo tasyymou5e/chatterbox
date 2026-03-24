@@ -710,6 +710,52 @@ export default function AdminArchitectureEbook() {
     );
   }, [searchQuery]);
 
+  const handleDownloadPdf = useCallback(() => {
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 15;
+    const maxWidth = pageWidth - margin * 2;
+    let y = 20;
+
+    // Title page
+    doc.setFontSize(24);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Chatterbox Architecture Ebook', pageWidth / 2, 60, { align: 'center' });
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Comprehensive Technical Reference — v4.0', pageWidth / 2, 72, { align: 'center' });
+    doc.text(`Generated ${new Date().toLocaleDateString()}`, pageWidth / 2, 80, { align: 'center' });
+    doc.addPage();
+
+    chapters.forEach((chapter) => {
+      // Chapter title
+      if (y > 260) { doc.addPage(); y = 20; }
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      const titleLines = doc.splitTextToSize(chapter.title, maxWidth);
+      doc.text(titleLines, margin, y);
+      y += titleLines.length * 8 + 4;
+
+      // Chapter body — strip markdown bold/italic markers
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      const cleaned = chapter.content
+        .replace(/\*\*(.*?)\*\*/g, '$1')
+        .replace(/\*(.*?)\*/g, '$1')
+        .replace(/^#+\s*/gm, '')
+        .replace(/^[-*]\s/gm, '• ');
+      const bodyLines: string[] = doc.splitTextToSize(cleaned, maxWidth);
+      for (const line of bodyLines) {
+        if (y > 275) { doc.addPage(); y = 20; }
+        doc.text(line, margin, y);
+        y += 5;
+      }
+      y += 10;
+    });
+
+    doc.save('chatterbox-architecture-ebook.pdf');
+  }, []);
+
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -725,9 +771,15 @@ export default function AdminArchitectureEbook() {
             <p className="text-gray-400 text-sm">Comprehensive technical reference — v4.0 · Updated 2026-03-24</p>
           </div>
         </div>
-        <Badge variant="outline" className="border-blue-500/50 text-blue-400">
-          15 Chapters
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={handleDownloadPdf} className="gap-2">
+            <Download className="h-4 w-4" />
+            Download PDF
+          </Button>
+          <Badge variant="outline" className="border-blue-500/50 text-blue-400">
+            15 Chapters
+          </Badge>
+        </div>
       </div>
 
       {/* Search */}
