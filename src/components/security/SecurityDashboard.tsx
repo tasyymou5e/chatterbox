@@ -11,8 +11,9 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { invokeWithRetry } from '@/hooks/useRetryWithBackoff';
-import { Shield, AlertTriangle, Activity, Lock, Users, Database, RefreshCw } from 'lucide-react';
-import type { SecurityMetrics, SecurityTest, ThreatAnalysis } from '@/types/security';
+import { Shield, AlertTriangle, Activity, Lock, Users, Database, RefreshCw, Zap, Eye, Fingerprint } from 'lucide-react';
+import type { SecurityMetrics, SecurityTest } from '@/types/security';
+import { Progress } from '@/components/ui/progress';
 
 // Default metrics when API fails
 const DEFAULT_METRICS: SecurityMetrics = {
