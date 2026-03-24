@@ -25,7 +25,6 @@ serve(async (req) => {
   if (!validateSchedulerSecret(req)) {
     return createSchedulerUnauthorizedResponse(corsHeaders);
   }
-  }
 
   const json = (payload: unknown, status = 200) =>
     new Response(JSON.stringify(payload), {
