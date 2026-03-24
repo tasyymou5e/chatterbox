@@ -64,6 +64,17 @@ if (isPreviewHost) {
   });
 }
 
+// Register PWA service worker with error handling (injectRegister: false)
+if (!isPreviewHost && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch((err) => {
+      secureLog.warn('Service worker registration failed gracefully', {
+        message: err instanceof Error ? err.message : String(err),
+      });
+    });
+  });
+}
+
 // Start initialization tracking immediately
 initLogger.start();
 initLogger.beginPhase('module_load');
