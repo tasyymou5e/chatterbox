@@ -20,9 +20,8 @@ serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const lovableKey = Deno.env.get("LOVABLE_API_KEY")!;
+    const lovableKey = Deno.env.get("LOVABLE_API_KEY");
 
-    // Verify user
     const userClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
       global: { headers: { Authorization: authHeader } },
     });
@@ -36,12 +35,9 @@ serve(async (req) => {
 
     const adminClient = createClient(supabaseUrl, serviceKey);
 
-    // Parse request body for schedule_type
     const requestBody = await req.json().catch(() => ({}));
     const scheduleType = requestBody.schedule_type || "daily";
-    const childId = requestBody.child_id; // optional: generate plan for a specific child
-
-    // Determine the target child: explicit child_id, or the calling user if they are a child
+    const childId = requestBody.child_id;
     const targetChildId = childId || user.id;
 
     // Check if plan already exists for today
@@ -54,10 +50,9 @@ serve(async (req) => {
       .maybeSingle();
 
     if (existingPlan) {
-      // Return existing plan with items
       const { data: items } = await adminClient
         .from("user_daily_plan_items")
-        .select("*")
+        .select("id, plan_id, catalog_item_id, title, description, category, priority, status, ai_reasoning, completed_at")
         .eq("plan_id", existingPlan.id)
         .order("priority");
 
@@ -67,27 +62,13 @@ serve(async (req) => {
       );
     }
 
-    // Fetch child's assessment results (by child_id or user_id)
-    const { data: assessments } = await adminClient
-      .from("assessment_results")
-      .select("*")
-      .or(`child_id.eq.${targetChildId},user_id.eq.${targetChildId}`)
-      .order("created_at", { ascending: false })
-      .limit(5);
-
-    // Fetch child profile for context
-    const { data: profile } = await adminClient
-      .from("profiles")
-      .select("first_name, last_name, user_role")
-      .eq("user_id", targetChildId)
-      .maybeSingle();
-
-    // Fetch available catalog items
+    // Fetch catalog items (limit to 30 most relevant)
     const { data: catalogItems } = await adminClient
       .from("life_skill_catalog")
-      .select("*")
+      .select("id, title, description, category, difficulty, age_group, skill_domain, item_type")
       .eq("is_active", true)
-      .order("sort_order");
+      .order("sort_order")
+      .limit(30);
 
     if (!catalogItems || catalogItems.length === 0) {
       return new Response(
@@ -96,179 +77,68 @@ serve(async (req) => {
       );
     }
 
-    // Build AI prompt
-    const assessmentSummary = assessments?.length
-      ? assessments.map((a: any) => ({
-          type: a.assessment_type,
-          subject: a.subject_name,
-          grade: a.overall_grade,
-          scores: a.scores,
-          ai_review: a.ai_review,
-          date: a.created_at,
-        }))
-      : [];
+    // Fetch assessments (limit fields)
+    const { data: assessments } = await adminClient
+      .from("assessment_results")
+      .select("assessment_type, subject_name, overall_grade, scores")
+      .or(`child_id.eq.${targetChildId},user_id.eq.${targetChildId}`)
+      .order("created_at", { ascending: false })
+      .limit(3);
 
-    const catalogSummary = catalogItems.map((c: any) => ({
-      id: c.id,
-      title: c.title,
-      description: c.description,
-      category: c.category,
-      difficulty: c.difficulty,
-      age_group: c.age_group,
-      duration: c.estimated_duration_minutes,
-      tags: c.tags,
-      skill_domain: c.skill_domain,
-      item_type: c.item_type,
-      autism_skill_tags: c.autism_skill_tags,
-      clinical_reference: c.clinical_reference,
-    }));
+    // Fetch profile
+    const { data: profile } = await adminClient
+      .from("profiles")
+      .select("first_name, user_role")
+      .eq("user_id", targetChildId)
+      .maybeSingle();
 
-    const userRole = profile?.user_role || "parent";
     const userName = profile?.first_name || "User";
+    const userRole = profile?.user_role || "parent";
 
-    // Map assessment scores to skill domain weights
-    const domainWeights = mapAssessmentsToDomains(assessmentSummary);
+    // Try AI generation, fall back to randomized plan on failure
+    let planResult: { summary: string; items: any[] };
 
-    const itemCount = scheduleType === "weekly" ? "15-25" : scheduleType === "monthly" ? "30-40" : "5-8";
-    const timeframe = scheduleType === "weekly" ? "7 days" : scheduleType === "monthly" ? "30 days" : "today";
-
-    const systemPrompt = `You are a life skills planning assistant specializing in autism support (ABA, TEACCH, ESDM frameworks).
-Review assessment results and create a personalized ${scheduleType} plan from the available catalog.
-
-Assessment-to-Domain Mapping:
-${JSON.stringify(domainWeights, null, 2)}
-
-Rules:
-- Select ${itemCount} items from the catalog matching the user's needs based on assessments.
-- Weight selection toward domains with higher deficit scores (higher = more need).
-- Balance across different skill domains and item types (chore, game, study, activity).
-- ${scheduleType === "weekly" ? "Distribute items across 7 days with variety. Include a 'day' field (1-7) for each item." : ""}
-- ${scheduleType === "monthly" ? "Create progressive difficulty: easier items first week, harder later. Include a 'week' field (1-4) for each item." : ""}
-- For each item, explain why it was selected based on assessment deficits.
-- Consider the user's role (${userRole}).`;
-
-    const userPrompt = `User: ${userName} (Role: ${userRole})
-
-Assessment Results:
-${assessmentSummary.length > 0 ? JSON.stringify(assessmentSummary, null, 2) : "No assessments completed yet - create a general introductory plan."}
-
-Available Catalog Items:
-${JSON.stringify(catalogSummary, null, 2)}
-
-Create a personalized ${scheduleType} plan for ${timeframe}. Select items and explain why each is recommended.`;
-
-    // Call Lovable AI Gateway with tool calling for structured output
-    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${lovableKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "create_daily_plan",
-              description: "Create a personalized daily plan with selected catalog items",
-              parameters: {
-                type: "object",
-                properties: {
-                  summary: {
-                    type: "string",
-                    description: "2-3 sentence summary of the plan",
-                  },
-                  items: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        catalog_item_id: { type: "string" },
-                        title: { type: "string" },
-                        description: { type: "string" },
-                        category: { type: "string" },
-                        priority: { type: "integer" },
-                        ai_reasoning: { type: "string" },
-                      },
-                      required: ["catalog_item_id", "title", "description", "category", "priority", "ai_reasoning"],
-                      additionalProperties: false,
-                    },
-                  },
-                },
-                required: ["summary", "items"],
-                additionalProperties: false,
-              },
-            },
-          },
-        ],
-        tool_choice: { type: "function", function: { name: "create_daily_plan" } },
-      }),
-    });
-
-    if (!aiResponse.ok) {
-      const status = aiResponse.status;
-      if (status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again later." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (status === 402) {
-        return new Response(JSON.stringify({ error: "AI credits exhausted. Please add funds." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      console.error("AI gateway error:", status, await aiResponse.text());
-      return new Response(JSON.stringify({ error: "AI service unavailable" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    try {
+      planResult = await generateWithAI(
+        lovableKey, catalogItems, assessments || [], userName, userRole, scheduleType
+      );
+    } catch (aiErr) {
+      console.warn("AI generation failed, using fallback:", aiErr);
+      planResult = generateFallbackPlan(catalogItems, scheduleType);
     }
 
-    const aiData = await aiResponse.json();
-    const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
-    if (!toolCall) {
-      console.error("No tool call in AI response:", JSON.stringify(aiData));
-      return new Response(JSON.stringify({ error: "AI failed to generate plan" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const plan = JSON.parse(toolCall.function.arguments);
-
-    // Validate catalog_item_ids exist
     const validIds = new Set(catalogItems.map((c: any) => c.id));
-    const validItems = plan.items.filter((item: any) => validIds.has(item.catalog_item_id));
+    const validItems = planResult.items.filter((item: any) => validIds.has(item.catalog_item_id));
 
-    // Insert the plan under the child's user id (upsert to handle race conditions)
+    // If AI returned no valid items, use fallback
+    if (validItems.length === 0) {
+      planResult = generateFallbackPlan(catalogItems, scheduleType);
+    }
+
+    const finalItems = validItems.length > 0 ? validItems : planResult.items;
+
+    // Upsert the plan
     const { data: newPlan, error: planError } = await adminClient
       .from("user_daily_plans")
       .upsert({
         user_id: targetChildId,
         plan_date: today,
         status: "active",
-        ai_summary: plan.summary,
-        assessment_snapshot: assessmentSummary.length > 0 ? assessmentSummary : null,
+        ai_summary: planResult.summary,
+        assessment_snapshot: assessments && assessments.length > 0 ? assessments : null,
       }, { onConflict: "user_id,plan_date" })
       .select("id")
       .single();
 
     if (planError || !newPlan) {
-      console.error("Plan insert/upsert error:", planError);
+      console.error("Plan upsert error:", planError);
       return new Response(JSON.stringify({ error: "Failed to save plan" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Look up the child's family_id before inserting
+    // Create skill_plan_schedules entry
     const { data: familyMember } = await adminClient
       .from("family_connections")
       .select("family_id")
@@ -276,32 +146,25 @@ Create a personalized ${scheduleType} plan for ${timeframe}. Select items and ex
       .limit(1)
       .maybeSingle();
 
-    const resolvedFamilyId = familyMember?.family_id;
-
-    if (!resolvedFamilyId) {
-      console.warn("No family found for child:", targetChildId, "— skipping skill_plan_schedules insert");
-    }
-
-    // Also create a skill_plan_schedules entry for parent approval
-    if (resolvedFamilyId) {
+    if (familyMember?.family_id) {
       await adminClient
         .from("skill_plan_schedules")
         .insert({
           child_id: targetChildId,
-          family_id: resolvedFamilyId,
+          family_id: familyMember.family_id,
           created_by: user.id,
-        schedule_type: scheduleType,
-        plan_name: `${scheduleType.charAt(0).toUpperCase() + scheduleType.slice(1)} Plan - ${today}`,
-        plan_items: validItems.map((item: any) => ({
-          catalog_item_id: item.catalog_item_id,
-          title: item.title,
-          description: item.description,
-          category: item.category,
-          skill_domain: item.category,
-          item_type: 'activity',
-          priority: item.priority,
-          ai_reasoning: item.ai_reasoning,
-        })),
+          schedule_type: scheduleType,
+          plan_name: `${scheduleType.charAt(0).toUpperCase() + scheduleType.slice(1)} Plan - ${today}`,
+          plan_items: finalItems.map((item: any) => ({
+            catalog_item_id: item.catalog_item_id,
+            title: item.title,
+            description: item.description,
+            category: item.category,
+            skill_domain: item.category,
+            item_type: 'activity',
+            priority: item.priority,
+            ai_reasoning: item.ai_reasoning,
+          })),
           status: "pending_approval",
           start_date: today,
         })
@@ -310,7 +173,7 @@ Create a personalized ${scheduleType} plan for ${timeframe}. Select items and ex
     }
 
     // Insert plan items
-    const planItems = validItems.map((item: any, idx: number) => ({
+    const planItems = finalItems.map((item: any, idx: number) => ({
       plan_id: newPlan.id,
       catalog_item_id: item.catalog_item_id,
       title: item.title,
@@ -324,7 +187,7 @@ Create a personalized ${scheduleType} plan for ${timeframe}. Select items and ex
     const { data: insertedItems, error: itemsError } = await adminClient
       .from("user_daily_plan_items")
       .insert(planItems)
-      .select("*");
+      .select("id, plan_id, catalog_item_id, title, description, category, priority, status, ai_reasoning, completed_at");
 
     if (itemsError) {
       console.error("Items insert error:", itemsError);
@@ -333,7 +196,7 @@ Create a personalized ${scheduleType} plan for ${timeframe}. Select items and ex
     return new Response(
       JSON.stringify({
         plan_id: newPlan.id,
-        summary: plan.summary,
+        summary: planResult.summary,
         items: insertedItems || [],
         already_exists: false,
       }),
@@ -348,43 +211,97 @@ Create a personalized ${scheduleType} plan for ${timeframe}. Select items and ex
   }
 });
 
-// Map assessment results to skill domain deficit weights
-function mapAssessmentsToDomains(assessments: any[]): Record<string, number> {
-  const weights: Record<string, number> = {
-    communication: 5,
-    social: 5,
-    sensory: 5,
-    executive_function: 5,
-    daily_living: 5,
-    emotional_regulation: 5,
-    motor_skills: 5,
-    academic: 5,
-  };
-
-  for (const assessment of assessments) {
-    const scores = assessment.scores || {};
-    const type = assessment.type?.toLowerCase() || "";
-
-    if (type.includes("atec")) {
-      // ATEC: higher scores = more deficit
-      if (scores.speech !== undefined) weights.communication = Math.max(weights.communication, scores.speech);
-      if (scores.sociability !== undefined) weights.social = Math.max(weights.social, scores.sociability);
-      if (scores.sensory !== undefined) weights.sensory = Math.max(weights.sensory, scores.sensory);
-      if (scores.health !== undefined) weights.daily_living = Math.max(weights.daily_living, scores.health);
-    }
-
-    if (type.includes("dsm")) {
-      // DSM-5: criteria met indicate areas of need
-      if (scores.social_communication !== undefined) {
-        weights.communication = Math.max(weights.communication, scores.social_communication * 3);
-        weights.social = Math.max(weights.social, scores.social_communication * 3);
-      }
-      if (scores.restricted_repetitive !== undefined) {
-        weights.sensory = Math.max(weights.sensory, scores.restricted_repetitive * 3);
-        weights.emotional_regulation = Math.max(weights.emotional_regulation, scores.restricted_repetitive * 2);
-      }
-    }
+/** AI-powered plan generation with minimal payload */
+async function generateWithAI(
+  lovableKey: string | undefined,
+  catalogItems: any[],
+  assessments: any[],
+  userName: string,
+  userRole: string,
+  scheduleType: string
+): Promise<{ summary: string; items: any[] }> {
+  if (!lovableKey) {
+    throw new Error("No LOVABLE_API_KEY");
   }
 
-  return weights;
+  // Compact catalog: only id + title + category
+  const compactCatalog = catalogItems.map(c => `${c.id}|${c.title}|${c.category}|${c.skill_domain || ''}`).join('\n');
+
+  const assessmentBrief = assessments.length > 0
+    ? assessments.map(a => `${a.assessment_type}: grade=${a.overall_grade}`).join('; ')
+    : "No assessments yet";
+
+  const itemCount = scheduleType === "weekly" ? "15" : scheduleType === "monthly" ? "30" : "6";
+
+  const prompt = `Select ${itemCount} items from this catalog for ${userName} (${userRole}). Assessments: ${assessmentBrief}.
+
+Catalog (id|title|category|domain):
+${compactCatalog}
+
+Return JSON: {"summary":"...","items":[{"catalog_item_id":"...","title":"...","description":"brief","category":"...","priority":1,"ai_reasoning":"brief"}]}`;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000); // 15s timeout
+
+  try {
+    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${lovableKey}`,
+        "Content-Type": "application/json",
+      },
+      signal: controller.signal,
+      body: JSON.stringify({
+        model: "google/gemini-2.0-flash-001",
+        messages: [
+          { role: "system", content: "You are a life skills planner for autism support. Return only valid JSON." },
+          { role: "user", content: prompt },
+        ],
+        temperature: 0.7,
+        max_tokens: 1500,
+      }),
+    });
+
+    clearTimeout(timeout);
+
+    if (!aiResponse.ok) {
+      const errText = await aiResponse.text();
+      throw new Error(`AI ${aiResponse.status}: ${errText.slice(0, 200)}`);
+    }
+
+    const aiData = await aiResponse.json();
+    const content = aiData.choices?.[0]?.message?.content || "";
+
+    // Extract JSON from response
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error("No JSON in AI response");
+
+    return JSON.parse(jsonMatch[0]);
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+/** Fallback: pick random catalog items without AI */
+function generateFallbackPlan(
+  catalogItems: any[],
+  scheduleType: string
+): { summary: string; items: any[] } {
+  const count = scheduleType === "weekly" ? 15 : scheduleType === "monthly" ? 30 : 6;
+
+  // Shuffle and pick
+  const shuffled = [...catalogItems].sort(() => Math.random() - 0.5);
+  const selected = shuffled.slice(0, Math.min(count, shuffled.length));
+
+  return {
+    summary: `Your ${scheduleType} plan with ${selected.length} activities selected from the catalog.`,
+    items: selected.map((item, idx) => ({
+      catalog_item_id: item.id,
+      title: item.title,
+      description: item.description || "",
+      category: item.category || "general",
+      priority: idx + 1,
+      ai_reasoning: `Selected to build ${item.skill_domain || item.category || 'life'} skills.`,
+    })),
+  };
 }
