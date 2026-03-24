@@ -150,13 +150,22 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
 
 const ChartTooltip = RechartsPrimitive.Tooltip
 
+interface ChartPayloadItem {
+  name?: string
+  dataKey?: string
+  value?: number | string
+  color?: string
+  fill?: string
+  payload?: Record<string, unknown>
+  [key: string]: unknown
+}
+
 const ChartTooltipContent = React.forwardRef<
   HTMLDivElement,
   Omit<React.ComponentProps<typeof RechartsPrimitive.Tooltip>, 'payload' | 'label'> &
     React.ComponentProps<"div"> & {
       active?: boolean
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      payload?: any[]
+      payload?: ChartPayloadItem[]
       label?: string
       hideLabel?: boolean
       hideIndicator?: boolean
