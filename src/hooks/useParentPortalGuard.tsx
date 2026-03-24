@@ -194,7 +194,7 @@ export const useParentPortalGuard = (options: ParentPortalGuardOptions = {}) => 
     };
 
     checkAccess();
-  }, [user, userRole, loading, isAdmin, navigate, requiredFamilyAccess, redirectPath, familyCreationAttempts]);
+  }, [user, userRole, loading, isAdmin, isCheckingRole, navigate, requiredFamilyAccess, redirectPath, familyCreationAttempts]);
 
   return {
     isAuthorized,
