@@ -17,7 +17,7 @@ export interface FamilyConnection {
     can_comment: boolean;
     can_assign_tasks: boolean;
   };
-  connection_metadata: Record<string, unknown>;
+  connection_metadata: Record<string, string | number | boolean | null>;
   expires_at?: string;
   connected_at?: string;
   created_at: string;

@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Mail, Send, Loader2, Users, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { cError } from '@/utils/wideLogger';
 
 interface Recipient {
   email: string;

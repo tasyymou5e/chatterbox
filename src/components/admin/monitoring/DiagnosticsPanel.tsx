@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Shield, TestTube2, BarChart3, RefreshCw, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { cWarn } from '@/utils/wideLogger';
 import { ErrorLogAnalysis } from './ErrorLogAnalysis';
 import { TestSuggestionsPanel } from './TestSuggestionsPanel';
 import { invokeEdgeFunction } from '@/utils/secureEdgeFunctionInvoke';
