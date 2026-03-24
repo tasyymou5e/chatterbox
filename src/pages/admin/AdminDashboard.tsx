@@ -14,6 +14,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import CreateTestFamilyButton from '@/components/admin/CreateTestFamilyButton';
+import QuickCreateTestFamilyButton from '@/components/admin/QuickCreateTestFamilyButton';
 import { AnalyticsKPICard } from '@/components/analytics/AnalyticsKPICard';
 import { LazyEngagementChart, LazyRetentionChart } from '@/components/analytics/lazy';
 import { SystemHealthWidget } from '@/components/analytics/SystemHealthWidget';
@@ -356,6 +357,7 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
+              <QuickCreateTestFamilyButton onSuccess={() => fetchDashboardStats()} />
               <CreateTestFamilyButton onSuccess={() => fetchDashboardStats()} />
               <Button 
                 variant="outline"
