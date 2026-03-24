@@ -46,7 +46,7 @@ export const useParentPortalGuard = (options: ParentPortalGuardOptions = {}) => 
     const checkAccess = async () => {
       // Prevent duplicate checks
       if (checkInProgressRef.current) return;
-      if (loading) return;
+      if (loading || isCheckingRole) return;
 
       checkInProgressRef.current = true;
 
