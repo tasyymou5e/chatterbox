@@ -1,6 +1,6 @@
 # Admin Features Guide
 
-> **Last Updated:** 2026-02-17  
+> **Last Updated:** 2026-03-24  
 > **Admin Portal:** `/admin/*`  
 > **Authorization:** Requires `admin` role
 

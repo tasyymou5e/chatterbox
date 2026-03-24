@@ -1,6 +1,6 @@
 # TECHSTACK.md — Chatterbox Comprehensive Tech Stack
 
-> **Last Updated:** 2026-03-15  
+> **Last Updated:** 2026-03-24  
 > **Purpose:** Single authoritative reference for every technology used across the Chatterbox application. For deep dives on any topic, follow the cross-reference links to dedicated knowledge files.
 
 ---

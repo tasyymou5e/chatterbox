@@ -1,7 +1,7 @@
 # Chatterbox Architecture Ebook
 **Comprehensive Technical Reference**
 
-> **Last Updated:** 2026-03-15  
+> **Last Updated:** 2026-03-24  
 > **Version:** 3.0  
 > **Audience:** Developers, architects, new team members
 
