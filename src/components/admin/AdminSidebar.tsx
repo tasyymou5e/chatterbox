@@ -114,7 +114,7 @@ export function AdminSidebar() {
             <Collapsible key={group.label} defaultOpen={active} className="group/collapsible">
               <SidebarGroup>
                 <SidebarGroupLabel asChild>
-                  <CollapsibleTrigger className="flex w-full items-center justify-between text-gray-300 hover:text-gray-200">
+                  <CollapsibleTrigger className="flex w-full items-center justify-between text-gray-200 hover:text-white font-medium">
                     <span>{group.label}</span>
                     {!collapsed && (
                       <ChevronRight className="h-3 w-3 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
@@ -137,8 +137,8 @@ export function AdminSidebar() {
                                 to={item.url}
                                 className={
                                   isActive
-                                    ? 'text-white bg-gray-700'
-                                    : 'text-gray-100 hover:text-white hover:bg-gray-700/50'
+                                    ? 'text-white bg-gray-700 font-semibold'
+                                    : 'text-gray-200 hover:text-white hover:bg-gray-700/50'
                                 }
                               >
                                 <item.icon className="h-4 w-4" />
