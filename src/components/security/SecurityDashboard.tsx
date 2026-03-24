@@ -371,22 +371,41 @@ export const SecurityDashboard: React.FC = () => {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {metrics.top_threat_indicators.map((alert, index) => (
-                    <Alert key={index}>
-                      <AlertTriangle className="h-4 w-4" />
-                      <AlertTitle className="flex items-center justify-between">
-                        <span>{alert.event_type}</span>
-                        <Badge variant={getSeverityColor(alert.severity)}>
-                          {alert.severity}
-                        </Badge>
-                      </AlertTitle>
-                      <AlertDescription>
-                        {typeof alert.event_details === 'object' 
-                          ? JSON.stringify(alert.event_details, null, 2)
-                          : String(alert.event_details)}
-                      </AlertDescription>
-                    </Alert>
-                  ))}
+                {metrics.top_threat_indicators.map((alert, index) => {
+                    const details = alert.event_details as Record<string, unknown> | null;
+                    const eventType = alert.event_type || 'unknown_event';
+                    const operation = details?.operation ? String(details.operation) : '';
+                    const tableName = details?.table_name ? String(details.table_name) : '';
+                    const displayTitle = operation && tableName
+                      ? `${operation} on ${tableName}`
+                      : eventType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                    const timestamp = details?.timestamp
+                      ? new Date(String(details.timestamp)).toLocaleString()
+                      : alert.timestamp
+                        ? new Date(alert.timestamp).toLocaleString()
+                        : '';
+
+                    return (
+                      <Alert key={alert.id || index}>
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertTitle className="flex items-center justify-between">
+                          <span>{displayTitle}</span>
+                          <Badge variant={getSeverityColor(alert.severity)}>
+                            {alert.severity}
+                          </Badge>
+                        </AlertTitle>
+                        <AlertDescription className="space-y-1">
+                          <p className="text-sm">{eventType.replace(/_/g, ' ')}</p>
+                          {timestamp && (
+                            <p className="text-xs text-muted-foreground">{timestamp}</p>
+                          )}
+                          {alert.user_id && (
+                            <p className="text-xs text-muted-foreground">User: {alert.user_id.slice(0, 8)}…</p>
+                          )}
+                        </AlertDescription>
+                      </Alert>
+                    );
+                  })}
                 </div>
               )}
             </CardContent>
