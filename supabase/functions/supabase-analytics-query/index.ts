@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.0'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
 import { analyticsQueryLimiter, RateLimiter } from '../_shared/rate-limiter.ts'
 import { getCorsHeaders } from '../_shared/cors.ts'
 import { validateAdminJWT, getServiceClient, createUnauthorizedResponse, createForbiddenResponse } from '../_shared/auth-validator.ts'

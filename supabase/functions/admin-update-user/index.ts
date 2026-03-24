@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.0'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
 import { getCorsHeaders } from '../_shared/cors.ts'
 import { adminActionLimiter, passwordResetLimiter } from '../_shared/rate-limiter.ts'
 import { PasswordValidator } from '../_shared/password-validator.ts'
