@@ -59,8 +59,8 @@ export const useParentPortalGuard = (options: ParentPortalGuardOptions = {}) => 
           return;
         }
 
-        // If user has no role at all, redirect to auth — do not grant access
-        if (!isAdmin && !userRole) {
+        // If user has no role and role check is complete, deny access
+        if (!isAdmin && !userRole && !isCheckingRole) {
           cWarn('ParentPortalGuard: User has no role assigned - denying access');
           setIsAuthorized(false);
           setChecking(false);
