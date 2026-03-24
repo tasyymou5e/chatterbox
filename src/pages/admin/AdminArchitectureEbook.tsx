@@ -630,7 +630,7 @@ Managed via ai_usage_quotas table:
   },
   {
     id: 'security-model',
-    title: '11. Security Model',
+    title: '12. Security Model',
     icon: Shield,
     content: `### Defense in Depth
 
@@ -665,7 +665,7 @@ USING (public.has_role(auth.uid(), 'admin'));
   },
   {
     id: 'performance',
-    title: '12. Performance',
+    title: '13. Performance',
     icon: Gauge,
     content: `### Optimization Strategies
 
@@ -691,7 +691,7 @@ USING (public.has_role(auth.uid(), 'admin'));
   },
   {
     id: 'testing-strategy',
-    title: '13. Testing Strategy',
+    title: '14. Testing Strategy',
     icon: TestTube,
     content: `### Testing Pyramid
 
@@ -723,7 +723,7 @@ expect(screen.getByText('Clean Room')).toBeInTheDocument();
   },
   {
     id: 'documentation-system',
-    title: '14. Documentation System',
+    title: '15. Documentation System',
     icon: FileText,
     content: `### DocRegistry System
 
@@ -766,7 +766,7 @@ The project uses src/config/docRegistry.ts to track all documentation files:
   },
   {
     id: 'appendix',
-    title: '15. Appendix',
+    title: '16. Appendix',
     icon: BookOpen,
     content: `### Glossary
 
@@ -1013,7 +1013,7 @@ export default function AdminArchitectureEbook() {
             Download PDF
           </Button>
           <Badge variant="outline" className="border-blue-500/50 text-blue-400">
-            15 Chapters
+            16 Chapters
           </Badge>
         </div>
       </div>
