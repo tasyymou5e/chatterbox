@@ -32,6 +32,7 @@ export default defineConfig(({ mode }) => ({
     // PWA Plugin with Workbox configuration
     VitePWA({
       registerType: 'autoUpdate',
+      injectRegister: false,
       includeAssets: ['favicon.png', 'og-image.png', 'robots.txt'],
       
       manifest: {
