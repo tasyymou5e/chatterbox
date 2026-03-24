@@ -145,14 +145,7 @@ export function AdminSidebar() {
                               isActive={isActive}
                               tooltip={item.title}
                             >
-                              <Link
-                                to={item.url}
-                                className={
-                                  isActive
-                                    ? 'text-white bg-gray-700 font-semibold'
-                                    : 'text-gray-200 hover:text-white hover:bg-gray-700/50'
-                                }
-                              >
+                              <Link to={item.url}>
                                 <item.icon className="h-4 w-4" />
                                 <span>{item.title}</span>
                               </Link>
