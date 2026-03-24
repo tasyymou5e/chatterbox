@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getCorsHeaders } from '../_shared/cors.ts';
 import { getServiceClient } from '../_shared/auth-validator.ts';
+import { validateSchedulerSecret, createSchedulerUnauthorizedResponse } from '../_shared/scheduler-validator.ts';
 
 interface ProviderHealthResult {
   provider_key: string;
@@ -13,8 +14,17 @@ interface ProviderHealthResult {
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req.headers.get('origin'));
   
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+  // Health check endpoint (unauthenticated for monitoring probes)
+  if (req.method === 'GET') {
+    return new Response(JSON.stringify({ status: 'healthy', function: 'scheduled-health-check' }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+
+  // Validate scheduler secret for cron-triggered POST requests
+  if (!validateSchedulerSecret(req)) {
+    return createSchedulerUnauthorizedResponse(corsHeaders);
+  }
   }
 
   const json = (payload: unknown, status = 200) =>

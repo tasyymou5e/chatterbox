@@ -1,6 +1,7 @@
 import { getCorsHeaders } from '../_shared/cors.ts';
 import { generalApiLimiter, RateLimiter } from '../_shared/rate-limiter.ts';
 import { getServiceClient } from '../_shared/auth-validator.ts';
+import { validateSchedulerSecret, createSchedulerUnauthorizedResponse } from '../_shared/scheduler-validator.ts';
 
 interface RecurrencePattern {
   frequency: 'daily' | 'weekly' | 'custom';
@@ -21,10 +22,14 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Validate scheduler secret for cron-triggered requests
+  if (!validateSchedulerSecret(req)) {
+    return createSchedulerUnauthorizedResponse(corsHeaders);
+  }
+
   // Apply rate limiting
   const rateCheck = generalApiLimiter.check(req);
   if (!rateCheck.allowed) {
-    console.warn('Rate limit exceeded for process-recurring-chores');
     return RateLimiter.createRateLimitResponse(rateCheck.resetTime);
   }
 

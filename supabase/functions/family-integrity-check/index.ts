@@ -715,7 +715,7 @@ async function executeFix(
       
       const { data } = await supabase
         .from(fix.table)
-        .select('*')
+        .select('id, user_id, family_id, created_at')
         .eq(whereKey, whereValue)
         .maybeSingle();
       
