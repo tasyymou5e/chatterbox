@@ -49,6 +49,8 @@ interface AlertResult {
 }
 
 async function handler(req: Request): Promise<Response> {
+  const corsHeaders = getCorsHeaders(req.headers.get('origin'));
+
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
