@@ -4,6 +4,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 
 interface CatalogHeaderProps {
   isAuthenticated: boolean;
@@ -28,6 +29,8 @@ export const CatalogHeader = React.memo(function CatalogHeader({
   onToggleVirtualScrolling,
   isDevelopment
 }: CatalogHeaderProps) {
+  const navigate = useNavigate();
+
   return (
     <div className="text-center mb-8">
       <h1 className="text-4xl font-bold text-primary mb-4">
@@ -39,10 +42,13 @@ export const CatalogHeader = React.memo(function CatalogHeader({
       
       {/* Authentication Status */}
       {!isAuthenticated && (
-        <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg mt-4 max-w-md mx-auto">
+        <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg mt-4 max-w-md mx-auto flex items-center justify-between gap-3">
           <p className="text-sm">
-            <strong>Sign in</strong> to access full content details, save favorites, and unlock family-specific activities.
+            <strong>Sign in</strong> to save favorites and unlock family-specific activities.
           </p>
+          <Button size="sm" onClick={() => navigate('/auth?tab=signin')}>
+            Sign In
+          </Button>
         </div>
       )}
       
