@@ -256,7 +256,7 @@ export default function AdminFamilies() {
   };
 
   const getRoleColor = (role: string) => {
-    return role === 'parent' ? 'bg-purple-600' : 'bg-green-600';
+    return role === 'parent' ? 'bg-primary' : 'bg-secondary';
   };
 
   const filteredFamilies = families.filter(family =>
@@ -327,11 +327,11 @@ export default function AdminFamilies() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white flex items-center">
-            <Home className="h-8 w-8 mr-3 text-blue-400" />
+          <h1 className="text-3xl font-bold text-card-foreground flex items-center">
+            <Home className="h-8 w-8 mr-3 text-primary" />
             Family Management
           </h1>
-          <p className="text-gray-400 mt-1">
+          <p className="text-muted-foreground mt-1">
             Manage and monitor all registered families
           </p>
         </div>
@@ -340,43 +340,43 @@ export default function AdminFamilies() {
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-3">
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className="bg-card border-border">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-300">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               Total Families
             </CardTitle>
-            <Home className="h-4 w-4 text-blue-400" />
+            <Home className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">
+            <div className="text-2xl font-bold text-card-foreground">
               {families.length}
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className="bg-card border-border">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-300">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               Total Members
             </CardTitle>
-            <Users className="h-4 w-4 text-green-400" />
+            <Users className="h-4 w-4 text-secondary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">
+            <div className="text-2xl font-bold text-card-foreground">
               {families.reduce((sum, family) => sum + family.member_count, 0)}
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className="bg-card border-border">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-300">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               Average Family Size
             </CardTitle>
-            <Users className="h-4 w-4 text-purple-400" />
+            <Users className="h-4 w-4 text-accent" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">
+            <div className="text-2xl font-bold text-card-foreground">
               {families.length > 0 
                 ? Math.round(families.reduce((sum, family) => sum + family.member_count, 0) / families.length * 10) / 10
                 : 0
@@ -387,40 +387,40 @@ export default function AdminFamilies() {
       </div>
 
       {/* Search */}
-      <Card className="bg-gray-800 border-gray-700">
+      <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="text-white">Search Families</CardTitle>
+          <CardTitle className="text-card-foreground">Search Families</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
               placeholder="Search by family name or code..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-gray-700 border-gray-600 text-white"
+              className="pl-10 bg-muted border-border text-foreground"
             />
           </div>
         </CardContent>
       </Card>
 
       {/* Families Table */}
-      <Card className="bg-gray-800 border-gray-700">
+      <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="text-white flex items-center gap-3">
+          <CardTitle className="text-card-foreground flex items-center gap-3">
             Families ({filteredFamilies.length})
             {userRole === 'admin' && filteredFamilies.length > 0 && (
               <div className="flex items-center gap-2">
                 <Checkbox
                   checked={filteredFamilies.length > 0 && selectedFamilyIds.size === filteredFamilies.length}
                   onCheckedChange={toggleAllFamilies}
-                  className="border-gray-500"
+                  className="border-muted-foreground"
                 />
-                <span className="text-xs text-gray-400 font-normal">Select all</span>
+                <span className="text-xs text-muted-foreground font-normal">Select all</span>
               </div>
             )}
           </CardTitle>
-          <CardDescription className="text-gray-400">
+          <CardDescription className="text-muted-foreground">
             All registered family groups in the system
           </CardDescription>
         </CardHeader>
@@ -428,45 +428,45 @@ export default function AdminFamilies() {
           <div className="space-y-2">
             {filteredFamilies.map((family) => (
               <Collapsible key={family.id} open={family.expanded} onOpenChange={(expanded) => toggleFamilyExpansion(family.id, expanded)}>
-                <div className="border border-gray-700 rounded-lg bg-gray-800/50">
+                <div className="border border-border rounded-lg bg-card/50">
                   {/* Family Header Row */}
                   <CollapsibleTrigger asChild>
-                    <div className="flex items-center justify-between p-4 hover:bg-gray-700/30 cursor-pointer transition-colors">
+                    <div className="flex items-center justify-between p-4 hover:bg-muted/30 cursor-pointer transition-colors duration-200">
                       <div className="flex items-center space-x-4">
                         {userRole === 'admin' && (
                           <div onClick={(e) => e.stopPropagation()}>
                             <Checkbox
                               checked={selectedFamilyIds.has(family.id)}
                               onCheckedChange={() => toggleFamilySelection(family.id)}
-                              className="border-gray-500"
+                              className="border-muted-foreground"
                             />
                           </div>
                         )}
-                        <div className="flex items-center text-gray-400">
+                        <div className="flex items-center text-muted-foreground">
                           {family.expanded ? (
                             <ChevronDown className="h-4 w-4" />
                           ) : (
                             <ChevronRight className="h-4 w-4" />
                           )}
                         </div>
-                        <div className="font-mono text-white">{family.family_code}</div>
-                        <div className="text-white">{family.display_name}</div>
+                        <div className="font-mono text-card-foreground">{family.family_code}</div>
+                        <div className="text-card-foreground">{family.display_name}</div>
                         <Badge 
                           variant="secondary" 
-                          className="bg-blue-600 text-white cursor-pointer hover:bg-blue-500"
+                          className="bg-primary text-primary-foreground cursor-pointer hover:bg-primary-hover"
                         >
                           {family.member_count} members
                         </Badge>
                       </div>
                       <div className="flex items-center space-x-4">
-                        <div className="text-gray-300 text-sm">
+                        <div className="text-muted-foreground text-sm">
                           {new Date(family.created_at).toLocaleDateString()}
                         </div>
                         <div className="flex space-x-2">
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-blue-400 hover:text-blue-300 hover:bg-gray-700"
+                            className="text-primary hover:text-primary-hover hover:bg-muted"
                             onClick={(e) => handleViewFamily(family, e)}
                           >
                             <Eye className="h-4 w-4" />
@@ -476,7 +476,7 @@ export default function AdminFamilies() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="text-purple-400 hover:text-purple-300 hover:bg-gray-700"
+                                className="text-accent hover:text-accent-hover hover:bg-muted"
                                 onClick={(e) => handleBulkEmail(family, e)}
                                 title="Email Family Members"
                                 disabled={getEmailRecipients(family).length === 0}
@@ -486,7 +486,7 @@ export default function AdminFamilies() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="text-green-400 hover:text-green-300 hover:bg-gray-700"
+                                className="text-secondary hover:text-secondary-hover hover:bg-muted"
                                 onClick={(e) => handleEditFamily(family, e)}
                               >
                                 <Edit className="h-4 w-4" />
@@ -494,7 +494,7 @@ export default function AdminFamilies() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="text-blue-400 hover:text-blue-300 hover:bg-gray-700"
+                                className="text-primary hover:text-primary-hover hover:bg-muted"
                                 onClick={(e) => handleManageMembers(family, e)}
                                 title="Manage Family Members"
                               >
@@ -503,7 +503,7 @@ export default function AdminFamilies() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="text-red-400 hover:text-red-300 hover:bg-gray-700"
+                                className="text-destructive hover:text-destructive/80 hover:bg-muted"
                                 onClick={(e) => handleDeleteFamily(family, e)}
                               >
                                 <Trash2 className="h-4 w-4" />
@@ -517,10 +517,10 @@ export default function AdminFamilies() {
 
                   {/* Family Members */}
                   <CollapsibleContent>
-                    <div className="border-t border-gray-700 bg-gray-800/80">
+                    <div className="border-t border-border bg-card/80">
                       {family.members && family.members.length > 0 ? (
                         <div className="p-4">
-                          <div className="text-sm font-semibold text-gray-300 mb-3 flex items-center">
+                          <div className="text-sm font-semibold text-muted-foreground mb-3 flex items-center">
                             <Users className="h-4 w-4 mr-2" />
                             Family Members ({family.members.length})
                           </div>
@@ -528,29 +528,29 @@ export default function AdminFamilies() {
                             {family.members.map((member) => (
                               <div 
                                 key={member.id} 
-                                className="flex items-center justify-between p-3 bg-gray-700/30 rounded-md border border-gray-600/30"
+                                className="flex items-center justify-between p-3 bg-muted/30 rounded-md border border-border/30"
                               >
                                 <div className="flex items-center space-x-3">
-                                  <User className="h-4 w-4 text-gray-400" />
+                                  <User className="h-4 w-4 text-muted-foreground" />
                                   <div>
-                                    <div className="text-white font-medium">
+                                    <div className="text-card-foreground font-medium">
                                       {member.first_name && member.last_name 
                                         ? `${member.first_name} ${member.last_name}`
                                         : 'Unknown Name'
                                       }
                                     </div>
-                                    <div className="flex items-center space-x-2 text-sm text-gray-400">
+                                    <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                                       <Mail className="h-3 w-3" />
                                       {member.email ? (
                                         <a 
                                           href={`mailto:${member.email}`} 
-                                          className="text-blue-400 hover:text-blue-300 hover:underline"
+                                          className="text-primary hover:text-primary-hover hover:underline"
                                           onClick={(e) => e.stopPropagation()}
                                         >
                                           {member.email}
                                         </a>
                                       ) : (
-                                        <span className="text-gray-500 italic">No email</span>
+                                        <span className="text-muted-foreground/50 italic">No email</span>
                                       )}
                                     </div>
                                   </div>
@@ -558,11 +558,11 @@ export default function AdminFamilies() {
                                 <div className="flex items-center space-x-3">
                                   <Badge 
                                     variant="secondary" 
-                                    className={`text-white ${getRoleColor(member.role)}`}
+                                    className={`text-primary-foreground ${getRoleColor(member.role)}`}
                                   >
                                     {member.role}
                                   </Badge>
-                                  <div className="text-xs text-gray-400">
+                                  <div className="text-xs text-muted-foreground">
                                     Joined: {new Date(member.joined_at).toLocaleDateString()}
                                   </div>
                                 </div>
@@ -571,7 +571,7 @@ export default function AdminFamilies() {
                           </div>
                         </div>
                       ) : (
-                        <div className="p-4 text-center text-gray-400">
+                        <div className="p-4 text-center text-muted-foreground">
                           <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
                           <p>No members found</p>
                         </div>
@@ -596,8 +596,8 @@ export default function AdminFamilies() {
 
           {/* Floating action bar for bulk selection */}
           {userRole === 'admin' && selectedFamilyIds.size > 0 && (
-            <div className="sticky bottom-0 mt-4 flex items-center justify-between bg-gray-700 border border-gray-600 rounded-lg p-3">
-              <span className="text-white text-sm font-medium">
+            <div className="sticky bottom-0 mt-4 flex items-center justify-between bg-muted border border-border rounded-lg p-3">
+              <span className="text-card-foreground text-sm font-medium">
                 {selectedFamilyIds.size} famil{selectedFamilyIds.size !== 1 ? 'ies' : 'y'} selected
               </span>
               <div className="flex gap-2">
@@ -605,7 +605,7 @@ export default function AdminFamilies() {
                   variant="outline"
                   size="sm"
                   onClick={() => setSelectedFamilyIds(new Set())}
-                  className="border-gray-500 text-gray-300 hover:bg-gray-600"
+                  className="border-border text-muted-foreground hover:bg-muted"
                 >
                   Deselect All
                 </Button>
@@ -613,7 +613,6 @@ export default function AdminFamilies() {
                   variant="destructive"
                   size="sm"
                   onClick={() => setBulkDeleteDialogOpen(true)}
-                  className="bg-red-600 hover:bg-red-700"
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
                   Delete Selected

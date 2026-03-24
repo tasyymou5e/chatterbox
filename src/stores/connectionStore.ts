@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { supabase } from '@/integrations/supabase/client';
+import { cError } from '@/utils/wideLogger';
 
 type ConnectionRole = 'therapist' | 'teacher' | 'grandparent' | 'family_friend';
 
@@ -16,7 +17,7 @@ export interface FamilyConnection {
     can_comment: boolean;
     can_assign_tasks: boolean;
   };
-  connection_metadata: Record<string, any>;
+  connection_metadata: Record<string, string | number | boolean | null>;
   expires_at?: string;
   connected_at?: string;
   created_at: string;
@@ -142,7 +143,7 @@ export const useConnectionStore = create<ConnectionState>()(
 
             set({ connections, loading: false });
           } catch (error) {
-            console.error('Error fetching connections:', error);
+            cError('Error fetching connections:', error);
             set({ error: (error as Error).message, loading: false });
           }
         },
@@ -182,7 +183,7 @@ export const useConnectionStore = create<ConnectionState>()(
 
             set({ invitations, loading: false });
           } catch (error) {
-            console.error('Error fetching invitations:', error);
+            cError('Error fetching invitations:', error);
             set({ error: (error as Error).message, loading: false });
           }
         },
@@ -206,7 +207,7 @@ export const useConnectionStore = create<ConnectionState>()(
             set({ loading: false });
             return { error: null };
           } catch (error) {
-            console.error('Error sending invitation:', error);
+            cError('Error sending invitation:', error);
             const err = error instanceof Error ? error : new Error(String(error));
             set({ error: err.message, loading: false });
             return { error: err };
@@ -233,7 +234,7 @@ export const useConnectionStore = create<ConnectionState>()(
             set({ connections, loading: false });
             return { error: null };
           } catch (error) {
-            console.error('Error updating connection:', error);
+            cError('Error updating connection:', error);
             const err = error instanceof Error ? error : new Error(String(error));
             set({ error: err.message, loading: false });
             return { error: err };
@@ -260,7 +261,7 @@ export const useConnectionStore = create<ConnectionState>()(
             set({ connections, loading: false });
             return { error: null };
           } catch (error) {
-            console.error('Error removing connection:', error);
+            cError('Error removing connection:', error);
             const err = error instanceof Error ? error : new Error(String(error));
             set({ error: err.message, loading: false });
             return { error: err };
@@ -311,7 +312,7 @@ export const useConnectionStore = create<ConnectionState>()(
             set({ loading: false });
             return { error: null };
           } catch (error) {
-            console.error('Error accepting invitation:', error);
+            cError('Error accepting invitation:', error);
             const err = error instanceof Error ? error : new Error(String(error));
             set({ error: err.message, loading: false });
             return { error: err };
@@ -335,7 +336,7 @@ export const useConnectionStore = create<ConnectionState>()(
             set({ invitations, loading: false });
             return { error: null };
           } catch (error) {
-            console.error('Error declining invitation:', error);
+            cError('Error declining invitation:', error);
             const err = error instanceof Error ? error : new Error(String(error));
             set({ error: err.message, loading: false });
             return { error: err };

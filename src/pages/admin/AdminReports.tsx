@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { cError } from '@/utils/wideLogger';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -136,7 +137,7 @@ export default function AdminReports() {
       setActivitySummary(summaryArray);
 
     } catch (error: unknown) {
-      console.error('Error fetching reports data:', getErrorMessage(error));
+      cError('Error fetching reports data:', getErrorMessage(error));
       toast({
         variant: 'destructive',
         title: 'Error',

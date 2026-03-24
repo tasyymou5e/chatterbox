@@ -15,13 +15,15 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Trash2, AlertTriangle } from 'lucide-react';
 import { getErrorMessage } from '@/utils/getErrorMessage';
+import { cError } from '@/utils/wideLogger';
+
 interface Family {
   id: string;
   family_code: string;
   display_name: string;
   name: string;
   member_count: number;
-  metadata?: any; // Supabase Json type - contains is_test_family boolean
+  metadata?: { is_test_family?: boolean; [key: string]: unknown } | null;
 }
 
 interface FamilyDeleteDialogProps {
@@ -81,7 +83,7 @@ export default function FamilyDeleteDialog({ family, open, onOpenChange, onSucce
       onOpenChange(false);
       onSuccess?.();
     } catch (error: unknown) {
-      console.error('Error deleting family:', getErrorMessage(error));
+      cError('Error deleting family:', getErrorMessage(error));
       toast({
         variant: 'destructive',
         title: 'Deletion Failed',
@@ -99,24 +101,24 @@ export default function FamilyDeleteDialog({ family, open, onOpenChange, onSucce
 
   return (
     <AlertDialog open={open} onOpenChange={handleOpenChange}>
-      <AlertDialogContent className="bg-gray-800 border-gray-700 text-white">
+      <AlertDialogContent className="bg-card border-border text-card-foreground">
         <AlertDialogHeader>
-          <AlertDialogTitle className="flex items-center text-xl text-red-400">
+          <AlertDialogTitle className="flex items-center text-xl text-destructive">
             <Trash2 className="h-5 w-5 mr-2" />
             Delete Family
           </AlertDialogTitle>
-          <AlertDialogDescription className="text-gray-300">
+          <AlertDialogDescription className="text-muted-foreground">
             <div className="space-y-3">
-              <div className="flex items-start space-x-2 p-3 bg-red-900/20 border border-red-800 rounded">
-                <AlertTriangle className="h-5 w-5 text-red-400 mt-0.5 flex-shrink-0" />
+              <div className="flex items-start space-x-2 p-3 bg-destructive/10 border border-destructive/20 rounded">
+                <AlertTriangle className="h-5 w-5 text-destructive mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="font-medium text-red-400 mb-1">This action cannot be undone!</p>
+                  <p className="font-medium text-destructive mb-1">This action cannot be undone!</p>
                   <p className="text-sm">
                     You are about to permanently delete {isTestFamily ? 'the test family' : 'the family'} <strong>{family.display_name}</strong> 
                     ({family.family_code}) and all of its {family.member_count} member(s).
                   </p>
                   {isTestFamily && (
-                    <p className="text-sm mt-2 font-medium text-orange-400">
+                    <p className="text-sm mt-2 font-medium text-warning">
                       ⚠️ This is a test family - all user accounts will be permanently deleted.
                     </p>
                   )}
@@ -131,23 +133,23 @@ export default function FamilyDeleteDialog({ family, open, onOpenChange, onSucce
                   <li>All family activity logs and history</li>
                   <li>Any family-specific content interactions</li>
                   {isTestFamily ? (
-                    <li className="text-orange-400 font-medium">All {family.member_count} user accounts and profiles</li>
+                    <li className="text-warning font-medium">All {family.member_count} user accounts and profiles</li>
                   ) : (
-                    <li className="text-green-400">User accounts will be preserved</li>
+                    <li className="text-secondary">User accounts will be preserved</li>
                   )}
                 </ul>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="confirmation" className="text-gray-300">
-                  Type <code className="bg-gray-700 px-1 rounded">{family.family_code}</code> to confirm deletion:
+                <Label htmlFor="confirmation" className="text-muted-foreground">
+                  Type <code className="bg-muted px-1 rounded">{family.family_code}</code> to confirm deletion:
                 </Label>
                 <Input
                   id="confirmation"
                   value={confirmationText}
                   onChange={(e) => setConfirmationText(e.target.value)}
                   placeholder="Enter family code"
-                  className="bg-gray-700 border-gray-600 text-white focus:border-red-400"
+                  className="bg-muted border-border text-foreground focus:border-destructive"
                   disabled={loading}
                 />
               </div>
@@ -157,7 +159,7 @@ export default function FamilyDeleteDialog({ family, open, onOpenChange, onSucce
         
         <AlertDialogFooter>
           <AlertDialogCancel 
-            className="border-gray-600 text-gray-300 hover:bg-gray-700"
+            className="border-border text-muted-foreground hover:bg-muted"
             disabled={loading}
           >
             Cancel
@@ -165,7 +167,7 @@ export default function FamilyDeleteDialog({ family, open, onOpenChange, onSucce
           <AlertDialogAction
             onClick={handleDelete}
             disabled={!isConfirmationValid || loading}
-            className="bg-red-600 hover:bg-red-500 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-destructive hover:bg-destructive/90 text-destructive-foreground disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? (
               <>

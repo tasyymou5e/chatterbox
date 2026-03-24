@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Shield, TestTube2, BarChart3, RefreshCw, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { cWarn } from '@/utils/wideLogger';
 import { ErrorLogAnalysis } from './ErrorLogAnalysis';
 import { TestSuggestionsPanel } from './TestSuggestionsPanel';
 import { invokeEdgeFunction } from '@/utils/secureEdgeFunctionInvoke';
@@ -43,7 +44,7 @@ export const DiagnosticsPanel = () => {
         duration_ms: result.duration_ms,
         results: result.results,
       });
-    if (error) console.warn('Failed to store test result:', error);
+    if (error) cWarn('Failed to store test result:', error);
   };
 
   const runSafetyChecks = async () => {
