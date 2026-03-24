@@ -1,5 +1,6 @@
 import * as React from "react"
 import * as RechartsPrimitive from "recharts"
+import type { Payload } from "recharts/types/component/DefaultTooltipContent"
 
 import { cn } from "@/lib/utils"
 
@@ -150,13 +151,14 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
 
 const ChartTooltip = RechartsPrimitive.Tooltip
 
+type ChartPayloadItem = Payload<string | number, string>
+
 const ChartTooltipContent = React.forwardRef<
   HTMLDivElement,
   Omit<React.ComponentProps<typeof RechartsPrimitive.Tooltip>, 'payload' | 'label'> &
     React.ComponentProps<"div"> & {
       active?: boolean
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      payload?: any[]
+      payload?: ChartPayloadItem[]
       label?: string
       hideLabel?: boolean
       hideIndicator?: boolean
@@ -237,8 +239,7 @@ const ChartTooltipContent = React.forwardRef<
       >
         {!nestLabel ? tooltipLabel : null}
         <div className="grid gap-1.5">
-          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-          {payload.map((item: any, index: number) => {
+          {payload.map((item: ChartPayloadItem, index: number) => {
             const key = `${nameKey || item.name || item.dataKey || "value"}`
             const itemConfig = getPayloadConfigFromPayload(config, item, key)
             const itemPayload = item.payload as Record<string, unknown> | undefined
@@ -246,7 +247,7 @@ const ChartTooltipContent = React.forwardRef<
 
             return (
               <div
-                key={item.dataKey || index}
+                key={String(item.dataKey ?? index)}
                 className={cn(
                   "flex w-full flex-wrap items-stretch gap-2 [&>svg]:h-2.5 [&>svg]:w-2.5 [&>svg]:text-muted-foreground",
                   indicator === "dot" && "items-center"

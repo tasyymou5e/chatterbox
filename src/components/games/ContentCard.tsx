@@ -127,8 +127,8 @@ function ContentCardComponent({
           {/* Autism-specific features */}
           {getAutismBadges(item.autism_features).length > 0 && (
             <div className="flex flex-wrap gap-1">
-              {getAutismBadges(item.autism_features).map((feature, index) => (
-                <Badge key={index} variant="secondary" className="text-xs bg-blue-100 text-blue-700">
+              {getAutismBadges(item.autism_features).map((feature) => (
+                <Badge key={feature} variant="secondary" className="text-xs bg-blue-100 text-blue-700">
                   ✨ {feature}
                 </Badge>
               ))}
@@ -138,8 +138,8 @@ function ContentCardComponent({
           {/* Tags */}
           {item.tags && item.tags.length > 0 && (
             <div className="flex flex-wrap gap-1">
-              {item.tags.slice(0, 3).map((tag, index) => (
-                <Badge key={index} variant="outline" className="text-xs">
+              {item.tags.slice(0, 3).map((tag) => (
+                <Badge key={tag} variant="outline" className="text-xs">
                   #{tag}
                 </Badge>
               ))}
