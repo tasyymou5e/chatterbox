@@ -191,9 +191,8 @@ export const GamesCatalogSafeMode: React.FC = () => {
                   <Badge variant="outline">{item.content_type}</Badge>
                   <Button
                     size="sm"
-                    onClick={() => handleContentClick(item)}
+                    onClick={() => item.url ? handleContentClick(item) : window.location.assign('/auth?tab=signin')}
                     className="gap-1"
-                    disabled={!item.url}
                   >
                     <ExternalLink className="h-3 w-3" />
                     {item.url ? 'Open' : 'Sign In'}
