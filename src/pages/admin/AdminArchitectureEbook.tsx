@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { jsPDF } from 'jspdf';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,7 @@ import {
   BookOpen, Search, ChevronRight, ChevronDown, 
   ArrowUp, Layers, Database, Shield, 
   Brain, TestTube, FileText, Zap, Users,
-  Lock, Gauge, BookMarked
+  Lock, Gauge, BookMarked, Download
 } from 'lucide-react';
 
 // Full ebook content embedded as structured chapters
