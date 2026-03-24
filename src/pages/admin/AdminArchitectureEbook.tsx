@@ -552,7 +552,7 @@ The project uses src/config/docRegistry.ts to track all documentation files:
 - **Shared Utilities**: 10 modules
 - **Documentation Files**: 42
 - **Security Grade**: A+
-- **Last Full Audit**: 2026-03-24\`
+- **Last Full Audit**: 2026-03-24`
   }
 ];
 
