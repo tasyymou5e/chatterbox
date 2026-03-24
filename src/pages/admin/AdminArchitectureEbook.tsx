@@ -307,7 +307,7 @@ Routes are protected by WithAuth and role-specific guards:
 - \`password-validator.ts\` — Crypto-secure password generation & validation
 - \`scheduler-validator.ts\` — \`X-Scheduler-Secret\` header validation for cron functions
 - \`security-headers.ts\` — Standard security headers
-- \`wide-event.ts\` — \`withWideEvent()\` structured logging for all functions\`
+- \`wide-event.ts\` — \`withWideEvent()\` structured logging for all functions`
   },
   {
     id: 'database-schema',
