@@ -84,8 +84,7 @@ export const Hero = ({ onChoosePortal, settings, loading = false }: HeroProps) =
             </Button>
             <Button 
               size="lg" 
-              variant="outline"
-              className="border-white/30 text-white hover:bg-white/10 font-semibold px-8 py-4 text-lg backdrop-blur-sm"
+              className="bg-white text-primary hover:bg-white/95 font-semibold px-8 py-4 text-lg shadow-medium"
               onClick={() => navigate('/games')}
             >
               Browse Games & Activities
