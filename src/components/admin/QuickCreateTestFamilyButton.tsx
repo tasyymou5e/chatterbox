@@ -42,7 +42,7 @@ export default function QuickCreateTestFamilyButton({ onSuccess }: QuickCreateTe
     cLog('[QuickCreateTestFamily] Creating preset TEST-850682 family...');
 
     try {
-      const { data, error } = await invokeEdgeFunction('create-test-family', {
+      const { data, error } = await invokeEdgeFunction<{ success: boolean; familyCode?: string; membersCreated?: number; error?: string }>('create-test-family', {
         ...PRESET_FAMILY,
         createdBy: user.id,
       });
