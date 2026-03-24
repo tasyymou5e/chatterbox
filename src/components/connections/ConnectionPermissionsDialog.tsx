@@ -19,7 +19,7 @@ interface ConnectionPermissionsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   connection: FamilyConnection;
-  onUpdate: (connectionId: string, updates: Partial<FamilyConnection>) => Promise<{ error: any }>;
+  onUpdate: (connectionId: string, updates: Partial<FamilyConnection>) => Promise<{ error: Error | null }>;
 }
 
 const roleLabels = {

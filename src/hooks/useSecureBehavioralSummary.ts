@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { cError } from '@/utils/wideLogger';
 
 interface BehavioralSummary {
   child_user_id: string;
@@ -30,7 +31,7 @@ export const useSecureBehavioralSummary = (familyId?: string) => {
 
       if (rpcError) {
         setError(rpcError.message);
-        console.error('Error fetching behavioral summary:', rpcError);
+        cError('Error fetching behavioral summary:', rpcError);
         return;
       }
 
@@ -38,7 +39,7 @@ export const useSecureBehavioralSummary = (familyId?: string) => {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch behavioral summary';
       setError(errorMessage);
-      console.error('Error in behavioral summary hook:', err);
+      cError('Error in behavioral summary hook:', err);
     } finally {
       setLoading(false);
     }

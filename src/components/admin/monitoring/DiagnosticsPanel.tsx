@@ -43,7 +43,7 @@ export const DiagnosticsPanel = () => {
         duration_ms: result.duration_ms,
         results: result.results,
       });
-    if (error) console.warn('Failed to store test result:', error);
+    if (error) cWarn('Failed to store test result:', error);
   };
 
   const runSafetyChecks = async () => {

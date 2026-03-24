@@ -136,7 +136,7 @@ export default function AdminReports() {
       setActivitySummary(summaryArray);
 
     } catch (error: unknown) {
-      console.error('Error fetching reports data:', getErrorMessage(error));
+      cError('Error fetching reports data:', getErrorMessage(error));
       toast({
         variant: 'destructive',
         title: 'Error',

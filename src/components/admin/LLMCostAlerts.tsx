@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { cError } from "@/utils/wideLogger";
 import {
   AlertTriangle,
   Bell,
@@ -57,7 +58,7 @@ export function LLMCostAlerts({ onAlertCountChange }: LLMCostAlertsProps) {
       }
     } catch (error) {
       if (isMounted) {
-        console.error("Failed to fetch alerts:", error);
+        cError("Failed to fetch alerts:", error);
       }
     } finally {
       if (isMounted) {
@@ -80,7 +81,7 @@ export function LLMCostAlerts({ onAlertCountChange }: LLMCostAlertsProps) {
       
       await fetchAlerts();
     } catch (error) {
-      console.error("Failed to check thresholds:", error);
+      cError("Failed to check thresholds:", error);
       toast.error("Failed to check thresholds");
     } finally {
       setIsChecking(false);
@@ -112,7 +113,7 @@ export function LLMCostAlerts({ onAlertCountChange }: LLMCostAlertsProps) {
       
       toast.success("Alert acknowledged");
     } catch (error) {
-      console.error("Failed to acknowledge alert:", error);
+      cError("Failed to acknowledge alert:", error);
       toast.error("Failed to acknowledge alert");
     }
   };
@@ -140,7 +141,7 @@ export function LLMCostAlerts({ onAlertCountChange }: LLMCostAlertsProps) {
       onAlertCountChange?.(0);
       toast.success("All alerts acknowledged");
     } catch (error) {
-      console.error("Failed to acknowledge all alerts:", error);
+      cError("Failed to acknowledge all alerts:", error);
       toast.error("Failed to acknowledge alerts");
     }
   };

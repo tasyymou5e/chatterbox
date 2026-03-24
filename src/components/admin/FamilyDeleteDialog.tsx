@@ -15,13 +15,15 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Trash2, AlertTriangle } from 'lucide-react';
 import { getErrorMessage } from '@/utils/getErrorMessage';
+import { cError } from '@/utils/wideLogger';
+
 interface Family {
   id: string;
   family_code: string;
   display_name: string;
   name: string;
   member_count: number;
-  metadata?: any; // Supabase Json type - contains is_test_family boolean
+  metadata?: { is_test_family?: boolean; [key: string]: unknown } | null;
 }
 
 interface FamilyDeleteDialogProps {
@@ -81,7 +83,7 @@ export default function FamilyDeleteDialog({ family, open, onOpenChange, onSucce
       onOpenChange(false);
       onSuccess?.();
     } catch (error: unknown) {
-      console.error('Error deleting family:', getErrorMessage(error));
+      cError('Error deleting family:', getErrorMessage(error));
       toast({
         variant: 'destructive',
         title: 'Deletion Failed',

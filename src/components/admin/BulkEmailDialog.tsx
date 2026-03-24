@@ -104,7 +104,7 @@ export default function BulkEmailDialog({
       onOpenChange(false);
 
     } catch (error) {
-      console.error('Error sending bulk email:', error);
+      cError('Error sending bulk email:', error);
       toast({
         variant: 'destructive',
         title: 'Failed to send emails',
