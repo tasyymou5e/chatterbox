@@ -309,14 +309,6 @@ Create a personalized ${scheduleType} plan for ${timeframe}. Select items and ex
         .single();
     }
 
-    if (planError) {
-      console.error("Plan insert error:", planError);
-      return new Response(JSON.stringify({ error: "Failed to save plan" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
     // Insert plan items
     const planItems = validItems.map((item: any, idx: number) => ({
       plan_id: newPlan.id,
