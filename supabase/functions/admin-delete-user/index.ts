@@ -7,6 +7,7 @@ import {
   createUnauthorizedResponse,
   createForbiddenResponse
 } from '../_shared/auth-validator.ts'
+import { withWideEvent } from '../_shared/wide-event.ts'
 
 interface DeleteUserRequest {
   userId: string;
@@ -25,7 +26,7 @@ interface DeleteUserResponse {
   error?: string;
 }
 
-serve(async (req) => {
+serve(withWideEvent('admin-delete-user', async (req, wideEvent) => {
   const corsHeaders = getCorsHeaders(req.headers.get('origin'));
   
   if (req.method === 'OPTIONS') {
@@ -57,7 +58,9 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Admin ${auth.userId} deleting user: ${userId} (${userEmail || 'unknown'})`);
+    wideEvent.admin_user_id = auth.userId;
+    wideEvent.target_user_id = userId;
+    wideEvent.target_user_email = userEmail;
 
     const supabase = getServiceClient();
     const deletedRecords = {
@@ -75,7 +78,7 @@ serve(async (req) => {
       .eq('user_id', userId)
       .select('id');
 
-    if (rolesError) console.error('Error deleting user_roles:', rolesError);
+    if (rolesError) wideEvent.roles_delete_error = rolesError.message;
     else deletedRecords.userRoles = rolesData?.length || 0;
 
     // 2. Delete family_members
@@ -85,7 +88,7 @@ serve(async (req) => {
       .eq('user_id', userId)
       .select('id');
 
-    if (membersError) console.error('Error deleting family_members:', membersError);
+    if (membersError) wideEvent.members_delete_error = membersError.message;
     else deletedRecords.familyMembers = membersData?.length || 0;
 
     // 3. Delete child_accounts
@@ -95,7 +98,7 @@ serve(async (req) => {
       .eq('user_id', userId)
       .select('id');
 
-    if (childError) console.error('Error deleting child_accounts:', childError);
+    if (childError) wideEvent.child_delete_error = childError.message;
     else deletedRecords.childAccounts = childData?.length || 0;
 
     // 4. Delete profiles
@@ -105,19 +108,19 @@ serve(async (req) => {
       .eq('user_id', userId)
       .select('id');
 
-    if (profileError) console.error('Error deleting profiles:', profileError);
+    if (profileError) wideEvent.profile_delete_error = profileError.message;
     else deletedRecords.profiles = profileData?.length || 0;
 
     // 5. Delete auth user
     try {
       const { error: authError } = await supabase.auth.admin.deleteUser(userId);
       if (authError) {
-        console.error('Error deleting auth user:', authError);
+        wideEvent.auth_delete_error = authError.message;
       } else {
         deletedRecords.authUser = true;
       }
     } catch (authErr) {
-      console.error('Exception deleting auth user:', authErr);
+      wideEvent.auth_delete_error = authErr instanceof Error ? authErr.message : String(authErr);
     }
 
     // 6. Audit log
@@ -130,7 +133,7 @@ serve(async (req) => {
         metadata: { userEmail, deletedRecords },
       });
     } catch (auditErr) {
-      console.error('Audit log failed:', auditErr);
+      wideEvent.audit_log_error = auditErr instanceof Error ? auditErr.message : String(auditErr);
     }
 
     const response: DeleteUserResponse = {
@@ -138,7 +141,7 @@ serve(async (req) => {
       deletedRecords,
     };
 
-    console.log('User deletion completed:', response);
+    wideEvent.deleted_records = deletedRecords;
 
     return new Response(
       JSON.stringify(response),
@@ -146,7 +149,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error in admin-delete-user:', error);
+    wideEvent.error = error instanceof Error ? error.message : String(error);
     
     return new Response(
       JSON.stringify({
@@ -157,4 +160,4 @@ serve(async (req) => {
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
-})
+}));
