@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import CreateTestFamilyButton from '@/components/admin/CreateTestFamilyButton';
+import QuickCreateTestFamilyButton from '@/components/admin/QuickCreateTestFamilyButton';
 import FamilyViewDialog from '@/components/admin/FamilyViewDialog';
 import FamilyEditDialog from '@/components/admin/FamilyEditDialog';
 import FamilyDeleteDialog from '@/components/admin/FamilyDeleteDialog';
@@ -335,7 +336,12 @@ export default function AdminFamilies() {
             Manage and monitor all registered families
           </p>
         </div>
-        {userRole === 'admin' && <CreateTestFamilyButton onSuccess={fetchFamilies} />}
+        {userRole === 'admin' && (
+          <div className="flex gap-2">
+            <QuickCreateTestFamilyButton onSuccess={fetchFamilies} />
+            <CreateTestFamilyButton onSuccess={fetchFamilies} />
+          </div>
+        )}
       </div>
 
       {/* Stats Cards */}
