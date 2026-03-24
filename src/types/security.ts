@@ -12,6 +12,28 @@ export interface ThreatIndicator {
   ip_address?: string;
 }
 
+export interface AccessAnomaly {
+  user_id: string;
+  actions_per_hour: number;
+  unique_ips: number;
+  risk: 'medium' | 'high' | 'critical';
+}
+
+export interface BruteForceIndicator {
+  user_id: string;
+  attempts: number;
+  risk: 'medium' | 'high' | 'critical';
+}
+
+export interface ThreatAnalysis {
+  access_anomalies: AccessAnomaly[];
+  brute_force_indicators: BruteForceIndicator[];
+  rls_violation_count: number;
+  active_monitoring: boolean;
+  last_scan: string;
+  risk_score: number;
+}
+
 export interface SecurityMetrics {
   total_alerts: number;
   rls_violations: number;
@@ -24,6 +46,7 @@ export interface SecurityMetrics {
     low: number;
   };
   top_threat_indicators: ThreatIndicator[];
+  threat_analysis?: ThreatAnalysis;
 }
 
 export interface SecurityTest {
