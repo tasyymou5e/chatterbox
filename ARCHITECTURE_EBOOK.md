@@ -18,12 +18,13 @@
 7. [Backend: Edge Functions](#7-backend-edge-functions)
 8. [Database Schema](#8-database-schema)
 9. [Kids Portal & Skill Plans](#9-kids-portal--skill-plans)
-10. [AI Integration](#10-ai-integration)
-11. [Security Model](#11-security-model)
-12. [Performance](#12-performance)
-13. [Testing Strategy](#13-testing-strategy)
-14. [Documentation System](#14-documentation-system)
-15. [Appendix](#15-appendix)
+10. [Games & Chores Catalog](#10-games--chores-catalog)
+11. [AI Integration](#11-ai-integration)
+12. [Security Model](#12-security-model)
+13. [Performance](#13-performance)
+14. [Testing Strategy](#14-testing-strategy)
+15. [Documentation System](#15-documentation-system)
+16. [Appendix](#16-appendix)
 
 ---
 
@@ -453,7 +454,290 @@ The Kids Portal implements a complete learning pipeline:
 
 ---
 
-## 10. AI Integration
+## 10. Games & Chores Catalog
+
+This chapter provides a comprehensive catalog of all interactive games, activities, and chore templates available in the platform, with detailed skill alignment mappings.
+
+### 10.1 SkillQuest Game System Overview
+
+The SkillQuest system provides **80+ interactive game variants** plus **12 standalone bonus games** across **12 skill domains**. Games use 5 core mechanics: **Match**, **Sort**, **Sequence**, **Odd-One-Out**, and **Fill-in-the-Blank**. Each game variant emphasizes specific mechanics via weighted challenge generation. Difficulty adapts automatically via `useAdaptiveDifficulty` (easy/medium/hard).
+
+**Source**: `src/components/games/shared/skillGameData.ts`
+
+### 10.2 Skill Domains & Game Variants
+
+#### 💬 Communication & AAC (8 variants + 1 bonus)
+
+| Game | Mechanics | Skills Targeted | Description |
+|------|-----------|----------------|-------------|
+| Word Matcher | Match, Odd-one-out | Vocabulary recognition, symbol-word association | Match symbols to their words |
+| Greeting Sorter | Sort, Odd-one-out | Social greetings, polite language categories | Sort greetings, requests & responses |
+| Needs Finder | Odd-one-out, Fill-blank | Expressing needs, emotional vocabulary | Find the odd one out from needs & feelings |
+| Conversation Builder | Sequence, Fill-blank | Conversational turn-taking, pragmatic language | Put conversation steps in order |
+| Polite Words | Match, Odd-one-out | Manners, social etiquette | Match polite words to their meanings |
+| AAC Board Match | Match, Fill-blank | AAC symbol recognition, picture communication | Match AAC picture symbols to words |
+| Symbol Sentence Builder | Sequence, Fill-blank | Sentence construction, AAC fluency | Put symbols in order to make a sentence |
+| PECS Sorter | Sort, Odd-one-out | PECS categorization, picture exchange | Sort picture cards into categories |
+| 🔔 Sound Match (bonus) | Sounds game | Auditory processing, sound-picture association | Listen & match sounds to pictures |
+
+#### 🤝 Social Skills (8 variants + 1 bonus)
+
+| Game | Mechanics | Skills Targeted | Description |
+|------|-----------|----------------|-------------|
+| Emotion Explorer | Sort, Odd-one-out | Emotion identification, categorization | Sort emotions: positive, negative, neutral |
+| Social Skills Match | Match, Fill-blank | Social skill recognition | Match social skills to their symbols |
+| Feeling Detective | Odd-one-out, Match | Emotional discrimination | Find the feeling that doesn't belong |
+| Friendship Builder | Sort, Odd-one-out | Prosocial behavior identification | Sort friendly vs unfriendly behaviors |
+| Face Reader | Match, Fill-blank | Facial expression reading, empathy | Match faces to the right emotion name |
+| Social Story Sequencer | Sequence, Fill-blank | Social narrative comprehension | Put social story steps in order |
+| Friendship Scenario | Odd-one-out, Match, Fill-blank | Social decision-making | Choose the best friendly response |
+| Behavior Sorter | Sort, Odd-one-out | Behavioral self-regulation | Sort behaviors: helpful vs unhelpful |
+| 🃏 Emotion Memory (bonus) | Memory game | Emotion recall, visual memory | Flip cards to match emotion pairs |
+
+#### 🌈 Sensory Regulation (5 variants + 2 bonuses)
+
+| Game | Mechanics | Skills Targeted | Description |
+|------|-----------|----------------|-------------|
+| Five Senses Sorter | Sort, Odd-one-out | Sensory categorization, body awareness | Sort items by sense: touch, taste, sound |
+| Opposites Finder | Match, Odd-one-out | Sensory vocabulary, contrast understanding | Match sensory opposites: hot/cold, loud/quiet |
+| Sense Detective | Odd-one-out, Fill-blank | Sensory discrimination | Find what doesn't belong in each sense |
+| Texture Match | Match, Sort | Tactile vocabulary, texture identification | Match textures: soft, rough, smooth, squishy |
+| Calm or Alert? | Sort, Odd-one-out | Self-regulation, arousal level awareness | Determine if a sense is calming or alerting |
+| 🧠 Sensory Memory (bonus) | Memory game | Sensory recall | Match sensory pairs from memory |
+| 🎵 Sound Sorter (bonus) | Sounds game | Auditory discrimination | Listen to sounds & find the match |
+
+#### 🧩 Executive Function (5 variants + 1 bonus)
+
+| Game | Mechanics | Skills Targeted | Description |
+|------|-----------|----------------|-------------|
+| Morning Routine | Sequence, Fill-blank | Routine following, time management | Put morning steps in order |
+| Bedtime Routine | Sequence, Fill-blank | Routine adherence, transitions | Order the bedtime steps correctly |
+| Task Planner | Fill-blank, Sequence | Task planning, step prediction | What step comes next? Fill the blank |
+| Snack Time Steps | Sequence, Fill-blank | Independence, sequencing | Order the steps to make a snack |
+| Routine Mixer | Sort, Odd-one-out | Routine categorization, flexibility | Sort steps into the right routine |
+| 🔮 Sequence Spotter (bonus) | Pattern game | Pattern recognition, prediction | Spot the pattern in the sequence |
+
+#### 🏠 Daily Living / Daily Routines (7 variants + 1 bonus)
+
+| Game | Mechanics | Skills Targeted | Description |
+|------|-----------|----------------|-------------|
+| Room Sorter | Sort, Odd-one-out | Environmental awareness, categorization | Sort items into the right rooms |
+| What's Missing? | Fill-blank, Odd-one-out | Visual scanning, memory | Find the missing item in each room |
+| Odd Item Out | Odd-one-out, Match | Categorization, logical reasoning | Which item doesn't belong in this room? |
+| Kitchen Helper | Match, Odd-one-out | Kitchen vocabulary, domestic skills | Match kitchen items to their names |
+| Getting Dressed | Sort, Odd-one-out | Self-care, categorization | Sort clothing items vs bathroom items |
+| Visual Schedule Builder | Sequence, Fill-blank | Schedule comprehension, independence | Build a visual schedule for your day |
+| Routine Timer Sort | Sort, Sequence | Time concepts, daily structure | Sort activities by when you do them |
+| 🏡 Home Memory (bonus) | Memory game | Object recall, spatial memory | Flip & match household item pairs |
+
+#### 💖 Emotional Regulation (8 variants)
+
+| Game | Mechanics | Skills Targeted | Description |
+|------|-----------|----------------|-------------|
+| Feelings Meter | Sort, Odd-one-out | Emotion intensity awareness | Sort feelings by intensity: low, medium, high |
+| Coping Toolbox | Match, Fill-blank | Coping strategy identification | Match calming strategies to their symbols |
+| Zone Check | Odd-one-out, Sort | Zones of Regulation awareness | Is this feeling calm, medium, or big? |
+| Calm Down Steps | Sequence, Fill-blank | Self-regulation sequencing | Put calming steps in the right order |
+| Big vs Small Feelings | Sort, Odd-one-out | Emotional magnitude discrimination | Sort big feelings from small feelings |
+| Emotion Scenario | Match, Odd-one-out | Emotional perspective-taking | Match feelings to situations |
+| Trigger Identifier | Odd-one-out, Sort | Trigger awareness, prevention | Find what might cause big feelings |
+| Calm Plan Builder | Sequence, Fill-blank | Self-regulation planning | Build your own calming plan step by step |
+
+#### 🏃 Motor Skills (5 variants + 1 bonus)
+
+| Game | Mechanics | Skills Targeted | Description |
+|------|-----------|----------------|-------------|
+| Body Part Match | Sort, Match | Body awareness, movement categorization | Match actions to hands, body, or legs |
+| Action Hero | Match, Odd-one-out | Action vocabulary, movement identification | Match the action to its emoji |
+| Coordination Challenge | Odd-one-out, Fill-blank | Coordination awareness, fine motor concepts | Find the odd action out |
+| Hand Gym | Match, Fill-blank | Fine motor skill recognition | Match fine motor actions |
+| Movement Sequence | Sequence, Fill-blank | Gross motor planning, sequencing | Put movements in order to make a routine |
+| 🥁 Action Sounds (bonus) | Sounds game | Auditory-motor association | Match action sounds to movements |
+
+#### 📚 Academic Readiness (5 variants + 1 bonus)
+
+| Game | Mechanics | Skills Targeted | Description |
+|------|-----------|----------------|-------------|
+| Shape Sorter | Sort, Odd-one-out | Shape recognition, categorization | Sort shapes, letters & numbers |
+| Color Match | Match, Odd-one-out | Color recognition, naming | Match colors to their names |
+| Number Sequence | Sequence, Fill-blank | Counting, number order | Put numbers in the right order |
+| Letter Detective | Odd-one-out, Match | Letter recognition, discrimination | Find which letter doesn't belong |
+| Math Symbols | Match, Fill-blank | Math symbol recognition | Match math symbols to their names |
+| 🧩 Pattern Spotter (bonus) | Pattern game | Pattern recognition, prediction | Find the pattern & pick what comes next |
+
+#### 🗣️ Speech Therapy (5 variants + 1 bonus)
+
+| Game | Mechanics | Skills Targeted | Description |
+|------|-----------|----------------|-------------|
+| Sound Matcher | Match, Odd-one-out | Sound-mouth shape association, oral motor | Match sounds to mouth shapes |
+| Mouth Shape Sort | Sort, Odd-one-out | Oral motor awareness, articulation prep | Sort mouth shapes vs sounds |
+| Rhyme Finder | Match, Odd-one-out | Phonological awareness, rhyming | Find the words that rhyme |
+| Word Builder | Sequence, Fill-blank | Word formation, phonemic awareness | Build words step by step |
+| Articulation Challenge | Odd-one-out, Match, Fill-blank | Articulation practice, speech fluency | Practice tricky sounds & syllables |
+| 🗣️ Speech Sounds Pattern (bonus) | Pattern game | Speech sound patterns | Spot patterns in speech sounds |
+
+#### 📖 Storytelling (5 variants + 1 bonus)
+
+| Game | Mechanics | Skills Targeted | Description |
+|------|-----------|----------------|-------------|
+| Story Starter | Match, Sort, Odd-one-out | Narrative initiation, story elements | Pick elements to start a story |
+| Character Match | Match, Odd-one-out | Character identification | Match characters to their descriptions |
+| Setting Sorter | Sort, Odd-one-out | Setting vs object discrimination | Sort story settings from objects |
+| Plot Sequencer | Sequence, Fill-blank | Narrative sequencing, cause-effect | Put story events in the right order |
+| Story Detective | Odd-one-out, Match | Narrative coherence, critical thinking | Find what doesn't belong in the story |
+| 📖 Story Memory (bonus) | Memory game | Story element recall | Flip cards to match story element pairs |
+
+#### 🎓 Educational Learning (5 variants + 1 bonus)
+
+| Game | Mechanics | Skills Targeted | Description |
+|------|-----------|----------------|-------------|
+| Alphabet Adventure | Sequence, Fill-blank | Letter sequencing, alphabetical order | Sort and sequence letters |
+| Counting Quest | Sequence, Fill-blank | Number sequencing, counting | Count and sequence numbers |
+| Science Sorter | Sort, Odd-one-out | Scientific categorization | Sort science items by category |
+| Reading Match | Match, Fill-blank | Reading tool identification | Match reading tools to their names |
+| Knowledge Detective | Odd-one-out, Match | Subject discrimination | Find what doesn't belong in each subject |
+| 🎓 Learning Patterns (bonus) | Pattern game | Academic pattern recognition | Find patterns in letters & numbers |
+
+#### 🧠 Cognitive Development (5 variants + 1 bonus)
+
+| Game | Mechanics | Skills Targeted | Description |
+|------|-----------|----------------|-------------|
+| Brain Trainer | Match, Fill-blank | Memory skills, cognitive recall | Train your memory with matching |
+| Memory Challenge | Fill-blank, Odd-one-out | Working memory, visual memory | Remember and find what's missing |
+| Focus Finder | Odd-one-out, Match | Sustained attention, focus | Find the odd one out — stay focused |
+| Logic Puzzle | Sort, Odd-one-out | Logical reasoning, categorization | Sort logic tools by type |
+| Pattern Thinker | Sequence, Fill-blank | Pattern recognition, sequential reasoning | Find patterns and complete sequences |
+| 🧠 Cognitive Memory (bonus) | Memory game | Memory training | Train your memory with card pairs |
+
+### 10.3 Standalone Bonus Games (12 total)
+
+These use dedicated game engines (Memory Match, Pattern Match, Sounds Match) rather than the SkillQuest challenge system:
+
+| Game | Engine | Domain | Skills | Description |
+|------|--------|--------|--------|-------------|
+| Emotion Memory | Memory Match | Social Skills | Emotion recall, visual memory | Flip cards to match emotion pairs |
+| Sensory Memory | Memory Match | Sensory | Sensory recall, concentration | Match sensory pairs from memory |
+| Home Memory | Memory Match | Daily Living | Object recall, spatial memory | Flip & match household item pairs |
+| Story Memory | Memory Match | Storytelling | Narrative element recall | Flip cards to match story elements |
+| Cognitive Memory | Memory Match | Cognitive Dev | Memory training, concentration | Train memory with card pairs |
+| Pattern Spotter | Pattern Match | Academic | Pattern recognition, prediction | Find the pattern & pick what comes next |
+| Sequence Spotter | Pattern Match | Executive Function | Sequential reasoning | Spot the pattern in the sequence |
+| Speech Sounds Pattern | Pattern Match | Speech Therapy | Speech sound patterns | Spot patterns in speech sounds |
+| Learning Patterns | Pattern Match | Educational Learning | Academic patterns | Find patterns in letters & numbers |
+| Sound Match | Sounds Match | Communication | Auditory processing | Listen & match sounds to pictures |
+| Sound Sorter | Sounds Match | Sensory | Auditory discrimination | Listen to sounds & find the match |
+| Action Sounds | Sounds Match | Motor Skills | Auditory-motor association | Match action sounds to movements |
+
+### 10.4 Game Mechanics Reference
+
+| Mechanic | Description | Clinical Alignment |
+|----------|-------------|-------------------|
+| **Match** | Pair symbols to their labels/descriptions | Vocabulary, recognition, association |
+| **Sort** | Drag items into categorical groups | Categorization, discrimination, executive function |
+| **Sequence** | Arrange items in correct order | Planning, temporal reasoning, routine learning |
+| **Odd-One-Out** | Identify the item that doesn't belong | Critical thinking, categorization, attention |
+| **Fill-in-the-Blank** | Complete a sequence with the missing item | Working memory, prediction, pattern completion |
+
+### 10.5 Adaptive Difficulty System
+
+| Level | Rounds | Items per Challenge | Target Audience |
+|-------|--------|-------------------|-----------------|
+| Easy | 3 | 3-4 items | Beginners, ages 3-5 |
+| Medium | 5 | 4-5 items | Intermediate, ages 6-8 |
+| Hard | 7 | 5-6 items | Advanced, ages 9-12 |
+
+The `useAdaptiveDifficulty` hook tracks accuracy history per game and auto-adjusts difficulty up/down based on performance trends.
+
+### 10.6 Chore System
+
+#### Database Tables
+
+| Table | Purpose |
+|-------|---------|
+| `chore_categories` | Category definitions with icons, colors, autism-friendly feature flags |
+| `chore_templates` | Reusable chore blueprints with instructions, difficulty, age ranges |
+| `chores` | Family-specific chore instances (from templates or custom) |
+| `chore_assignments` | Assigned chores with status tracking, due dates, recurrence |
+| `chore_completions` | Completion records with points, ratings, photos, duration |
+
+#### Chore Categories & Skill Alignment
+
+| Category | Icon | Skills Developed | Autism Accommodations |
+|----------|------|-----------------|----------------------|
+| Bathroom | 🛁 | Self-care, hygiene routines, independence | Visual schedules, step-by-step instructions |
+| Kitchen | 🍳 | Daily living, following instructions, safety | Simplified steps, break reminders |
+| Bedroom | 🛏️ | Organization, routine adherence, responsibility | Visual checklists, sensory-friendly materials |
+| Cleaning | 🧹 | Motor skills, task completion, following steps | Timer breaks, noise considerations |
+| Outdoor | 🌿 | Gross motor, sensory exploration, nature connection | Sensory preparation, flexible timing |
+| Personal Care | 🧼 | Self-care independence, health habits | Visual aids, social stories |
+| School Prep | 🎒 | Executive function, time management, organization | Visual timers, task chunking |
+| Social Tasks | 🤝 | Social skills, cooperation, empathy | Social stories, role modeling |
+
+#### Chore Difficulty Levels
+
+| Difficulty | Base Points | Estimated Duration | Target Age |
+|------------|------------|-------------------|------------|
+| Easy | 5 pts | 5-10 min | 3-6 years |
+| Medium | 10 pts | 10-20 min | 6-10 years |
+| Hard | 20 pts | 20-30 min | 10+ years |
+
+#### Autism-Friendly Chore Features
+
+Each chore supports configurable accommodations via `AutismFriendlyFeatures`:
+
+- **Visual Schedules**: Step-by-step visual instructions with optional photo guides
+- **Break Reminders**: Configurable break intervals and durations during chores
+- **Sensory Considerations**: Noise level ratings, lighting preferences, texture warnings
+- **Social Stories**: Pre-chore social narratives explaining what to expect
+- **Custom Instructions**: Simplified or alternative instructions per child
+- **Communication Style**: Visual, auditory, or tactile instruction preference
+
+#### Recurrence Patterns
+
+Chores support flexible scheduling via `RecurrencePattern`:
+- **Daily**: Every day or every N days
+- **Weekly**: Specific days of the week
+- **Custom**: Configurable intervals with skip weekends option
+- **Time of Day**: Morning, afternoon, or evening scheduling
+
+#### Gamification Integration
+
+| Feature | Points Source | Description |
+|---------|-------------|-------------|
+| Base completion | `base_points` on template | Points for completing any chore |
+| Time bonus | Completion under estimated duration | Bonus for finishing early |
+| Streak bonus | `daily_streaks` table | Multiplier for consecutive days |
+| Difficulty bonus | Higher difficulty = more points | Encourages challenge progression |
+| Photo verification | Parent review of completion photos | Optional proof of completion |
+| Parent feedback | Satisfaction + difficulty ratings | Qualitative completion data |
+
+### 10.7 Content Pipeline Summary
+
+```
+┌──────────────┐     ┌──────────────┐     ┌──────────────┐
+│  80+ Game    │     │  12 Bonus    │     │   Chore      │
+│  Variants    │     │  Standalone  │     │  Templates   │
+│  (SkillQuest)│     │  Games       │     │  (DB-driven) │
+└──────┬───────┘     └──────┬───────┘     └──────┬───────┘
+       │                    │                     │
+       ▼                    ▼                     ▼
+┌──────────────────────────────────────────────────────────┐
+│              content_items table (public catalog)         │
+│  Tags: domain, age range, autism features, skill levels   │
+└──────────────────────────┬───────────────────────────────┘
+                           │
+          ┌────────────────┼────────────────┐
+          ▼                ▼                ▼
+    ┌──────────┐    ┌──────────┐    ┌──────────┐
+    │ Public   │    │ Kids     │    │ Parent   │
+    │ Catalog  │    │ Portal   │    │ Curation │
+    │ (/games) │    │ (plans)  │    │ (assign) │
+    └──────────┘    └──────────┘    └──────────┘
+```
+
+---
+
+## 11. AI Integration
 
 ### AI Services Architecture
 
@@ -495,7 +779,7 @@ The `ai_usage_quotas` table controls per-role daily message limits, preventing a
 
 ---
 
-## 11. Security Model
+## 12. Security Model
 
 ### Defense in Depth
 
@@ -541,7 +825,7 @@ Layer 6: Monitoring
 
 ---
 
-## 12. Performance
+## 13. Performance
 
 ### Bundle Optimization
 - **Vite** with SWC plugin for fast builds
@@ -564,7 +848,7 @@ Layer 6: Monitoring
 
 ---
 
-## 13. Testing Strategy
+## 14. Testing Strategy
 
 ### Test Stack
 
@@ -602,7 +886,7 @@ tests-e2e/
 
 ---
 
-## 14. Documentation System
+## 15. Documentation System
 
 ### Automated Documentation Pipeline
 
@@ -635,7 +919,7 @@ npm run docs:update -- --filter=hooks       # Category filter
 
 ---
 
-## 15. Appendix
+## 16. Appendix
 
 ### A. Complete Hook Reference (54 hooks)
 
