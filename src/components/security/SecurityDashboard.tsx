@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { invokeWithRetry } from '@/hooks/useRetryWithBackoff';
 import { Shield, AlertTriangle, Activity, Lock, Users, Database, RefreshCw } from 'lucide-react';
-import type { SecurityMetrics, SecurityTest } from '@/types/security';
+import type { SecurityMetrics, SecurityTest, ThreatAnalysis } from '@/types/security';
 
 // Default metrics when API fails
 const DEFAULT_METRICS: SecurityMetrics = {
@@ -64,7 +64,8 @@ export const SecurityDashboard: React.FC = () => {
           medium: 0,
           low: 0
         },
-        top_threat_indicators: data?.top_threat_indicators ?? []
+        top_threat_indicators: data?.top_threat_indicators ?? [],
+        threat_analysis: data?.threat_analysis ?? undefined
       };
       
       setMetrics(newMetrics);
