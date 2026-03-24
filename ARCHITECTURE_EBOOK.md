@@ -779,7 +779,7 @@ The `ai_usage_quotas` table controls per-role daily message limits, preventing a
 
 ---
 
-## 11. Security Model
+## 12. Security Model
 
 ### Defense in Depth
 
@@ -825,7 +825,7 @@ Layer 6: Monitoring
 
 ---
 
-## 12. Performance
+## 13. Performance
 
 ### Bundle Optimization
 - **Vite** with SWC plugin for fast builds
@@ -848,7 +848,7 @@ Layer 6: Monitoring
 
 ---
 
-## 13. Testing Strategy
+## 14. Testing Strategy
 
 ### Test Stack
 
@@ -886,7 +886,7 @@ tests-e2e/
 
 ---
 
-## 14. Documentation System
+## 15. Documentation System
 
 ### Automated Documentation Pipeline
 
@@ -919,7 +919,7 @@ npm run docs:update -- --filter=hooks       # Category filter
 
 ---
 
-## 15. Appendix
+## 16. Appendix
 
 ### A. Complete Hook Reference (54 hooks)
 
