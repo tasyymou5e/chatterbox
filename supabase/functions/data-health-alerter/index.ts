@@ -12,11 +12,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { sendEmailNonBlocking } from "../_shared/email-sender.ts";
 import { dataHealthAlertTemplate, type DataHealthAlertData } from "../_shared/email-templates.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { getCorsHeaders } from "../_shared/cors.ts";
 
 // Alert thresholds and cooldowns
 const THRESHOLDS = {
