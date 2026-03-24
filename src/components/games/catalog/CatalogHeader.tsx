@@ -2,6 +2,7 @@
  * Catalog header component with title, description, and status badges
  */
 
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 
