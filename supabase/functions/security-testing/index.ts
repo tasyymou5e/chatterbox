@@ -350,7 +350,7 @@ async function testRLSPolicies(supabase: any): Promise<SecurityTest[]> {
     'high',
     async () => {
       const anonClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!);
-      const { data, error } = await anonClient.from('profiles').select('*');
+      const { data, error } = await anonClient.from('profiles').select('id, user_id');
       
       if (error || (data && data.length === 0)) {
         return { success: true };
@@ -416,7 +416,7 @@ async function testRLSPolicies(supabase: any): Promise<SecurityTest[]> {
         
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        const { data, error } = await testClient.from('admin_audit_logs').select('*').limit(1);
+        const { data, error } = await testClient.from('admin_audit_logs').select('id').limit(1);
         
         if (error) {
           return { success: true, details: 'RLS properly blocked non-admin access' };
@@ -460,7 +460,7 @@ async function testAuthenticationSecurity(supabase: any): Promise<SecurityTest[]
         }
       });
       
-      const { data, error } = await fakeClient.from('profiles').select('*');
+      const { data, error } = await fakeClient.from('profiles').select('id, user_id');
       
       if (error || (data && data.length === 0)) {
         return { success: true };
