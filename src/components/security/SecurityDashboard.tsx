@@ -11,8 +11,9 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { invokeWithRetry } from '@/hooks/useRetryWithBackoff';
-import { Shield, AlertTriangle, Activity, Lock, Users, Database, RefreshCw } from 'lucide-react';
+import { Shield, AlertTriangle, Activity, Lock, Users, Database, RefreshCw, Zap, Eye, Fingerprint } from 'lucide-react';
 import type { SecurityMetrics, SecurityTest } from '@/types/security';
+import { Progress } from '@/components/ui/progress';
 
 // Default metrics when API fails
 const DEFAULT_METRICS: SecurityMetrics = {
@@ -64,7 +65,8 @@ export const SecurityDashboard: React.FC = () => {
           medium: 0,
           low: 0
         },
-        top_threat_indicators: data?.top_threat_indicators ?? []
+        top_threat_indicators: data?.top_threat_indicators ?? [],
+        threat_analysis: data?.threat_analysis ?? undefined
       };
       
       setMetrics(newMetrics);
@@ -436,47 +438,141 @@ export const SecurityDashboard: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="threats" className="space-y-4">
+          {/* Risk Score */}
           <Card>
             <CardHeader>
-              <CardTitle>Threat Indicators & Analysis</CardTitle>
+              <CardTitle className="flex items-center justify-between">
+                <span>Threat Risk Score</span>
+                {metrics.threat_analysis && (
+                  <Badge variant={
+                    metrics.threat_analysis.risk_score >= 75 ? 'destructive' :
+                    metrics.threat_analysis.risk_score >= 40 ? 'default' : 'secondary'
+                  }>
+                    {metrics.threat_analysis.risk_score >= 75 ? 'Critical' :
+                     metrics.threat_analysis.risk_score >= 40 ? 'Elevated' : 'Normal'}
+                  </Badge>
+                )}
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <Alert>
-                  <Shield className="h-4 w-4" />
-                  <AlertTitle>Real-time Monitoring Active</AlertTitle>
-                  <AlertDescription>
-                    Security monitoring is actively analyzing access patterns, 
-                    RLS policy violations, and suspicious activities in real-time.
-                  </AlertDescription>
-                </Alert>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-sm">Pattern Detection</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-muted-foreground">
-                        Monitoring user access patterns for anomalies
-                      </p>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-sm">Policy Enforcement</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-muted-foreground">
-                        Tracking RLS policy violations and bypass attempts
-                      </p>
-                    </CardContent>
-                  </Card>
+              {metrics.threat_analysis ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-4">
+                    <span className="text-3xl font-bold">{metrics.threat_analysis.risk_score}</span>
+                    <span className="text-muted-foreground text-sm">/ 100</span>
+                    <Progress value={metrics.threat_analysis.risk_score} className="flex-1" />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Last scan: {new Date(metrics.threat_analysis.last_scan).toLocaleString()}
+                  </p>
                 </div>
-              </div>
+              ) : (
+                <p className="text-muted-foreground text-sm">Click Refresh to load threat analysis</p>
+              )}
             </CardContent>
           </Card>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Access Pattern Anomalies */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Eye className="h-4 w-4" />
+                  Access Pattern Anomalies
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {metrics.threat_analysis?.access_anomalies?.length ? (
+                  <div className="space-y-2">
+                    {metrics.threat_analysis.access_anomalies.map((a, i) => (
+                      <div key={i} className="flex items-center justify-between text-sm border-b border-border pb-2">
+                        <div>
+                          <code className="text-xs">{a.user_id.slice(0, 8)}…</code>
+                          <div className="text-xs text-muted-foreground">{a.actions_per_hour} actions/hr · {a.unique_ips} IPs</div>
+                        </div>
+                        <Badge variant={a.risk === 'critical' ? 'destructive' : a.risk === 'high' ? 'destructive' : 'default'}>
+                          {a.risk}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-4">
+                    <Shield className="h-8 w-8 mx-auto mb-2 text-muted-foreground opacity-50" />
+                    <p className="text-sm text-muted-foreground">No anomalies detected</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Brute Force Detection */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Fingerprint className="h-4 w-4" />
+                  Brute Force Detection
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {metrics.threat_analysis?.brute_force_indicators?.length ? (
+                  <div className="space-y-2">
+                    {metrics.threat_analysis.brute_force_indicators.map((b, i) => (
+                      <div key={i} className="flex items-center justify-between text-sm border-b border-border pb-2">
+                        <div>
+                          <code className="text-xs">{b.user_id.slice(0, 8)}…</code>
+                          <div className="text-xs text-muted-foreground">{b.attempts} failed attempts</div>
+                        </div>
+                        <Badge variant={b.risk === 'critical' ? 'destructive' : b.risk === 'high' ? 'destructive' : 'default'}>
+                          {b.risk}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-4">
+                    <Lock className="h-8 w-8 mx-auto mb-2 text-muted-foreground opacity-50" />
+                    <p className="text-sm text-muted-foreground">No brute force detected</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* RLS Policy Enforcement */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Zap className="h-4 w-4" />
+                  RLS Policy Enforcement
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-4 space-y-2">
+                  <div className="text-3xl font-bold">
+                    {metrics.threat_analysis?.rls_violation_count ?? metrics.rls_violations}
+                  </div>
+                  <p className="text-sm text-muted-foreground">violations in 24h</p>
+                  <Badge variant={
+                    (metrics.threat_analysis?.rls_violation_count ?? metrics.rls_violations) > 0
+                      ? 'destructive' : 'secondary'
+                  }>
+                    {(metrics.threat_analysis?.rls_violation_count ?? metrics.rls_violations) > 0
+                      ? 'Action Required' : 'All Clear'}
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Monitoring Status */}
+          <Alert>
+            <Activity className="h-4 w-4" />
+            <AlertTitle>Real-time Monitoring {metrics.threat_analysis?.active_monitoring ? 'Active' : 'Inactive'}</AlertTitle>
+            <AlertDescription>
+              Pattern detection, RLS violation tracking, and brute-force monitoring are 
+              {metrics.threat_analysis?.active_monitoring ? ' actively ' : ' not '}
+              analyzing security events in real-time.
+            </AlertDescription>
+          </Alert>
         </TabsContent>
       </Tabs>
     </div>
