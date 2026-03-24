@@ -11,7 +11,7 @@ interface ParentPortalGuardOptions {
 }
 
 export const useParentPortalGuard = (options: ParentPortalGuardOptions = {}) => {
-  const { user, userRole, loading, isAdmin } = useAuthStore();
+  const { user, userRole, loading, isAdmin, isCheckingRole } = useAuthStore();
   const navigate = useNavigate();
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [checking, setChecking] = useState(true);
