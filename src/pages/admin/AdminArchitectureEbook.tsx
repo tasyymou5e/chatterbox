@@ -23,11 +23,11 @@ const chapters = [
 
 | Metric | Value |
 |--------|-------|
-| Custom React Hooks | 58 |
+| Custom React Hooks | 54 |
 | Zustand Stores | 18 |
 | Edge Functions | 32 |
 | Database Tables | 59 |
-| TypeScript Type Files | 30 |
+| TypeScript Type Files | 27 |
 | Component Directories | 24 |
 | Page Routes | 20+ |
 | RLS Policies | 65+ (optimized from 130+) |
@@ -297,11 +297,17 @@ Routes are protected by WithAuth and role-specific guards:
 | data-health-alerter | Service | Data health score alerting |
 | api-integration-status | JWT | Check API integration status |
 
-### Shared Utilities (_shared/)
-- cors.ts — Dynamic origin validation
-- auth-validator.ts — JWT verification and role checking
-- rate-limiter.ts — Per-IP rate limiting
-- api-types.ts — Shared TypeScript interfaces`
+### Shared Utilities (\`_shared/\` — 10 modules)
+- \`cors.ts\` — Dynamic origin validation
+- \`auth-validator.ts\` — JWT verification, \`validateAdminJWT()\`, role checking
+- \`rate-limiter.ts\` — Per-IP rate limiting with configurable windows
+- \`api-types.ts\` — Shared TypeScript interfaces
+- \`email-sender.ts\` — Email sending via Resend
+- \`email-templates.ts\` — HTML email template rendering
+- \`password-validator.ts\` — Crypto-secure password generation & validation
+- \`scheduler-validator.ts\` — \`X-Scheduler-Secret\` header validation for cron functions
+- \`security-headers.ts\` — Standard security headers
+- \`wide-event.ts\` — \`withWideEvent()\` structured logging for all functions\`
   },
   {
     id: 'database-schema',
@@ -486,7 +492,7 @@ expect(screen.getByText('Clean Room')).toBeInTheDocument();
 
 The project uses src/config/docRegistry.ts to track all documentation files:
 
-- **35 registered documents** organized by category
+- **42 registered documents** organized by category
 - **File pattern monitoring** for auto-update detection
 - **Metadata**: title, description, category, last updated date
 
@@ -494,12 +500,27 @@ The project uses src/config/docRegistry.ts to track all documentation files:
 
 | Category | Files | Description |
 |----------|-------|-------------|
-| Architecture | 3 | System design, tech stack, routing |
-| Security | 3 | RLS policies, security framework, Supabase schema |
-| Features | 3 | Kids portal, hooks, stores |
-| Operations | 3 | Edge functions, implementation status, testing |
-| Guides | 2 | API documentation, component docs |
-| Reference | 1 | Architecture ebook (this document) |
+| Core | 4 | Architecture ebook, project knowledge, README, architecture docs |
+| Components | 3 | Component docs, pages docs, graphics tech stack |
+| State | 2 | Stores documentation, Zustand design |
+| Hooks | 1 | Hooks documentation |
+| Types | 2 | Types documentation, TypeScript strictness |
+| Security | 4 | Security framework, RLS policies, RLS tests, enterprise security |
+| Backend | 4 | Edge functions guide, Supabase schema, API docs, logging standards |
+| Testing | 3 | Testing guide, test plan, auth E2E coverage |
+| Guides | 7 | Admin features, auth, kids portal, workflows, site flow, routing, parent-child |
+| Utils | 3 | Utils docs, JSDoc standards, docs auto-update |
+| Status | 8 | Issues, implementation status, bundle optimization, error recovery, etc. |
+
+### Related Documentation Files
+
+| Document | Purpose |
+|----------|---------|
+| TECHSTACK.md | Authoritative technical reference |
+| LOGGING_STANDARDS.md | Structured logging with withWideEvent() |
+| ASSESSMENT_PIPELINE.md | Assessment → AI plan → execution pipeline |
+| ENTERPRISE_SECURITY_PERFORMANCE.md | Security hardening & performance |
+| AUTH_E2E_COVERAGE_REPORT.md | End-to-end auth test coverage |
 
 ### Standards
 - All docs use "Last Updated" headers
@@ -526,10 +547,12 @@ The project uses src/config/docRegistry.ts to track all documentation files:
 - **Total Tables**: 59
 - **Total Edge Functions**: 32
 - **Total Zustand Stores**: 18
-- **Total Custom Hooks**: 58
+- **Total Custom Hooks**: 54
 - **Total RLS Policies**: 65+
+- **Shared Utilities**: 10 modules
+- **Documentation Files**: 42
 - **Security Grade**: A+
-- **Last Full Audit**: 2026-03-15`
+- **Last Full Audit**: 2026-03-24\`
   }
 ];
 
@@ -698,7 +721,7 @@ export default function AdminArchitectureEbook() {
           <BookOpen className="h-8 w-8 text-blue-400" />
           <div>
             <h1 className="text-2xl font-bold text-white">Architecture Ebook</h1>
-            <p className="text-gray-400 text-sm">Comprehensive technical reference — v3.0 · Updated 2026-03-15</p>
+            <p className="text-gray-400 text-sm">Comprehensive technical reference — v4.0 · Updated 2026-03-24</p>
           </div>
         </div>
         <Badge variant="outline" className="border-blue-500/50 text-blue-400">
