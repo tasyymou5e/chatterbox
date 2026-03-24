@@ -75,7 +75,7 @@ export default function QuickCreateTestFamilyButton({ onSuccess }: QuickCreateTe
     <Button
       onClick={handleClick}
       disabled={loading}
-      className="w-full justify-start text-sm text-amber-600 hover:text-amber-700 bg-amber-500/10 hover:bg-amber-500/20 border-0"
+      className="w-full justify-start text-sm text-accent-foreground bg-accent/50 hover:bg-accent border-0"
       variant="outline"
     >
       {loading ? (
