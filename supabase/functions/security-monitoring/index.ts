@@ -255,19 +255,53 @@ async function checkSuspiciousActivity(supabase: any, data: any, corsHeaders: Re
 async function generateSecurityReport(supabase: any, corsHeaders: Record<string, string>): Promise<Response> {
   const now = new Date();
   const last24Hours = new Date(now.getTime() - 24 * 3600000);
+  const lastHour = new Date(now.getTime() - 3600000);
   
   // Get security metrics for the last 24 hours
   const [
     { data: alerts },
     { data: violations },
     { data: activities },
-    { data: errors }
+    { data: errors },
+    { data: recentActivity },
+    { data: failedLogins }
   ] = await Promise.all([
-    supabase.from('security_audit_logs').select('id, severity, created_at').gte('created_at', last24Hours.toISOString()),
+    supabase.from('security_audit_logs').select('id, severity, event_type, event_details, user_id, created_at').gte('created_at', last24Hours.toISOString()).order('created_at', { ascending: false }),
     supabase.from('security_audit_logs').select('id, created_at').eq('event_type', 'rls_violation').gte('created_at', last24Hours.toISOString()),
     supabase.from('user_activity_logs').select('id, created_at').eq('success', false).gte('created_at', last24Hours.toISOString()),
-    supabase.from('system_errors').select('id, created_at').gte('created_at', last24Hours.toISOString())
+    supabase.from('system_errors').select('id, created_at').gte('created_at', last24Hours.toISOString()),
+    supabase.from('user_activity_logs').select('user_id, activity_type, ip_address, created_at').gte('created_at', lastHour.toISOString()),
+    supabase.from('user_activity_logs').select('user_id, activity_type, ip_address, created_at, failure_reason').eq('success', false).gte('created_at', last24Hours.toISOString()).order('created_at', { ascending: false }).limit(50)
   ]);
+
+  // Compute access pattern anomalies from the last hour
+  const userFrequency = new Map<string, number>();
+  const userIPs = new Map<string, Set<string>>();
+  recentActivity?.forEach((a: any) => {
+    userFrequency.set(a.user_id, (userFrequency.get(a.user_id) || 0) + 1);
+    if (a.ip_address) {
+      if (!userIPs.has(a.user_id)) userIPs.set(a.user_id, new Set());
+      userIPs.get(a.user_id)!.add(String(a.ip_address));
+    }
+  });
+
+  const accessAnomalies = Array.from(userFrequency.entries())
+    .filter(([uid, freq]) => freq > 50 || (userIPs.get(uid)?.size || 0) > 3)
+    .map(([uid, freq]) => ({
+      user_id: uid,
+      actions_per_hour: freq,
+      unique_ips: userIPs.get(uid)?.size || 0,
+      risk: freq > 100 ? 'critical' : freq > 50 ? 'high' : 'medium'
+    }));
+
+  // Compute failed login clusters
+  const loginsByUser = new Map<string, number>();
+  failedLogins?.forEach((fl: any) => {
+    loginsByUser.set(fl.user_id, (loginsByUser.get(fl.user_id) || 0) + 1);
+  });
+  const bruteForceIndicators = Array.from(loginsByUser.entries())
+    .filter(([, count]) => count >= 3)
+    .map(([uid, count]) => ({ user_id: uid, attempts: count, risk: count >= 10 ? 'critical' : count >= 5 ? 'high' : 'medium' }));
 
   const report = {
     period: '24_hours',
@@ -279,12 +313,20 @@ async function generateSecurityReport(supabase: any, corsHeaders: Record<string,
       system_errors: errors?.length || 0
     },
     severity_breakdown: {
-      critical: alerts?.filter(a => a.severity === 'critical').length || 0,
-      high: alerts?.filter(a => a.severity === 'high').length || 0,
-      medium: alerts?.filter(a => a.severity === 'medium').length || 0,
-      low: alerts?.filter(a => a.severity === 'low').length || 0
+      critical: alerts?.filter((a: any) => a.severity === 'critical').length || 0,
+      high: alerts?.filter((a: any) => a.severity === 'high').length || 0,
+      medium: alerts?.filter((a: any) => a.severity === 'medium').length || 0,
+      low: alerts?.filter((a: any) => a.severity === 'low').length || 0
     },
-    top_threat_indicators: alerts?.slice(0, 10) || []
+    top_threat_indicators: alerts?.slice(0, 10) || [],
+    threat_analysis: {
+      access_anomalies: accessAnomalies,
+      brute_force_indicators: bruteForceIndicators,
+      rls_violation_count: violations?.length || 0,
+      active_monitoring: true,
+      last_scan: now.toISOString(),
+      risk_score: Math.min(100, (accessAnomalies.length * 20) + (bruteForceIndicators.length * 15) + ((violations?.length || 0) * 10) + ((alerts?.filter((a: any) => a.severity === 'critical').length || 0) * 25))
+    }
   };
 
   console.log(`[security-monitoring] Report generated: alerts=${report.summary.total_alerts}`);
