@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   BookOpen, Video, Download, ExternalLink, ArrowRight, Star,
-  Search, Heart, Clock, FileText, CheckCircle2, Filter,
+  Search, Heart, Clock, CheckCircle2, Filter,
   Lightbulb, Users, Brain, Palette, MessageSquare, Shield, Home, Sparkles
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
