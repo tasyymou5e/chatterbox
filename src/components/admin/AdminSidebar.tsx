@@ -137,8 +137,8 @@ export function AdminSidebar() {
                                 to={item.url}
                                 className={
                                   isActive
-                                    ? 'text-white bg-gray-700'
-                                    : 'text-gray-100 hover:text-white hover:bg-gray-700/50'
+                                    ? 'text-white bg-gray-700 font-semibold'
+                                    : 'text-gray-200 hover:text-white hover:bg-gray-700/50'
                                 }
                               >
                                 <item.icon className="h-4 w-4" />
