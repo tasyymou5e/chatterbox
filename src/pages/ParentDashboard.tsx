@@ -98,26 +98,25 @@ const ParentDashboard = () => {
           }
         }
         
-        // Check if role exists
-        const { data: existingRole, error: roleCheckError } = await supabase
-          .from('user_roles')
-          .select('id')
-          .eq('user_id', user.id)
-          .maybeSingle();
+        // Check if role exists - use RPC to bypass potential RLS timing issues
+        const { data: primaryRole } = await supabase.rpc('get_primary_role', {
+          _user_id: user.id
+        });
         
-        if (roleCheckError) {
-          console.warn('Error checking role:', roleCheckError);
-        }
-        
-        if (!existingRole) {
-          // Assign parent role
+        if (!primaryRole) {
+          // Only attempt insert if no role exists via RPC check
           const { error: roleInsertError } = await supabase.from('user_roles').insert({
             user_id: user.id,
             role: 'parent'
           });
           
           if (roleInsertError) {
-            console.warn('Error creating role:', roleInsertError);
+            // P0001 "Role conflict" means role already exists - this is fine
+            if (roleInsertError.code === 'P0001' || roleInsertError.message?.includes('Role conflict')) {
+              secureLog.dev('Role already exists for user (conflict), skipping');
+            } else {
+              console.warn('Error creating role:', roleInsertError);
+            }
           } else {
             repairedFields.push('role');
             repairDetails.role = {

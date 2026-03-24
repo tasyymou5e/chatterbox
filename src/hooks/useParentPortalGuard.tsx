@@ -11,7 +11,7 @@ interface ParentPortalGuardOptions {
 }
 
 export const useParentPortalGuard = (options: ParentPortalGuardOptions = {}) => {
-  const { user, userRole, loading, isAdmin } = useAuthStore();
+  const { user, userRole, loading, isAdmin, isCheckingRole } = useAuthStore();
   const navigate = useNavigate();
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [checking, setChecking] = useState(true);
@@ -46,7 +46,7 @@ export const useParentPortalGuard = (options: ParentPortalGuardOptions = {}) => 
     const checkAccess = async () => {
       // Prevent duplicate checks
       if (checkInProgressRef.current) return;
-      if (loading) return;
+      if (loading || isCheckingRole) return;
 
       checkInProgressRef.current = true;
 
@@ -59,8 +59,8 @@ export const useParentPortalGuard = (options: ParentPortalGuardOptions = {}) => 
           return;
         }
 
-        // If user has no role at all, redirect to auth — do not grant access
-        if (!isAdmin && !userRole) {
+        // If user has no role and role check is complete, deny access
+        if (!isAdmin && !userRole && !isCheckingRole) {
           cWarn('ParentPortalGuard: User has no role assigned - denying access');
           setIsAuthorized(false);
           setChecking(false);
@@ -194,7 +194,7 @@ export const useParentPortalGuard = (options: ParentPortalGuardOptions = {}) => 
     };
 
     checkAccess();
-  }, [user, userRole, loading, isAdmin, navigate, requiredFamilyAccess, redirectPath, familyCreationAttempts]);
+  }, [user, userRole, loading, isAdmin, isCheckingRole, navigate, requiredFamilyAccess, redirectPath, familyCreationAttempts]);
 
   return {
     isAuthorized,
