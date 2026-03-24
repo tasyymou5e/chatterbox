@@ -1,5 +1,6 @@
 import * as React from "react"
 import * as RechartsPrimitive from "recharts"
+import type { Payload } from "recharts/types/component/DefaultTooltipContent"
 
 import { cn } from "@/lib/utils"
 
@@ -150,16 +151,7 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
 
 const ChartTooltip = RechartsPrimitive.Tooltip
 
-interface ChartPayloadItem {
-  name?: string
-  dataKey?: string
-  value?: number | string
-  color?: string
-  fill?: string
-  graphicalItemId?: number
-  payload?: Record<string, unknown>
-  [key: string]: unknown
-}
+type ChartPayloadItem = Payload<string | number, string>
 
 const ChartTooltipContent = React.forwardRef<
   HTMLDivElement,
