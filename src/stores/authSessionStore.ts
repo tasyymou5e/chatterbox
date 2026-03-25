@@ -158,6 +158,11 @@ export const useAuthSessionStore = create<AuthSessionState>()(
           // Set up auth state listener
           const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (event, session) => {
+              if (event === 'INITIAL_SESSION') {
+                // Handled by getSession() below — skip to avoid double state updates
+                return;
+              }
+              
               if (event === 'SIGNED_IN' && session) {
                 set({ 
                   session, 
