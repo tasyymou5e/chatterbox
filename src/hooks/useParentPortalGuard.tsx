@@ -15,7 +15,6 @@ export const useParentPortalGuard = (options: ParentPortalGuardOptions = {}) => 
   const navigate = useNavigate();
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [checking, setChecking] = useState(true);
-  const [familyCreationAttempts, setFamilyCreationAttempts] = useState(0);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const checkInProgressRef = useRef(false);
 
@@ -103,51 +102,44 @@ export const useParentPortalGuard = (options: ParentPortalGuardOptions = {}) => 
 
             hasFamily = adminFamilies && adminFamilies.length > 0;
           } else {
-            // Check if parent user is a family member
-            const { data: familyMembership, error } = await supabase
-              .from('family_members')
-              .select('id, family_id')
-              .eq('user_id', user.id)
-              .limit(1);
+            // Check if parent user is a family member with retries
+            let attempts = 0;
+            const maxAttempts = 3;
+            
+            while (attempts < maxAttempts && !hasFamily) {
+              if (attempts > 0) {
+                // Wait 2 seconds between retries
+                await new Promise(resolve => setTimeout(resolve, 2000));
+              }
+              
+              const { data: familyMembership, error } = await supabase
+                .from('family_members')
+                .select('id, family_id')
+                .eq('user_id', user.id)
+                .limit(1);
 
-            logSupabaseQuery(
-              { component: 'ParentPortalGuard', operation: 'checkFamilyMembership', userId: user.id, table: 'family_members' },
-              { success: !error, error, rowCount: familyMembership?.length || 0 }
-            );
+              logSupabaseQuery(
+                { component: 'ParentPortalGuard', operation: 'checkFamilyMembership', userId: user.id, table: 'family_members' },
+                { success: !error, error, rowCount: familyMembership?.length || 0 }
+              );
 
-            if (error) {
-              cLog('Error checking family membership:', error);
-              // Allow access on error to avoid blocking legitimate users
-              setIsAuthorized(true);
-              setChecking(false);
-              return;
+              if (error) {
+                cLog('Error checking family membership:', error);
+                // Allow access on error to avoid blocking legitimate users
+                setIsAuthorized(true);
+                setChecking(false);
+                return;
+              }
+
+              hasFamily = familyMembership && familyMembership.length > 0;
+              
+              if (hasFamily) {
+                cLog('ParentPortalGuard: Family membership found: ' + familyMembership![0].family_id);
+              } else {
+                attempts++;
+                cLog('ParentPortalGuard: No family found, retry attempt: ' + attempts);
+              }
             }
-
-            hasFamily = familyMembership && familyMembership.length > 0;
-            
-            if (hasFamily) {
-              cLog('ParentPortalGuard: Family membership found: ' + familyMembership[0].family_id);
-            }
-          }
-
-          // If no family found and this is a new parent, wait for auto-creation
-          if (!hasFamily && userRole === UserRoles.PARENT && familyCreationAttempts < 3) {
-            cLog('ParentPortalGuard: No family found, waiting for auto-creation... Attempt: ' + (familyCreationAttempts + 1));
-            
-            logDataAccessIssue('ParentPortalGuard', 'No family found for parent, retrying', {
-              userId: user.id,
-              expectedData: 'family membership',
-              actualResult: 'none found, attempt ' + (familyCreationAttempts + 1)
-            });
-            
-            setFamilyCreationAttempts(prev => prev + 1);
-            checkInProgressRef.current = false;
-            
-            // Wait 2 seconds and retry
-            setTimeout(() => {
-              checkAccess();
-            }, 2000);
-            return;
           }
 
           // If still no family after attempts, handle gracefully
@@ -155,7 +147,7 @@ export const useParentPortalGuard = (options: ParentPortalGuardOptions = {}) => 
             logDataAccessIssue('ParentPortalGuard', 'No family after all attempts', {
               userId: user.id,
               expectedData: 'family membership',
-              actualResult: 'none after 3 attempts'
+              actualResult: 'none after retries'
             });
             
             if (isAdmin) {
@@ -194,7 +186,7 @@ export const useParentPortalGuard = (options: ParentPortalGuardOptions = {}) => 
     };
 
     checkAccess();
-  }, [user, userRole, loading, isAdmin, isCheckingRole, navigate, requiredFamilyAccess, redirectPath, familyCreationAttempts]);
+  }, [user, userRole, loading, isAdmin, isCheckingRole, navigate, requiredFamilyAccess, redirectPath]);
 
   return {
     isAuthorized,
