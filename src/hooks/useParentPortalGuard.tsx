@@ -15,7 +15,6 @@ export const useParentPortalGuard = (options: ParentPortalGuardOptions = {}) => 
   const navigate = useNavigate();
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [checking, setChecking] = useState(true);
-  const [familyCreationAttempts, setFamilyCreationAttempts] = useState(0);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const checkInProgressRef = useRef(false);
 
