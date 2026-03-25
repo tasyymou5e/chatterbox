@@ -66,7 +66,7 @@ export function SiteHeader({ className }: SiteHeaderProps) {
   ];
 
   const authenticatedItems = user ? [
-    { title: "Parent Dashboard", href: "/parent-dashboard", icon: LayoutDashboard },
+    { title: "Parent Dashboard", href: "/parent", icon: LayoutDashboard },
   ] : [];
 
   return (

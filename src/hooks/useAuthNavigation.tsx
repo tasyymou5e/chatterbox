@@ -79,7 +79,7 @@ export const useAuthNavigation = () => {
               navigate('/children/tasks');
               break;
             default:
-              navigate('/parent-dashboard');
+              navigate('/parent');
               break;
           }
         }, 50); // Fast redirect since session is confirmed

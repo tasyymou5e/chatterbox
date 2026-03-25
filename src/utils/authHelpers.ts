@@ -14,6 +14,6 @@ export function getDashboardPath(role: string | null): string {
     case 'child':
       return '/children/tasks';
     default:
-      return '/parent-dashboard';
+      return '/parent';
   }
 }
