@@ -32,12 +32,9 @@ const hasDesignTokensLoaded = () => {
 const resetPreviewServiceWorker = async () => {
   if (!('serviceWorker' in navigator)) return;
 
-  const cssLooksBroken = !hasDesignTokensLoaded();
-  const resetFlag = cssLooksBroken
-    ? `${PREVIEW_SW_RESET_FLAG}:css-recovery`
-    : PREVIEW_SW_RESET_FLAG;
-
-  if (sessionStorage.getItem(resetFlag)) return;
+  // Use a single consistent flag to prevent reload loops
+  // Previously, different keys for css-recovery vs normal could allow double reloads
+  if (sessionStorage.getItem(PREVIEW_SW_RESET_FLAG)) return;
 
   const registrations = await navigator.serviceWorker.getRegistrations();
 
@@ -50,8 +47,10 @@ const resetPreviewServiceWorker = async () => {
     await Promise.all(cacheKeys.map((cacheKey) => caches.delete(cacheKey)));
   }
 
+  const cssLooksBroken = !hasDesignTokensLoaded();
+
   if (registrations.length > 0 || cssLooksBroken) {
-    sessionStorage.setItem(resetFlag, '1');
+    sessionStorage.setItem(PREVIEW_SW_RESET_FLAG, '1');
     window.location.reload();
   }
 };
