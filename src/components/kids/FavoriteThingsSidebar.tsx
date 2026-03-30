@@ -7,7 +7,7 @@
 import { useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { ChevronLeft, ChevronRight, Heart } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+
 
 interface FavoriteItem {
   id: string;

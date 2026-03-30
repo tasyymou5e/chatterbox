@@ -7,7 +7,7 @@
 import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, Circle, MapPin, RefreshCw } from 'lucide-react';
+import { CheckCircle, Circle, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface Mission {
