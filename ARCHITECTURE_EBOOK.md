@@ -1026,4 +1026,58 @@ See [Chapter 7](#7-backend-edge-functions) for the complete categorized table.
 
 ---
 
+## 17. ConnectSphere Integration (NDBI/PMI Research)
+
+### Research Basis
+
+The ConnectSphere integration brings research-backed autism early intervention features from the NDBI (Naturalistic Developmental Behavioral Interventions) and ESDM (Early Start Denver Model) frameworks into Chatterbox.
+
+### New Components
+
+| Component | File | Purpose |
+|-----------|------|---------|
+| **QuickNeedsChatBar** | `src/components/kids/QuickNeedsChatBar.tsx` | Persistent bottom AAC bar with one-tap buttons (Help, Hungry, Thirsty, Potty, All Done, Hurt) and text-to-speech output |
+| **DailyRoutineTimeline** | `src/components/kids/DailyRoutineTimeline.tsx` | Visual step-by-step daily routine with expandable sub-steps, integrates with chore assignments |
+| **FavoriteThingsSidebar** | `src/components/kids/FavoriteThingsSidebar.tsx` | Collapsible right panel with quick-access learning modules (ABC, 123, Colors, Shapes, etc.) |
+| **RealWorldMissions** | `src/components/kids/RealWorldMissions.tsx` | Card-based offline activity suggestions bridging digital skills to real-life interactions |
+
+### New Game Variants (ConnectSphere-aligned)
+
+| Variant ID | Domain | Description | Clinical Alignment |
+|-----------|--------|-------------|-------------------|
+| `acad-abc-explorer` | Educational Learning | Letter recognition and phonics matching | ESDM language goals |
+| `acad-number-fun` | Educational Learning | Counting sequences and number identification | Academic readiness |
+| `acad-colors-shapes` | Educational Learning | Color/shape sorting and matching | Visual discrimination |
+| `soc-my-family` | Social Skills | Family member recognition and matching | Joint attention (NDBI) |
+| `soc-sharing-turns` | Social Skills | Turn-taking social story interactive | Peer interaction (PMI) |
+| `comm-object-id` | Communication | Object-to-name matching | Receptive language |
+| `comm-needs-express` | Communication | AAC needs expression matching | Functional communication |
+
+### Architecture Integration
+
+```
+Kids Portal Layout (updated)
+├── KidsProgressHeader
+├── DailyRoutineTimeline ← NEW (chores as visual routine)
+├── SkillPlanDashboard (existing)
+├── RealWorldMissions ← NEW (post-activity suggestions)
+├── SkillGamesBrowser (existing, + 7 new ConnectSphere variants)
+├── FavoriteThingsSidebar ← NEW (right panel, fixed position)
+└── QuickNeedsChatBar ← NEW (fixed bottom bar, always visible)
+```
+
+### AAC Chat Bar Features
+- **Text-to-Speech**: Uses `speechSynthesis` Web API for voice output
+- **Large Touch Targets**: 64px minimum touch area for motor accessibility
+- **Color-Coded**: Each need has a distinct color for visual discrimination
+- **Customizable**: Extensible button array for personalized needs
+
+### Real World Missions
+- Bridges digital learning to real-life activities
+- Generated from a pool of 12 domain-specific missions
+- Random selection of 3 daily missions with refresh capability
+- Parent-verifiable completion tracking
+
+---
+
 *This document is automatically registered in `src/config/docRegistry.ts` for date tracking.*

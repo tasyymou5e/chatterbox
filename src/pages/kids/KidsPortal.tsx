@@ -9,6 +9,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { KidsPortalLayout, AgeGroupMenu, KidsProgressHeader, EmbeddedGameViewer, MascotGuide, useMascotGuide } from '@/components/kids';
 import { SkillPlanDashboard } from '@/components/kids/SkillPlanDashboard';
 import { SkillGamesBrowser } from '@/components/kids/SkillGamesBrowser';
+import { QuickNeedsChatBar } from '@/components/kids/QuickNeedsChatBar';
+import { DailyRoutineTimeline } from '@/components/kids/DailyRoutineTimeline';
+import { FavoriteThingsSidebar } from '@/components/kids/FavoriteThingsSidebar';
+import { RealWorldMissions } from '@/components/kids/RealWorldMissions';
 import { KidsAssessmentGate } from '@/components/kids/KidsAssessmentGate';
 import { useChildProfile } from '@/hooks/useChildProfile';
 import { useChildAvatar } from '@/hooks/useChildAvatar';
@@ -100,11 +104,17 @@ export default function KidsPortal() {
           onAvatarUpload={uploadAvatar}
           isAvatarSaving={isAvatarSaving}
         >
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-6 pb-20">
             <KidsProgressHeader profile={childProfile} className="mb-2" />
+
+            {/* Daily Routine Timeline */}
+            <DailyRoutineTimeline />
 
             {/* Skill Plan Dashboard - primary full view */}
             <SkillPlanDashboard isIdle={isIdle} />
+
+            {/* Real World Missions */}
+            <RealWorldMissions />
 
             {/* Free-play Skill Games Browser */}
             <SkillGamesBrowser />
@@ -117,6 +127,12 @@ export default function KidsPortal() {
           />
         </KidsPortalLayout>
       </KidsAssessmentGate>
+
+      {/* Persistent AAC Quick Needs Chat Bar */}
+      <QuickNeedsChatBar />
+
+      {/* Favorites Sidebar */}
+      <FavoriteThingsSidebar />
 
       {activeGame && (
         <EmbeddedGameViewer
