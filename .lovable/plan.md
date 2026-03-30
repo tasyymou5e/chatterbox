@@ -1,82 +1,130 @@
 
 
-## Add More Games Across 10 Categories
+# Integrate ConnectSphere Features into Kids Portal & Skill Catalog
 
-### Current State
-The SkillGamesBrowser has **8 domains** with **40 SkillQuest variants + 8 standalone games = 48 total**. The user wants games added in 10 categories — some map to existing domains, some require new domains or expanded symbol sets.
+## Summary
 
-### Category Mapping
+The uploaded PDF describes "ConnectSphere" — a research-backed autism early intervention app with child-facing learning modules, an AAC chat bar, daily visual routines, and parent progress dashboards. Many features already exist in Chatterbox (SkillQuest games, skill plans, assessments, chore system). This plan covers integrating the **missing** ConnectSphere concepts into the Kids Portal and Skill Catalog.
 
-| Requested Category | Action |
-|---|---|
-| Communication & AAC | Expand existing `communication` domain — add AAC-specific symbols (picture boards, PECS) + 3 new variants |
-| Educational Learning | New `educational_learning` domain — alphabet, counting, science, reading symbols + 5 variants |
-| Social Skills | Expand existing `social` domain — add social stories symbols + 3 new variants |
-| Speech Therapy | New `speech_therapy` domain — mouth shapes, sounds, articulation symbols + 5 variants |
-| Daily Routines | Expand existing `daily_living` + `executive_function` — add visual schedule symbols + 3 new variants |
-| Storytelling | New `storytelling` domain — narrative elements, characters, story structure + 5 variants |
-| Progress Tracking | Skip (already exists as admin/parent feature, not a game domain) |
-| Interactive Games | Expand standalone games — add 4 new Memory/Pattern/Sound bonus entries |
-| Emotional Regulation | Expand existing `emotional_regulation` — add coping scenario symbols + 3 new variants |
-| Cognitive Development | New `cognitive_development` domain — memory training, attention, problem-solving + 5 variants |
+## What Already Exists (No Changes Needed)
 
-### Implementation Plan
+- SkillQuest game system (80+ variants across 12 domains)
+- Skill plan dashboard with parent approval workflow
+- Assessment pipeline (ATEC, DSM-5)
+- Chore system with visual schedules
+- Adaptive difficulty engine
+- Parent progress reports & dashboards
+- Mascot guide system
+- Calm-down / emotional regulation games
 
-#### 1. Add 4 New Domains with Symbol Sets (`skillGameData.ts`)
+## What's New from ConnectSphere to Integrate
 
-**Speech Therapy** (20 symbols):
-- Groups: `mouth_shape`, `sound_type`, `word_practice`, `articulation`
-- Symbols: lip shapes, tongue positions, vowel/consonant sounds, word pairs
+### 1. Quick Needs Chat Bar (Bottom Persistent Bar)
+**From PDF**: Always-visible bottom bar with one-tap buttons: Help, Hungry, Thirsty, Potty, All Done — with text-to-speech output.
 
-**Storytelling** (20 symbols):
-- Groups: `character`, `setting`, `action`, `emotion`, `object`
-- Symbols: hero, villain, castle, forest, running, finding, magic wand, treasure
+**Implementation**:
+- Create `src/components/kids/QuickNeedsChatBar.tsx` — a fixed bottom bar with large touch-target buttons (emoji + label)
+- Each button triggers `speechSynthesis.speak()` with the phrase
+- Render inside `KidsPortalLayout` as a persistent element above the tab bar
+- Customizable buttons stored in child profile preferences
 
-**Educational Learning** (20 symbols):
-- Groups: `alphabet`, `counting`, `science`, `reading`
-- Symbols: letters D-Z, numbers 6-10, planets, weather, books, magnifying glass
+### 2. Favorite Things Sidebar (Right-Side Panel)
+**From PDF**: Persistent right panel with quick-access icons for learning modules (ABC, 123, Colors, My Family, etc.)
 
-**Cognitive Development** (20 symbols):
-- Groups: `memory`, `attention`, `logic`, `problem_solving`
-- Symbols: brain, puzzle, magnifier, lightbulb, clock, maze, mirror, arrows
+**Implementation**:
+- Create `src/components/kids/FavoriteThingsSidebar.tsx` — collapsible right panel showing favorited catalog items and core learning categories
+- Pull favorites from `content_favorites` table + child's top-played items
+- Each item launches directly into `ActivityExecutor` or `SkillMatchGame`
+- Responsive: drawer on mobile, sidebar on desktop
 
-#### 2. Add ~28 New Game Variants
+### 3. Visual Daily Routine View
+**From PDF**: "What I Do Now!" sequential routine with checkable steps (Eat Breakfast → Brush Teeth → Get Dressed)
 
-Per new domain (5 each = 20):
-- **Speech Therapy**: Sound Matcher, Mouth Shape Sort, Rhyme Finder, Word Builder, Articulation Challenge
-- **Storytelling**: Story Starter, Character Match, Setting Sorter, Plot Sequencer, Story Detective
-- **Educational Learning**: Alphabet Adventure, Counting Quest, Science Sorter, Reading Match, Knowledge Detective
-- **Cognitive Development**: Brain Trainer, Memory Challenge, Focus Finder, Logic Puzzle, Pattern Thinker
+**Implementation**:
+- Create `src/components/kids/DailyRoutineTimeline.tsx` — visual step-by-step routine display
+- Data source: existing chore assignments for the day, ordered by time
+- Each step shows an emoji, title, and tap-to-complete interaction
+- Sub-steps expand (e.g., Potty → Pull Down Pants, Use Toilet, Wipe, Flush, Wash Hands)
+- Integrate into `SkillPlanDashboard` as a "My Routine" section above the skill plan
 
-Per expanded domain (2-3 each = ~8):
-- **Communication & AAC**: AAC Board Match, Symbol Sentence Builder, PECS Sorter
-- **Social Skills**: Social Story Sequencer, Friendship Scenario, Behavior Sorter
-- **Emotional Regulation**: Emotion Scenario, Trigger Identifier, Calm Plan Builder
-- **Daily Routines**: Visual Schedule Builder, Routine Timer Sort
+### 4. New Skill Catalog Items (life_skill_catalog inserts)
+**From PDF**: Foundational learning modules not fully covered in current catalog.
 
-#### 3. Add 4 New Standalone Games
+Add these items via the `manage-skill-plan` edge function or direct DB seed:
 
-- Storytelling Memory (memory game with story elements)
-- Speech Sounds Pattern (pattern game with speech sounds)
-- Cognitive Memory Challenge (memory game for cognitive domain)
-- Educational Pattern (pattern game for learning)
+| Title | Domain | Type | Description |
+|-------|--------|------|-------------|
+| ABC Alphabet Explorer | academic | game | Letter recognition and phonics |
+| 123 Number Fun | academic | game | Counting and number identification |
+| Colors & Shapes Match | academic | game | Color/shape recognition and matching |
+| My Family Faces | social | activity | Identify and name family members |
+| Feelings Identification | emotional_regulation | game | Basic feelings recognition with photos |
+| Object & People ID | communication | activity | Connect names to faces and objects |
+| Morning Sing-Along | sensory | activity | Musical routine for morning transition |
+| Potty Training Steps | daily_living | activity | Step-by-step toilet routine with visuals |
+| Getting Dressed Sequence | daily_living | activity | Sequential dressing with visual cues |
+| Sharing & Taking Turns | social | game | Turn-taking social story interactive |
 
-#### 4. Update SkillGamesBrowser (`SkillGamesBrowser.tsx`)
+**Implementation**:
+- Create a seed script in the `manage-skill-plan` edge function with a `seed_connectsphere` action
+- Each item includes `autism_skill_tags`, `clinical_reference` (NDBI/ESDM), `step_by_step_instructions`
+- Map to existing game mechanics (match, sort, sequence) where applicable
 
-Add the 4 new domain labels and emojis to `DOMAIN_LABELS`:
-- `speech_therapy: { label: 'Speech Therapy', emoji: '🗣️' }`
-- `storytelling: { label: 'Storytelling', emoji: '📖' }`
-- `educational_learning: { label: 'Educational Learning', emoji: '🎓' }`
-- `cognitive_development: { label: 'Cognitive Development', emoji: '🧠' }`
+### 5. New SkillQuest Game Variants (skillGameData.ts)
+Add game variants for the new ConnectSphere concepts:
 
-### Result
-- **Before**: 8 domains, 48 games
-- **After**: 12 domains, ~80 games
+- `academic` domain: `acad-abc-explorer`, `acad-number-fun`, `acad-colors-shapes`
+- `social` domain: `soc-my-family`, `soc-sharing-turns`
+- `communication` domain: `comm-object-id`, `comm-needs-express`
 
-### Files Changed
+Each variant uses existing game engine (match/sort/sequence) with new symbol sets.
 
-| File | Action |
-|------|--------|
-| `src/components/games/shared/skillGameData.ts` | Add 4 symbol sets, 28 variants, 4 standalone, 4 domain configs |
-| `src/components/kids/SkillGamesBrowser.tsx` | Add 4 new domain labels |
+### 6. Real World Missions Section
+**From PDF**: Parent-child activities that bridge digital skills to real life.
+
+**Implementation**:
+- Create `src/components/kids/RealWorldMissions.tsx` — card-based list of suggested offline activities
+- Generated from completed skill plan items (e.g., finished "Sharing" game → mission: "Share a toy with a sibling today")
+- Parent can check off completion via parent portal
+- Add `real_world_missions` column (JSONB) to `plan_session_logs` or create lightweight table
+
+### 7. Architecture Ebook Update
+- Add ConnectSphere research findings as a new section in Chapter 10 (or new Chapter 17)
+- Document the NDBI/PMI research basis and how each feature aligns
+- Update catalog tables with the new items
+
+## Technical Approach
+
+```text
+Kids Portal Layout (updated)
+├── KidsProgressHeader
+├── DailyRoutineTimeline ← NEW (chores as visual routine)
+├── SkillPlanDashboard (existing)
+├── RealWorldMissions ← NEW (post-activity suggestions)
+├── SkillGamesBrowser (existing, + new variants)
+├── FavoriteThingsSidebar ← NEW (right panel)
+└── QuickNeedsChatBar ← NEW (fixed bottom bar)
+```
+
+## Files to Create
+- `src/components/kids/QuickNeedsChatBar.tsx`
+- `src/components/kids/FavoriteThingsSidebar.tsx`
+- `src/components/kids/DailyRoutineTimeline.tsx`
+- `src/components/kids/RealWorldMissions.tsx`
+
+## Files to Modify
+- `src/components/kids/KidsPortalLayout.tsx` — add ChatBar + Sidebar slots
+- `src/pages/kids/KidsPortal.tsx` — wire new components
+- `src/components/games/shared/skillGameData.ts` — add new academic/social variants + symbols
+- `src/components/kids/SkillPlanDashboard.tsx` — integrate routine timeline
+- `ARCHITECTURE_EBOOK.md` + `AdminArchitectureEbook.tsx` — document ConnectSphere integration
+- `src/types/skillPlan.ts` — add mission-related types if needed
+
+## Implementation Order
+1. QuickNeedsChatBar (high-impact, simple)
+2. New catalog items + game variants (content expansion)
+3. DailyRoutineTimeline (leverages existing chore data)
+4. FavoriteThingsSidebar (personalization)
+5. RealWorldMissions (parent-child bridge)
+6. Documentation updates
 
