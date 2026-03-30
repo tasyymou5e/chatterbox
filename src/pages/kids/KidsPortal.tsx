@@ -104,11 +104,17 @@ export default function KidsPortal() {
           onAvatarUpload={uploadAvatar}
           isAvatarSaving={isAvatarSaving}
         >
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-6 pb-20">
             <KidsProgressHeader profile={childProfile} className="mb-2" />
+
+            {/* Daily Routine Timeline */}
+            <DailyRoutineTimeline />
 
             {/* Skill Plan Dashboard - primary full view */}
             <SkillPlanDashboard isIdle={isIdle} />
+
+            {/* Real World Missions */}
+            <RealWorldMissions />
 
             {/* Free-play Skill Games Browser */}
             <SkillGamesBrowser />
@@ -121,6 +127,12 @@ export default function KidsPortal() {
           />
         </KidsPortalLayout>
       </KidsAssessmentGate>
+
+      {/* Persistent AAC Quick Needs Chat Bar */}
+      <QuickNeedsChatBar />
+
+      {/* Favorites Sidebar */}
+      <FavoriteThingsSidebar />
 
       {activeGame && (
         <EmbeddedGameViewer
