@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
 import { getCorsHeaders } from '../_shared/cors.ts'
+import { validateSchedulerSecret, createSchedulerUnauthorizedResponse } from '../_shared/scheduler-validator.ts';
 
 /**
  * Edge Function Health Check with Automatic Recovery
@@ -85,12 +86,17 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Health check endpoint
+  // Health check endpoint (public)
   const url = new URL(req.url);
   if (url.searchParams.get('health') === 'true' || url.pathname.endsWith('/health')) {
     return new Response(JSON.stringify({ status: 'healthy', timestamp: new Date().toISOString() }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
+  }
+
+  // Require scheduler secret for actual health-check execution (cron-only)
+  if (!validateSchedulerSecret(req)) {
+    return createSchedulerUnauthorizedResponse(corsHeaders);
   }
 
   try {
