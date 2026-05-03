@@ -13,6 +13,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { sendEmailNonBlocking } from "../_shared/email-sender.ts";
 import { dataHealthAlertTemplate, type DataHealthAlertData } from "../_shared/email-templates.ts";
 import { getCorsHeaders } from "../_shared/cors.ts";
+import { validateSchedulerSecret, createSchedulerUnauthorizedResponse } from "../_shared/scheduler-validator.ts";
 
 // Alert thresholds and cooldowns
 const THRESHOLDS = {
@@ -54,6 +55,11 @@ async function handler(req: Request): Promise<Response> {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Require scheduler secret (cron-only function)
+  if (!validateSchedulerSecret(req)) {
+    return createSchedulerUnauthorizedResponse(corsHeaders);
   }
 
   console.log("[data-health-alerter] Starting health check");
