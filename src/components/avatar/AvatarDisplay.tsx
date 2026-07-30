@@ -87,7 +87,8 @@ export function AvatarDisplay({
         <Avatar className={cn(sizeClasses[size], 'border-2 border-primary/20')}>
           <AvatarImage 
             src={avatar.uploadedUrl} 
-            alt={name || 'Avatar'} 
+            alt={name ? `${name}'s profile picture` : 'User profile picture'} 
+
           />
           <AvatarFallback className="bg-primary/10 text-primary font-bold">
             {getInitials(name)}
@@ -186,7 +187,7 @@ export function CertificateAvatar({
       <div className={cn('w-20 h-20 rounded-full overflow-hidden border-4 border-warning', className)}>
         <img 
           src={avatar.uploadedUrl}
-          alt={name || 'Avatar'}
+          alt={name ? `${name}'s profile picture` : 'User profile picture'}
           className="w-full h-full object-cover"
         />
       </div>
