@@ -2,6 +2,8 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter } from 'react-router-dom'
+import { HelmetProvider } from 'react-helmet-async'
+
 import { Toaster } from '@/components/ui/toaster'
 import { Toaster as SonnerToaster } from '@/components/ui/sonner'
 import App from './App.tsx'
@@ -114,19 +116,22 @@ try {
     <React.StrictMode>
       <InitializationErrorBoundary>
         <ErrorBoundary componentName="AppRoot">
-          <QueryClientProvider client={queryClient}>
-            <BrowserRouter>
-              <AppInitializer>
-                <App />
-              </AppInitializer>
-              <Toaster />
-              <SonnerToaster />
-            </BrowserRouter>
-          </QueryClientProvider>
+          <HelmetProvider>
+            <QueryClientProvider client={queryClient}>
+              <BrowserRouter>
+                <AppInitializer>
+                  <App />
+                </AppInitializer>
+                <Toaster />
+                <SonnerToaster />
+              </BrowserRouter>
+            </QueryClientProvider>
+          </HelmetProvider>
         </ErrorBoundary>
       </InitializationErrorBoundary>
     </React.StrictMode>,
   );
+
   
   // Mark React render phase complete
   initLogger.completePhase('react_render');
