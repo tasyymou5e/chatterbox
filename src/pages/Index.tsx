@@ -15,26 +15,29 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen" id="main-content">
+    <div className="min-h-screen">
       <SiteHeader />
 
-      {/* Hero Section */}
-      <section className="pt-16">
-        <Hero onChoosePortal={scrollToPortals} settings={settings} loading={loading} />
-        
-        {/* Scroll indicator */}
-        <div className="text-center pb-8">
-          <Button
-            onClick={scrollToPortals}
-            variant="ghost"
-            size="lg"
-            className="text-white hover:bg-white/10 animate-bounce"
-            aria-label="Scroll to get started"
-          >
-            <ArrowDown className="w-6 h-6" aria-hidden="true" />
-          </Button>
-        </div>
-      </section>
+      <main id="main-content">
+        {/* Hero Section */}
+        <section className="pt-16">
+          <Hero onChoosePortal={scrollToPortals} settings={settings} loading={loading} />
+
+          {/* Scroll indicator */}
+          <div className="text-center pb-8">
+            <Button
+              onClick={scrollToPortals}
+              variant="ghost"
+              size="lg"
+              className="bg-foreground/70 text-background hover:bg-foreground/85 animate-bounce"
+              aria-label="Scroll to get started"
+            >
+              <ArrowDown className="w-6 h-6" aria-hidden="true" />
+            </Button>
+          </div>
+        </section>
+      </main>
+
 
       {/* Footer */}
       <footer className="bg-foreground text-white py-12">

@@ -57,7 +57,7 @@ export default function CommunicationSupport() {
                   </Link>
                 </Button>
                 <Button variant="outline" size="lg" asChild>
-                  <Link to="/connect/parent-resources">Learn More</Link>
+                  <Link to="/connect/parent-resources">Explore parent resources</Link>
                 </Button>
               </div>
             </div>

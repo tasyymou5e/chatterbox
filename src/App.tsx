@@ -9,6 +9,8 @@ import { usePerformanceMonitoringSafe } from "@/hooks/usePerformanceMonitoringSa
 import { PWAInstallPrompt } from '@/components/pwa/PWAInstallPrompt';
 import { OfflineIndicator } from '@/components/pwa/OfflineIndicator';
 import { lazy, Suspense } from 'react';
+import { RouteSeo } from '@/components/seo/RouteSeo';
+
 
 const AIAssistantChat = lazy(() => import('@/components/ai/AIAssistantChat'));
 import {
@@ -55,9 +57,11 @@ const App = () => {
       <ProductionSecurityWrapper>
         <SecurityMonitoringProvider>
           <ErrorBoundary componentName="App">
+              <RouteSeo />
               <a href="#main-content" className="skip-to-content">
                 Skip to main content
               </a>
+
               <OfflineIndicator />
               <PWAInstallPrompt />
               <Suspense fallback={null}>

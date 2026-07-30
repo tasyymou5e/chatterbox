@@ -7,6 +7,11 @@
     <!-- Font Preconnect (improves LCP by reducing connection latency) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800&display=swap"
+    />
+
     
     <!-- Security Headers -->
     <!-- NOTE: 'unsafe-inline' and 'unsafe-eval' in script-src are required for Vite HMR
@@ -48,18 +53,39 @@
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://chatterboxlife.lovable.app/">
+    <meta property="og:url" content="https://chatterbox.life/">
     <meta property="og:title" content="Chatterbox - Empowering Children with Autism">
     <meta property="og:description" content="Chatterbox empowers children with autism through technology, education, and family connection.">
-    <meta property="og:image" content="/og-image.png">
+    <meta property="og:image" content="https://chatterbox.life/og-image.png">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://chatterboxlife.lovable.app/">
+    <meta property="twitter:url" content="https://chatterbox.life/">
     <meta property="twitter:title" content="Chatterbox - Empowering Children with Autism">
     <meta property="twitter:description" content="Chatterbox empowers children with autism through technology, education, and family connection.">
-    <meta property="twitter:image" content="/og-image.png">
+    <meta property="twitter:image" content="https://chatterbox.life/og-image.png">
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Chatterbox",
+        "url": "https://chatterbox.life/"
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "Chatterbox",
+        "url": "https://chatterbox.life/",
+        "logo": "https://chatterbox.life/android-chrome-512x512.png",
+        "description": "Chatterbox empowers children with autism through educational games, communication tools, and family progress tracking."
+      }
+    </script>
   </head>
+
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
