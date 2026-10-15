@@ -4,6 +4,7 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { visualizer } from "rollup-plugin-visualizer";
 import { VitePWA } from "vite-plugin-pwa";
+import { mcpPlugin } from "@lovable.dev/mcp-js/stacks/supabase/vite";
 import { version } from "./package.json";
 
 // Supabase project ID — used to build PWA caching regexes.
@@ -20,6 +21,7 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
+    mcpPlugin(),
     mode === 'development' && componentTagger(),
     // Bundle analyzer - generates stats.html in production/analyze builds
     (mode === 'production' || mode === 'analyze') && visualizer({

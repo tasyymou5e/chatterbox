@@ -20,6 +20,7 @@ import GamesCatalogLazy from '@/pages/GamesCatalogLazy';
 
 // Lazy loaded pages - Non-critical (reduces initial bundle)
 const AboutLazy = React.lazy(() => import('@/pages/About'));
+const OAuthConsentLazy = React.lazy(() => import('@/pages/OAuthConsent'));
 const AdminLoginLazy = React.lazy(() => import('@/pages/admin/AdminLogin'));
 const PasswordResetLazy = React.lazy(() => import('@/components/admin/PasswordReset'));
 const ResetPasswordConfirmLazy = React.lazy(() => import('@/pages/admin/ResetPasswordConfirm'));
@@ -110,6 +111,7 @@ interface RouteConfig {
 export const coreRoutes: RouteConfig[] = [
   { path: '/', element: <Index /> },
   { path: '/auth', element: <Auth /> },
+  { path: '/.lovable/oauth/consent', element: <LazyRoute><OAuthConsentLazy /></LazyRoute> },
   { path: '/about', element: <LazyRoute><AboutLazy /></LazyRoute> },
   { path: '/parent-dashboard', element: <Navigate to="/parent" replace /> },
   { path: '/parent/dashboard', element: <Navigate to="/parent" replace /> },
