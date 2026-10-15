@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Authenticated users can read quotas" ON public.ai_usage_quotas;
