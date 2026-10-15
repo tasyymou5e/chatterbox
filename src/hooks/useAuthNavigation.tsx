@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import { cLog, cWarn, cInfo } from '@/utils/wideLogger';
+import { oauthReturnPath } from '@/lib/oauth-return-path';
 import '@/types/interfaces'; // Import for Window interface extension
 
 export const useAuthNavigation = () => {
@@ -60,6 +61,14 @@ export const useAuthNavigation = () => {
         timestamp: Date.now()
       });
       
+      // Return to a pending OAuth consent (or other safe local path) after login
+      const nextParam = currentPath === '/auth' ? new URLSearchParams(window.location.search).get('next') : null;
+      const safeNext = nextParam ? oauthReturnPath(nextParam) : '/';
+      if (safeNext !== '/') {
+        navigate(safeNext, { replace: true });
+        return;
+      }
+
       // Only redirect users from auth page to prevent loops
       if (currentPath === '/auth' || currentPath === '/') {
         cInfo('Redirecting from auth page', { attempt: navigationAttempts + 1, userRole });

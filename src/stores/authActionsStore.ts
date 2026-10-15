@@ -1,3 +1,4 @@
+import { oauthReturnPath } from '@/lib/oauth-return-path';
 /**
  * Auth Actions Store
  * 
@@ -54,7 +55,8 @@ export const useAuthActionsStore = create<AuthActionsState>()(
        */
       signUp: async (email: string, password: string, firstName?: string, lastName?: string) => {
         const sessionStore = useAuthSessionStore.getState();
-        const redirectUrl = `${window.location.origin}/`;
+        const nextParam = new URLSearchParams(window.location.search).get('next');
+        const redirectUrl = new URL(oauthReturnPath(nextParam), window.location.origin).href;
         
         sessionStore.setLoading(true);
         
