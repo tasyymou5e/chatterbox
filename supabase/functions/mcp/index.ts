@@ -3,10 +3,10 @@
 // supabase function: mcp
 // Bundled from src/lib/mcp/index.ts by @lovable.dev/mcp-js.
 // src/lib/mcp/index.ts
-import { auth, defineMcp } from "npm:@lovable.dev/mcp-js@0.25.0";
+import { auth, defineMcp } from "npm:@lovable.dev/mcp-js@3.1.0";
 
 // src/lib/mcp/tools/list-families.ts
-import { defineTool, ToolError } from "npm:@lovable.dev/mcp-js@0.25.0";
+import { defineTool, ToolError } from "npm:@lovable.dev/mcp-js@3.1.0";
 
 // src/lib/mcp/supabase.ts
 import { createClient } from "npm:@supabase/supabase-js@^2.90.1";
@@ -82,7 +82,7 @@ var list_families_default = defineTool({
 });
 
 // src/lib/mcp/tools/list-chores.ts
-import { defineTool as defineTool2, ToolError as ToolError2 } from "npm:@lovable.dev/mcp-js@0.25.0";
+import { defineTool as defineTool2, ToolError as ToolError2 } from "npm:@lovable.dev/mcp-js@3.1.0";
 import { z } from "npm:zod@^4.3.5";
 var list_chores_default = defineTool2({
   name: "list_chores",
@@ -124,5 +124,5 @@ var mcp_default = defineMcp({
 });
 
 // lovable-mcp-supabase-entry.ts
-import { createSupabaseHandler } from "npm:@lovable.dev/mcp-js@0.25.0/stacks/supabase";
+import { createSupabaseHandler } from "npm:@lovable.dev/mcp-js@3.1.0/stacks/supabase";
 Deno.serve(createSupabaseHandler(mcp_default, { functionName: "mcp" }));
