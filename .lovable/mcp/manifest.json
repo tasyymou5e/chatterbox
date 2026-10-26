@@ -12,7 +12,7 @@
   "mcp": {
     "server": {
       "name": "chatterboxlife",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "title": "chatterboxlife"
     },
     "tools": [
@@ -61,6 +61,72 @@
           },
           "required": [
             "family_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "create_chore",
+        "title": "Create chore",
+        "description": "Create a chore in a family. Only that family's parents or admins may do this. Call first with confirm=false to preview, show the preview to the user, and only call again with confirm=true after they approve.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "family_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "description": "Family ID from list_my_families."
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200,
+              "description": "Chore title."
+            },
+            "description": {
+              "description": "Optional details.",
+              "type": "string",
+              "maxLength": 2000
+            },
+            "difficulty": {
+              "description": "Defaults to medium.",
+              "type": "string",
+              "enum": [
+                "easy",
+                "medium",
+                "hard"
+              ]
+            },
+            "points": {
+              "description": "Points awarded (default 10).",
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1000
+            },
+            "minutes": {
+              "description": "Estimated minutes (default 15).",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 600
+            },
+            "confirm": {
+              "type": "boolean",
+              "description": "false = preview only; true = save after the user approved the preview."
+            }
+          },
+          "required": [
+            "family_id",
+            "title",
+            "confirm"
           ],
           "additionalProperties": false
         },

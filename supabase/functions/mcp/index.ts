@@ -109,18 +109,83 @@ var list_chores_default = defineTool2({
   }
 });
 
+// src/lib/mcp/tools/create-chore.ts
+import { defineTool as defineTool3, ToolError as ToolError3 } from "npm:@lovable.dev/mcp-js@3.1.0";
+import { z as z2 } from "npm:zod@^4.3.5";
+var create_chore_default = defineTool3({
+  name: "create_chore",
+  title: "Create chore",
+  description: "Create a chore in a family. Only that family's parents or admins may do this. Call first with confirm=false to preview, show the preview to the user, and only call again with confirm=true after they approve.",
+  inputSchema: {
+    family_id: z2.string().uuid().describe("Family ID from list_my_families."),
+    title: z2.string().trim().min(1).max(200).describe("Chore title."),
+    description: z2.string().trim().max(2e3).optional().describe("Optional details."),
+    difficulty: z2.enum(["easy", "medium", "hard"]).optional().describe("Defaults to medium."),
+    points: z2.number().int().min(0).max(1e3).optional().describe("Points awarded (default 10)."),
+    minutes: z2.number().int().min(1).max(600).optional().describe("Estimated minutes (default 15)."),
+    confirm: z2.boolean().describe("false = preview only; true = save after the user approved the preview.")
+  },
+  annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+  handler: async ({ family_id, title, description, difficulty, points, minutes, confirm }, ctx) => {
+    if (!ctx.isAuthenticated()) throw new ToolError3("Not authenticated");
+    const userId = ctx.getUserId();
+    if (!userId) throw new ToolError3("Not authenticated");
+    const supabase = supabaseForUser(ctx);
+    const [{ data: member }, { data: isAdmin }] = await Promise.all([
+      supabase.from("family_members").select("role").eq("family_id", family_id).eq("user_id", userId).maybeSingle(),
+      supabase.rpc("has_role", { _user_id: userId, _role: "admin" })
+    ]);
+    if (!isAdmin && member?.role !== "parent") {
+      throw new ToolError3("Only parents in this family or admins can create chores.");
+    }
+    const chore = {
+      family_id,
+      title,
+      description: description ?? null,
+      difficulty: difficulty ?? "medium",
+      points: points ?? 10,
+      minutes: minutes ?? 15
+    };
+    if (!confirm) {
+      return {
+        content: [{
+          type: "text",
+          text: `Preview \u2014 not saved yet:
+${JSON.stringify(chore, null, 2)}
+Ask the user to confirm, then call again with confirm=true.`
+        }],
+        structuredContent: { saved: false, preview: chore }
+      };
+    }
+    const { data, error } = await supabase.from("chores").insert({
+      family_id,
+      title,
+      description: chore.description,
+      difficulty: chore.difficulty,
+      base_points: chore.points,
+      estimated_duration: chore.minutes,
+      created_by: userId
+    }).select("id").single();
+    if (error) throw new ToolError3(error.message);
+    return {
+      content: [{ type: "text", text: `Chore "${title}" created.` }],
+      structuredContent: { saved: true, id: String(data.id), chore }
+    };
+  }
+});
+
 // src/lib/mcp/index.ts
 var projectRef = "lxuqfgbukrrickanmmic";
 var mcp_default = defineMcp({
   name: "chatterboxlife",
   title: "chatterboxlife",
-  version: "0.1.0",
-  instructions: "Tools for Chatterbox. List your families, then list the active chores in a family.",
+  version: "0.2.0",
+  instructions: "Tools for Chatterbox. List your families, list active chores, and (for parents/admins) create chores. Always preview a new chore and get the user's confirmation before saving it.",
   auth: auth.oauth.issuer({
     issuer: `https://${projectRef}.supabase.co/auth/v1`,
     acceptedAudiences: "authenticated"
   }),
-  tools: [list_families_default, list_chores_default]
+  tools: [list_families_default, list_chores_default, create_chore_default]
 });
 
 // lovable-mcp-supabase-entry.ts
