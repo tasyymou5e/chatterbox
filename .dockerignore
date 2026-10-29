@@ -1,0 +1,9 @@
+node_modules
+dist
+stats.html
+.git
+.env*
+supabase
+tests
+tests-e2e
+backups

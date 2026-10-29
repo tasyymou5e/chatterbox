@@ -79,6 +79,8 @@ Creating a safe, engaging, and educational environment where children who have a
 
 ## 🚀 Quick Start
 
+To run the whole stack locally (Supabase in Docker, loaded with a copy of the hosted database), see [LOCAL_SETUP.md](LOCAL_SETUP.md).
+
 ```sh
 git clone <YOUR_GIT_URL>
 cd chatterbox

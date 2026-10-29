@@ -1,5 +1,23 @@
 project_id = "lxuqfgbukrrickanmmic"
 
+# Local development (`npx supabase start`). These sections only affect the local
+# stack; see LOCAL_SETUP.md.
+[db]
+major_version = 17
+
+[db.migrations]
+# The migration history does not replay cleanly on an empty database (older files
+# re-create objects that already exist). Local databases are loaded from a dump of
+# the hosted project instead: scripts/local/pull-supabase.sh
+enabled = false
+
+[db.seed]
+enabled = false
+
+[auth]
+site_url = "http://localhost:8080"
+additional_redirect_urls = ["http://localhost:8080/**", "http://127.0.0.1:8080/**"]
+
 # JWT Authentication Configuration
 # ---------------------------------
 # All functions use verify_jwt = false because the project uses Supabase's

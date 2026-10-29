@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { getCorsHeaders } from "../_shared/cors.ts";
+import { AI_GATEWAY_URL, getAiGatewayKey, aiModel } from "../_shared/ai-gateway.ts";
 
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req.headers.get('origin'));
@@ -20,7 +21,7 @@ serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const lovableKey = Deno.env.get("LOVABLE_API_KEY");
+    const lovableKey = getAiGatewayKey();
 
     const userClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
       global: { headers: { Authorization: authHeader } },
@@ -221,7 +222,7 @@ async function generateWithAI(
   scheduleType: string
 ): Promise<{ summary: string; items: any[] }> {
   if (!lovableKey) {
-    throw new Error("No LOVABLE_API_KEY");
+    throw new Error("No AI gateway key (AI_GATEWAY_API_KEY or LOVABLE_API_KEY)");
   }
 
   // Compact catalog: only id + title + category
@@ -244,7 +245,7 @@ Return JSON: {"summary":"...","items":[{"catalog_item_id":"...","title":"...","d
   const timeout = setTimeout(() => controller.abort(), 15000); // 15s timeout
 
   try {
-    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const aiResponse = await fetch(`${AI_GATEWAY_URL}/chat/completions`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${lovableKey}`,
@@ -252,7 +253,7 @@ Return JSON: {"summary":"...","items":[{"catalog_item_id":"...","title":"...","d
       },
       signal: controller.signal,
       body: JSON.stringify({
-        model: "google/gemini-2.0-flash-001",
+        model: aiModel("google/gemini-2.0-flash-001"),
         messages: [
           { role: "system", content: "You are a life skills planner for autism support. Return only valid JSON." },
           { role: "user", content: prompt },

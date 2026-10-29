@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { getCorsHeaders } from '../_shared/cors.ts';
+import { AI_GATEWAY_URL, getAiGatewayKey } from '../_shared/ai-gateway.ts';
 import { adminActionLimiter, RateLimiter } from '../_shared/rate-limiter.ts';
 import { validateJWT, getServiceClient } from '../_shared/auth-validator.ts';
 
@@ -70,7 +71,7 @@ serve(async (req) => {
     // Check which API keys are configured
     const grokKey = Deno.env.get('GROK_API_KEY');
     const openaiKey = Deno.env.get('OPENAI_API_KEY');
-    const lovableKey = Deno.env.get('LOVABLE_API_KEY');
+    const lovableKey = getAiGatewayKey();
 
     const integrations: IntegrationStatus[] = [
       {
@@ -133,7 +134,7 @@ serve(async (req) => {
           }
         } else if (provider === 'lovable' && lovableKey) {
           // Test Lovable AI Gateway
-          const response = await fetch('https://ai.gateway.lovable.dev/v1/models', {
+          const response = await fetch(`${AI_GATEWAY_URL}/models`, {
             headers: { 'Authorization': `Bearer ${lovableKey}` }
           });
           healthy = response.ok;

@@ -30,3 +30,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local Supabase (see LOCAL_SETUP.md)
+supabase/.temp
+supabase/.branches
+supabase/local/dump/
+supabase/functions/.env

@@ -18,13 +18,14 @@
          and the Lovable preview environment. In a production deployment served via your own
          infrastructure, replace these with nonce-based CSP delivered through HTTP headers. -->
     <!-- NOTE: connect-src Supabase domain must be updated if the project ID changes (currently lxuqfgbukrrickanmmic) -->
+    <!-- localhost:54321 is the local Supabase stack (npx supabase start); see LOCAL_SETUP.md -->
     <meta http-equiv="Content-Security-Policy" content="
       default-src 'self';
       script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.gpteng.co https://*.lovable.app https://*.lovableproject.com;
       style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
       font-src 'self' https://fonts.gstatic.com data:;
       img-src 'self' data: blob: https:;
-      connect-src 'self' ws: wss: https://*.lovable.app https://*.lovableproject.com https://lxuqfgbukrrickanmmic.supabase.co wss://lxuqfgbukrrickanmmic.supabase.co https://api.x.ai https://fonts.googleapis.com https://fonts.gstatic.com;
+      connect-src 'self' ws: wss: https://*.lovable.app https://*.lovableproject.com https://lxuqfgbukrrickanmmic.supabase.co wss://lxuqfgbukrrickanmmic.supabase.co http://localhost:54321 http://127.0.0.1:54321 https://api.x.ai https://fonts.googleapis.com https://fonts.gstatic.com;
       frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com;
       media-src 'self' https: blob:;
       worker-src 'self' blob:;
