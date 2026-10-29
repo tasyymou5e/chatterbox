@@ -37,7 +37,12 @@ echo "==> Restoring into local database"
 {
   cat "$DUMP_DIR/roles.sql" "$DUMP_DIR/schema.sql"
   echo "SET session_replication_role = replica;"
-  cat "$DUMP_DIR/data.sql"
+  # Drop empty COPY blocks. Supabase-managed schemas contain tables the local
+  # `postgres` role has no INSERT grant on (storage.buckets_vectors,
+  # storage.vector_indexes: newer than the local image's storage migrations).
+  # Even a zero-row COPY fails there, and --single-transaction rolls back the
+  # whole restore. Blocks with no rows carry no data, so dropping them is lossless.
+  awk '/^COPY .* FROM stdin;$/ { hdr = $0; if ((getline nxt) > 0) { if (nxt == "\\.") next; print hdr; print nxt; next } print hdr; next } { print }' "$DUMP_DIR/data.sql"
   echo "SET session_replication_role = DEFAULT;"
   cat supabase/local/post-restore.sql
 } | docker exec -i "$DB_CONTAINER" psql -U postgres -d postgres --single-transaction -v ON_ERROR_STOP=1 -q
