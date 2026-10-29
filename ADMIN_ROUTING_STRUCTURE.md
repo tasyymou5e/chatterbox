@@ -72,7 +72,8 @@ This document provides a comprehensive overview of the Chatterbox application's 
   ├── /reports ......... Administrative reports
   ├── /content ......... Content management
   ├── /system-monitoring System health monitoring
-  └── /security-center .. Enhanced security dashboard
+  ├── /security-center .. Enhanced security dashboard
+  └── /environment ..... Backend target, edge function secrets, local copy status
 ```
 
 ## 3. Authentication & Route Protection
@@ -149,7 +150,8 @@ switch (userRole) {
     ├── reports
     ├── content
     ├── system-monitoring
-    └── security-center
+    ├── security-center
+    └── environment
 ```
 
 ## 5. Enhanced Security Components

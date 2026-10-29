@@ -508,6 +508,20 @@ Routes are defined in `src/routes/index.tsx` with:
 
 ---
 
+### Admin Environment (`/admin/environment`)
+
+**File:** `src/pages/admin/AdminEnvironment.tsx`
+
+**Purpose:** Shows which backend the app is running against and what works there.
+
+**Key Features:**
+- Backend target badge (Local vs Hosted) from `VITE_SUPABASE_URL`; links to Studio and Mailpit when local
+- Edge function secrets table (configured / missing / not set (optional), never values) via `api-integration-status` action `environment`, with setup steps for the local stack when required secrets are missing
+- Live row counts for key tables
+- Local copy status snapshot (see `LOCAL_SETUP.md`)
+
+---
+
 ### Admin Login (`/admin/login`)
 
 **File:** `src/pages/admin/AdminLogin.tsx`

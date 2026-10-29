@@ -611,6 +611,7 @@ Metrics:
 ├── /system-monitoring # System health
 ├── /security-center  # Security operations
 ├── /llm-monitoring   # AI cost tracking
+├── /environment      # Backend target, edge function secrets, local copy status
 ├── /login            # Admin authentication
 ├── /reset-password   # Password reset
 └── /debug            # Debug tools (dev only)

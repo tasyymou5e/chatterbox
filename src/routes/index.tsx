@@ -46,6 +46,7 @@ const AdminSecurityCenterLazy = React.lazy(() =>
 const AdminAutoRepairLogsLazy = React.lazy(() => import('@/pages/admin/AdminAutoRepairLogs'));
 const AdminIntegrityManagementLazy = React.lazy(() => import('@/pages/admin/AdminIntegrityManagement'));
 const AdminDataHealthLazy = React.lazy(() => import('@/pages/admin/AdminDataHealth'));
+const AdminEnvironmentLazy = React.lazy(() => import('@/pages/admin/AdminEnvironment'));
 const AdminArchitectureEbookLazy = React.lazy(() => import('@/pages/admin/AdminArchitectureEbook'));
 const AdminLogsTriageLazy = React.lazy(() => import('@/pages/admin/AdminLogsTriage'));
 const AdminKidsCatalogOverviewLazy = React.lazy(() => import('@/pages/admin/AdminKidsCatalogOverview'));
@@ -312,6 +313,14 @@ export const adminChildRoutes: RouteConfig[] = [
     element: (
       <ErrorBoundary componentName="AdminDataHealth">
         <LazyRoute variant="dashboard"><AdminDataHealthLazy /></LazyRoute>
+      </ErrorBoundary>
+    )
+  },
+  { 
+    path: 'environment', 
+    element: (
+      <ErrorBoundary componentName="AdminEnvironment">
+        <LazyRoute variant="dashboard"><AdminEnvironmentLazy /></LazyRoute>
       </ErrorBoundary>
     )
   },

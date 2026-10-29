@@ -721,6 +721,28 @@ interface IntegrationStatusResponse {
 }
 ```
 
+**Action `environment`** (admin or `read_only`; same JWT check and rate limit):
+
+Request body: `{ "action": "environment" }`
+
+```typescript
+interface EnvironmentResponse {
+  environment: 'local' | 'hosted'; // from the SUPABASE_URL host (127.0.0.1, localhost, kong, host.docker.internal, ::1 => local)
+  secrets: Array<{
+    name: string;        // GROK_API_KEY, OPENAI_API_KEY, LOVABLE_API_KEY, AI_GATEWAY_URL,
+                         // AI_GATEWAY_API_KEY, AI_GATEWAY_MODEL, RESEND_API_KEY, SCHEDULER_SECRET
+    configured: boolean; // presence only: values, lengths or hashes are never returned
+    feature: string;     // what the secret enables
+    optional: boolean;   // true for OPENAI_API_KEY (unused) and AI_GATEWAY_* (have defaults / fall back to LOVABLE_API_KEY)
+  }>;
+  aiGatewayKeyConfigured: boolean; // getAiGatewayKey() resolves to a non-empty key; covers only
+                                   // generate-daily-plan and ai-assessment-review (ai-chat's lovable
+                                   // provider and ai-session-helper read LOVABLE_API_KEY directly)
+}
+```
+
+Used by the `/admin/environment` page.
+
 ---
 
 #### `update-site-settings`
@@ -907,7 +929,7 @@ function validateInput<T>(schema: z.ZodSchema<T>, data: unknown): T {
    ```
 
 3. **Add secrets (if needed):**
-   - Add to Supabase dashboard: Settings → Edge Functions → Secrets
+   - Add to Supabase dashboard: Edge Functions → Secrets
 
 ---
 

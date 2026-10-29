@@ -233,6 +233,7 @@ The application has three main portals, each with its own route tree:
   /admin/analytics   → Analytics dashboards
   /admin/security    → Security center
   /admin/content     → Content moderation
+  /admin/environment → Backend target & secrets status
   /admin/settings    → Site settings
   /admin/debug       → Debug tools
 
@@ -340,7 +341,7 @@ Routes are protected by `WithAuth` and role-specific guards:
 | `security-monitoring` | Service | Security event logging & alerting |
 | `security-testing` | Admin | Run security test suite |
 | `data-health-alerter` | Service | Data health score alerting |
-| `api-integration-status` | JWT | Check API integration status |
+| `api-integration-status` | JWT | Check API integration status; `environment` action reports local/hosted + secret presence |
 
 #### System Functions (4)
 | Function | Auth | Purpose |

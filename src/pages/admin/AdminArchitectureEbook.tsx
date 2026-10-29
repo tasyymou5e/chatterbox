@@ -206,6 +206,7 @@ All route-level pages use React.lazy() with Suspense boundaries. PageSkeleton co
   /admin/families    → Family management
   /admin/security    → Security center
   /admin/content     → Content moderation
+  /admin/environment → Backend target & secrets status
 
 /parent/*            → Parent Portal (requires parent role)
   /parent/dashboard  → Family overview
@@ -296,7 +297,7 @@ Routes are protected by WithAuth and role-specific guards:
 | security-monitoring | Service | Security event logging & alerting |
 | security-testing | Admin | Run security test suite |
 | data-health-alerter | Service | Data health score alerting |
-| api-integration-status | JWT | Check API integration status |
+| api-integration-status | JWT | Check API integration status; \`environment\` action reports local/hosted + secret presence |
 
 ### Shared Utilities (\`_shared/\` — 10 modules)
 - \`cors.ts\` — Dynamic origin validation

@@ -100,11 +100,54 @@ so the functions pick them up.
 The AI plan and assessment functions call an OpenAI-compatible chat API. In production
 that is the Lovable AI gateway (`LOVABLE_API_KEY`). Locally you can use any
 OpenAI-compatible provider through `AI_GATEWAY_URL`, `AI_GATEWAY_API_KEY` and
-`AI_GATEWAY_MODEL` (see `supabase/functions/_shared/ai-gateway.ts`).
+`AI_GATEWAY_MODEL` (see `supabase/functions/_shared/ai-gateway.ts`). AI chat and `ai-session-helper`
+always use the Lovable gateway and need `LOVABLE_API_KEY`.
+
+## What works locally
+
+Status as of 2026-10-29. The admin page **/admin/environment** shows the live version:
+backend target, which edge function secrets are set (yes/no only, never values), and row
+counts for key tables.
+
+The local stack is fully separate from the hosted project (`lxuqfgbukrrickanmmic`);
+nothing done locally reaches production. `docker compose` builds the frontend with the
+`LOCAL_*` build args, so it never targets production either.
+
+Running: Postgres, REST, auth, storage, realtime, Studio (http://127.0.0.1:54323),
+Mailpit (http://127.0.0.1:54324) and the edge runtime serving all 33 functions. imgproxy
+and the connection pooler are stopped; nothing here needs them.
+
+Data: comparing every COPY block in `supabase/local/dump/data.sql` with the local
+database, 121 of 126 tables are identical. The other 5 differ only because of activity
+since the restore (`auth.audit_log_entries`, `auth.sessions`, `auth.mfa_amr_claims`,
+`auth.refresh_tokens` (expired tokens cleaned up), `public.user_activity_logs`). Nothing
+is missing: 11 auth users, 3 storage buckets, 1 cron job (`cleanup-old-health-logs-daily`),
+45 `content_items` (all active), 11 `content_categories`, 40 `life_skill_catalog` rows.
+
+Needs configuration: until `supabase/functions/.env` exists (see Edge functions above),
+these fail:
+
+- AI plans and assessment reviews (`generate-daily-plan`, `ai-assessment-review`): the
+  `AI_GATEWAY_*` settings or `LOVABLE_API_KEY`. To use the Lovable gateway, remove the
+  `AI_GATEWAY_*` lines: an empty `AI_GATEWAY_API_KEY=` hides `LOVABLE_API_KEY`.
+- AI chat (`ai-chat` with the default `lovable` provider) and `ai-session-helper`: always
+  `LOVABLE_API_KEY`; they ignore the `AI_GATEWAY_*` settings.
+- `grok-chat` and `text-to-speech`: `GROK_API_KEY`. `llm-with-failover`, and `ai-chat` with
+  a non-lovable provider, read `LLM_<PROVIDER>_API_KEY` (for example `LLM_GROK_API_KEY`).
+  `OPENAI_API_KEY` is not read by any function (only the admin status check reports it).
+- Family emails: `RESEND_API_KEY`.
+- Scheduled jobs: `SCHEDULER_SECRET`.
+
+Prefer dev/test keys. These features also need internet access to reach the providers.
+Edge functions download their imports from deno.land / esm.sh on first run, then cache
+them.
+
+If a page such as `/admin/kids-catalog` shows no data, it most likely loaded before the
+restore or the image rebuild finished: re-run the restore if needed, rebuild, and reload.
 
 ## Not copied
 
-- Storage files. The hosted buckets were empty when this was written; the buckets and
-  policies are recreated.
+- Storage files. The hosted project has no storage objects; the buckets and policies are
+  recreated.
 - The hourly edge-function health-check cron job. In production it calls the hosted
-  functions URL.
+  functions URL, so it is intentionally not recreated locally.

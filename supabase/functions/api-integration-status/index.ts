@@ -14,6 +14,61 @@ interface IntegrationStatus {
   models: string[];
 }
 
+interface SecretStatus {
+  name: string;
+  configured: boolean;
+  feature: string;
+  /** Optional secrets have a default or are not read by any function; unset is not a problem. */
+  optional: boolean;
+}
+
+interface EnvironmentReport {
+  environment: 'local' | 'hosted';
+  secrets: SecretStatus[];
+  /**
+   * True when getAiGatewayKey() resolves to a non-empty key (AI_GATEWAY_API_KEY, else LOVABLE_API_KEY).
+   * Covers only generate-daily-plan and ai-assessment-review; ai-chat (lovable provider) and
+   * ai-session-helper read LOVABLE_API_KEY directly.
+   */
+  aiGatewayKeyConfigured: boolean;
+}
+
+/** Edge function secrets reported by the 'environment' action. Names only: values never leave the function. */
+const ENVIRONMENT_SECRETS: ReadonlyArray<Omit<SecretStatus, 'configured'>> = [
+  { name: 'GROK_API_KEY', feature: 'grok-chat, text-to-speech', optional: false },
+  { name: 'OPENAI_API_KEY', feature: 'Not read by any function (only this status check reports it)', optional: true },
+  { name: 'LOVABLE_API_KEY', feature: 'ai-chat (lovable provider) and ai-session-helper always; AI plans and assessment reviews when AI_GATEWAY_API_KEY is unset', optional: false },
+  { name: 'AI_GATEWAY_URL', feature: 'OpenAI-compatible endpoint for AI plans and assessment reviews (defaults to the Lovable gateway)', optional: true },
+  { name: 'AI_GATEWAY_API_KEY', feature: 'Key for AI plans and assessment reviews (takes precedence over LOVABLE_API_KEY)', optional: true },
+  { name: 'AI_GATEWAY_MODEL', feature: 'Model override for AI plans and assessment reviews (defaults to the gateway default)', optional: true },
+  { name: 'RESEND_API_KEY', feature: 'Family emails (Resend)', optional: false },
+  { name: 'SCHEDULER_SECRET', feature: 'Scheduled jobs', optional: false },
+];
+
+const LOCAL_HOSTS = new Set(['127.0.0.1', 'localhost', 'kong', 'host.docker.internal', '::1', '[::1]']);
+
+/** Inside the local edge runtime SUPABASE_URL is typically http://kong:8000. */
+function detectEnvironment(): 'local' | 'hosted' {
+  try {
+    const host = new URL(Deno.env.get('SUPABASE_URL') ?? '').hostname.toLowerCase();
+    return LOCAL_HOSTS.has(host) ? 'local' : 'hosted';
+  } catch {
+    return 'hosted';
+  }
+}
+
+const isSet = (value: string | undefined): boolean => !!value && value.trim().length > 0;
+
+function buildEnvironmentReport(): EnvironmentReport {
+  return {
+    environment: detectEnvironment(),
+    secrets: ENVIRONMENT_SECRETS.map((s) => ({ ...s, configured: isSet(Deno.env.get(s.name)) })),
+    // getAiGatewayKey() uses `??`, so an empty AI_GATEWAY_API_KEY shadows LOVABLE_API_KEY.
+    // Report the key generate-daily-plan and ai-assessment-review will actually use.
+    aiGatewayKeyConfigured: isSet(getAiGatewayKey()),
+  };
+}
+
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req.headers.get('origin'));
   
@@ -67,6 +122,10 @@ serve(async (req) => {
     }
 
     const { action, provider } = await req.json();
+
+    if (action === 'environment') {
+      return json(buildEnvironmentReport());
+    }
 
     // Check which API keys are configured
     const grokKey = Deno.env.get('GROK_API_KEY');
